@@ -8,6 +8,7 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"lint": "oxlint",
+		"lint:github": "oxlint --format=github",
 		"lint:fix": "oxlint --fix"
 	},
 	"dependencies": {

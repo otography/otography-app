@@ -10,6 +10,9 @@
 		"lint": {
 			"dependsOn": ["^lint"]
 		},
+		"lint:github": {
+			"dependsOn": ["^lint:github"]
+		},
 		"lint:fix": {
 			"cache": false
 		},
