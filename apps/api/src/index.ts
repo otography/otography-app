@@ -24,7 +24,7 @@ app.get("/", (c) => {
 
 app.get("/api/user", async (c) => {
 	const supabase = getSupabase(c);
-	const { data, error } = await supabase.auth.getUser();
+	const { data, error } = await supabase.auth.getClaims();
 
 	if (error) {
 		// Client-side auth issues (not logged in, expired session, etc.) - return 401
@@ -42,7 +42,7 @@ app.get("/api/user", async (c) => {
 		return c.json({ message: "Auth lookup failed" }, 500);
 	}
 
-	if (!data.user) {
+	if (!data?.claims) {
 		return c.json({ message: "You are not logged in." }, 401);
 	}
 
