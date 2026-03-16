@@ -1,5 +1,2 @@
 [github_app]
-pr_commands = [
-    "/agentic_describe",
-    "/agentic_review"
-]
+pr_commands = ["/agentic_describe", "/agentic_review"]
