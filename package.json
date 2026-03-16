@@ -12,9 +12,11 @@
 		"lint:fix": "turbo run lint:fix",
 		"check-types": "turbo run check-types",
 		"fmt": "oxfmt",
-		"fmt:check": "oxfmt --check"
+		"fmt:check": "oxfmt --check",
+		"prepare": "lefthook install"
 	},
 	"devDependencies": {
+		"lefthook": "^2.1.4",
 		"oxfmt": "^0.41.0",
 		"oxlint": "^1.56.0",
 		"turbo": "^2.8.17",

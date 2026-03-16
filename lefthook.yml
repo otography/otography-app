@@ -1,0 +1,18 @@
+pre-commit:
+  parallel: false
+  commands:
+    format:
+      glob: "**/*.{js,jsx,ts,tsx,json,md}"
+      exclude:
+        - ".agents/**"
+        - ".claude/**"
+      run: bunx oxfmt --write {staged_files}
+      stage_fixed: true
+
+    lint:
+      glob: "**/*.{js,jsx,ts,tsx}"
+      exclude:
+        - ".agents/**"
+        - ".claude/**"
+      run: bunx oxlint --fix {staged_files}
+      stage_fixed: true
