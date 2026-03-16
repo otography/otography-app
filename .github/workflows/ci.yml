@@ -33,7 +33,7 @@ jobs:
         run: bun run fmt:check
 
       - name: Lint
-        run: bun run lint
+        run: bun run lint:github
 
       - name: Type check
         run: bun run check-types
