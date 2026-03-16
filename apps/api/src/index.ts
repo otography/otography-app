@@ -27,13 +27,16 @@ app.get("/api/user", async (c) => {
 	const { data, error } = await supabase.auth.getUser();
 
 	if (error) {
-		console.error("error", error);
+		// Session missing means not logged in - return 401
+		if (error.name === "AuthSessionMissingError") {
+			return c.json({ message: "You are not logged in." }, 401);
+		}
+		// Other errors are server-side failures - return 500
+		return c.json({ message: "Auth lookup failed" }, 500);
 	}
 
 	if (!data.user) {
-		return c.json({
-			message: "You are not logged in.",
-		});
+		return c.json({ message: "You are not logged in." }, 401);
 	}
 
 	return c.json({
