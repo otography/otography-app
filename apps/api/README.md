@@ -1,26 +1,20 @@
-# API (Hono + Drizzle + Supabase)
+# API (Hono + Supabase + Drizzle)
 
-BFF (Backend For Frontend) 構成の API サーバー。
+Supabase の公式 Hono 認証サンプルに合わせた API サーバーです。
 
 ## セットアップ
 
-### 1. Supabase ローカル環境の起動
+### 1. 環境変数
 
-```bash
-# Supabase CLI のインストール（未インストールの場合）
-brew install supabase/tap/supabase
-
-# 初期化（初回のみ）
-supabase init
-
-# ローカル環境の起動
-supabase start
-```
-
-起動後、表示される接続情報を `.env` に設定：
+`.env` を作成し、以下を設定します。
 
 ```env
-DATABASE_URL=postgresql://postgres:postgres@localhost:54322/postgres
+# Supabase
+DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres
+SUPABASE_URL=https://[PROJECT-REF].supabase.co
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+
+# Server
 PORT=3001
 APP_FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
@@ -38,92 +32,54 @@ bun install
 bun run dev
 ```
 
-http://localhost:3001 で起動します。
+API は `http://localhost:3001` で起動します。
 
-## DB スキーマの追加
+## 認証ミドルウェア
 
-### 1. スキーマ定義
-
-`src/db/schema.ts` にテーブルを定義：
+`src/middleware/auth.middleware.ts` の `supabaseMiddleware` を全ルートへ適用しています。
 
 ```ts
-import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
-
-export const photos = pgTable("photos", {
-	id: serial("id").primaryKey(),
-	title: text("title").notNull(),
-	url: text("url").notNull(),
-	userId: integer("user_id").notNull(),
-	createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export type Photo = typeof photos.$inferSelect;
-export type NewPhoto = typeof photos.$inferInsert;
+app.use("*", supabaseMiddleware());
 ```
 
-### 2. マイグレーション生成 & 適用
+ルート内では `getSupabase(c)` で Supabase クライアントを取得します。
+
+## エンドポイント
+
+### `GET /`
+
+ヘルスチェック用のシンプルな応答。
+
+### `GET /api/user`
+
+`supabase.auth.getClaims()` でログイン状態を返します。
+
+- 未ログイン: `{ "message": "You are not logged in." }`
+- ログイン済み: `{ "message": "You are logged in!", "userId": "..." }`
+
+### `GET /signout`
+
+`supabase.auth.signOut()` 実行後、`/` へリダイレクトします。
+
+### `GET /countries`
+
+RLS 有効テーブルの取得例です。
+
+```ts
+const { data, error } = await supabase.from("countries").select("*");
+```
+
+## Drizzle コマンド
 
 ```bash
-# マイグレーションファイル生成
 bun run db:generate
-
-# DB に適用
+bun run db:migrate
 bun run db:push
+bun run db:studio
 ```
 
-## 利用可能なスクリプト
+## 公式サンプル
 
-| コマンド              | 説明                                 |
-| --------------------- | ------------------------------------ |
-| `bun run dev`         | 開発サーバー起動（ホットリロード）   |
-| `bun run db:generate` | マイグレーションファイル生成         |
-| `bun run db:push`     | スキーマをDBに直接プッシュ（開発用） |
-| `bun run db:studio`   | Drizzle Studio 起動（DB GUI）        |
+ベースにしたサンプル:
 
-## API エンドポイントの追加
-
-`src/index.ts` にルートを追加：
-
-```ts
-import { Hono } from "hono";
-import { db } from "./db";
-import { photos } from "./db/schema";
-
-const app = new Hono();
-
-app.get("/photos", async (c) => {
-	const allPhotos = await db.select().from(photos);
-	return c.json({ data: allPhotos });
-});
-
-export default app;
-```
-
-## Hono RPC（フロントエンド連携）
-
-フロントエンドと型を共有する場合：
-
-1. API 側で型をエクスポート：
-
-```ts
-export type AppType = typeof app;
-```
-
-2. フロントエンドで型付きクライアントを作成：
-
-```ts
-import { hc } from "hono/client";
-import type { AppType } from "api";
-
-const client = hc<AppType>("http://localhost:3001");
-const res = await client.photos.$get();
-```
-
-## 将来的な Supabase リプレースについて
-
-この構成では、Supabase への依存を Drizzle ORM レイヤーで抽象化しています。
-将来的に Supabase を別の DB に置き換える場合：
-
-1. 新しい DB の接続情報を `DATABASE_URL` に設定
-2. `drizzle-kit push` でスキーマを適用
-3. コードの変更は不要（ORM が吸収）
+- https://github.com/supabase/supabase/blob/4d967740f73fd5bf8af9ae9c26afacc0c24149db/examples/auth/hono/src/index.tsx
