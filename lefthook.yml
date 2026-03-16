@@ -2,7 +2,7 @@ pre-commit:
   parallel: true
   commands:
     format:
-      glob: "*.{js,jsx,ts,tsx,json,md}"
+      glob: "**/*.{js,jsx,ts,tsx,json,md}"
       exclude:
         - ".agents/**"
         - ".claude/**"
@@ -10,7 +10,7 @@ pre-commit:
       stage_fixed: true
 
     lint:
-      glob: "*.{js,jsx,ts,tsx}"
+      glob: "**/*.{js,jsx,ts,tsx}"
       exclude:
         - ".agents/**"
         - ".claude/**"
