@@ -48,7 +48,7 @@ app.get("/api/user", async (c) => {
 
 	return c.json({
 		message: "You are logged in!",
-		userId: data.user.id,
+		userId: data.claims.id,
 	});
 });
 
