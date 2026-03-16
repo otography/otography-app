@@ -52,6 +52,7 @@ app.get("/countries", async (c) => {
 
 	if (error) {
 		console.error(error);
+		return c.json({ message: "Failed to fetch countries" }, 500);
 	}
 
 	return c.json(data);
