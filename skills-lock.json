@@ -5,6 +5,16 @@
       "source": "oxc-project/oxc",
       "sourceType": "github",
       "computedHash": "a3d6e4a6e23419c9c67d64ce8cd9f26c14a31b1ec8ef5bb46b2662205f895187"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "computedHash": "9c87c315aed143ee3b34bec8117100f5035e0df09e6b23e1ecc772cff434c9ad"
+    },
+    "vercel-react-best-practices": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "afeca00ac2f492d88fdd010e73d91719a5b57c564bb4a73325b0bd77e11323ab"
     }
   }
 }
