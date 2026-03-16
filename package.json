@@ -12,7 +12,8 @@
 		"lint:fix": "turbo run lint:fix",
 		"check-types": "turbo run check-types",
 		"fmt": "oxfmt",
-		"fmt:check": "oxfmt --check"
+		"fmt:check": "oxfmt --check",
+		"prepare": "lefthook install"
 	},
 	"devDependencies": {
 		"lefthook": "^2.1.4",
