@@ -1,9 +1,22 @@
 import { Hono } from "hono";
+import { csrf } from "hono/csrf";
+import { env } from "hono/adapter";
 import { getSupabase, supabaseMiddleware } from "./middleware/auth.middleware";
 
 const app = new Hono();
 
 app.use("*", supabaseMiddleware());
+
+// CSRF middleware for state-changing routes
+const csrfProtection = () => {
+	return csrf({
+		origin: (origin, c) => {
+			const { APP_FRONTEND_URL } = env<{ APP_FRONTEND_URL?: string }>(c);
+			if (!APP_FRONTEND_URL) return false;
+			return origin === APP_FRONTEND_URL;
+		},
+	});
+};
 
 app.get("/", (c) => {
 	return c.text("Hello Hono!");
@@ -29,10 +42,10 @@ app.get("/api/user", async (c) => {
 	});
 });
 
-app.get("/signout", async (c) => {
+app.post("/signout", csrfProtection(), async (c) => {
 	const supabase = getSupabase(c);
 	await supabase.auth.signOut();
-	return c.redirect("/");
+	return c.body(null, 204);
 });
 
 app.get("/countries", async (c) => {
