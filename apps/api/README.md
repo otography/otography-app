@@ -50,11 +50,11 @@ http://localhost:3001 で起動します。
 import { pgTable, serial, text, timestamp } from "drizzle-orm/pg-core";
 
 export const photos = pgTable("photos", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  url: text("url").notNull(),
-  userId: integer("user_id").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+	id: serial("id").primaryKey(),
+	title: text("title").notNull(),
+	url: text("url").notNull(),
+	userId: integer("user_id").notNull(),
+	createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 export type Photo = typeof photos.$inferSelect;
@@ -73,12 +73,12 @@ bun run db:push
 
 ## 利用可能なスクリプト
 
-| コマンド | 説明 |
-|---------|------|
-| `bun run dev` | 開発サーバー起動（ホットリロード） |
-| `bun run db:generate` | マイグレーションファイル生成 |
-| `bun run db:push` | スキーマをDBに直接プッシュ（開発用） |
-| `bun run db:studio` | Drizzle Studio 起動（DB GUI） |
+| コマンド              | 説明                                 |
+| --------------------- | ------------------------------------ |
+| `bun run dev`         | 開発サーバー起動（ホットリロード）   |
+| `bun run db:generate` | マイグレーションファイル生成         |
+| `bun run db:push`     | スキーマをDBに直接プッシュ（開発用） |
+| `bun run db:studio`   | Drizzle Studio 起動（DB GUI）        |
 
 ## API エンドポイントの追加
 
@@ -92,8 +92,8 @@ import { photos } from "./db/schema";
 const app = new Hono();
 
 app.get("/photos", async (c) => {
-  const allPhotos = await db.select().from(photos);
-  return c.json({ data: allPhotos });
+	const allPhotos = await db.select().from(photos);
+	return c.json({ data: allPhotos });
 });
 
 export default app;
