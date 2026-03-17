@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { getSupabase, supabaseMiddleware } from "./middleware/auth.middleware";
 import { csrfProtection } from "./middleware/csrf.middleware";
+import { env } from "./env";
 
 const app = new Hono();
 
@@ -58,7 +59,7 @@ app.get("/countries", async (c) => {
 	return c.json(data);
 });
 
-const port = Number(process.env.PORT ?? 3001);
+const port = env.PORT;
 
 export default {
 	port,
