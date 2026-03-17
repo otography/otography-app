@@ -5,12 +5,15 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
-.env
+# Local env files (keep local overrides gitignored)
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# dotenvx private keys - DO NOT COMMIT
+.env.keys
+.env*.keys
 
 # Testing
 coverage
