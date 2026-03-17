@@ -1,5 +1,5 @@
 import { createEnv } from "@t3-oss/env-core";
-import { z } from "zod";
+import { type } from "arktype";
 
 /**
  * Drizzle Kit 用の環境変数
@@ -11,7 +11,7 @@ import { z } from "zod";
  */
 export const env = createEnv({
 	server: {
-		DATABASE_URL: z.url(),
+		DATABASE_URL: type("string.url"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

@@ -14,7 +14,7 @@
 		"check-types": "turbo run check-types",
 		"fmt": "oxfmt",
 		"fmt:check": "oxfmt --check",
-		"prepare": "lefthook install"
+		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^1.38.4",
