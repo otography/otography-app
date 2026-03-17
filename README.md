@@ -35,22 +35,17 @@ This Turborepo has some additional tools already setup for you:
 
 ### Development Setup
 
-After cloning the repository, install dependencies:
+After cloning the repository, install dependencies and set up git hooks:
 
 ```sh
 bun install
+bun run hooks:install
 ```
 
-This will automatically configure pre-commit hooks via Lefthook. The hooks will:
+The pre-commit hooks (via Lefthook) will:
 
 - Format staged files with `oxfmt`
 - Lint staged files with `oxlint`
-
-If you need to manually re-enable the hooks:
-
-```sh
-bun run prepare
-```
 
 ### Build
 
