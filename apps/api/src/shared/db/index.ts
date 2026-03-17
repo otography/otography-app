@@ -6,8 +6,8 @@
  * ## 使い方
  *
  * ```ts
- * import { db } from "./db";
- * import { users } from "./db/schema";
+ * import { db } from "@/shared/db";
+ * import { users } from "@/shared/db/schema";
  * import { eq } from "drizzle-orm";
  *
  * // SELECT
@@ -26,7 +26,7 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { env } from "../env";
+import { env } from "../../env";
 import * as schema from "./schema";
 
 const connectionString = env.DATABASE_URL;

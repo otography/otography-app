@@ -1,6 +1,11 @@
 {
 	"version": 1,
 	"skills": {
+		"errore": {
+			"source": "remorses/errore",
+			"sourceType": "github",
+			"computedHash": "13d00a28907cdf17faf9b2a98a4da9fbf8edf0c722c13351b8a576a480b02582"
+		},
 		"migrate-oxlint": {
 			"source": "oxc-project/oxc",
 			"sourceType": "github",
