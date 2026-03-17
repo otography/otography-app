@@ -2,7 +2,7 @@ import { createServerClient, parseCookieHeader } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Context, MiddlewareHandler } from "hono";
 import { setCookie } from "hono/cookie";
-import { env } from "../env";
+import { env } from "../../env";
 
 declare module "hono" {
 	interface ContextVariableMap {
