@@ -17,6 +17,7 @@
 		"prepare": "lefthook install"
 	},
 	"devDependencies": {
+		"@dotenvx/dotenvx": "^1.38.4",
 		"lefthook": "^2.1.4",
 		"oxfmt": "^0.41.0",
 		"oxlint": "^1.56.0",

@@ -1,5 +1,22 @@
 {
   "enabledPlugins": {
     "hono-skill@hono-skill": true
+  },
+  "permissions": {
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(cat **/.env*)",
+      "Bash(head **/.env*)",
+      "Bash(tail **/.env*)",
+      "Bash(less **/.env*)",
+      "Bash(more **/.env*)",
+      "Bash(vim **/.env*)",
+      "Bash(nano **/.env*)",
+      "Bash(code **/.env*)",
+      "Bash(grep **/.env*)"
+    ]
   }
 }

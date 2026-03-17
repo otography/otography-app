@@ -1,2 +1,8 @@
 # deps
 node_modules/
+
+# env files (dotenvx encrypted .env can be committed)
+.env.local
+.env.*.local
+.env.keys
+.env*.keys
