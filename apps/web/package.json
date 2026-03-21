@@ -8,7 +8,7 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "oxlint --type-aware",
-		"lint:github": "oxlint --format=github",
+		"lint:github": "oxlint --type-aware --format=github",
 		"check-types": "next typegen && tsc --noEmit"
 	},
 	"dependencies": {

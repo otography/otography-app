@@ -8,12 +8,14 @@
 	"scripts": {
 		"build": "turbo run build",
 		"dev": "turbo run dev",
-		"lint": "turbo run lint",
-		"lint:github": "turbo run lint:github",
-		"lint:fix": "turbo run lint:fix",
+		"lint": "oxlint --type-aware .",
+		"lint:github": "oxlint --type-aware --format=github .",
+		"lint:fix": "oxlint --type-aware --fix .",
+		"format": "oxfmt --check .",
+		"format:fix": "oxfmt .",
+		"quality": "turbo run quality",
+		"quality:fix": "turbo run quality:fix",
 		"check-types": "turbo run check-types",
-		"fmt": "oxfmt",
-		"fmt:check": "oxfmt --check",
 		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {
