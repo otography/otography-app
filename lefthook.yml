@@ -14,5 +14,5 @@ pre-commit:
       exclude:
         - ".agents/**"
         - ".claude/**"
-      run: bunx oxlint --fix {staged_files}
+      run: bunx oxlint --type-aware --fix {staged_files}
       stage_fixed: true
