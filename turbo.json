@@ -14,19 +14,48 @@
 			"cache": false,
 			"persistent": true
 		},
-		"//#quality": {
-			"dependsOn": ["//#lint", "//#format"]
+		"quality": {
+			"dependsOn": ["//#_lint", "//#_format"]
 		},
-		"//#quality:fix": {
-			"dependsOn": ["//#lint:fix", "//#format:fix"]
-		},
-		"//#lint": {},
-		"//#lint:github": {},
-		"//#lint:fix": {
+		"quality:fix": {
+			"dependsOn": ["//#_lint:fix", "//#_format:fix"],
 			"cache": false
 		},
-		"//#format": {},
-		"//#format:fix": {
+		"lint": {
+			"dependsOn": ["//#_lint"]
+		},
+		"lint:type-aware": {
+			"dependsOn": ["//#_lint:type-aware"]
+		},
+		"lint:github": {
+			"dependsOn": ["//#_lint:github"]
+		},
+		"lint:fix": {
+			"dependsOn": ["//#_lint:fix"],
+			"cache": false
+		},
+		"lint:fix:type-aware": {
+			"dependsOn": ["//#_lint:fix:type-aware"],
+			"cache": false
+		},
+		"format": {
+			"dependsOn": ["//#_format"]
+		},
+		"format:fix": {
+			"dependsOn": ["//#_format:fix"],
+			"cache": false
+		},
+		"//#_lint": {},
+		"//#_lint:type-aware": {},
+		"//#_lint:github": {},
+		"//#_lint:fix": {
+			"cache": false
+		},
+		"//#_lint:fix:type-aware": {
+			"cache": false
+		},
+		"//#_format": {},
+		"//#_format:fix": {
 			"cache": false
 		}
 	}

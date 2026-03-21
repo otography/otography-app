@@ -7,8 +7,9 @@
 		"dev": "dotenvx run -- next dev --port 3000",
 		"build": "next build",
 		"start": "next start",
-		"lint": "oxlint --type-aware",
-		"lint:github": "oxlint --type-aware --format=github",
+		"lint": "oxlint",
+		"lint:type-aware": "oxlint --type-aware",
+		"lint:github": "oxlint --format=github",
 		"check-types": "next typegen && tsc --noEmit"
 	},
 	"dependencies": {
