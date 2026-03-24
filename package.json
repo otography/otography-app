@@ -25,10 +25,13 @@
 		"quality": "turbo run quality",
 		"quality:fix": "turbo run quality:fix",
 		"check-types": "turbo run check-types",
+		"check-dead-code": "knip --exclude binaries",
+		"check-dead-code:fix": "knip --fix --exclude binaries",
 		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {
 		"@dotenvx/dotenvx": "^1.38.4",
+		"knip": "^6.0.2",
 		"lefthook": "^2.1.4",
 		"oxfmt": "^0.41.0",
 		"oxlint": "^1.56.0",
