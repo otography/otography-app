@@ -1,7 +1,7 @@
 /**
  * Database Connection
  *
- * Drizzle ORM で Supabase (PostgreSQL) に接続するクライアント。
+ * Drizzle ORM で PostgreSQL に接続するクライアント。
  *
  * ## 使い方
  *
@@ -25,13 +25,36 @@
  */
 
 import { drizzle } from "drizzle-orm/postgres-js";
+import type { Context } from "hono";
 import postgres from "postgres";
-import { env } from "../../env";
-import * as schema from "./schema";
+import { getEnv } from "../../env";
+import { profiles } from "./schema";
 
-const connectionString = env.DATABASE_URL;
+const createDb = (connectionString: string) => {
+	// Disable prepared statements (prepare: false) as they are not supported for "Transaction" pool mode
+	const client = postgres(connectionString, { prepare: false });
 
-// Disable prepared statements (prepare: false) as they are not supported for "Transaction" pool mode
-const client = postgres(connectionString, { prepare: false });
+	return drizzle({
+		client,
+		schema: {
+			profiles,
+		},
+	});
+};
 
-export const db = drizzle(client, { schema });
+type Database = ReturnType<typeof createDb>;
+
+declare global {
+	var __otography_db__: Database | undefined;
+}
+
+export const getDb = (c: Context) => {
+	if (globalThis.__otography_db__) {
+		return globalThis.__otography_db__;
+	}
+
+	const env = getEnv(c);
+	const db = createDb(env.DATABASE_URL);
+	globalThis.__otography_db__ = db;
+	return db;
+};
