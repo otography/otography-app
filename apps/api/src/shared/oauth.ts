@@ -48,10 +48,6 @@ const isAppleTokenResponse = (value: unknown): value is AppleTokenResponse => {
 	return typeof value === "object" && value !== null;
 };
 
-const formatPrivateKey = (privateKey: string) => {
-	return privateKey.replaceAll("\\n", "\n");
-};
-
 const normalizeReturnTo = (value: string | null | undefined) => {
 	if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) {
 		return undefined;
@@ -282,7 +278,7 @@ const createAppleClientSecret = async (c: Context) => {
 		throw new Error("Apple OAuth is not configured.");
 	}
 
-	const signingKey = await importPKCS8(formatPrivateKey(env.AUTH_APPLE_PRIVATE_KEY), "ES256");
+	const signingKey = await importPKCS8(env.AUTH_APPLE_PRIVATE_KEY, "ES256");
 	const now = Math.floor(Date.now() / 1000);
 
 	return new SignJWT({})

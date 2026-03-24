@@ -22,7 +22,15 @@ export async function withRls<T>(
 		const jwtClaims = JSON.stringify({ sub: userId });
 
 		await tx.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`);
-		await tx.execute(sql.raw("set local role authenticated"));
+
+		try {
+			await tx.execute(sql.raw("set local role authenticated"));
+		} catch (error) {
+			throw new Error(
+				"Failed to switch to 'authenticated' role. Ensure the database user in DATABASE_URL is a member of the 'authenticated' role (run: GRANT authenticated TO <db_user>;).",
+				{ cause: error },
+			);
+		}
 
 		return fn(tx);
 	});
