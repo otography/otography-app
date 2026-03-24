@@ -1,6 +1,14 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/current-user";
+import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+	const currentUser = await getCurrentUser();
+
+	if (currentUser) {
+		redirect("/");
+	}
+
 	return (
 		<main
 			style={{
@@ -22,10 +30,10 @@ export default function LoginPage() {
 			>
 				<h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Login</h1>
 				<p style={{ marginTop: 0, marginBottom: "1rem", lineHeight: 1.5 }}>
-					Sign-in UI is not implemented yet. This page exists to handle unauthenticated redirects
-					from Supabase middleware.
+					The browser only sends credentials to apps/api. It never stores Firebase tokens or talks
+					to the database directly.
 				</p>
-				<Link href="/">Back to home</Link>
+				<LoginForm />
 			</section>
 		</main>
 	);
