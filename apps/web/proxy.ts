@@ -1,8 +1,8 @@
 import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/proxy";
+import { guardAuthenticatedRoutes } from "@/lib/proxy-auth";
 
 export async function proxy(request: NextRequest) {
-	return await updateSession(request);
+	return await guardAuthenticatedRoutes(request);
 }
 
 export const config = {

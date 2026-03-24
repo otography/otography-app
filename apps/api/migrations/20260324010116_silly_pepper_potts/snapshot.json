@@ -1,0 +1,134 @@
+{
+	"id": "0e0745f2-01c7-4f8e-9b47-711f8bbcf7bd",
+	"prevIds": ["00000000-0000-0000-0000-000000000000"],
+	"version": "8",
+	"dialect": "postgres",
+	"ddl": [
+		{
+			"isRlsEnabled": true,
+			"name": "profiles",
+			"schema": "public",
+			"entityType": "tables"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "profiles_pkey",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "pks"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "id",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "email",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "display_name",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"type": "text",
+			"typeSchema": null,
+			"notNull": false,
+			"dimensions": 0,
+			"default": null,
+			"generated": null,
+			"identity": null,
+			"name": "photo_url",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "now()",
+			"generated": null,
+			"identity": null,
+			"name": "created_at",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"type": "timestamp with time zone",
+			"typeSchema": null,
+			"notNull": true,
+			"dimensions": 0,
+			"default": "now()",
+			"generated": null,
+			"identity": null,
+			"name": "updated_at",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "columns"
+		},
+		{
+			"as": "PERMISSIVE",
+			"for": "SELECT",
+			"roles": ["authenticated"],
+			"using": "\"profiles\".\"id\" = requesting_user_id()",
+			"withCheck": null,
+			"name": "profiles_select_own",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "policies"
+		},
+		{
+			"as": "PERMISSIVE",
+			"for": "INSERT",
+			"roles": ["authenticated"],
+			"using": null,
+			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
+			"name": "profiles_insert_own",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "policies"
+		},
+		{
+			"as": "PERMISSIVE",
+			"for": "UPDATE",
+			"roles": ["authenticated"],
+			"using": "\"profiles\".\"id\" = requesting_user_id()",
+			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
+			"name": "profiles_update_own",
+			"schema": "public",
+			"table": "profiles",
+			"entityType": "policies"
+		}
+	],
+	"renames": []
+}
