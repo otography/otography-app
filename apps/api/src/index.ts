@@ -1,12 +1,24 @@
 import { Hono } from "hono";
-import { supabaseMiddleware } from "./shared/middleware";
+import { cors } from "hono/cors";
 import { auth } from "./features/auth";
 import { countries } from "./features/countries";
-import { env } from "./env";
+import { getBootEnv, getEnv } from "./env";
+import { authSessionMiddleware } from "./shared/middleware";
 
 const app = new Hono();
 
-app.use("*", supabaseMiddleware());
+app.use("/api/*", async (c, next) => {
+	const env = getEnv(c);
+	const middleware = cors({
+		origin: env.APP_FRONTEND_URL,
+		allowHeaders: ["Content-Type"],
+		allowMethods: ["GET", "POST", "OPTIONS"],
+		credentials: true,
+	});
+
+	return middleware(c, next);
+});
+app.use("*", authSessionMiddleware());
 
 // Mount feature routes
 app.route("/", auth);
@@ -15,7 +27,7 @@ app.route("/", countries);
 // Root route
 app.get("/", (c) => c.text("Hello Hono!"));
 
-const port = env.PORT;
+const port = getBootEnv().PORT;
 
 export default {
 	port,

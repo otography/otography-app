@@ -1,0 +1,93 @@
+{
+	"id": "0e0745f2-01c7-4f8e-9b47-711f8bbcf7bd",
+	"prevId": "00000000-0000-0000-0000-000000000000",
+	"version": "7",
+	"dialect": "postgresql",
+	"tables": {
+		"public.profiles": {
+			"name": "profiles",
+			"schema": "",
+			"columns": {
+				"id": {
+					"name": "id",
+					"type": "text",
+					"primaryKey": true,
+					"notNull": true
+				},
+				"email": {
+					"name": "email",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"display_name": {
+					"name": "display_name",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"photo_url": {
+					"name": "photo_url",
+					"type": "text",
+					"primaryKey": false,
+					"notNull": false
+				},
+				"created_at": {
+					"name": "created_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				},
+				"updated_at": {
+					"name": "updated_at",
+					"type": "timestamp with time zone",
+					"primaryKey": false,
+					"notNull": true,
+					"default": "now()"
+				}
+			},
+			"indexes": {},
+			"foreignKeys": {},
+			"compositePrimaryKeys": {},
+			"uniqueConstraints": {},
+			"policies": {
+				"profiles_select_own": {
+					"name": "profiles_select_own",
+					"as": "PERMISSIVE",
+					"for": "SELECT",
+					"to": ["authenticated"],
+					"using": "\"profiles\".\"id\" = requesting_user_id()"
+				},
+				"profiles_insert_own": {
+					"name": "profiles_insert_own",
+					"as": "PERMISSIVE",
+					"for": "INSERT",
+					"to": ["authenticated"],
+					"withCheck": "\"profiles\".\"id\" = requesting_user_id()"
+				},
+				"profiles_update_own": {
+					"name": "profiles_update_own",
+					"as": "PERMISSIVE",
+					"for": "UPDATE",
+					"to": ["authenticated"],
+					"using": "\"profiles\".\"id\" = requesting_user_id()",
+					"withCheck": "\"profiles\".\"id\" = requesting_user_id()"
+				}
+			},
+			"checkConstraints": {},
+			"isRLSEnabled": false
+		}
+	},
+	"enums": {},
+	"schemas": {},
+	"sequences": {},
+	"roles": {},
+	"policies": {},
+	"views": {},
+	"_meta": {
+		"columns": {},
+		"schemas": {},
+		"tables": {}
+	}
+}

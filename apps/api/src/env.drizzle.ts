@@ -6,7 +6,7 @@ import { type } from "arktype";
  *
  * drizzle-kit コマンド (generate, migrate, push 等) で使用。
  * アプリ本体の env.ts から分離することで、
- * DB 操作に不要な環境変数 (SUPABASE_URL 等) を設定せずに
+ * DB 操作に不要なアプリ実行用の環境変数を設定せずに
  * drizzle コマンドを実行可能にする。
  */
 export const env = createEnv({
