@@ -62,7 +62,7 @@
 			"cache": false
 		},
 		"//#check-dead-code": {
-			"inputs": ["knip.jsonc", "apps/*/package.json", "packages/*/package.json"]
+			"inputs": ["$TURBO_DEFAULT$", "knip.jsonc", "apps/*/package.json", "packages/*/package.json"]
 		}
 	}
 }
