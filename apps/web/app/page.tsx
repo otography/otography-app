@@ -1,86 +1,62 @@
-import Image, { type ImageProps } from "next/image";
-import styles from "./page.module.css";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/current-user";
+import { SignOutButton } from "./sign-out-button";
 
-type Props = Omit<ImageProps, "src"> & {
-	srcLight: string;
-	srcDark: string;
-};
+export default async function Home() {
+	const currentUser = await getCurrentUser();
 
-const ThemeImage = (props: Props) => {
-	const { srcLight, srcDark, ...rest } = props;
+	if (!currentUser) {
+		redirect("/login");
+	}
 
 	return (
-		<>
-			<Image {...rest} src={srcLight} className="imgLight" />
-			<Image {...rest} src={srcDark} className="imgDark" />
-		</>
-	);
-};
-
-export default function Home() {
-	return (
-		<div className={styles.page}>
-			<main className={styles.main}>
-				<ThemeImage
-					className={styles.logo}
-					srcLight="turborepo-dark.svg"
-					srcDark="turborepo-light.svg"
-					alt="Turborepo logo"
-					width={180}
-					height={38}
-					priority
-				/>
-				<ol>
-					<li>
-						Get started by editing <code>apps/web/app/page.tsx</code>
-					</li>
-					<li>Save and see your changes instantly.</li>
-				</ol>
-
-				<div className={styles.ctas}>
-					<a
-						className={styles.primary}
-						href="https://vercel.com/new/clone?demo-description=Learn+to+implement+a+monorepo+with+a+two+Next.js+sites+that+has+installed+three+local+packages.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F4K8ZISWAzJ8X1504ca0zmC%2F0b21a1c6246add355e55816278ef54bc%2FBasic.png&demo-title=Monorepo+with+Turborepo&demo-url=https%3A%2F%2Fexamples-basic-web.vercel.sh%2F&from=templates&project-name=Monorepo+with+Turborepo&repository-name=monorepo-turborepo&repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fturborepo%2Ftree%2Fmain%2Fexamples%2Fbasic&root-directory=apps%2Fdocs&skippable-integrations=1&teamSlug=vercel&utm_source=create-turbo"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						<Image
-							className={styles.logo}
-							src="/vercel.svg"
-							alt="Vercel logomark"
-							width={20}
-							height={20}
-						/>
-						Deploy now
-					</a>
-					<a
-						href="https://turborepo.dev/docs?utm_source"
-						target="_blank"
-						rel="noopener noreferrer"
-						className={styles.secondary}
-					>
-						Read our docs
-					</a>
-				</div>
-			</main>
-			<footer className={styles.footer}>
-				<a
-					href="https://vercel.com/templates?search=turborepo&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
+		<main
+			style={{
+				display: "grid",
+				placeItems: "center",
+				minHeight: "100dvh",
+				padding: "2rem",
+				backgroundColor: "#f6f7fb",
+			}}
+		>
+			<section
+				style={{
+					width: "100%",
+					maxWidth: "40rem",
+					padding: "2rem",
+					borderRadius: "1rem",
+					border: "1px solid #d6d6d6",
+					backgroundColor: "#ffffff",
+					display: "grid",
+					gap: "1rem",
+				}}
+			>
+				<header style={{ display: "grid", gap: "0.5rem" }}>
+					<h1 style={{ margin: 0 }}>Authenticated Dashboard</h1>
+					<p style={{ margin: 0, lineHeight: 1.5 }}>
+						This page only consumes the API session. The Next.js app does not use Firebase or
+						connect to the database directly.
+					</p>
+				</header>
+				<dl
+					style={{
+						display: "grid",
+						gridTemplateColumns: "max-content 1fr",
+						gap: "0.75rem 1rem",
+						margin: 0,
+					}}
 				>
-					<Image aria-hidden src="/window.svg" alt="Window icon" width={16} height={16} />
-					Examples
-				</a>
-				<a
-					href="https://turborepo.dev?utm_source=create-turbo"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to turborepo.dev →
-				</a>
-			</footer>
-		</div>
+					<dt>User ID</dt>
+					<dd style={{ margin: 0 }}>{currentUser.userId}</dd>
+					<dt>Email</dt>
+					<dd style={{ margin: 0 }}>{currentUser.profile.email ?? "Not set"}</dd>
+					<dt>Display name</dt>
+					<dd style={{ margin: 0 }}>{currentUser.profile.displayName ?? "Not set"}</dd>
+					<dt>Created at</dt>
+					<dd style={{ margin: 0 }}>{new Date(currentUser.profile.createdAt).toLocaleString()}</dd>
+				</dl>
+				<SignOutButton />
+			</section>
+		</main>
 	);
 }
