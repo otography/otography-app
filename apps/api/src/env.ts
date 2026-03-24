@@ -16,7 +16,7 @@ const server = {
 	DATABASE_URL: type("string.url"),
 	FIREBASE_API_KEY: type("string>0"),
 	FIREBASE_CLIENT_EMAIL: type("string.email"),
-	FIREBASE_PRIVATE_KEY: type("string>0"),
+	FIREBASE_PRIVATE_KEY: type("string>0").pipe((v) => v.replaceAll("\\n", "\n")),
 	FIREBASE_PROJECT_ID: type("string>0"),
 	PORT: type("string.numeric.parse | undefined").pipe((v) => v ?? 3001),
 	NODE_ENV: type("'development' | 'production' | 'test' | undefined").pipe(
