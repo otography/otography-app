@@ -10,7 +10,9 @@
 		],
 		"strictNullChecks": true,
 		"paths": {
-			"@/*": ["./*"]
+			"@/*": ["./src/*"],
+			"api": ["../api/src/index.ts"],
+			"api/client": ["../api/src/client.ts"]
 		}
 	},
 	"include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "next.config.js", ".next/types/**/*.ts"],

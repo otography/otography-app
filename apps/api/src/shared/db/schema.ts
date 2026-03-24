@@ -2,7 +2,7 @@ import { createInsertSchema } from "drizzle-orm/arktype";
 import { sql } from "drizzle-orm";
 import { pgPolicy, pgRole, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-const authenticatedRole = pgRole("authenticated").existing();
+const authenticatedRole = pgRole("authenticated");
 
 export const profiles = pgTable(
 	"profiles",

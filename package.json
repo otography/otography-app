@@ -30,13 +30,13 @@
 		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {
-		"@dotenvx/dotenvx": "^1.38.4",
-		"knip": "^6.0.2",
+		"@dotenvx/dotenvx": "^1.57.2",
+		"knip": "^6.0.4",
 		"lefthook": "^2.1.4",
 		"oxfmt": "^0.41.0",
-		"oxlint": "^1.56.0",
-		"oxlint-tsgolint": "^0.17.1",
-		"turbo": "^2.8.17",
+		"oxlint": "^1.57.0",
+		"oxlint-tsgolint": "^0.17.3",
+		"turbo": "^2.8.20",
 		"typescript": "5.9.2"
 	},
 	"engines": {

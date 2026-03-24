@@ -1,22 +1,14 @@
 {
-	"id": "0e0745f2-01c7-4f8e-9b47-711f8bbcf7bd",
-	"prevIds": ["00000000-0000-0000-0000-000000000000"],
 	"version": "8",
 	"dialect": "postgres",
+	"id": "63e7aede-e7ac-4a4c-b518-938b4aab8929",
+	"prevIds": ["917aeb05-3eb3-44da-9d2c-2070c5671ed5"],
 	"ddl": [
 		{
 			"isRlsEnabled": true,
 			"name": "profiles",
-			"schema": "public",
-			"entityType": "tables"
-		},
-		{
-			"columns": ["id"],
-			"nameExplicit": false,
-			"name": "profiles_pkey",
-			"schema": "public",
-			"table": "profiles",
-			"entityType": "pks"
+			"entityType": "tables",
+			"schema": "public"
 		},
 		{
 			"type": "text",
@@ -27,9 +19,9 @@
 			"generated": null,
 			"identity": null,
 			"name": "id",
+			"entityType": "columns",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "columns"
+			"table": "profiles"
 		},
 		{
 			"type": "text",
@@ -40,9 +32,9 @@
 			"generated": null,
 			"identity": null,
 			"name": "email",
+			"entityType": "columns",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "columns"
+			"table": "profiles"
 		},
 		{
 			"type": "text",
@@ -53,9 +45,9 @@
 			"generated": null,
 			"identity": null,
 			"name": "display_name",
+			"entityType": "columns",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "columns"
+			"table": "profiles"
 		},
 		{
 			"type": "text",
@@ -66,9 +58,9 @@
 			"generated": null,
 			"identity": null,
 			"name": "photo_url",
+			"entityType": "columns",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "columns"
+			"table": "profiles"
 		},
 		{
 			"type": "timestamp with time zone",
@@ -79,9 +71,9 @@
 			"generated": null,
 			"identity": null,
 			"name": "created_at",
+			"entityType": "columns",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "columns"
+			"table": "profiles"
 		},
 		{
 			"type": "timestamp with time zone",
@@ -92,9 +84,17 @@
 			"generated": null,
 			"identity": null,
 			"name": "updated_at",
+			"entityType": "columns",
+			"schema": "public",
+			"table": "profiles"
+		},
+		{
+			"columns": ["id"],
+			"nameExplicit": false,
+			"name": "profiles_pkey",
 			"schema": "public",
 			"table": "profiles",
-			"entityType": "columns"
+			"entityType": "pks"
 		},
 		{
 			"as": "PERMISSIVE",
@@ -103,9 +103,9 @@
 			"using": "\"profiles\".\"id\" = requesting_user_id()",
 			"withCheck": null,
 			"name": "profiles_select_own",
+			"entityType": "policies",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "policies"
+			"table": "profiles"
 		},
 		{
 			"as": "PERMISSIVE",
@@ -114,9 +114,9 @@
 			"using": null,
 			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
 			"name": "profiles_insert_own",
+			"entityType": "policies",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "policies"
+			"table": "profiles"
 		},
 		{
 			"as": "PERMISSIVE",
@@ -125,9 +125,9 @@
 			"using": "\"profiles\".\"id\" = requesting_user_id()",
 			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
 			"name": "profiles_update_own",
+			"entityType": "policies",
 			"schema": "public",
-			"table": "profiles",
-			"entityType": "policies"
+			"table": "profiles"
 		}
 	],
 	"renames": []

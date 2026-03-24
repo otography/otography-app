@@ -2,7 +2,7 @@ import { type NextRequest } from "next/server";
 import { guardAuthenticatedRoutes } from "@/lib/proxy-auth";
 
 export async function proxy(request: NextRequest) {
-	return await guardAuthenticatedRoutes(request);
+	return guardAuthenticatedRoutes(request);
 }
 
 export const config = {

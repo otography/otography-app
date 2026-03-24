@@ -1,6 +1,6 @@
 import { type } from "arktype";
 import { cookies } from "next/headers";
-import { env } from "@/src/env";
+import { env } from "@/env";
 
 const currentUserResponseSchema = type({
 	message: "string",

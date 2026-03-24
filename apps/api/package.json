@@ -1,12 +1,16 @@
 {
 	"name": "api",
 	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./client": "./src/client.ts"
+	},
 	"scripts": {
 		"dev": "dotenvx run -- bun run --hot src/index.ts",
-		"db:generate": "drizzle-kit generate",
-		"db:migrate": "drizzle-kit migrate",
-		"db:push": "drizzle-kit push",
-		"db:studio": "drizzle-kit studio",
+		"db:generate": "dotenvx run -- drizzle-kit generate",
+		"db:migrate": "dotenvx run -- drizzle-kit migrate",
+		"db:push": "dotenvx run -- drizzle-kit push",
+		"db:studio": "dotenvx run -- drizzle-kit studio",
 		"lint": "oxlint",
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
@@ -18,7 +22,7 @@
 		"arktype": "^2.2.0",
 		"drizzle-orm": "^1.0.0-beta.19",
 		"firebase-admin": "^13.7.0",
-		"hono": "^4.12.8",
+		"hono": "^4.12.9",
 		"jose": "^6.2.2",
 		"postgres": "^3.4.8"
 	},

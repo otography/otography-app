@@ -36,8 +36,6 @@ import {
 	requireAuth,
 } from "../../shared/middleware";
 
-const auth = new Hono();
-
 const credentialsBodySchema = type({
 	email: "string",
 	password: "string",
@@ -112,8 +110,9 @@ const finishOAuthBrowserAuth = async (c: Context, idToken: string, returnTo?: st
 	return c.redirect(buildOAuthSuccessRedirect(c, returnTo), 302);
 };
 
-auth.get("/api/auth/oauth/:provider/start", async (c) => {
-	const provider = getOAuthProvider(c.req.param("provider"));
+// Handler functions
+const oauthStartHandler = async (c: Context) => {
+	const provider = getOAuthProvider(c.req.param("provider") ?? "");
 
 	if (!provider) {
 		return c.json({ message: "Unsupported OAuth provider." }, 404);
@@ -127,10 +126,10 @@ auth.get("/api/auth/oauth/:provider/start", async (c) => {
 			error instanceof Error ? error.message : "Failed to start third-party authentication.";
 		return c.redirect(buildOAuthFailureRedirect(c, message), 302);
 	}
-});
+};
 
-auth.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", async (c) => {
-	const provider = getOAuthProvider(c.req.param("provider"));
+const oauthCallbackHandler = async (c: Context) => {
+	const provider = getOAuthProvider(c.req.param("provider") ?? "");
 
 	if (!provider) {
 		return c.json({ message: "Unsupported OAuth provider." }, 404);
@@ -191,9 +190,9 @@ auth.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", async (c) => {
 	}
 
 	return finishOAuthBrowserAuth(c, firebaseAuthResult.idToken, oauthState.returnTo);
-});
+};
 
-auth.post("/api/auth/sign-in", csrfProtection(), async (c) => {
+const signInHandler = async (c: Context) => {
 	const credentials = await readCredentials(c);
 
 	if (!credentials) {
@@ -212,9 +211,9 @@ auth.post("/api/auth/sign-in", csrfProtection(), async (c) => {
 	}
 
 	return finishCredentialAuth(c, result.idToken, "Signed in successfully.", 200);
-});
+};
 
-auth.post("/api/auth/sign-up", csrfProtection(), async (c) => {
+const signUpHandler = async (c: Context) => {
 	const credentials = await readCredentials(c);
 
 	if (!credentials) {
@@ -233,9 +232,9 @@ auth.post("/api/auth/sign-up", csrfProtection(), async (c) => {
 	}
 
 	return finishCredentialAuth(c, result.idToken, "Account created successfully.", 201);
-});
+};
 
-auth.get("/api/user", requireAuth(), async (c) => {
+const userHandler = async (c: Context) => {
 	const session = getAuthSession(c);
 
 	if (!session) {
@@ -281,9 +280,9 @@ auth.get("/api/user", requireAuth(), async (c) => {
 		profile,
 		userId,
 	});
-});
+};
 
-auth.post("/api/auth/sign-out", csrfProtection(), async (c) => {
+const signOutHandler = async (c: Context) => {
 	const authSessionError = getAuthSessionError(c);
 
 	if (authSessionError) {
@@ -320,6 +319,15 @@ auth.post("/api/auth/sign-out", csrfProtection(), async (c) => {
 
 	clearSessionCookie(c);
 	return c.body(null, 204);
-});
+};
+
+// Chained routes for proper type inference
+const auth = new Hono()
+	.get("/api/auth/oauth/:provider/start", oauthStartHandler)
+	.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", oauthCallbackHandler)
+	.post("/api/auth/sign-in", csrfProtection(), signInHandler)
+	.post("/api/auth/sign-up", csrfProtection(), signUpHandler)
+	.get("/api/user", requireAuth(), userHandler)
+	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);
 
 export { auth };

@@ -2,7 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { env } from "@/src/env";
+import { env } from "@/env";
+import { api } from "@/lib/api";
 
 type AuthMode = "sign-in" | "sign-up";
 
@@ -22,25 +23,20 @@ export function LoginForm() {
 		setError(null);
 
 		try {
-			const response = await fetch(
-				new URL(`/api/auth/${mode === "sign-in" ? "sign-in" : "sign-up"}`, env.NEXT_PUBLIC_API_URL),
-				{
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-					credentials: "include",
-					body: JSON.stringify({
-						email,
-						password,
-					}),
-				},
-			);
+			const response =
+				mode === "sign-in"
+					? await api.auth["sign-in"].$post({ json: { email, password } })
+					: await api.auth["sign-up"].$post({ json: { email, password } });
 
 			if (!response.ok) {
 				const payload = (await response.json().catch(() => null)) as { message?: string } | null;
 				setError(payload?.message ?? "Authentication failed.");
 				return;
+			}
+
+			// sign-up の場合はプロファイルを作成
+			if (mode === "sign-up") {
+				await api.user.$get();
 			}
 
 			router.push("/");
