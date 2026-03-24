@@ -1,5 +1,6 @@
 import "hono";
-import type { FirebaseAuthError, DecodedIdToken } from "firebase-admin/auth";
+import type { DecodedIdToken } from "firebase-admin/auth";
+import type { AuthErrorLike } from "../firebase-auth-error";
 
 declare module "hono" {
 	interface ContextVariableMap {
@@ -7,7 +8,7 @@ declare module "hono" {
 			claims: DecodedIdToken;
 			sessionCookie: string;
 		} | null;
-		authSessionError: FirebaseAuthError | null;
+		authSessionError: AuthErrorLike | null;
 		jwtPayload: DecodedIdToken | null;
 		userId: string | null;
 	}

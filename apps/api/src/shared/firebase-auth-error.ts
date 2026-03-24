@@ -1,24 +1,60 @@
 import { FirebaseAuthError } from "firebase-admin/auth";
 
-const createInternalAuthError = (message: string, cause?: unknown) => {
-	const error = (
-		FirebaseAuthError as unknown as {
-			fromServerError: (code: string, msg: string) => FirebaseAuthError;
-		}
-	).fromServerError("INTERNAL_ERROR", message);
-	if (cause !== undefined) {
-		(error as Error & { cause?: unknown }).cause = cause;
+class AuthError extends Error {
+	constructor(
+		public readonly code: string,
+		message: string,
+		public readonly cause?: unknown,
+	) {
+		super(message, { cause });
+		this.name = "AuthError";
 	}
-	return error;
+
+	hasCode(code: string) {
+		return this.code === code;
+	}
+}
+
+const FIREBASE_ERROR_CODES = new Set([
+	"argument-error",
+	"internal-error",
+	"invalid-id-token",
+	"invalid-session-cookie-duration",
+	"session-cookie-expired",
+	"session-cookie-revoked",
+	"user-disabled",
+	"user-not-found",
+]);
+
+export type AuthErrorLike = AuthError | FirebaseAuthError;
+
+const isFirebaseAuthError = (error: unknown): error is FirebaseAuthError =>
+	error instanceof FirebaseAuthError;
+
+const toAuthCode = (error: unknown): string => {
+	if (isFirebaseAuthError(error)) {
+		return error.code;
+	}
+
+	if (error instanceof Error && FIREBASE_ERROR_CODES.has(error.message)) {
+		return error.message;
+	}
+
+	return "unknown-error";
 };
 
-export const normalizeFirebaseAuthError = (error: unknown, fallbackMessage: string) => {
-	return error instanceof FirebaseAuthError
-		? error
-		: createInternalAuthError(fallbackMessage, error);
+export const normalizeFirebaseAuthError = (
+	error: unknown,
+	fallbackMessage: string,
+): AuthErrorLike => {
+	if (isFirebaseAuthError(error)) {
+		return error;
+	}
+
+	return new AuthError(toAuthCode(error), fallbackMessage, error);
 };
 
-export const shouldClearSessionCookieForAuthError = (error: FirebaseAuthError) => {
+export const shouldClearSessionCookieForAuthError = (error: AuthErrorLike) => {
 	return (
 		error.hasCode("argument-error") ||
 		error.hasCode("invalid-id-token") ||
@@ -29,7 +65,7 @@ export const shouldClearSessionCookieForAuthError = (error: FirebaseAuthError) =
 	);
 };
 
-export const getRequireAuthFailure = (error: FirebaseAuthError) => {
+export const getRequireAuthFailure = (error: AuthErrorLike) => {
 	if (error.hasCode("internal-error")) {
 		return {
 			body: {
@@ -59,7 +95,7 @@ export const getRequireAuthFailure = (error: FirebaseAuthError) => {
 	};
 };
 
-export const getSessionCookieIssuanceFailure = (error: FirebaseAuthError) => {
+export const getSessionCookieIssuanceFailure = (error: AuthErrorLike) => {
 	if (error.hasCode("invalid-session-cookie-duration")) {
 		return {
 			body: {
@@ -99,7 +135,7 @@ export const getSessionCookieIssuanceFailure = (error: FirebaseAuthError) => {
 	};
 };
 
-export const getServerSignOutFailure = (error: FirebaseAuthError) => {
+export const getServerSignOutFailure = (error: AuthErrorLike) => {
 	if (error.hasCode("internal-error")) {
 		return {
 			body: {
