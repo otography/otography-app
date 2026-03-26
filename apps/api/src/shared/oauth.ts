@@ -1,6 +1,7 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { SignJWT, importPKCS8, jwtVerify } from "jose";
 import type { Context } from "hono";
+import { OAuthConfigError, OAuthExchangeError, OAuthStateError } from "@repo/errors";
 import { getEnv } from "../env";
 
 const GOOGLE_AUTHORIZE_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -73,11 +74,11 @@ const getOAuthCookieOptions = (c: Context) => {
 	};
 };
 
-const getOAuthStateSecret = (c: Context) => {
+const getOAuthStateSecret = (c: Context): OAuthConfigError | Uint8Array => {
 	const env = getEnv(c);
 
 	if (!env.AUTH_OAUTH_STATE_SECRET) {
-		throw new Error("OAuth state secret is not configured.");
+		return new OAuthConfigError({ message: "OAuth state secret is not configured." });
 	}
 
 	return textEncoder.encode(env.AUTH_OAUTH_STATE_SECRET);
@@ -128,7 +129,10 @@ const clearOAuthState = (c: Context, provider: OAuthProvider) => {
 	});
 };
 
-export const createOAuthAuthorizationUrl = async (c: Context, provider: OAuthProvider) => {
+export const createOAuthAuthorizationUrl = async (
+	c: Context,
+	provider: OAuthProvider,
+): Promise<OAuthConfigError | string> => {
 	const env = getEnv(c);
 	const state = crypto.randomUUID();
 	const returnTo = normalizeReturnTo(c.req.query("returnTo"));
@@ -138,17 +142,24 @@ export const createOAuthAuthorizationUrl = async (c: Context, provider: OAuthPro
 		...(returnTo ? { returnTo } : {}),
 	};
 
+	const secret = getOAuthStateSecret(c);
+	if (secret instanceof Error) return secret;
+
 	const cookie = await new SignJWT(payload)
 		.setProtectedHeader({ alg: "HS256" })
 		.setIssuedAt()
 		.setExpirationTime(`${OAUTH_STATE_COOKIE_MAX_AGE_SECONDS}s`)
-		.sign(getOAuthStateSecret(c));
+		.sign(secret)
+		.catch(
+			(e) => new OAuthConfigError({ message: "Failed to create OAuth state token.", cause: e }),
+		);
+	if (cookie instanceof Error) return cookie;
 
 	setCookie(c, getOAuthStateCookieName(provider), cookie, getOAuthCookieOptions(c));
 
 	if (provider === "google") {
 		if (!env.AUTH_GOOGLE_CLIENT_ID || !env.AUTH_GOOGLE_CLIENT_SECRET) {
-			throw new Error("Google OAuth is not configured.");
+			return new OAuthConfigError({ message: "Google OAuth is not configured." });
 		}
 
 		const url = new URL(GOOGLE_AUTHORIZE_ENDPOINT);
@@ -168,7 +179,7 @@ export const createOAuthAuthorizationUrl = async (c: Context, provider: OAuthPro
 		!env.AUTH_APPLE_KEY_ID ||
 		!env.AUTH_APPLE_PRIVATE_KEY
 	) {
-		throw new Error("Apple OAuth is not configured.");
+		return new OAuthConfigError({ message: "Apple OAuth is not configured." });
 	}
 
 	const url = new URL(APPLE_AUTHORIZE_ENDPOINT);
@@ -206,38 +217,44 @@ export const consumeOAuthState = async (
 	c: Context,
 	provider: OAuthProvider,
 	returnedState: string | null,
-) => {
-	try {
-		const rawCookie = getCookie(c, getOAuthStateCookieName(provider));
+): Promise<OAuthStateError | OAuthConfigError | { returnTo?: string }> => {
+	clearOAuthState(c, provider);
 
-		if (!rawCookie || !isNonEmptyString(returnedState)) {
-			throw new Error("Missing OAuth state.");
-		}
+	const rawCookie = getCookie(c, getOAuthStateCookieName(provider));
 
-		const verified = await jwtVerify(rawCookie, getOAuthStateSecret(c), {
-			algorithms: ["HS256"],
-		});
-		const payload = verified.payload;
-		const cookieProvider = payload.provider;
-		const cookieState = payload.state;
-
-		if (cookieProvider !== provider || cookieState !== returnedState) {
-			throw new Error("OAuth state mismatch.");
-		}
-
-		return {
-			returnTo: typeof payload.returnTo === "string" ? payload.returnTo : undefined,
-		};
-	} finally {
-		clearOAuthState(c, provider);
+	if (!rawCookie || !isNonEmptyString(returnedState)) {
+		return new OAuthStateError({ message: "Missing OAuth state." });
 	}
+
+	const secret = getOAuthStateSecret(c);
+	if (secret instanceof Error) return secret;
+
+	const verified = await jwtVerify(rawCookie, secret, {
+		algorithms: ["HS256"],
+	}).catch((e) => new OAuthStateError({ message: "OAuth state verification failed.", cause: e }));
+	if (verified instanceof Error) return verified;
+
+	const payload = verified.payload;
+	const cookieProvider = payload.provider;
+	const cookieState = payload.state;
+
+	if (cookieProvider !== provider || cookieState !== returnedState) {
+		return new OAuthStateError({ message: "OAuth state mismatch." });
+	}
+
+	return {
+		returnTo: typeof payload.returnTo === "string" ? payload.returnTo : undefined,
+	};
 };
 
-const exchangeGoogleAuthorizationCode = async (c: Context, code: string) => {
+const exchangeGoogleAuthorizationCode = async (
+	c: Context,
+	code: string,
+): Promise<OAuthConfigError | OAuthExchangeError | string> => {
 	const env = getEnv(c);
 
 	if (!env.AUTH_GOOGLE_CLIENT_ID || !env.AUTH_GOOGLE_CLIENT_SECRET) {
-		throw new Error("Google OAuth is not configured.");
+		return new OAuthConfigError({ message: "Google OAuth is not configured." });
 	}
 
 	const response = await fetch(GOOGLE_TOKEN_ENDPOINT, {
@@ -252,21 +269,25 @@ const exchangeGoogleAuthorizationCode = async (c: Context, code: string) => {
 			grant_type: "authorization_code",
 			redirect_uri: getOAuthCallbackUrl(c, "google"),
 		}),
-	});
-	const payload = (await response.json().catch(() => null)) as unknown;
+	}).catch(
+		(e) => new OAuthExchangeError({ message: "Google OAuth code exchange failed.", cause: e }),
+	);
+	if (response instanceof Error) return response;
+
+	const payload = (await (response.json() as Promise<unknown>).catch(() => null)) as unknown;
 
 	if (!response.ok || !isGoogleTokenResponse(payload) || !isNonEmptyString(payload.id_token)) {
 		const description =
 			isGoogleTokenResponse(payload) && isNonEmptyString(payload.error_description)
 				? payload.error_description
 				: "Google OAuth code exchange failed.";
-		throw new Error(description);
+		return new OAuthExchangeError({ message: description });
 	}
 
 	return payload.id_token;
 };
 
-const createAppleClientSecret = async (c: Context) => {
+const createAppleClientSecret = async (c: Context): Promise<OAuthConfigError | string> => {
 	const env = getEnv(c);
 
 	if (
@@ -275,30 +296,44 @@ const createAppleClientSecret = async (c: Context) => {
 		!env.AUTH_APPLE_KEY_ID ||
 		!env.AUTH_APPLE_PRIVATE_KEY
 	) {
-		throw new Error("Apple OAuth is not configured.");
+		return new OAuthConfigError({ message: "Apple OAuth is not configured." });
 	}
 
-	const signingKey = await importPKCS8(env.AUTH_APPLE_PRIVATE_KEY, "ES256");
+	const signingKey = await importPKCS8(env.AUTH_APPLE_PRIVATE_KEY, "ES256").catch(
+		(e) => new OAuthConfigError({ message: "Failed to load Apple signing key.", cause: e }),
+	);
+	if (signingKey instanceof Error) return signingKey;
+
 	const now = Math.floor(Date.now() / 1000);
 
-	return new SignJWT({})
+	const clientSecret = await new SignJWT({})
 		.setProtectedHeader({ alg: "ES256", kid: env.AUTH_APPLE_KEY_ID })
 		.setIssuer(env.AUTH_APPLE_TEAM_ID)
 		.setSubject(env.AUTH_APPLE_CLIENT_ID)
 		.setAudience(APPLE_AUDIENCE)
 		.setIssuedAt(now)
 		.setExpirationTime(now + 300)
-		.sign(signingKey);
+		.sign(signingKey)
+		.catch(
+			(e) => new OAuthConfigError({ message: "Failed to create Apple client secret.", cause: e }),
+		);
+
+	return clientSecret;
 };
 
-const exchangeAppleAuthorizationCode = async (c: Context, code: string) => {
+const exchangeAppleAuthorizationCode = async (
+	c: Context,
+	code: string,
+): Promise<OAuthConfigError | OAuthExchangeError | string> => {
 	const env = getEnv(c);
 
 	if (!env.AUTH_APPLE_CLIENT_ID) {
-		throw new Error("Apple OAuth is not configured.");
+		return new OAuthConfigError({ message: "Apple OAuth is not configured." });
 	}
 
 	const clientSecret = await createAppleClientSecret(c);
+	if (clientSecret instanceof Error) return clientSecret;
+
 	const response = await fetch(APPLE_TOKEN_ENDPOINT, {
 		method: "POST",
 		headers: {
@@ -311,15 +346,19 @@ const exchangeAppleAuthorizationCode = async (c: Context, code: string) => {
 			grant_type: "authorization_code",
 			redirect_uri: getOAuthCallbackUrl(c, "apple"),
 		}),
-	});
-	const payload = (await response.json().catch(() => null)) as unknown;
+	}).catch(
+		(e) => new OAuthExchangeError({ message: "Apple OAuth code exchange failed.", cause: e }),
+	);
+	if (response instanceof Error) return response;
+
+	const payload = (await (response.json() as Promise<unknown>).catch(() => null)) as unknown;
 
 	if (!response.ok || !isAppleTokenResponse(payload) || !isNonEmptyString(payload.id_token)) {
 		const description =
 			isAppleTokenResponse(payload) && isNonEmptyString(payload.error_description)
 				? payload.error_description
 				: "Apple OAuth code exchange failed.";
-		throw new Error(description);
+		return new OAuthExchangeError({ message: description });
 	}
 
 	return payload.id_token;
@@ -329,9 +368,9 @@ export const exchangeProviderAuthorizationCode = async (
 	c: Context,
 	provider: OAuthProvider,
 	code: string,
-) => {
+): Promise<OAuthConfigError | OAuthExchangeError | string> => {
 	if (!isNonEmptyString(code)) {
-		throw new Error("Missing OAuth authorization code.");
+		return new OAuthExchangeError({ message: "Missing OAuth authorization code." });
 	}
 
 	return provider === "google"

@@ -3,12 +3,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
-import {
-	getServerSignOutFailure,
-	getSessionCookieIssuanceFailure,
-	normalizeFirebaseAuthError,
-	shouldClearSessionCookieForAuthError,
-} from "../../shared/firebase-auth-error";
+import { AuthError } from "@repo/errors/server";
 import { signInWithIdp, signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
 import {
 	buildOAuthFailureRedirect,
@@ -29,12 +24,7 @@ import {
 } from "../../shared/session";
 import { withRls } from "../../shared/db/rls";
 import { profileInsertSchema, profiles } from "../../shared/db/schema";
-import {
-	csrfProtection,
-	getAuthSession,
-	getAuthSessionError,
-	requireAuth,
-} from "../../shared/middleware";
+import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
 const credentialsBodySchema = type({
 	email: "string",
@@ -68,9 +58,12 @@ const readCredentials = async (c: Context) => {
 };
 
 const issueSessionCookie = async (c: Context, idToken: string) => {
-	const sessionCookie = await firebaseAuth.createSessionCookie(idToken, {
-		expiresIn: SESSION_COOKIE_MAX_AGE_MS,
-	});
+	const sessionCookie = await firebaseAuth
+		.createSessionCookie(idToken, {
+			expiresIn: SESSION_COOKIE_MAX_AGE_MS,
+		})
+		.catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
+	if (sessionCookie instanceof Error) return sessionCookie;
 
 	setSessionCookie(c, sessionCookie);
 };
@@ -81,30 +74,18 @@ const finishCredentialAuth = async (
 	successMessage: string,
 	successStatus: 200 | 201,
 ) => {
-	try {
-		await issueSessionCookie(c, idToken);
-	} catch (error) {
-		const authError = normalizeFirebaseAuthError(
-			error,
-			"Failed to establish the authenticated session.",
-		);
-		const failure = getSessionCookieIssuanceFailure(authError);
-		return c.json(failure.body, failure.status);
+	const sessionResult = await issueSessionCookie(c, idToken);
+	if (sessionResult instanceof Error) {
+		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
 	}
 
 	return c.json({ message: successMessage }, successStatus);
 };
 
 const finishOAuthBrowserAuth = async (c: Context, idToken: string, returnTo?: string) => {
-	try {
-		await issueSessionCookie(c, idToken);
-	} catch (error) {
-		const authError = normalizeFirebaseAuthError(
-			error,
-			"Failed to establish the authenticated session.",
-		);
-		const failure = getSessionCookieIssuanceFailure(authError);
-		return c.redirect(buildOAuthFailureRedirect(c, failure.body.message, returnTo), 302);
+	const sessionResult = await issueSessionCookie(c, idToken);
+	if (sessionResult instanceof Error) {
+		return c.redirect(buildOAuthFailureRedirect(c, sessionResult.message, returnTo), 302);
 	}
 
 	return c.redirect(buildOAuthSuccessRedirect(c, returnTo), 302);
@@ -118,14 +99,12 @@ const oauthStartHandler = async (c: Context) => {
 		return c.json({ message: "Unsupported OAuth provider." }, 404);
 	}
 
-	try {
-		const authorizationUrl = await createOAuthAuthorizationUrl(c, provider);
-		return c.redirect(authorizationUrl, 302);
-	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Failed to start third-party authentication.";
-		return c.redirect(buildOAuthFailureRedirect(c, message), 302);
+	const authorizationUrl = await createOAuthAuthorizationUrl(c, provider);
+	if (authorizationUrl instanceof Error) {
+		return c.redirect(buildOAuthFailureRedirect(c, authorizationUrl.message), 302);
 	}
+
+	return c.redirect(authorizationUrl, 302);
 };
 
 const oauthCallbackHandler = async (c: Context) => {
@@ -144,16 +123,14 @@ const oauthCallbackHandler = async (c: Context) => {
 		);
 	}
 
-	let oauthState: { returnTo?: string };
-
-	try {
-		oauthState = await consumeOAuthState(c, provider, callbackParams.state);
-	} catch {
+	const oauthStateResult = await consumeOAuthState(c, provider, callbackParams.state);
+	if (oauthStateResult instanceof Error) {
 		return c.redirect(
 			buildOAuthFailureRedirect(c, "The authentication session is invalid or expired."),
 			302,
 		);
 	}
+	const oauthState = oauthStateResult;
 
 	if (!callbackParams.code) {
 		return c.redirect(
@@ -166,15 +143,14 @@ const oauthCallbackHandler = async (c: Context) => {
 		);
 	}
 
-	let providerIdToken: string;
-
-	try {
-		providerIdToken = await exchangeProviderAuthorizationCode(c, provider, callbackParams.code);
-	} catch (error) {
-		const message =
-			error instanceof Error ? error.message : "Failed to complete third-party authentication.";
-		return c.redirect(buildOAuthFailureRedirect(c, message, oauthState.returnTo), 302);
+	const exchangeResult = await exchangeProviderAuthorizationCode(c, provider, callbackParams.code);
+	if (exchangeResult instanceof Error) {
+		return c.redirect(
+			buildOAuthFailureRedirect(c, exchangeResult.message, oauthState.returnTo),
+			302,
+		);
 	}
+	const providerIdToken = exchangeResult;
 
 	const firebaseAuthResult = await signInWithIdp(
 		c,
@@ -182,7 +158,7 @@ const oauthCallbackHandler = async (c: Context) => {
 		getOAuthCallbackUrl(c, provider),
 	);
 
-	if ("status" in firebaseAuthResult) {
+	if (firebaseAuthResult instanceof Error) {
 		return c.redirect(
 			buildOAuthFailureRedirect(c, firebaseAuthResult.message, oauthState.returnTo),
 			302,
@@ -206,8 +182,8 @@ const signInHandler = async (c: Context) => {
 
 	const result = await signInWithPassword(c, credentials.email, credentials.password);
 
-	if ("status" in result) {
-		return c.json({ message: result.message }, result.status);
+	if (result instanceof Error) {
+		return c.json({ message: result.message }, result.statusCode);
 	}
 
 	return finishCredentialAuth(c, result.idToken, "Signed in successfully.", 200);
@@ -227,8 +203,8 @@ const signUpHandler = async (c: Context) => {
 
 	const result = await signUpWithPassword(c, credentials.email, credentials.password);
 
-	if ("status" in result) {
-		return c.json({ message: result.message }, result.status);
+	if (result instanceof Error) {
+		return c.json({ message: result.message }, result.statusCode);
 	}
 
 	return finishCredentialAuth(c, result.idToken, "Account created successfully.", 201);
@@ -241,7 +217,7 @@ const userHandler = async (c: Context) => {
 		return c.json({ message: "You are not logged in." }, 401);
 	}
 
-	const userId = typeof session.claims.sub === "string" ? session.claims.sub : null;
+	const userId = session.sub;
 
 	if (!userId) {
 		clearSessionCookie(c);
@@ -250,30 +226,36 @@ const userHandler = async (c: Context) => {
 
 	const profileInput = profileInsertSchema({
 		id: userId,
-		email: getStringClaim(session.claims, "email"),
-		displayName: getStringClaim(session.claims, "name"),
-		photoUrl: getStringClaim(session.claims, "picture"),
+		email: getStringClaim(session, "email"),
+		displayName: getStringClaim(session, "name"),
+		photoUrl: getStringClaim(session, "picture"),
 	});
 
 	if (profileInput instanceof type.errors) {
 		return c.json({ message: "Failed to normalize the current user profile." }, 500);
 	}
 
-	const [profile] = await withRls(c, session.claims, (tx) =>
+	const rlsResult = await withRls(c, session, (tx) =>
 		tx
 			.insert(profiles)
 			.values(profileInput)
 			.onConflictDoUpdate({
 				target: profiles.id,
 				set: {
-					email: getStringClaim(session.claims, "email"),
-					displayName: getStringClaim(session.claims, "name"),
-					photoUrl: getStringClaim(session.claims, "picture"),
+					email: getStringClaim(session, "email"),
+					displayName: getStringClaim(session, "name"),
+					photoUrl: getStringClaim(session, "picture"),
 					updatedAt: sql`now()`,
 				},
 			})
 			.returning(),
 	);
+
+	if (rlsResult instanceof Error) {
+		return c.json({ message: "Failed to fetch user profile." }, rlsResult.statusCode);
+	}
+
+	const [profile] = rlsResult;
 
 	return c.json({
 		message: "You are logged in!",
@@ -283,37 +265,24 @@ const userHandler = async (c: Context) => {
 };
 
 const signOutHandler = async (c: Context) => {
-	const authSessionError = getAuthSessionError(c);
-
-	if (authSessionError) {
-		if (shouldClearSessionCookieForAuthError(authSessionError)) {
-			clearSessionCookie(c);
-			return c.body(null, 204);
-		}
-
-		const failure = getServerSignOutFailure(authSessionError);
-		return c.json(failure.body, failure.status);
-	}
-
 	const session = getAuthSession(c);
-	const userId = typeof session?.claims.sub === "string" ? session.claims.sub : null;
+	const userId = session?.sub ?? null;
 
 	if (userId) {
-		try {
-			await firebaseAuth.revokeRefreshTokens(userId);
-		} catch (error) {
-			const authError = normalizeFirebaseAuthError(
-				error,
-				"Failed to revoke the Firebase refresh tokens.",
-			);
+		const revokeResult = await firebaseAuth
+			.revokeRefreshTokens(userId)
+			.catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
 
-			if (shouldClearSessionCookieForAuthError(authError)) {
+		if (revokeResult instanceof Error) {
+			if (revokeResult.clearCookie) {
 				clearSessionCookie(c);
 				return c.body(null, 204);
 			}
 
-			const failure = getServerSignOutFailure(authError);
-			return c.json(failure.body, failure.status);
+			return c.json(
+				{ message: "Failed to sign you out. Please try again." },
+				revokeResult.statusCode,
+			);
 		}
 	}
 
@@ -327,7 +296,7 @@ const auth = new Hono()
 	.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", oauthCallbackHandler)
 	.post("/api/auth/sign-in", csrfProtection(), signInHandler)
 	.post("/api/auth/sign-up", csrfProtection(), signUpHandler)
-	.get("/api/user", requireAuth(), userHandler)
+	.get("/api/user", requireAuthMiddleware(), userHandler)
 	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);
 
 export { auth };

@@ -1,5 +1,6 @@
 import { type } from "arktype";
 import type { Context } from "hono";
+import { AuthRestError } from "@repo/errors";
 import { getEnv } from "../env";
 
 const FIREBASE_IDENTITY_TOOLKIT_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
@@ -47,21 +48,23 @@ const FIREBASE_AUTH_ERROR_MESSAGE: Record<string, string> = {
 	INVALID_IDP_RESPONSE: "The third-party authentication response is invalid or expired.",
 	INVALID_LOGIN_CREDENTIALS: "Invalid email address or password.",
 	INVALID_PASSWORD: "Invalid email address or password.",
-	INVALID_PROVIDER_ID: "This authentication provider is not enabled in Firebase Auth.",
-	OPERATION_NOT_ALLOWED: "This authentication provider is not enabled in Firebase Auth.",
+	INVALID_PROVIDER_ID: "This authentication provider is not enabled.",
+	OPERATION_NOT_ALLOWED: "This authentication provider is not enabled.",
 	TOO_MANY_ATTEMPTS_TRY_LATER: "Too many authentication attempts. Please try again later.",
 	USER_DISABLED: "This account has been disabled.",
 	WEAK_PASSWORD: "Password must be at least 6 characters long.",
 };
 
-const createAuthFailure = (
+const createAuthRestError = (
 	code?: string,
 	fallbackStatus: 400 | 401 | 403 | 409 | 429 | 502 | 503 = 401,
+	cause?: unknown,
 ) => {
-	return {
+	return new AuthRestError({
 		message: FIREBASE_AUTH_ERROR_MESSAGE[code ?? ""] ?? "Authentication failed.",
-		status: FIREBASE_AUTH_ERROR_STATUS[code ?? ""] ?? fallbackStatus,
-	} as const;
+		statusCode: FIREBASE_AUTH_ERROR_STATUS[code ?? ""] ?? fallbackStatus,
+		...(cause ? { cause } : {}),
+	});
 };
 
 const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<string, unknown>) => {
@@ -69,36 +72,31 @@ const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<st
 	const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/${endpoint}`);
 	url.searchParams.set("key", env.FIREBASE_API_KEY);
 
-	let response: Response;
+	const response = await fetch(url, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(body),
+	}).catch((e) => createAuthRestError(undefined, 503, e));
+	if (response instanceof Error) return response;
 
-	try {
-		response = await fetch(url, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify(body),
-		});
-	} catch {
-		return createAuthFailure(undefined, 503);
-	}
-
-	const payload = await response.json().catch(() => null);
+	const payload = await (response.json() as Promise<unknown>).catch(() => null);
 
 	if (!response.ok) {
 		const parsedError = firebaseErrorResponseSchema(payload);
 		const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
-		return createAuthFailure(code);
+		return createAuthRestError(code);
 	}
 
 	if (!payload) {
-		return createAuthFailure(undefined, 502);
+		return createAuthRestError(undefined, 502);
 	}
 
 	const parsedPayload = firebaseEmailPasswordAuthResponseSchema(payload);
 
 	if (parsedPayload instanceof type.errors) {
-		return createAuthFailure(undefined, 502);
+		return createAuthRestError(undefined, 502);
 	}
 
 	return parsedPayload;
