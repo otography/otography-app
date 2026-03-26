@@ -45,6 +45,11 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
 
 export const requireAuthMiddleware = (): MiddlewareHandler => {
 	return async (c, next) => {
+		if (c.get("authSession")) {
+			await next();
+			return;
+		}
+
 		const sessionCookie = getSessionCookie(c);
 
 		if (!sessionCookie) {

@@ -58,10 +58,12 @@ const FIREBASE_AUTH_ERROR_MESSAGE: Record<string, string> = {
 const createAuthRestError = (
 	code?: string,
 	fallbackStatus: 400 | 401 | 403 | 409 | 429 | 502 | 503 = 401,
+	cause?: unknown,
 ) => {
 	return new AuthRestError({
 		message: FIREBASE_AUTH_ERROR_MESSAGE[code ?? ""] ?? "Authentication failed.",
 		statusCode: FIREBASE_AUTH_ERROR_STATUS[code ?? ""] ?? fallbackStatus,
+		...(cause ? { cause } : {}),
 	});
 };
 
@@ -76,7 +78,7 @@ const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<st
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(body),
-	}).catch(() => createAuthRestError(undefined, 503));
+	}).catch((e) => createAuthRestError(undefined, 503, e));
 	if (response instanceof Error) return response;
 
 	const payload = await (response.json() as Promise<unknown>).catch(() => null);
