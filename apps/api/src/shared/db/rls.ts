@@ -22,7 +22,16 @@ export async function withRls<T>(
 
 		const jwtClaims = JSON.stringify({ sub: userId });
 
-		await tx.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`);
+		const claimsResult = await tx
+			.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
+			.catch(
+				(e) =>
+					new RlsError({
+						message: "Failed to set JWT claims for RLS.",
+						cause: e,
+					}),
+			);
+		if (claimsResult instanceof Error) return claimsResult;
 
 		const roleResult = await tx.execute(sql.raw("set local role authenticated")).catch(
 			(e) =>
