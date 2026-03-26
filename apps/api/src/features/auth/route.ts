@@ -271,9 +271,7 @@ const signOutHandler = async (c: Context) => {
 	if (userId) {
 		const revokeResult = await firebaseAuth
 			.revokeRefreshTokens(userId)
-			.catch((e) =>
-				AuthError.fromFirebase(e, "Failed to revoke the Firebase refresh tokens.", 502),
-			);
+			.catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
 
 		if (revokeResult instanceof Error) {
 			if (revokeResult.clearCookie) {
@@ -281,7 +279,10 @@ const signOutHandler = async (c: Context) => {
 				return c.body(null, 204);
 			}
 
-			return c.json({ message: revokeResult.message }, revokeResult.statusCode);
+			return c.json(
+				{ message: "Failed to sign you out. Please try again." },
+				revokeResult.statusCode,
+			);
 		}
 	}
 
