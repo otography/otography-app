@@ -6,14 +6,14 @@ const AUTH_ERROR_CONFIG: Record<
 	string,
 	{ message?: string; statusCode?: ContentfulStatusCode; clearCookie?: boolean }
 > = {
-	"internal-error": { message: "Authentication service unavailable.", statusCode: 503 },
-	"invalid-session-cookie-duration": { message: "Invalid session.", statusCode: 500 },
-	"user-disabled": { message: "Account is disabled.", statusCode: 403, clearCookie: true },
-	"argument-error": { message: "Invalid session.", clearCookie: true },
-	"invalid-id-token": { message: "Invalid session.", clearCookie: true },
-	"session-cookie-expired": { message: "Session expired.", clearCookie: true },
-	"session-cookie-revoked": { message: "Session revoked.", clearCookie: true },
-	"user-not-found": { message: "Invalid session.", clearCookie: true },
+	"auth/internal-error": { message: "Authentication service unavailable.", statusCode: 503 },
+	"auth/invalid-session-cookie-duration": { message: "Invalid session.", statusCode: 500 },
+	"auth/user-disabled": { message: "Account is disabled.", statusCode: 403, clearCookie: true },
+	"auth/argument-error": { message: "Invalid session.", clearCookie: true },
+	"auth/invalid-id-token": { message: "Invalid session.", clearCookie: true },
+	"auth/session-cookie-expired": { message: "Session expired.", clearCookie: true },
+	"auth/session-cookie-revoked": { message: "Session revoked.", clearCookie: true },
+	"auth/user-not-found": { message: "Invalid session.", clearCookie: true },
 };
 
 class AuthError extends errore.createTaggedError({

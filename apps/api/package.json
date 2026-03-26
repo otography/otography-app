@@ -15,7 +15,8 @@
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
 		"lint:fix": "oxlint --fix",
-		"check-types": "tsc --noEmit"
+		"check-types": "tsc --noEmit",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@repo/errors": "workspace:*",

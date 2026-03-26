@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [format, lint, typecheck, deadcode]
+        check: [format, lint, typecheck, deadcode, test]
     steps:
       - uses: actions/checkout@v6
 
@@ -40,6 +40,7 @@ jobs:
             lint) bun run lint:github ;;
             typecheck) bun run check-types ;;
             deadcode) bun run check-dead-code ;;
+            test) bun run test ;;
           esac
 
   build:

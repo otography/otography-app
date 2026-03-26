@@ -7,6 +7,9 @@
 		".": "./src/index.ts",
 		"./server": "./src/server.ts"
 	},
+	"scripts": {
+		"test": "vitest run"
+	},
 	"dependencies": {
 		"errore": "^0.14.1",
 		"hono": "^4.12.9"

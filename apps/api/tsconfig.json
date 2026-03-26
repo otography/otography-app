@@ -5,6 +5,8 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
 		"module": "ESNext",
-		"moduleResolution": "bundler"
-	}
+		"moduleResolution": "bundler",
+		"types": ["vitest/globals"]
+	},
+	"exclude": ["src/__tests__"]
 }

@@ -27,5 +27,7 @@ export default {
 	fetch: app.fetch,
 };
 
+export { app };
+
 // Export for Hono RPC client
 export type AppType = typeof app;
