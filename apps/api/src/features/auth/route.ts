@@ -24,7 +24,7 @@ import {
 } from "../../shared/session";
 import { withRls } from "../../shared/db/rls";
 import { profileInsertSchema, profiles } from "../../shared/db/schema";
-import { csrfProtection, getAuthSession, requireAuth } from "../../shared/middleware";
+import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
 const credentialsBodySchema = type({
 	email: "string",
@@ -295,7 +295,7 @@ const auth = new Hono()
 	.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", oauthCallbackHandler)
 	.post("/api/auth/sign-in", csrfProtection(), signInHandler)
 	.post("/api/auth/sign-up", csrfProtection(), signUpHandler)
-	.get("/api/user", requireAuth(), userHandler)
+	.get("/api/user", requireAuthMiddleware(), userHandler)
 	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);
 
 export { auth };
