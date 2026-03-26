@@ -1,9 +1,7 @@
 import { Hono } from "hono";
 // import { countriesRepository } from "./repository";
 
-const countries = new Hono();
-
-countries.get("/countries", async (c) => {
+const countries = new Hono().get("/countries", async (c) => {
 	// const result = await countriesRepository.findAll();
 	// return c.json(result);
 	return c.json([{ id: 1, name: "Japan" }]);

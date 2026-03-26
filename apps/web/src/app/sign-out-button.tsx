@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { env } from "@/src/env";
+import { api } from "@/lib/api";
 
 export function SignOutButton() {
 	const router = useRouter();
@@ -14,10 +14,7 @@ export function SignOutButton() {
 		setIsPending(true);
 
 		try {
-			const response = await fetch(new URL("/api/auth/sign-out", env.NEXT_PUBLIC_API_URL), {
-				method: "POST",
-				credentials: "include",
-			});
+			const response = await api.auth["sign-out"].$post();
 
 			if (!response.ok) {
 				const payload = (await response.json().catch(() => null)) as { message?: string } | null;
