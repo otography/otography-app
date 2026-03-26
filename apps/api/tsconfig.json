@@ -6,7 +6,6 @@
 		"jsxImportSource": "hono/jsx",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"types": ["vitest/globals"]
-	},
-	"exclude": ["src/__tests__"]
+		"types": ["vitest/globals", "@vitest/spy"]
+	}
 }

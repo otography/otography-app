@@ -52,8 +52,12 @@ export async function testRequest(
 		getCookie: (name: string) => {
 			const setCookie = response.headers.getSetCookie();
 			const match = setCookie.find((c) => c.startsWith(`${name}=`));
-			if (!match) return undefined;
-			return match.split(";")[0].split("=").slice(1).join("=");
+			if (match === undefined) return undefined;
+			const [first] = match.split(";");
+			if (first === undefined) return undefined;
+			const eqIndex = first.indexOf("=");
+			if (eqIndex === -1) return undefined;
+			return first.slice(eqIndex + 1);
 		},
 	};
 }
