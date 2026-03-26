@@ -4,16 +4,16 @@ import * as errore from "errore";
 
 const AUTH_ERROR_CONFIG: Record<
 	string,
-	{ statusCode?: ContentfulStatusCode; clearCookie?: boolean }
+	{ message?: string; statusCode?: ContentfulStatusCode; clearCookie?: boolean }
 > = {
-	"internal-error": { statusCode: 503 },
-	"invalid-session-cookie-duration": { statusCode: 500 },
-	"user-disabled": { statusCode: 403, clearCookie: true },
-	"argument-error": { clearCookie: true },
-	"invalid-id-token": { clearCookie: true },
-	"session-cookie-expired": { clearCookie: true },
-	"session-cookie-revoked": { clearCookie: true },
-	"user-not-found": { clearCookie: true },
+	"internal-error": { message: "Authentication service unavailable.", statusCode: 503 },
+	"invalid-session-cookie-duration": { message: "Invalid session.", statusCode: 500 },
+	"user-disabled": { message: "Account is disabled.", statusCode: 403, clearCookie: true },
+	"argument-error": { message: "Invalid session.", clearCookie: true },
+	"invalid-id-token": { message: "Invalid session.", clearCookie: true },
+	"session-cookie-expired": { message: "Session expired.", clearCookie: true },
+	"session-cookie-revoked": { message: "Session revoked.", clearCookie: true },
+	"user-not-found": { message: "Invalid session.", clearCookie: true },
 };
 
 class AuthError extends errore.createTaggedError({
@@ -45,7 +45,7 @@ class AuthError extends errore.createTaggedError({
 		if (error instanceof FirebaseAuthError) {
 			const config = AUTH_ERROR_CONFIG[error.code];
 			return new AuthError({
-				message: error.message,
+				message: config?.message ?? fallbackMessage,
 				code: error.code,
 				statusCode: config?.statusCode ?? fallbackStatus,
 				clearCookie: config?.clearCookie,

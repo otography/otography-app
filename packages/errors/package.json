@@ -9,11 +9,19 @@
 	},
 	"dependencies": {
 		"errore": "^0.14.1",
-		"firebase-admin": "^13.7.0",
 		"hono": "^4.12.9"
 	},
 	"devDependencies": {
 		"@repo/typescript-config": "workspace:*",
-		"@types/bun": "^1.3.11"
+		"@types/bun": "^1.3.11",
+		"firebase-admin": "^13.7.0"
+	},
+	"peerDependencies": {
+		"firebase-admin": "^13.7.0"
+	},
+	"peerDependenciesMeta": {
+		"firebase-admin": {
+			"optional": true
+		}
 	}
 }

@@ -6,7 +6,7 @@ import { clearSessionCookie, getSessionCookie } from "../session";
 const verifySessionCookie = (cookie: string) =>
 	firebaseAuth
 		.verifySessionCookie(cookie, true)
-		.catch((e) => AuthError.fromFirebase(e, "Failed to verify the Firebase session cookie."));
+		.catch((e) => AuthError.fromFirebase(e, "Session verification failed."));
 
 export const getAuthSession = (c: Context) => {
 	return c.get("authSession");

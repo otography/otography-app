@@ -17,7 +17,7 @@ export async function withRls<T>(
 		const userId = typeof claims.sub === "string" ? claims.sub : null;
 
 		if (!userId) {
-			return new RlsError({ message: "Missing sub claim in Firebase session cookie." });
+			return new RlsError({ message: "Missing user identifier in session." });
 		}
 
 		const jwtClaims = JSON.stringify({ sub: userId });
@@ -36,8 +36,7 @@ export async function withRls<T>(
 		const roleResult = await tx.execute(sql.raw("set local role authenticated")).catch(
 			(e) =>
 				new RlsError({
-					message:
-						"Failed to switch to 'authenticated' role. Ensure the database user in DATABASE_URL is a member of the 'authenticated' role (run: GRANT authenticated TO <db_user>;).",
+					message: "Failed to switch to 'authenticated' role.",
 					cause: e,
 				}),
 		);

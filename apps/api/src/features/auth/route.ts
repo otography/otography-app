@@ -62,7 +62,7 @@ const issueSessionCookie = async (c: Context, idToken: string) => {
 		.createSessionCookie(idToken, {
 			expiresIn: SESSION_COOKIE_MAX_AGE_MS,
 		})
-		.catch((e) => AuthError.fromFirebase(e, "Failed to establish the authenticated session.", 502));
+		.catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
 	if (sessionCookie instanceof Error) return sessionCookie;
 
 	setSessionCookie(c, sessionCookie);
@@ -252,7 +252,7 @@ const userHandler = async (c: Context) => {
 	);
 
 	if (rlsResult instanceof Error) {
-		return c.json({ message: rlsResult.message }, rlsResult.statusCode);
+		return c.json({ message: "Failed to fetch user profile." }, rlsResult.statusCode);
 	}
 
 	const [profile] = rlsResult;
