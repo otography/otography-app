@@ -1,6 +1,6 @@
 import type { Context, MiddlewareHandler } from "hono";
 import { firebaseAuth } from "../firebase-auth";
-import { AuthError } from "@repo/errors";
+import { AuthError } from "@repo/errors/server";
 import { clearSessionCookie, getSessionCookie } from "../session";
 
 const clearSessionContext = (c: Context) => {

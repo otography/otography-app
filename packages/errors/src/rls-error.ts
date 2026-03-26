@@ -3,6 +3,7 @@ import * as errore from "errore";
 
 class RlsError extends errore.createTaggedError({
 	name: "RlsError",
+	message: "$message",
 }) {
 	statusCode: ContentfulStatusCode = 500;
 }

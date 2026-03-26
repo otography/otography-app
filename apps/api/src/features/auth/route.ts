@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
-import { AuthError } from "@repo/errors";
+import { AuthError } from "@repo/errors/server";
 import { signInWithIdp, signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
 import {
 	buildOAuthFailureRedirect,

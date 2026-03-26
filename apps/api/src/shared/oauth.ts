@@ -306,14 +306,19 @@ const createAppleClientSecret = async (c: Context): Promise<OAuthConfigError | s
 
 	const now = Math.floor(Date.now() / 1000);
 
-	return new SignJWT({})
+	const clientSecret = await new SignJWT({})
 		.setProtectedHeader({ alg: "ES256", kid: env.AUTH_APPLE_KEY_ID })
 		.setIssuer(env.AUTH_APPLE_TEAM_ID)
 		.setSubject(env.AUTH_APPLE_CLIENT_ID)
 		.setAudience(APPLE_AUDIENCE)
 		.setIssuedAt(now)
 		.setExpirationTime(now + 300)
-		.sign(signingKey);
+		.sign(signingKey)
+		.catch(
+			(e) => new OAuthConfigError({ message: "Failed to create Apple client secret.", cause: e }),
+		);
+
+	return clientSecret;
 };
 
 const exchangeAppleAuthorizationCode = async (
