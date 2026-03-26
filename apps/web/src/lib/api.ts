@@ -9,4 +9,3 @@ const client = hc<AppType>(env.NEXT_PUBLIC_API_URL, {
 });
 
 export const api = client.api;
-export type { AppType };
