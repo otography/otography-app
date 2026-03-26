@@ -8,7 +8,7 @@ const AUTH_ERROR_CONFIG: Record<
 > = {
 	"internal-error": { statusCode: 503 },
 	"invalid-session-cookie-duration": { statusCode: 500 },
-	"user-disabled": { statusCode: 403 },
+	"user-disabled": { statusCode: 403, clearCookie: true },
 	"argument-error": { clearCookie: true },
 	"invalid-id-token": { clearCookie: true },
 	"session-cookie-expired": { clearCookie: true },
