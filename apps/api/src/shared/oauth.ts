@@ -100,7 +100,7 @@ export const buildOAuthFailureRedirect = (c: Context, message: string, _returnTo
 };
 
 export const buildOAuthSuccessRedirect = (c: Context, returnTo?: string) => {
-	return buildFrontendUrl(c, normalizeReturnTo(returnTo) ?? "/");
+	return buildFrontendUrl(c, normalizeReturnTo(returnTo) ?? "/account");
 };
 
 export const getOAuthProvider = (value: string): OAuthProvider | null => {
