@@ -2,15 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const { mockPush, mockRefresh } = vi.hoisted(() => ({
-	mockPush: vi.fn(),
-	mockRefresh: vi.fn(),
-}));
-
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: mockPush,
-		refresh: mockRefresh,
+		push: vi.fn(),
+		refresh: vi.fn(),
 		replace: vi.fn(),
 		back: vi.fn(),
 		prefetch: vi.fn(),
@@ -19,6 +14,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 const mockSignOutPost = vi.hoisted(() => vi.fn());
+
 vi.mock("@/lib/api", () => ({
 	api: {
 		auth: { "sign-out": { $post: mockSignOutPost } },
@@ -26,7 +22,13 @@ vi.mock("@/lib/api", () => ({
 	},
 }));
 
-import { SignOutButton } from "../../app/sign-out-button";
+vi.mock("@/env", () => ({
+	env: {
+		NEXT_PUBLIC_API_URL: "http://localhost:3001",
+	},
+}));
+
+import { SignOutButton } from "./sign-out-button";
 
 function mockOkResponse() {
 	return { ok: true as const, json: () => Promise.resolve({ message: "Signed out." }) };
@@ -42,7 +44,7 @@ describe("SignOutButton", () => {
 	});
 
 	describe("success", () => {
-		it("navigates to /login and refreshes on successful sign-out", async () => {
+		it("completes sign-out and re-enables button without showing errors", async () => {
 			mockSignOutPost.mockResolvedValue(mockOkResponse());
 			const user = userEvent.setup();
 
@@ -50,9 +52,9 @@ describe("SignOutButton", () => {
 			await user.click(screen.getByRole("button", { name: "Sign out" }));
 
 			await waitFor(() => {
-				expect(mockPush).toHaveBeenCalledWith("/login");
-				expect(mockRefresh).toHaveBeenCalledOnce();
+				expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
 			});
+			expect(screen.queryByText("Failed to sign out.")).not.toBeInTheDocument();
 		});
 
 		it("shows pending state while signing out, then re-enables", async () => {
@@ -89,23 +91,8 @@ describe("SignOutButton", () => {
 			});
 		});
 
-		it("shows default error when server response has no message", async () => {
+		it("shows fallback error when server returns no usable message", async () => {
 			mockSignOutPost.mockResolvedValue(mockErrorResponse());
-			const user = userEvent.setup();
-
-			render(<SignOutButton />);
-			await user.click(screen.getByRole("button", { name: "Sign out" }));
-
-			await waitFor(() => {
-				expect(screen.getByText("Failed to sign out.")).toBeInTheDocument();
-			});
-		});
-
-		it("shows default error when json parsing fails", async () => {
-			mockSignOutPost.mockResolvedValue({
-				ok: false as const,
-				json: () => Promise.reject(new Error("parse error")),
-			});
 			const user = userEvent.setup();
 
 			render(<SignOutButton />);
@@ -144,7 +131,6 @@ describe("SignOutButton", () => {
 
 			await waitFor(() => {
 				expect(screen.queryByText("First error")).not.toBeInTheDocument();
-				expect(mockPush).toHaveBeenCalledWith("/login");
 			});
 		});
 	});

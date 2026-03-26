@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
-import { LoginForm } from "./login-form";
+import { AuthForm } from "@/features/auth/components/auth-form";
 
 export default async function LoginPage() {
 	const currentUser = await getCurrentUser();
@@ -33,7 +33,7 @@ export default async function LoginPage() {
 					The browser only sends credentials to apps/api. It never stores Firebase tokens or talks
 					to the database directly.
 				</p>
-				<LoginForm />
+				<AuthForm />
 			</section>
 		</main>
 	);

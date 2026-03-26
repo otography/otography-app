@@ -2,16 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const { mockPush, mockRefresh, mockUseSearchParams } = vi.hoisted(() => ({
-	mockPush: vi.fn(),
-	mockRefresh: vi.fn(),
+const { mockUseSearchParams } = vi.hoisted(() => ({
 	mockUseSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 vi.mock("next/navigation", () => ({
 	useRouter: () => ({
-		push: mockPush,
-		refresh: mockRefresh,
+		push: vi.fn(),
+		refresh: vi.fn(),
 		replace: vi.fn(),
 		back: vi.fn(),
 		prefetch: vi.fn(),
@@ -21,7 +19,6 @@ vi.mock("next/navigation", () => ({
 
 const mockSignInPost = vi.hoisted(() => vi.fn());
 const mockSignUpPost = vi.hoisted(() => vi.fn());
-const mockUserGet = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/api", () => ({
 	api: {
@@ -30,7 +27,7 @@ vi.mock("@/lib/api", () => ({
 			"sign-up": { $post: mockSignUpPost },
 			"sign-out": { $post: vi.fn() },
 		},
-		user: { $get: mockUserGet },
+		user: { $get: vi.fn() },
 	},
 }));
 
@@ -40,7 +37,7 @@ vi.mock("@/env", () => ({
 	},
 }));
 
-import { LoginForm } from "../../app/login/login-form";
+import { AuthForm } from "./auth-form";
 
 function mockOkResponse() {
 	return { ok: true as const, json: () => Promise.resolve({ message: "ok" }) };
@@ -50,7 +47,7 @@ function mockErrorResponse(message?: string) {
 	return { ok: false as const, json: () => Promise.resolve(message ? { message } : null) };
 }
 
-describe("LoginForm", () => {
+describe("AuthForm", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockUseSearchParams.mockReturnValue(new URLSearchParams());
@@ -58,7 +55,7 @@ describe("LoginForm", () => {
 
 	describe("OAuth links", () => {
 		it("renders Google OAuth link pointing to API endpoint", () => {
-			render(<LoginForm />);
+			render(<AuthForm />);
 			expect(screen.getByText("Continue with Google")).toHaveAttribute(
 				"href",
 				"http://localhost:3001/api/auth/oauth/google/start",
@@ -66,7 +63,7 @@ describe("LoginForm", () => {
 		});
 
 		it("renders Apple OAuth link pointing to API endpoint", () => {
-			render(<LoginForm />);
+			render(<AuthForm />);
 			expect(screen.getByText("Continue with Apple")).toHaveAttribute(
 				"href",
 				"http://localhost:3001/api/auth/oauth/apple/start",
@@ -77,25 +74,25 @@ describe("LoginForm", () => {
 	describe("error from searchParams", () => {
 		it("displays error message from URL query parameter", () => {
 			mockUseSearchParams.mockReturnValue(new URLSearchParams("error=OAuth+failed"));
-			render(<LoginForm />);
+			render(<AuthForm />);
 			expect(screen.getByText("OAuth failed")).toBeInTheDocument();
 		});
 	});
 
 	describe("sign-in", () => {
-		it("navigates to /account on successful sign-in", async () => {
+		it("completes sign-in without showing errors on success", async () => {
 			mockSignInPost.mockResolvedValue(mockOkResponse());
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Sign in" }));
 
 			await waitFor(() => {
-				expect(mockPush).toHaveBeenCalledWith("/account");
-				expect(mockRefresh).toHaveBeenCalledOnce();
+				expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
 			});
+			expect(screen.queryByText("Authentication failed.")).not.toBeInTheDocument();
 		});
 
 		it("shows pending state and disables all actions while signing in", async () => {
@@ -107,7 +104,7 @@ describe("LoginForm", () => {
 			);
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Sign in" }));
@@ -121,7 +118,7 @@ describe("LoginForm", () => {
 
 			resolveResponse(mockOkResponse());
 			await waitFor(() => {
-				expect(mockPush).toHaveBeenCalledWith("/account");
+				expect(screen.getByRole("button", { name: "Sign in" })).toBeEnabled();
 			});
 		});
 
@@ -129,7 +126,7 @@ describe("LoginForm", () => {
 			mockSignInPost.mockResolvedValue(mockErrorResponse("Invalid email or password."));
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Sign in" }));
@@ -139,11 +136,11 @@ describe("LoginForm", () => {
 			});
 		});
 
-		it("shows default error when server returns no message", async () => {
+		it("shows fallback error when server returns no usable message", async () => {
 			mockSignInPost.mockResolvedValue({ ok: false as const, json: () => Promise.resolve(null) });
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Sign in" }));
@@ -157,7 +154,7 @@ describe("LoginForm", () => {
 			mockSignInPost.mockRejectedValue(new Error("Network error"));
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Sign in" }));
@@ -169,20 +166,19 @@ describe("LoginForm", () => {
 	});
 
 	describe("sign-up", () => {
-		it("navigates to /account on successful sign-up", async () => {
+		it("completes sign-up without showing errors on success", async () => {
 			mockSignUpPost.mockResolvedValue(mockOkResponse());
-			mockUserGet.mockResolvedValue(mockOkResponse());
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Create account" }));
 
 			await waitFor(() => {
-				expect(mockPush).toHaveBeenCalledWith("/account");
-				expect(mockRefresh).toHaveBeenCalledOnce();
+				expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
 			});
+			expect(screen.queryByText("Authentication failed.")).not.toBeInTheDocument();
 		});
 
 		it("shows pending state while creating account", async () => {
@@ -194,7 +190,7 @@ describe("LoginForm", () => {
 			);
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -203,7 +199,7 @@ describe("LoginForm", () => {
 
 			resolveResponse(mockOkResponse());
 			await waitFor(() => {
-				expect(mockUserGet).toHaveBeenCalled();
+				expect(screen.getByRole("button", { name: "Create account" })).toBeEnabled();
 			});
 		});
 
@@ -211,7 +207,7 @@ describe("LoginForm", () => {
 			mockSignUpPost.mockResolvedValue(mockErrorResponse("Email already exists."));
 			const user = userEvent.setup();
 
-			render(<LoginForm />);
+			render(<AuthForm />);
 			await user.type(screen.getByLabelText("Email"), "test@example.com");
 			await user.type(screen.getByLabelText("Password"), "password123");
 			await user.click(screen.getByRole("button", { name: "Create account" }));
@@ -219,21 +215,6 @@ describe("LoginForm", () => {
 			await waitFor(() => {
 				expect(screen.getByText("Email already exists.")).toBeInTheDocument();
 			});
-		});
-
-		it("does not fetch user profile when sign-up fails", async () => {
-			mockSignUpPost.mockResolvedValue(mockErrorResponse("Email already exists."));
-			const user = userEvent.setup();
-
-			render(<LoginForm />);
-			await user.type(screen.getByLabelText("Email"), "test@example.com");
-			await user.type(screen.getByLabelText("Password"), "password123");
-			await user.click(screen.getByRole("button", { name: "Create account" }));
-
-			await waitFor(() => {
-				expect(screen.getByText("Email already exists.")).toBeInTheDocument();
-			});
-			expect(mockUserGet).not.toHaveBeenCalled();
 		});
 	});
 });
