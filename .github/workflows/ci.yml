@@ -9,8 +9,12 @@ permissions:
   contents: read
 
 jobs:
-  ci:
+  check:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [format, lint, typecheck, deadcode]
     steps:
       - uses: actions/checkout@v6
 
@@ -29,14 +33,35 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Format check
-        run: bun run format
+      - name: Run check
+        run: |
+          case "${{ matrix.check }}" in
+            format) bun run format ;;
+            lint) bun run lint:github ;;
+            typecheck) bun run check-types ;;
+            deadcode) bun run check-dead-code ;;
+          esac
 
-      - name: Lint
-        run: bun run lint:github
+  build:
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
 
-      - name: Type check
-        run: bun run check-types
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Setup cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: ${{ runner.os }}-turbo-${{ hashFiles('bun.lock', '**/package.json', 'turbo.json') }}
+          restore-keys: |
+            ${{ runner.os }}-turbo-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Build
         run: bun run build
