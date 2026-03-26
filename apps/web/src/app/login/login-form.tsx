@@ -39,7 +39,7 @@ export function LoginForm() {
 				await api.user.$get();
 			}
 
-			router.push("/");
+			router.push("/account");
 			router.refresh();
 		} catch {
 			setError("Unable to reach the authentication API.");
