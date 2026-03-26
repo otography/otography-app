@@ -5,10 +5,15 @@ import { clearSessionCookie, getSessionCookie } from "../session";
 
 const clearSessionContext = (c: Context) => {
 	c.set("authSession", null);
+	c.set("authError", null);
 };
 
 export const getAuthSession = (c: Context) => {
 	return c.get("authSession");
+};
+
+const getAuthError = (c: Context): AuthError | null => {
+	return c.get("authError");
 };
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
@@ -26,6 +31,7 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
 			.catch((e) => AuthError.fromFirebase(e, "Failed to verify the Firebase session cookie."));
 
 		if (claims instanceof Error) {
+			c.set("authError", claims);
 			if (sessionCookie && claims.clearCookie) {
 				clearSessionCookie(c);
 			}
@@ -49,6 +55,11 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
 
 export const requireAuth = (): MiddlewareHandler => {
 	return async (c, next) => {
+		const authError = getAuthError(c);
+		if (authError) {
+			return c.json({ message: authError.message }, authError.statusCode);
+		}
+
 		if (!getAuthSession(c)) {
 			return c.json({ message: "You are not logged in." }, 401);
 		}
