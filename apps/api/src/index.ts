@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { auth } from "./features/auth";
-import { countries } from "./features/countries";
 import { getBootEnv, getEnv } from "./env";
 import { authSessionMiddleware } from "./shared/middleware";
 
@@ -19,7 +18,6 @@ const app = new Hono()
 	})
 	.use("*", authSessionMiddleware())
 	.route("/", auth)
-	.route("/", countries)
 	.get("/", (c) => c.text("Hello Hono!"));
 
 const port = getBootEnv().PORT;
