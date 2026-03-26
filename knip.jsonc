@@ -23,11 +23,11 @@
 			"project": [],
 		},
 		"apps/web": {
-			"entry": ["src/env.ts", "lib/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
-			"project": ["src/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "app/**/*.{ts,tsx}"],
+			"entry": ["src/env.ts"],
+			"project": ["src/**/*.{ts,tsx}"],
 		},
 		"apps/api": {
-			"entry": ["src/index.ts"],
+			"entry": [],
 			"project": ["src/**/*.ts"],
 			"ignore": ["src/env.drizzle.ts"],
 		},

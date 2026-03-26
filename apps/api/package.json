@@ -15,7 +15,8 @@
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
 		"lint:fix": "oxlint --fix",
-		"check-types": "tsc --noEmit"
+		"check-types": "tsc --noEmit",
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@repo/errors": "workspace:*",
@@ -30,6 +31,7 @@
 	"devDependencies": {
 		"@repo/typescript-config": "workspace:*",
 		"@types/bun": "latest",
+		"@vitest/spy": "^4.1.2",
 		"drizzle-kit": "^1.0.0-beta.19",
 		"oxlint": "^1.56.0",
 		"typescript": "5.9.2"

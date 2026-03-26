@@ -5,6 +5,7 @@
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx",
 		"module": "ESNext",
-		"moduleResolution": "bundler"
+		"moduleResolution": "bundler",
+		"types": ["vitest/globals", "@vitest/spy"]
 	}
 }

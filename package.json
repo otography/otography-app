@@ -25,6 +25,7 @@
 		"quality": "turbo run quality",
 		"quality:fix": "turbo run quality:fix",
 		"check-types": "turbo run check-types",
+		"test": "turbo run test",
 		"check-dead-code": "knip --exclude binaries",
 		"check-dead-code:fix": "knip --fix --exclude binaries",
 		"hooks:install": "lefthook install"
@@ -37,7 +38,8 @@
 		"oxlint": "^1.57.0",
 		"oxlint-tsgolint": "^0.17.3",
 		"turbo": "^2.8.20",
-		"typescript": "5.9.2"
+		"typescript": "5.9.2",
+		"vitest": "^4.1.2"
 	},
 	"engines": {
 		"node": ">=18"
