@@ -86,7 +86,7 @@ function SignOutError() {
 	return <p style={{ margin: 0, color: "#b00020" }}>{state.error}</p>;
 }
 
-export const SignOut = {
+const SignOut = {
 	Provider: SignOutProvider,
 	Button: SignOutButtonInner,
 	Error: SignOutError,
