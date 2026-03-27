@@ -1,4 +1,5 @@
 import { type } from "arktype";
+import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { sql } from "drizzle-orm";
@@ -27,34 +28,24 @@ import { profileInsertSchema, profiles } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
 const credentialsBodySchema = type({
-	email: "string",
-	password: "string",
+	email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
+	password: "string >= 6",
 });
 
-const emailSchema = type("string.email");
+const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (result, c) => {
+	if (!result.success) {
+		return c.json(
+			{
+				message: "Please provide a valid email address and a password with at least 6 characters.",
+			},
+			400,
+		);
+	}
+});
 
 const getStringClaim = (claims: Record<string, unknown>, key: string) => {
 	const value = claims[key];
 	return typeof value === "string" ? value : null;
-};
-
-const readCredentials = async (c: Context) => {
-	const parsedBody = credentialsBodySchema(await c.req.json().catch(() => null));
-
-	if (parsedBody instanceof type.errors) {
-		return null;
-	}
-
-	const email = emailSchema(parsedBody.email.trim().toLowerCase());
-
-	if (email instanceof type.errors || parsedBody.password.length < 6) {
-		return null;
-	}
-
-	return {
-		email,
-		password: parsedBody.password,
-	};
 };
 
 const issueSessionCookie = async (c: Context, idToken: string) => {
@@ -168,46 +159,23 @@ const oauthCallbackHandler = async (c: Context) => {
 	return finishOAuthBrowserAuth(c, firebaseAuthResult.idToken, oauthState.returnTo);
 };
 
-const signInHandler = async (c: Context) => {
-	const credentials = await readCredentials(c);
-
-	if (!credentials) {
-		return c.json(
-			{
-				message: "Please provide a valid email address and a password with at least 6 characters.",
-			},
-			400,
-		);
-	}
-
-	const result = await signInWithPassword(c, credentials.email, credentials.password);
+const handleCredentialAuth = async (
+	c: Context,
+	email: string,
+	password: string,
+	successMessage: string,
+	successStatus: 200 | 201,
+) => {
+	const result =
+		successStatus === 200
+			? await signInWithPassword(c, email, password)
+			: await signUpWithPassword(c, email, password);
 
 	if (result instanceof Error) {
 		return c.json({ message: result.message }, result.statusCode);
 	}
 
-	return finishCredentialAuth(c, result.idToken, "Signed in successfully.", 200);
-};
-
-const signUpHandler = async (c: Context) => {
-	const credentials = await readCredentials(c);
-
-	if (!credentials) {
-		return c.json(
-			{
-				message: "Please provide a valid email address and a password with at least 6 characters.",
-			},
-			400,
-		);
-	}
-
-	const result = await signUpWithPassword(c, credentials.email, credentials.password);
-
-	if (result instanceof Error) {
-		return c.json({ message: result.message }, result.statusCode);
-	}
-
-	return finishCredentialAuth(c, result.idToken, "Account created successfully.", 201);
+	return finishCredentialAuth(c, result.idToken, successMessage, successStatus);
 };
 
 const userHandler = async (c: Context) => {
@@ -294,8 +262,14 @@ const signOutHandler = async (c: Context) => {
 const auth = new Hono()
 	.get("/api/auth/oauth/:provider/start", oauthStartHandler)
 	.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", oauthCallbackHandler)
-	.post("/api/auth/sign-in", csrfProtection(), signInHandler)
-	.post("/api/auth/sign-up", csrfProtection(), signUpHandler)
+	.post("/api/auth/sign-in", csrfProtection(), credentialsValidator, (c) => {
+		const { email, password } = c.req.valid("json");
+		return handleCredentialAuth(c, email, password, "Signed in successfully.", 200);
+	})
+	.post("/api/auth/sign-up", csrfProtection(), credentialsValidator, (c) => {
+		const { email, password } = c.req.valid("json");
+		return handleCredentialAuth(c, email, password, "Account created successfully.", 201);
+	})
 	.get("/api/user", requireAuthMiddleware(), userHandler)
 	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);
 

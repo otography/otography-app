@@ -96,4 +96,18 @@ describe("POST /api/auth/sign-up", () => {
 			expect(res.getCookie("otography_session")).toBe("test-session-cookie");
 		});
 	});
+
+	describe("input validation", () => {
+		it("returns 400 for invalid credentials", async () => {
+			const res = await testRequest("/api/auth/sign-up", {
+				method: "POST",
+				body: { email: "not-an-email", password: "12345" },
+			});
+
+			expect(res.status).toBe(400);
+			expect(await res.json()).toMatchObject({
+				message: "Please provide a valid email address and a password with at least 6 characters.",
+			});
+		});
+	});
 });
