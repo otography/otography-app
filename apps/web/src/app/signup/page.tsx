@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
-import { SignInForm } from "@/features/auth";
+import { SignUpForm } from "@/features/auth";
 
-export default async function LoginPage() {
+export default async function SignUpPage() {
 	const currentUser = await getCurrentUser();
 
 	if (currentUser) {
@@ -28,12 +28,8 @@ export default async function LoginPage() {
 					backgroundColor: "#ffffff",
 				}}
 			>
-				<h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Login</h1>
-				<p style={{ marginTop: 0, marginBottom: "1rem", lineHeight: 1.5 }}>
-					The browser only sends credentials to apps/api. It never stores Firebase tokens or talks
-					to the database directly.
-				</p>
-				<SignInForm />
+				<h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Sign up</h1>
+				<SignUpForm />
 			</section>
 		</main>
 	);

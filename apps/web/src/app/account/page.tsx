@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/current-user";
-import { SignOutButton } from "../sign-out-button";
+import { SignOutButton } from "@/features/auth";
 
 export default async function AccountPage() {
 	const user = await getCurrentUser();
