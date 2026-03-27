@@ -19,6 +19,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
+		"@hono/arktype-validator": "^2.0.1",
 		"@repo/errors": "workspace:*",
 		"@t3-oss/env-core": "^0.13.10",
 		"arktype": "^2.2.0",
