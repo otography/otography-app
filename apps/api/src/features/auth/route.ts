@@ -28,7 +28,7 @@ import { profileInsertSchema, profiles } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
 const credentialsBodySchema = type({
-	email: "string.email",
+	email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
 	password: "string >= 6",
 });
 
@@ -166,11 +166,10 @@ const handleCredentialAuth = async (
 	successMessage: string,
 	successStatus: 200 | 201,
 ) => {
-	const normalizedEmail = email.trim().toLowerCase();
 	const result =
 		successStatus === 200
-			? await signInWithPassword(c, normalizedEmail, password)
-			: await signUpWithPassword(c, normalizedEmail, password);
+			? await signInWithPassword(c, email, password)
+			: await signUpWithPassword(c, email, password);
 
 	if (result instanceof Error) {
 		return c.json({ message: result.message }, result.statusCode);
