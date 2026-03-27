@@ -12,7 +12,7 @@ function useAuthContext() {
 	return context;
 }
 
-function AuthFrame({ children }: { children: ReactNode }) {
+function AuthSignInFrame({ children }: { children: ReactNode }) {
 	const { actions } = useAuthContext();
 
 	return (
@@ -20,6 +20,22 @@ function AuthFrame({ children }: { children: ReactNode }) {
 			onSubmit={(event) => {
 				event.preventDefault();
 				void actions.signIn();
+			}}
+			style={{ display: "grid", gap: "1rem" }}
+		>
+			{children}
+		</form>
+	);
+}
+
+function AuthSignUpFrame({ children }: { children: ReactNode }) {
+	const { actions } = useAuthContext();
+
+	return (
+		<form
+			onSubmit={(event) => {
+				event.preventDefault();
+				void actions.signUp();
 			}}
 			style={{ display: "grid", gap: "1rem" }}
 		>
@@ -149,7 +165,8 @@ function AuthOAuthLinks() {
 
 export const Auth = {
 	Provider: AuthProvider,
-	Frame: AuthFrame,
+	SignInFrame: AuthSignInFrame,
+	SignUpFrame: AuthSignUpFrame,
 	EmailField: AuthEmailField,
 	PasswordField: AuthPasswordField,
 	Error: AuthError,

@@ -5,12 +5,12 @@ import { Auth } from "./auth";
 export function SignInForm() {
 	return (
 		<Auth.Provider>
-			<Auth.Frame>
+			<Auth.SignInFrame>
 				<Auth.EmailField />
 				<Auth.PasswordField />
 				<Auth.Error />
 				<Auth.SubmitButton />
-			</Auth.Frame>
+			</Auth.SignInFrame>
 		</Auth.Provider>
 	);
 }
