@@ -1,5 +1,5 @@
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { FirebaseAuthError } from "firebase-admin/auth";
+import { FirebaseAuthError } from "@repo/firebase-auth-rest/auth";
 import * as errore from "errore";
 
 const AUTH_ERROR_CONFIG: Record<

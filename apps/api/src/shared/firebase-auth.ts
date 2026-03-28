@@ -1,5 +1,5 @@
-import { cert, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import { cert, initializeApp } from "@repo/firebase-auth-rest/app";
+import { getAuth } from "@repo/firebase-auth-rest/auth";
 import { getBootEnv } from "../env";
 
 const env = getBootEnv();

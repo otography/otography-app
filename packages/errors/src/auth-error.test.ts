@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("firebase-admin/auth", () => ({
+vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	FirebaseAuthError: class extends Error {
 		code: string;
 		constructor(message?: string, _options?: ErrorOptions) {
@@ -12,7 +12,7 @@ vi.mock("firebase-admin/auth", () => ({
 }));
 
 import { AuthError } from "./auth-error";
-import { FirebaseAuthError } from "firebase-admin/auth";
+import { FirebaseAuthError } from "@repo/firebase-auth-rest/auth";
 
 function createFirebaseAuthError(code: string, message: string): FirebaseAuthError {
 	const error = new FirebaseAuthError(message);

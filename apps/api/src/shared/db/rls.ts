@@ -1,4 +1,4 @@
-import type { DecodedIdToken } from "firebase-admin/auth";
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { RlsError } from "@repo/errors";
