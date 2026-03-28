@@ -576,7 +576,7 @@ export class MultiFactorAuthConfig implements MultiFactorConfig {
 			}
 		}
 		if (Object.prototype.hasOwnProperty.call(options, "providerConfigs")) {
-			const serverProviderConfigs = options.providerConfigs as MultiFactorProviderConfig[];
+			// providerConfigs is validated by the server
 		}
 		return request;
 	}

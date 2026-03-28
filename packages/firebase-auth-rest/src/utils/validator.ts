@@ -182,7 +182,7 @@ export function isPhoneNumber(phoneNumber: any): boolean {
 export function isISODateString(dateString: any): boolean {
 	try {
 		return isNonEmptyString(dateString) && new Date(dateString).toISOString() === dateString;
-	} catch (e) {
+	} catch {
 		return false;
 	}
 }
@@ -196,7 +196,7 @@ export function isISODateString(dateString: any): boolean {
 export function isUTCDateString(dateString: any): boolean {
 	try {
 		return isNonEmptyString(dateString) && new Date(dateString).toUTCString() === dateString;
-	} catch (e) {
+	} catch {
 		return false;
 	}
 }
@@ -248,7 +248,7 @@ export function isURL(urlStr: any): boolean {
 			return false;
 		}
 		return true;
-	} catch (e) {
+	} catch {
 		return false;
 	}
 }

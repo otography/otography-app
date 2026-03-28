@@ -37,7 +37,7 @@ function parseDate(time: any): string | null {
 		if (!isNaN(date.getTime())) {
 			return date.toUTCString();
 		}
-	} catch (e) {
+	} catch {
 		// Do nothing. null will be returned.
 	}
 	return null;
@@ -136,7 +136,7 @@ export abstract class MultiFactorInfo {
 			} else {
 				// Ignore the other SDK unsupported MFA factors to prevent blocking developers using the current SDK.
 			}
-		} catch (e) {
+		} catch {
 			// Ignore error.
 		}
 		return multiFactorInfo;

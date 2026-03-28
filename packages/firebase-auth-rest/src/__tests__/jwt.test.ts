@@ -7,7 +7,6 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as jose from "jose";
 import {
 	decodeJwt,
 	verifyJwtSignature,
@@ -18,14 +17,11 @@ import {
 } from "../utils/jwt";
 import {
 	generateIdToken,
-	getPrivateCryptoKey,
-	getMismatchPrivateCryptoKey,
 	getPublicKeyPem,
 	getMismatchPublicKeyPem,
 	mockPrivateKeyKid,
 	projectId,
 	uid,
-	developerClaims,
 	ONE_HOUR_IN_SECONDS,
 } from "./helpers/mocks";
 
@@ -48,14 +44,6 @@ const DECODED_SIGNED_TOKEN = {
 	header: {
 		alg: "RS256",
 		kid: mockPrivateKeyKid,
-		typ: "JWT",
-	},
-	payload: TOKEN_PAYLOAD,
-};
-
-const DECODED_UNSIGNED_TOKEN = {
-	header: {
-		alg: "none",
 		typ: "JWT",
 	},
 	payload: TOKEN_PAYLOAD,

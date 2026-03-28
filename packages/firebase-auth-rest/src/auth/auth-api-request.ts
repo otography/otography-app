@@ -1094,7 +1094,11 @@ export abstract class AbstractAuthRequestHandler {
 		if (!validator.isUid(id.uid)) {
 			throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
 		}
-		request.localId ? request.localId.push(id.uid) : (request.localId = [id.uid]);
+		if (request.localId) {
+			request.localId.push(id.uid);
+		} else {
+			request.localId = [id.uid];
+		}
 		return request;
 	}
 
@@ -1105,7 +1109,11 @@ export abstract class AbstractAuthRequestHandler {
 		if (!validator.isEmail(id.email)) {
 			throw new FirebaseAuthError(AuthClientErrorCode.INVALID_EMAIL);
 		}
-		request.email ? request.email.push(id.email) : (request.email = [id.email]);
+		if (request.email) {
+			request.email.push(id.email);
+		} else {
+			request.email = [id.email];
+		}
 		return request;
 	}
 
@@ -1116,9 +1124,11 @@ export abstract class AbstractAuthRequestHandler {
 		if (!validator.isPhoneNumber(id.phoneNumber)) {
 			throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PHONE_NUMBER);
 		}
-		request.phoneNumber
-			? request.phoneNumber.push(id.phoneNumber)
-			: (request.phoneNumber = [id.phoneNumber]);
+		if (request.phoneNumber) {
+			request.phoneNumber.push(id.phoneNumber);
+		} else {
+			request.phoneNumber = [id.phoneNumber];
+		}
 		return request;
 	}
 
@@ -1136,9 +1146,11 @@ export abstract class AbstractAuthRequestHandler {
 			providerId: id.providerId,
 			rawId: id.providerUid,
 		};
-		request.federatedUserId
-			? request.federatedUserId.push(federatedUserId)
-			: (request.federatedUserId = [federatedUserId]);
+		if (request.federatedUserId) {
+			request.federatedUserId.push(federatedUserId);
+		} else {
+			request.federatedUserId = [federatedUserId];
+		}
 		return request;
 	}
 
@@ -1569,9 +1581,11 @@ export abstract class AbstractAuthRequestHandler {
 		// deleteProvider: ['phone'] with an array of providerIds (phone in this case),
 		// will be passed.
 		if (request.phoneNumber === null) {
-			request.deleteProvider
-				? request.deleteProvider.push("phone")
-				: (request.deleteProvider = ["phone"]);
+			if (request.deleteProvider) {
+				request.deleteProvider.push("phone");
+			} else {
+				request.deleteProvider = ["phone"];
+			}
 			delete request.phoneNumber;
 		}
 

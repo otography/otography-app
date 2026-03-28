@@ -354,7 +354,7 @@ export class Tenant {
 		this.displayName = response.displayName;
 		try {
 			this.emailSignInConfig_ = new EmailSignInConfig(response);
-		} catch (e) {
+		} catch {
 			// If allowPasswordSignup is undefined, it is disabled by default.
 			this.emailSignInConfig_ = new EmailSignInConfig({
 				allowPasswordSignup: false,
