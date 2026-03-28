@@ -76,19 +76,6 @@ export function isString(value: any): value is string {
 }
 
 /**
- * Validates that a value is a base64 string.
- *
- * @param value - The value to validate.
- * @returns Whether the value is a base64 string or not.
- */
-export function isBase64String(value: any): boolean {
-	if (!isString(value)) {
-		return false;
-	}
-	return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value);
-}
-
-/**
  * Validates that a value is a non-empty string.
  *
  * @param value - The value to validate.
@@ -251,35 +238,4 @@ export function isURL(urlStr: any): boolean {
 	} catch {
 		return false;
 	}
-}
-
-/**
- * Validates that the provided topic is a valid FCM topic name.
- *
- * @param topic - The topic to validate.
- * @returns Whether the provided topic is a valid FCM topic name.
- */
-export function isTopic(topic: any): boolean {
-	if (typeof topic !== "string") {
-		return false;
-	}
-
-	const VALID_TOPIC_REGEX = /^(\/topics\/)?(private\/)?[a-zA-Z0-9-_.~%]+$/;
-	return VALID_TOPIC_REGEX.test(topic);
-}
-
-/**
- * Validates that the provided string can be used as a task ID
- * for Cloud Tasks.
- *
- * @param taskId - the task ID to validate.
- * @returns Whether the provided task ID is valid.
- */
-export function isTaskId(taskId: any): boolean {
-	if (typeof taskId !== "string") {
-		return false;
-	}
-
-	const VALID_TASK_ID_REGEX = /^[A-Za-z0-9_-]+$/;
-	return VALID_TASK_ID_REGEX.test(taskId);
 }

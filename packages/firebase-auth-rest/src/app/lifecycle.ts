@@ -122,7 +122,7 @@ function validateAppNameFormat(appName: string): void {
 	if (!validator.isNonEmptyString(appName)) {
 		throw new FirebaseAppError(
 			AppErrorCodes.INVALID_APP_NAME,
-			`Invalid Firebase app name "${appName}" provided. App name must be a non-empty string.`,
+			`Invalid Firebase app name "${String(appName)}" provided. App name must be a non-empty string.`,
 		);
 	}
 }

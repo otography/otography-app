@@ -28,28 +28,6 @@ export function getMetricsHeader(): string {
 }
 
 /**
- * Renames properties on an object given a mapping from old to new property names.
- *
- * For example, this can be used to map underscore_cased properties to camelCase.
- *
- * @param obj - The object whose properties to rename.
- * @param keyMap - The mapping from old to new property names.
- */
-export function renameProperties(
-	obj: { [key: string]: any },
-	keyMap: { [key: string]: string },
-): void {
-	Object.keys(keyMap).forEach((oldKey) => {
-		if (oldKey in obj) {
-			const newKey = keyMap[oldKey]!;
-			// The old key's value takes precedence over the new key's value.
-			obj[newKey] = obj[oldKey];
-			delete obj[oldKey];
-		}
-	});
-}
-
-/**
  * Defines a new read-only property directly on an object and returns the object.
  *
  * @param obj - The object on which to define the property.
@@ -75,7 +53,7 @@ export function addReadonlyGetter(obj: object, prop: string, value: any): void {
  *
  * @returns A project ID string or null.
  */
-export function getExplicitProjectId(app: App): string | null {
+function getExplicitProjectId(app: App): string | null {
 	const options = app.options;
 	if (validator.isNonEmptyString(options.projectId)) {
 		return options.projectId;
@@ -107,44 +85,6 @@ export function getExplicitProjectId(app: App): string | null {
 export function findProjectId(app: App): Promise<string | null> {
 	const projectId = getExplicitProjectId(app);
 	return Promise.resolve(projectId || null);
-}
-
-/**
- * Returns the service account email associated with a Firebase app, if it's explicitly
- * specified in either the Firebase app options, credentials or the local environment.
- * Otherwise returns null.
- *
- * @param app - A Firebase app to get the service account email from.
- *
- * @returns A service account email string or null.
- */
-export function getExplicitServiceAccountEmail(app: App): string | null {
-	const options = app.options;
-	if (validator.isNonEmptyString(options.serviceAccountId)) {
-		return options.serviceAccountId;
-	}
-
-	const credential = app.options.credential;
-	if (credential instanceof ServiceAccountCredential) {
-		return credential.clientEmail;
-	}
-	return null;
-}
-
-/**
- * Determines the service account email associated with a Firebase app. This method first
- * checks if a service account email is explicitly specified in either the Firebase app options,
- * credentials or the local environment in that order. If no explicit service account email is
- * configured, but the SDK has been initialized with ComputeEngineCredentials, this
- * method attempts to discover the service account email from the local metadata service.
- *
- * @param app - A Firebase app to get the service account email from.
- *
- * @returns A service account email ID string or null.
- */
-export function findServiceAccountEmail(app: App): Promise<string | null> {
-	const accountId = getExplicitServiceAccountEmail(app);
-	return Promise.resolve(accountId || null);
 }
 
 /**
@@ -214,68 +154,4 @@ export function generateUpdateMask(obj: any, terminalPaths: string[] = [], root 
 		}
 	}
 	return updateMask;
-}
-
-/**
- * Transforms milliseconds to a protobuf Duration type string.
- * Returns the duration in seconds with up to nine fractional
- * digits, terminated by 's'. Example: "3 seconds 0 nano seconds as 3s,
- * 3 seconds 1 nano seconds as 3.000000001s".
- *
- * @param milliseconds - The duration in milliseconds.
- * @returns The resulting formatted string in seconds with up to nine fractional
- * digits, terminated by 's'.
- */
-export function transformMillisecondsToSecondsString(milliseconds: number): string {
-	let duration: string;
-	const seconds = Math.floor(milliseconds / 1000);
-	const nanos = Math.floor((milliseconds - seconds * 1000) * 1000000);
-	if (nanos > 0) {
-		let nanoString = nanos.toString();
-		while (nanoString.length < 9) {
-			nanoString = "0" + nanoString;
-		}
-		duration = `${seconds}.${nanoString}s`;
-	} else {
-		duration = `${seconds}s`;
-	}
-	return duration;
-}
-
-/**
- * Internal type to represent a resource name
- */
-export type ParsedResource = {
-	projectId?: string;
-	locationId?: string;
-	resourceId?: string;
-};
-
-/**
- * Parses the top level resources of a given resource name.
- * Supports both full and partial resources names, example:
- * `locations/{location}/functions/{functionName}`,
- * `projects/{project}/locations/{location}/functions/{functionName}`, or {functionName}
- * Does not support deeply nested resource names.
- *
- * @param resourceName - The resource name string.
- * @param resourceIdKey - The key of the resource name to be parsed.
- * @returns A parsed resource name object.
- */
-export function parseResourceName(resourceName: string, resourceIdKey: string): ParsedResource {
-	if (!resourceName.includes("/")) {
-		return { resourceId: resourceName };
-	}
-	const CHANNEL_NAME_REGEX = new RegExp(
-		`^(projects/([^/]+)/)?locations/([^/]+)/${resourceIdKey}/([^/]+)$`,
-	);
-	const match = CHANNEL_NAME_REGEX.exec(resourceName);
-	if (match === null) {
-		throw new Error("Invalid resource name format.");
-	}
-	const projectId = match[2] || undefined;
-	const locationId = match[3] || undefined;
-	const resourceId = match[4] || "";
-
-	return { projectId, locationId, resourceId };
 }

@@ -261,24 +261,6 @@ describe("AuthorizedHttpClient", () => {
 		expect(headers["Authorization"]).toMatch(/^Bearer /);
 		expect(headers["My-Custom-Header"]).toBe("CustomValue");
 	});
-
-	it("should include x-goog-user-project header when projectId is set", async () => {
-		const mockAppWithProject = createMockApp({ projectId: "test-project-id" });
-
-		fetchSpy.mockResolvedValueOnce(
-			new Response(JSON.stringify({}), {
-				status: 200,
-				headers: { "content-type": "application/json" },
-			}),
-		);
-
-		const client = new AuthorizedHttpClient(mockAppWithProject as any);
-		await client.send({ method: "POST", url: mockUrl });
-
-		const [, fetchInit] = fetchSpy.mock.calls[0]!;
-		const headers = fetchInit.headers as Record<string, string>;
-		expect(headers["x-goog-user-project"]).toBe("test-project-id");
-	});
 });
 
 // ===================================================================

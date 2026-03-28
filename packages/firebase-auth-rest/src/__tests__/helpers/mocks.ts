@@ -11,7 +11,7 @@ import * as jose from "jose";
 
 export const uid = "someUid";
 export const projectId = "project_id";
-export const appName = "mock-app-name";
+const appName = "mock-app-name";
 
 export const ONE_HOUR_IN_SECONDS = 60 * 60;
 
@@ -46,15 +46,6 @@ xpdLXA==
 
 export const mockPrivateKeyKid = "aaaaaaaaaabbbbbbbbbbccccccccccdddddddddd";
 
-// certificateObject (mock.key.json の内容)
-export const certificateObject = {
-	type: "service_account",
-	project_id: projectId,
-	private_key_id: mockPrivateKeyKid,
-	private_key: mockPrivateKeyPem,
-	client_email: "foo@project_id.iam.gserviceaccount.com",
-};
-
 // 非対応鍵ペア (署名検証の失敗テスト用)
 const mismatchPrivateKeyPem = `-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCAQEAzhI/CMRtNO45R0DD4NBXFRDYAjlB/UVGGdMJKbCIrD3Uq7r/ivedqRYU
@@ -82,7 +73,7 @@ ogIh9eWY450oUoVBjEsdUd7Ef5KcpMFDUVFJwzCY371+Loqh2KYAk8WUSRzwGuw2QtLPO/L/
 QkKj4Q==
 -----END RSA PRIVATE KEY-----`;
 
-export const developerClaims = {
+const developerClaims = {
 	one: "uno",
 	two: "dos",
 };
@@ -90,7 +81,6 @@ export const developerClaims = {
 // ---- 鍵のインポート (キャッシュ付き) ----
 
 let _privateCryptoKey: CryptoKey | null = null;
-let _mismatchPrivateCryptoKey: CryptoKey | null = null;
 let _publicKeyPem: string | null = null;
 let _mismatchPublicKeyPem: string | null = null;
 
@@ -109,18 +99,11 @@ function toPkcs8Pem(pem: string): string {
 	return pem;
 }
 
-export async function getPrivateCryptoKey(): Promise<CryptoKey> {
+async function getPrivateCryptoKey(): Promise<CryptoKey> {
 	if (!_privateCryptoKey) {
 		_privateCryptoKey = await jose.importPKCS8(toPkcs8Pem(mockPrivateKeyPem), "RS256");
 	}
 	return _privateCryptoKey;
-}
-
-export async function getMismatchPrivateCryptoKey(): Promise<CryptoKey> {
-	if (!_mismatchPrivateCryptoKey) {
-		_mismatchPrivateCryptoKey = await jose.importPKCS8(toPkcs8Pem(mismatchPrivateKeyPem), "RS256");
-	}
-	return _mismatchPrivateCryptoKey;
 }
 
 export async function getPublicKeyPem(): Promise<string> {
@@ -150,7 +133,7 @@ export async function getMismatchPublicKeyPem(): Promise<string> {
 
 // ---- JWT 生成 (jose 版) ----
 
-export interface TokenOverrides {
+interface TokenOverrides {
 	algorithm?: string;
 	header?: Record<string, string>;
 	audience?: string;
@@ -216,7 +199,7 @@ export async function generateIdToken(
 
 // ---- モック FirebaseApp ----
 
-export interface MockFirebaseApp {
+interface MockFirebaseApp {
 	options: {
 		credential?: {
 			getAccessToken: () => Promise<{ access_token: string; expires_in: number }>;
@@ -250,33 +233,4 @@ export function createMockApp(overrides?: Partial<MockFirebaseApp["options"]>): 
 			getToken: async () => ({ accessToken: "mock-access-token" }),
 		},
 	};
-}
-
-// ---- モック fetch レスポンス ----
-
-export function mockJsonResponse(data: any, status = 200, headers: Record<string, string> = {}) {
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "content-type": "application/json", ...headers },
-	});
-}
-
-export function mockTextResponse(text: string, status = 200, headers: Record<string, string> = {}) {
-	return new Response(text, {
-		status,
-		headers: { "content-type": "text/plain", ...headers },
-	});
-}
-
-// 公開鍵レスポンス (Google X.509 cert フォーマット: { kid: "PEM certificate" })
-export async function mockPublicKeysResponse(
-	status = 200,
-	cacheControl = "public, max-age=1, must-revalidate, no-transform",
-) {
-	const publicKeyPem = await getPublicKeyPem();
-	const data = { [mockPrivateKeyKid]: publicKeyPem };
-	return new Response(JSON.stringify(data), {
-		status,
-		headers: { "cache-control": cacheControl, "content-type": "application/json" },
-	});
 }

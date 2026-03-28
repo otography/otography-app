@@ -373,7 +373,7 @@ export type UpdateAuthProviderRequest =
 	| OIDCUpdateAuthProviderRequest;
 
 /** A maximum of 10 test phone number / code pairs can be configured. */
-export const MAXIMUM_TEST_PHONE_NUMBERS = 10;
+const MAXIMUM_TEST_PHONE_NUMBERS = 10;
 
 /** The server side SAML configuration request interface. */
 export interface SAMLConfigServerRequest {
@@ -576,7 +576,7 @@ export class MultiFactorAuthConfig implements MultiFactorConfig {
 			}
 		}
 		if (Object.prototype.hasOwnProperty.call(options, "providerConfigs")) {
-			// providerConfigs is validated by the server
+			request.providerConfigs = options.providerConfigs as MultiFactorProviderConfig[];
 		}
 		return request;
 	}
@@ -653,7 +653,7 @@ export class MultiFactorAuthConfig implements MultiFactorConfig {
 				) {
 					throw new FirebaseAuthError(
 						AuthClientErrorCode.INVALID_CONFIG,
-						`"${multiFactorProviderConfig}" is not a valid "MultiFactorProviderConfig" type.`,
+						`"${JSON.stringify(multiFactorProviderConfig)}" is not a valid "MultiFactorProviderConfig" type.`,
 					);
 				}
 				const validProviderConfigKeys = {

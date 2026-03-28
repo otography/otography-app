@@ -28,7 +28,7 @@ const TOKEN_EXPIRY_THRESHOLD_MILLIS = 5 * 60 * 1000;
  * Type representing a Firebase OAuth access token (derived from a Google OAuth2 access token) which
  * can be used to authenticate to Firebase services such as the Realtime Database and Auth.
  */
-export interface FirebaseAccessToken {
+interface FirebaseAccessToken {
 	accessToken: string;
 	expirationTime: number;
 }

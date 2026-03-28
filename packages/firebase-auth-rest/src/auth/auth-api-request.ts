@@ -78,7 +78,7 @@ const FIREBASE_AUTH_HEADERS = {
 const FIREBASE_AUTH_TIMEOUT = 25000;
 
 /** List of reserved claims which cannot be provided when creating a custom token. */
-export const RESERVED_CLAIMS = [
+const RESERVED_CLAIMS = [
 	"acr",
 	"amr",
 	"at_hash",
@@ -98,7 +98,7 @@ export const RESERVED_CLAIMS = [
 ];
 
 /** List of supported email action request types. */
-export const EMAIL_ACTION_REQUEST_TYPES = [
+const EMAIL_ACTION_REQUEST_TYPES = [
 	"PASSWORD_RESET",
 	"VERIFY_EMAIL",
 	"EMAIL_SIGNIN",
@@ -602,7 +602,7 @@ function validateCreateEditRequest(request: any, writeOperationType: WriteOperat
  *
  * @internal
  */
-export const FIREBASE_AUTH_CREATE_SESSION_COOKIE = new ApiSettings(":createSessionCookie", "POST")
+const FIREBASE_AUTH_CREATE_SESSION_COOKIE = new ApiSettings(":createSessionCookie", "POST")
 	// Set request validator.
 	.setRequestValidator((request: any) => {
 		// Validate the ID token is a non-empty string.
@@ -631,14 +631,14 @@ export const FIREBASE_AUTH_CREATE_SESSION_COOKIE = new ApiSettings(":createSessi
  *
  * @internal
  */
-export const FIREBASE_AUTH_UPLOAD_ACCOUNT = new ApiSettings("/accounts:batchCreate", "POST");
+const FIREBASE_AUTH_UPLOAD_ACCOUNT = new ApiSettings("/accounts:batchCreate", "POST");
 
 /**
  * Instantiates the downloadAccount endpoint settings.
  *
  * @internal
  */
-export const FIREBASE_AUTH_DOWNLOAD_ACCOUNT = new ApiSettings("/accounts:batchGet", "GET")
+const FIREBASE_AUTH_DOWNLOAD_ACCOUNT = new ApiSettings("/accounts:batchGet", "GET")
 	// Set request validator.
 	.setRequestValidator((request: any) => {
 		// Validate next page token.
@@ -677,7 +677,7 @@ interface GetAccountInfoRequest {
  *
  * @internal
  */
-export const FIREBASE_AUTH_GET_ACCOUNT_INFO = new ApiSettings("/accounts:lookup", "POST")
+const FIREBASE_AUTH_GET_ACCOUNT_INFO = new ApiSettings("/accounts:lookup", "POST")
 	// Set request validator.
 	.setRequestValidator((request: GetAccountInfoRequest) => {
 		if (!request.localId && !request.email && !request.phoneNumber && !request.federatedUserId) {
@@ -700,7 +700,7 @@ export const FIREBASE_AUTH_GET_ACCOUNT_INFO = new ApiSettings("/accounts:lookup"
  *
  * @internal
  */
-export const FIREBASE_AUTH_GET_ACCOUNTS_INFO = new ApiSettings("/accounts:lookup", "POST")
+const FIREBASE_AUTH_GET_ACCOUNTS_INFO = new ApiSettings("/accounts:lookup", "POST")
 	// Set request validator.
 	.setRequestValidator((request: GetAccountInfoRequest) => {
 		if (!request.localId && !request.email && !request.phoneNumber && !request.federatedUserId) {
@@ -716,7 +716,7 @@ export const FIREBASE_AUTH_GET_ACCOUNTS_INFO = new ApiSettings("/accounts:lookup
  *
  * @internal
  */
-export const FIREBASE_AUTH_DELETE_ACCOUNT = new ApiSettings("/accounts:delete", "POST")
+const FIREBASE_AUTH_DELETE_ACCOUNT = new ApiSettings("/accounts:delete", "POST")
 	// Set request validator.
 	.setRequestValidator((request: any) => {
 		if (!request.localId) {
@@ -738,14 +738,14 @@ interface BatchDeleteErrorInfo {
 	message?: string;
 }
 
-export interface BatchDeleteAccountsResponse {
+interface BatchDeleteAccountsResponse {
 	errors?: BatchDeleteErrorInfo[];
 }
 
 /**
  * @internal
  */
-export const FIREBASE_AUTH_BATCH_DELETE_ACCOUNTS = new ApiSettings("/accounts:batchDelete", "POST")
+const FIREBASE_AUTH_BATCH_DELETE_ACCOUNTS = new ApiSettings("/accounts:batchDelete", "POST")
 	.setRequestValidator((request: BatchDeleteAccountsRequest) => {
 		if (!request.localIds) {
 			throw new FirebaseAuthError(
@@ -784,7 +784,7 @@ export const FIREBASE_AUTH_BATCH_DELETE_ACCOUNTS = new ApiSettings("/accounts:ba
  *
  * @internal
  */
-export const FIREBASE_AUTH_SET_ACCOUNT_INFO = new ApiSettings("/accounts:update", "POST")
+const FIREBASE_AUTH_SET_ACCOUNT_INFO = new ApiSettings("/accounts:update", "POST")
 	// Set request validator.
 	.setRequestValidator((request: any) => {
 		// localId is a required parameter.
@@ -817,7 +817,7 @@ export const FIREBASE_AUTH_SET_ACCOUNT_INFO = new ApiSettings("/accounts:update"
  *
  * @internal
  */
-export const FIREBASE_AUTH_SIGN_UP_NEW_USER = new ApiSettings("/accounts", "POST")
+const FIREBASE_AUTH_SIGN_UP_NEW_USER = new ApiSettings("/accounts", "POST")
 	// Set request validator.
 	.setRequestValidator((request: any) => {
 		// signupNewUser does not support customAttributes.

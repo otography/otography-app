@@ -298,7 +298,7 @@ interface UploadAccountUser {
 }
 
 /** UploadAccount endpoint request hash options. */
-export interface UploadAccountOptions {
+interface UploadAccountOptions {
 	hashAlgorithm?: string;
 	signerKey?: string;
 	rounds?: number;
@@ -311,12 +311,12 @@ export interface UploadAccountOptions {
 }
 
 /** UploadAccount endpoint complete request interface. */
-export interface UploadAccountRequest extends UploadAccountOptions {
+interface UploadAccountRequest extends UploadAccountOptions {
 	users?: UploadAccountUser[];
 }
 
 /** Callback function to validate an UploadAccountUser object. */
-export type ValidatorFunction = (data: UploadAccountUser) => void;
+type ValidatorFunction = (data: UploadAccountUser) => void;
 
 /**
  * Converts a client format second factor object to server format.
@@ -727,7 +727,7 @@ export class UserImportBuilder {
 			default:
 				throw new FirebaseAuthError(
 					AuthClientErrorCode.INVALID_HASH_ALGORITHM,
-					`Unsupported hash algorithm provider "${options.hash.algorithm}".`,
+					`Unsupported hash algorithm provider "${String(options.hash.algorithm)}".`,
 				);
 		}
 		return populatedOptions;

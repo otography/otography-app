@@ -43,7 +43,7 @@ function parseDate(time: any): string | null {
 	return null;
 }
 
-export interface MultiFactorInfoResponse {
+interface MultiFactorInfoResponse {
 	mfaEnrollmentId: string;
 	displayName?: string;
 	phoneInfo?: string;
@@ -52,11 +52,11 @@ export interface MultiFactorInfoResponse {
 	[key: string]: unknown;
 }
 
-export interface TotpInfoResponse {
+interface TotpInfoResponse {
 	[key: string]: unknown;
 }
 
-export interface ProviderUserInfoResponse {
+interface ProviderUserInfoResponse {
 	rawId: string;
 	displayName?: string;
 	email?: string;
@@ -66,7 +66,7 @@ export interface ProviderUserInfoResponse {
 	federatedId?: string;
 }
 
-export interface GetAccountInfoUserResponse {
+interface GetAccountInfoUserResponse {
 	localId: string;
 	email?: string;
 	emailVerified?: boolean;
@@ -253,12 +253,12 @@ export class PhoneMultiFactorInfo extends MultiFactorInfo {
 /**
  * `TotpInfo` struct associated with a second factor
  */
-export class TotpInfo {}
+class TotpInfo {}
 
 /**
  * Interface representing a TOTP specific user-enrolled second factor.
  */
-export class TotpMultiFactorInfo extends MultiFactorInfo {
+class TotpMultiFactorInfo extends MultiFactorInfo {
 	/**
 	 * `TotpInfo` struct associated with a second factor
 	 */

@@ -36,7 +36,7 @@ interface ServerToClientCode {
 /**
  * Firebase error code structure. This extends Error.
  */
-export class FirebaseError extends Error implements FirebaseErrorInterface {
+class FirebaseError extends Error implements FirebaseErrorInterface {
 	/**
 	 * @param errorInfo - The error information (code and message).
 	 * @constructor
@@ -74,7 +74,7 @@ export class FirebaseError extends Error implements FirebaseErrorInterface {
 /**
  * A FirebaseError with a prefix in front of the error code.
  */
-export class PrefixedFirebaseError extends FirebaseError {
+class PrefixedFirebaseError extends FirebaseError {
 	/**
 	 * @param codePrefix - The prefix to apply to the error code.
 	 * @param code - The error code.

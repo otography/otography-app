@@ -27,7 +27,7 @@ const ALGORITHM_NONE = "none" as const;
 const ONE_HOUR_IN_SECONDS = 60 * 60;
 
 // List of blacklisted claims which cannot be provided when creating a custom token
-export const BLACKLISTED_CLAIMS = [
+const BLACKLISTED_CLAIMS = [
 	"acr",
 	"amr",
 	"at_hash",

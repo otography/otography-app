@@ -84,7 +84,7 @@ export interface ProjectConfigServerResponse {
 /**
  * Request to update the project config.
  */
-export interface ProjectConfigClientRequest {
+interface ProjectConfigClientRequest {
 	smsRegionConfig?: SmsRegionConfig;
 	mfa?: MultiFactorAuthServerConfig;
 	recaptchaConfig?: RecaptchaAuthServerConfig;

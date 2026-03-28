@@ -96,7 +96,7 @@ export interface UpdateTenantRequest {
 export type CreateTenantRequest = UpdateTenantRequest;
 
 /** The corresponding server side representation of a TenantOptions object. */
-export interface TenantOptionsServerRequest extends EmailSignInConfigServerRequest {
+interface TenantOptionsServerRequest extends EmailSignInConfigServerRequest {
 	displayName?: string;
 	enableAnonymousUser?: boolean;
 	mfaConfig?: MultiFactorAuthServerConfig;

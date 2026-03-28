@@ -276,7 +276,7 @@ const EMULATOR_VERIFIER = new EmulatorSignatureVerifier();
  *
  * @internal
  */
-export const ID_TOKEN_INFO: FirebaseTokenInfo = {
+const ID_TOKEN_INFO: FirebaseTokenInfo = {
 	url: "https://firebase.google.com/docs/auth/admin/verify-id-tokens",
 	verifyApiName: "verifyIdToken()",
 	jwtName: "Firebase ID token",
@@ -289,7 +289,7 @@ export const ID_TOKEN_INFO: FirebaseTokenInfo = {
  *
  * @internal
  */
-export const AUTH_BLOCKING_TOKEN_INFO: FirebaseTokenInfo = {
+const AUTH_BLOCKING_TOKEN_INFO: FirebaseTokenInfo = {
 	url: "https://cloud.google.com/identity-platform/docs/blocking-functions",
 	verifyApiName: "_verifyAuthBlockingToken()",
 	jwtName: "Firebase Auth Blocking token",
@@ -302,7 +302,7 @@ export const AUTH_BLOCKING_TOKEN_INFO: FirebaseTokenInfo = {
  *
  * @internal
  */
-export const SESSION_COOKIE_INFO: FirebaseTokenInfo = {
+const SESSION_COOKIE_INFO: FirebaseTokenInfo = {
 	url: "https://firebase.google.com/docs/auth/admin/manage-cookies",
 	verifyApiName: "verifySessionCookie()",
 	jwtName: "Firebase session cookie",
@@ -315,7 +315,7 @@ export const SESSION_COOKIE_INFO: FirebaseTokenInfo = {
  *
  * @internal
  */
-export interface FirebaseTokenInfo {
+interface FirebaseTokenInfo {
 	/** Documentation URL. */
 	url: string;
 	/** verify API name. */

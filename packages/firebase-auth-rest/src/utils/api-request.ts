@@ -100,7 +100,7 @@ export class ApiSettings {
 /**
  * HTTP レスポンス
  */
-export class ApiResponse {
+class ApiResponse {
 	public readonly status: number;
 	public readonly headers: { [key: string]: string };
 	public readonly data: any;
@@ -245,7 +245,7 @@ export class HttpClient {
 					}
 					throw new FirebaseAppError(
 						AppErrorCodes.NETWORK_ERROR,
-						`Error while making request: ${config.url}. Error: ${(err as Error)?.message || err}.`,
+						`Error while making request: ${config.url}. Error: ${(err as Error)?.message ?? String(err)}.`,
 					);
 				}
 

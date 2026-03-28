@@ -51,7 +51,7 @@ export interface CryptoSigner {
  * A CryptoSigner implementation that uses an explicitly specified service account private key to
  * sign data. Performs all operations locally, and does not make any RPC calls.
  */
-export class ServiceAccountSigner implements CryptoSigner {
+class ServiceAccountSigner implements CryptoSigner {
 	algorithm = ALGORITHM_RS256;
 
 	/**
@@ -107,7 +107,7 @@ export function cryptoSignerFromApp(app: App): CryptoSigner {
 /**
  * Defines extended error info type. This includes a code, message string, and error data.
  */
-export interface ExtendedErrorInfo extends ErrorInfo {
+interface ExtendedErrorInfo extends ErrorInfo {
 	cause?: Error;
 }
 
