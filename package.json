@@ -31,14 +31,14 @@
 		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {
-		"@dotenvx/dotenvx": "^1.57.2",
-		"knip": "^6.0.4",
+		"@dotenvx/dotenvx": "^1.59.1",
+		"knip": "^6.1.0",
 		"lefthook": "^2.1.4",
 		"oxfmt": "^0.41.0",
 		"oxlint": "^1.57.0",
-		"oxlint-tsgolint": "^0.17.3",
-		"turbo": "^2.8.20",
-		"typescript": "5.9.2",
+		"oxlint-tsgolint": "^0.17.4",
+		"turbo": "^2.8.21",
+		"typescript": "^6.0.2",
 		"vitest": "^4.1.2"
 	},
 	"engines": {

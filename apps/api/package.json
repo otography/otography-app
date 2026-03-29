@@ -21,10 +21,10 @@
 	"dependencies": {
 		"@hono/arktype-validator": "^2.0.1",
 		"@repo/errors": "workspace:*",
+		"@repo/firebase-auth-rest": "workspace:*",
 		"@t3-oss/env-core": "^0.13.10",
 		"arktype": "^2.2.0",
 		"drizzle-orm": "^1.0.0-beta.19",
-		"firebase-admin": "^13.7.0",
 		"hono": "^4.12.9",
 		"jose": "^6.2.2",
 		"postgres": "^3.4.8"
