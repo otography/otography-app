@@ -1,3 +1,4 @@
+import { type } from "arktype";
 import { sql } from "drizzle-orm";
 import {
 	boolean,
@@ -8,10 +9,10 @@ import {
 	pgEnum,
 	pgTable,
 	primaryKey,
+	text,
 	timestamp,
 	uuid,
 	varchar,
-	text,
 } from "drizzle-orm/pg-core";
 
 export const birthplaceEnum = pgEnum("birthplace", [
@@ -67,6 +68,25 @@ export const birthplaceEnum = pgEnum("birthplace", [
 export const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
 export const groupTypeEnum = pgEnum("group_type", ["album", "playlist", "other"]);
 
+export const profiles = pgTable("profiles", {
+	id: text("id").primaryKey(),
+	email: text("email"),
+	displayName: text("display_name"),
+	photoUrl: text("photo_url"),
+	createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+	updatedAt: timestamp("updated_at", { withTimezone: true })
+		.notNull()
+		.defaultNow()
+		.$onUpdate(() => new Date()),
+});
+
+export const profileInsertSchema = type({
+	id: "string",
+	email: "string | null | undefined",
+	displayName: "string | null | undefined",
+	photoUrl: "string | null | undefined",
+});
+
 export const users = pgTable(
 	"users",
 	{
@@ -104,10 +124,7 @@ export const artists = pgTable(
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 		deletedAt: timestamp("deleted_at"),
 	},
-	(table) => [
-		index("idx_artists_name").on(table.name),
-		index("idx_artists_type").on(table.type),
-	],
+	(table) => [index("idx_artists_name").on(table.name), index("idx_artists_type").on(table.type)],
 );
 
 export const favoriteArtists = pgTable(
@@ -302,6 +319,9 @@ export const postLikes = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+export type Profile = typeof profiles.$inferSelect;
+export type NewProfile = typeof profiles.$inferInsert;
 
 export type Artist = typeof artists.$inferSelect;
 export type NewArtist = typeof artists.$inferInsert;

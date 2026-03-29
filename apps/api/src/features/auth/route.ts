@@ -5,6 +5,7 @@ import type { Context } from "hono";
 import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
+import { RlsError } from "@repo/errors";
 import { signInWithIdp, signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
 import {
 	buildOAuthFailureRedirect,
@@ -220,7 +221,8 @@ const userHandler = async (c: Context) => {
 	);
 
 	if (rlsResult instanceof Error) {
-		return c.json({ message: "Failed to fetch user profile." }, rlsResult.statusCode);
+		const status = rlsResult instanceof RlsError ? rlsResult.statusCode : 500;
+		return c.json({ message: "Failed to fetch user profile." }, status);
 	}
 
 	const [profile] = rlsResult;
