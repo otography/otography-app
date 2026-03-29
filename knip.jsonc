@@ -29,7 +29,7 @@
 		"apps/api": {
 			"entry": [],
 			"project": ["src/**/*.ts"],
-			"ignore": ["src/env.drizzle.ts"],
+			"ignore": ["src/env.drizzle.ts", "src/shared/db/schema.ts"],
 		},
 	},
 }
