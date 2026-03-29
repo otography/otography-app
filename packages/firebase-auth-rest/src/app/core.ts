@@ -160,7 +160,7 @@ export interface FirebaseError {
  * admin.messaging().subscribeToTopic(registrationTokens, 'topic-name')
  *   .then(function(response) {
  *     if (response.failureCount > 0) {
- *       console.log("Following devices unsucessfully subscribed to topic:");
+ *       console.log("Following devices unsuccessfully subscribed to topic:");
  *       response.errors.forEach(function(error) {
  *         var invalidToken = registrationTokens[error.index];
  *         console.log(invalidToken, error.error);

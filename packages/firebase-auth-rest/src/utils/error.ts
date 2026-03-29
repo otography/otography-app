@@ -45,11 +45,7 @@ class FirebaseError extends Error implements FirebaseErrorInterface {
 	constructor(private errorInfo: ErrorInfo) {
 		super(errorInfo.message);
 
-		/* tslint:disable:max-line-length */
-		// Set the prototype explicitly. See the following link for more details:
-		// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-		/* tslint:enable:max-line-length */
-		(this as any).__proto__ = FirebaseError.prototype;
+		Object.setPrototypeOf(this, FirebaseError.prototype);
 	}
 
 	/** @returns The error code. */
@@ -92,11 +88,7 @@ class PrefixedFirebaseError extends FirebaseError {
 			message,
 		});
 
-		/* tslint:disable:max-line-length */
-		// Set the prototype explicitly. See the following link for more details:
-		// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-		/* tslint:enable:max-line-length */
-		(this as any).__proto__ = PrefixedFirebaseError.prototype;
+		Object.setPrototypeOf(this, PrefixedFirebaseError.prototype);
 	}
 
 	/**
@@ -124,11 +116,7 @@ export class FirebaseAppError extends PrefixedFirebaseError {
 	constructor(code: string, message: string) {
 		super("app", code, message);
 
-		/* tslint:disable:max-line-length */
-		// Set the prototype explicitly. See the following link for more details:
-		// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-		/* tslint:enable:max-line-length */
-		(this as any).__proto__ = FirebaseAppError.prototype;
+		Object.setPrototypeOf(this, FirebaseAppError.prototype);
 	}
 }
 
@@ -186,11 +174,7 @@ export class FirebaseAuthError extends PrefixedFirebaseError {
 		// Override default message if custom message provided.
 		super("auth", info.code, message || info.message);
 
-		/* tslint:disable:max-line-length */
-		// Set the prototype explicitly. See the following link for more details:
-		// https://github.com/Microsoft/TypeScript/wiki/Breaking-Changes#extending-built-ins-like-error-array-and-map-may-no-longer-work
-		/* tslint:enable:max-line-length */
-		(this as any).__proto__ = FirebaseAuthError.prototype;
+		Object.setPrototypeOf(this, FirebaseAuthError.prototype);
 	}
 }
 

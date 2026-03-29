@@ -59,39 +59,38 @@ export class ServiceAccountCredential implements Credential {
 	/**
 	 * Creates a new ServiceAccountCredential from the given parameters.
 	 *
-	 * @param serviceAccountPathOrObject - Service account json object.
+	 * @param serviceAccount - Service account json object.
 	 *
 	 * @constructor
 	 */
-	constructor(private readonly serviceAccountPathOrObject: string | object) {
-		if (typeof serviceAccountPathOrObject === "string") {
-			throw new FirebaseAppError(
-				AppErrorCodes.INVALID_CREDENTIAL,
-				"Service account credential as a file path is not supported in this environment. " +
-					"Please provide a service account object instead.",
-			);
-		}
-
-		const serviceAccount = new ServiceAccount(serviceAccountPathOrObject);
-		this.projectId = serviceAccount.projectId;
-		this.privateKey = serviceAccount.privateKey;
-		this.clientEmail = serviceAccount.clientEmail;
+	constructor(serviceAccount: object) {
+		const sa = new ServiceAccount(serviceAccount);
+		this.projectId = sa.projectId;
+		this.privateKey = sa.privateKey;
+		this.clientEmail = sa.clientEmail;
 	}
 
 	private async getCryptoKey(): Promise<CryptoKey> {
 		if (this.cryptoKey) {
 			return this.cryptoKey;
 		}
-		let pkcs8Pem = this.privateKey;
-		// Firebase service account keys は PKCS#1 (BEGIN RSA PRIVATE KEY) の場合がある。
-		// jose.importPKCS8 は PKCS#8 (BEGIN PRIVATE KEY) のみ受け付けるため、
-		// PKCS#1 の場合は node:crypto の createPrivateKey で PKCS#8 に変換する。
-		if (/-----BEGIN RSA PRIVATE KEY-----/.test(this.privateKey)) {
-			const key = crypto.createPrivateKey({ key: this.privateKey, format: "pem" });
-			pkcs8Pem = key.export({ format: "pem", type: "pkcs8" }) as string;
+		try {
+			let pkcs8Pem = this.privateKey;
+			// Firebase service account keys は PKCS#1 (BEGIN RSA PRIVATE KEY) の場合がある。
+			// jose.importPKCS8 は PKCS#8 (BEGIN PRIVATE KEY) のみ受け付けるため、
+			// PKCS#1 の場合は node:crypto の createPrivateKey で PKCS#8 に変換する。
+			if (/-----BEGIN RSA PRIVATE KEY-----/.test(this.privateKey)) {
+				const key = crypto.createPrivateKey({ key: this.privateKey, format: "pem" });
+				pkcs8Pem = key.export({ format: "pem", type: "pkcs8" }) as string;
+			}
+			this.cryptoKey = await jose.importPKCS8(pkcs8Pem, "RS256");
+			return this.cryptoKey;
+		} catch (err: any) {
+			throw new FirebaseAppError(
+				AppErrorCodes.INVALID_CREDENTIAL,
+				`Failed to parse the service account private key: ${err?.message || String(err)}`,
+			);
 		}
-		this.cryptoKey = await jose.importPKCS8(pkcs8Pem, "RS256");
-		return this.cryptoKey;
 	}
 
 	public async getAccessToken(): Promise<GoogleOAuthAccessToken> {

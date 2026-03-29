@@ -21,7 +21,7 @@ const mockVerifySessionCookie = vi.fn();
 const mockCreateSessionCookie = vi.fn();
 const mockRevokeRefreshTokens = vi.fn();
 
-vi.mock("firebase-admin/auth", () => ({
+vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	getAuth: vi.fn(() => ({
 		verifySessionCookie: mockVerifySessionCookie,
 		createSessionCookie: mockCreateSessionCookie,

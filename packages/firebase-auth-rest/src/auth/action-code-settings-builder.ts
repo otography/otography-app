@@ -80,7 +80,7 @@ export interface ActionCodeSettings {
 
 		/**
 		 * The Android minimum version if available. If the installed app is an older
-		 * version, the user is taken to the GOogle Play Store to upgrade the app.
+		 * version, the user is taken to the Google Play Store to upgrade the app.
 		 */
 		minimumVersion?: string;
 	};

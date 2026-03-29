@@ -28,7 +28,7 @@ export function getMetricsHeader(): string {
 }
 
 /**
- * Defines a new read-only property directly on an object and returns the object.
+ * Defines a new read-only property directly on an object.
  *
  * @param obj - The object on which to define the property.
  * @param prop - The name of the property to be defined or modified.

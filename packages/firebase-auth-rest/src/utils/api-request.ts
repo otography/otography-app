@@ -18,6 +18,7 @@
 import { FirebaseApp } from "../app/firebase-app";
 import { AppErrorCodes, FirebaseAppError } from "./error";
 import { getMetricsHeader } from "./index";
+import * as validator from "./validator";
 
 /** Http method type definition. */
 export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD";
@@ -38,9 +39,7 @@ export interface BaseRequestConfig {
 /**
  * Configuration for constructing an HTTP request.
  */
-export interface HttpRequestConfig extends BaseRequestConfig {
-	httpAgent?: any;
-}
+export type HttpRequestConfig = BaseRequestConfig;
 
 /**
  * API settings for an API endpoint.
@@ -268,14 +267,18 @@ export class HttpClient {
 			...headers,
 		};
 
-		let body: string | undefined;
+		let body: string | Uint8Array | undefined;
 		if (data !== undefined && data !== null && method !== "GET" && method !== "HEAD") {
-			if (typeof data === "string" || typeof data === "object") {
-				body = typeof data === "string" ? data : JSON.stringify(data);
+			if (typeof data === "string") {
+				body = data;
+			} else if (validator.isBuffer(data)) {
+				body = new Uint8Array(data);
+			} else if (typeof data === "object") {
+				body = JSON.stringify(data);
 			} else {
 				throw new FirebaseAppError(
 					AppErrorCodes.INVALID_ARGUMENT,
-					"Request payload must be a string or object.",
+					"Request payload must be a string, a Buffer, or an object.",
 				);
 			}
 		}
@@ -288,7 +291,7 @@ export class HttpClient {
 			response = await fetch(url, {
 				method,
 				headers: fetchHeaders,
-				body,
+				body: body as BodyInit | undefined,
 				signal: controller.signal,
 			});
 		} catch (err: any) {

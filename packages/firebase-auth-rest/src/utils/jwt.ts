@@ -101,7 +101,23 @@ class X509CertFetcher {
 			}
 		}
 
-		const json: Record<string, string> = await response.json();
+		let json: Record<string, string>;
+		try {
+			json = await response.json();
+		} catch (e: unknown) {
+			throw new JwtError(
+				JwtErrorCode.KEY_FETCH_ERROR,
+				`Error parsing public keys response: ${(e as Error).message}`,
+			);
+		}
+
+		if (typeof json !== "object" || json === null || Array.isArray(json)) {
+			throw new JwtError(
+				JwtErrorCode.KEY_FETCH_ERROR,
+				"Error parsing public keys response: Expected a JSON object.",
+			);
+		}
+
 		const newKeys = new Map<string, CryptoKey>();
 
 		for (const [kid, pem] of Object.entries(json)) {
@@ -132,6 +148,7 @@ class X509CertFetcher {
 export class PublicKeySignatureVerifier implements SignatureVerifier {
 	private certFetcher: X509CertFetcher | undefined;
 	private jwksUrl: string | undefined;
+	private jwks: ReturnType<typeof jose.createRemoteJWKSet> | undefined;
 
 	private constructor() {}
 
@@ -150,6 +167,7 @@ export class PublicKeySignatureVerifier implements SignatureVerifier {
 	public static withJwksUrl(jwksUrl: string): PublicKeySignatureVerifier {
 		const instance = new PublicKeySignatureVerifier();
 		instance.jwksUrl = jwksUrl;
+		instance.jwks = jose.createRemoteJWKSet(new URL(jwksUrl));
 		return instance;
 	}
 
@@ -168,9 +186,8 @@ export class PublicKeySignatureVerifier implements SignatureVerifier {
 	}
 
 	private async verifyWithJwks(token: string): Promise<void> {
-		const jwks = jose.createRemoteJWKSet(new URL(this.jwksUrl!));
 		try {
-			await jose.jwtVerify(token, jwks, { algorithms: [ALGORITHM_RS256] });
+			await jose.jwtVerify(token, this.jwks!, { algorithms: [ALGORITHM_RS256] });
 		} catch (error: any) {
 			throw this.handleJoseError(error);
 		}

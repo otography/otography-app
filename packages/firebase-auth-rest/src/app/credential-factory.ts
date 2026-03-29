@@ -25,17 +25,15 @@ const globalCertCreds: { [key: string]: ServiceAccountCredential } = {};
  * admin access to Firebase services. This credential can be used in the call
  * to {@link firebase-admin.app#initializeApp}.
  *
- * @param serviceAccountPathOrObject - An object representing a service account key.
+ * @param serviceAccount - An object representing a service account key.
  *
  * @returns A credential authenticated via the
  *   provided service account that can be used to initialize an app.
  */
-export function cert(serviceAccountPathOrObject: string | ServiceAccount): Credential {
-	const stringifiedServiceAccount = JSON.stringify(serviceAccountPathOrObject);
+export function cert(serviceAccount: ServiceAccount): Credential {
+	const stringifiedServiceAccount = JSON.stringify(serviceAccount);
 	if (!(stringifiedServiceAccount in globalCertCreds)) {
-		globalCertCreds[stringifiedServiceAccount] = new ServiceAccountCredential(
-			serviceAccountPathOrObject,
-		);
+		globalCertCreds[stringifiedServiceAccount] = new ServiceAccountCredential(serviceAccount);
 	}
 	return globalCertCreds[stringifiedServiceAccount]!;
 }

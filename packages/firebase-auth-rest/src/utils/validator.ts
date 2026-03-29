@@ -211,7 +211,7 @@ export function isURL(urlStr: any): boolean {
 		}
 		const hostname = uri.hostname;
 		// Validate hostname strictly to match previous behavior and prevent weak/invalid domains.
-		// Must be alphanumeric with optional dashes/underscores, separated by dots.
+		// Must be alphanumeric with optional dashes, separated by dots.
 		// Cannot start/end with dot or dash (mostly).
 		// This regex is safe (no nested quantifiers with overlap).
 		if (

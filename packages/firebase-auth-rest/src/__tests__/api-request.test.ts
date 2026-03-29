@@ -196,7 +196,7 @@ describe("HttpClient", () => {
 	it("should reject if the request payload is invalid (number)", async () => {
 		const client = new HttpClient();
 		await expect(client.send({ method: "POST", url: mockUrl, data: 1 as any })).rejects.toThrow(
-			"must be a string or object",
+			"must be a string, a Buffer, or an object",
 		);
 	});
 });

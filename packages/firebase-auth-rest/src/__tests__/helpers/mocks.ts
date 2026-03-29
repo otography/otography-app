@@ -205,7 +205,6 @@ interface MockFirebaseApp {
 			getAccessToken: () => Promise<{ access_token: string; expires_in: number }>;
 		};
 		projectId?: string;
-		httpAgent?: any;
 		[key: string]: any;
 	};
 	name: string;

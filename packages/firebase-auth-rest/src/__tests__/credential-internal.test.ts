@@ -37,16 +37,6 @@ describe("ServiceAccountCredential", () => {
 			});
 		}
 
-		it("should throw if called with a string (file paths not supported)", () => {
-			expect(() => new ServiceAccountCredential("invalid-file")).toThrow(
-				"file path is not supported",
-			);
-		});
-
-		it("should throw if called with an empty string", () => {
-			expect(() => new ServiceAccountCredential("")).toThrow("file path is not supported");
-		});
-
 		it("should throw given an object without a 'project_id' property", () => {
 			const invalid = { ...mockCert };
 			delete (invalid as any).project_id;
