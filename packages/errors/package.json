@@ -8,7 +8,7 @@
 		"./server": "./src/server.ts"
 	},
 	"scripts": {
-		"test": "vitest run"
+		"test": "sh -lc 'node ../../node_modules/vitest/vitest.mjs run'"
 	},
 	"dependencies": {
 		"@repo/firebase-auth-rest": "workspace:*",

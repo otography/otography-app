@@ -11,16 +11,12 @@
 		"db:migrate": "dotenvx run -- bunx drizzle-kit migrate",
 		"db:push": "dotenvx run -- bunx drizzle-kit push",
 		"db:studio": "dotenvx run -- bunx drizzle-kit studio",
-		"supabase:start": "bunx supabase start",
-		"supabase:stop": "bunx supabase stop",
-		"supabase:status": "bunx supabase status",
-		"supabase:reset": "bunx supabase db reset",
 		"lint": "oxlint",
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
 		"lint:fix": "oxlint --fix",
 		"check-types": "tsc --noEmit",
-		"test": "vitest run"
+		"test": "sh -lc 'node ../../node_modules/vitest/vitest.mjs run'"
 	},
 	"dependencies": {
 		"@hono/arktype-validator": "^2.0.1",
