@@ -7,6 +7,12 @@
 		"jsxImportSource": "hono/jsx",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"types": ["vitest/globals", "@vitest/spy", "@types/node"]
+		"types": [
+			"vitest/globals",
+			"@vitest/spy",
+			"@cloudflare/vitest-pool-workers",
+			"@cloudflare/vitest-pool-workers/types",
+			"@types/node"
+		]
 	}
 }

@@ -1,15 +1,5 @@
+import { env } from "cloudflare:test";
 import { app } from "../..";
-import type { Bindings } from "../../index";
-
-const testEnv: Bindings = {
-	APP_FRONTEND_URL: "http://localhost:3000",
-	AUTH_COOKIE_DOMAIN: "localhost",
-	DATABASE_URL: "postgresql://test:test@localhost:5432/test",
-	FIREBASE_API_KEY: "test-api-key",
-	FIREBASE_CLIENT_EMAIL: "test@example.com",
-	FIREBASE_PRIVATE_KEY: "-----BEGIN RSA PRIVATE KEY-----\ntest-key\n-----END RSA PRIVATE KEY-----",
-	FIREBASE_PROJECT_ID: "test-project",
-};
 
 type TestRequestOptions = {
 	method?: string;
@@ -56,7 +46,7 @@ export async function testRequest(
 			headers: headerEntries,
 			body: body !== undefined ? JSON.stringify(body) : undefined,
 		},
-		testEnv,
+		env,
 	);
 
 	return {
