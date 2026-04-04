@@ -3,7 +3,6 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
@@ -13,8 +12,8 @@ import {
 	setSessionCookie,
 } from "../../shared/session";
 import { withRls } from "../../shared/db/rls";
-import { users } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
+import { insertUser, upsertUser } from "./repository";
 
 const credentialsBodySchema = type({
 	email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
@@ -76,15 +75,7 @@ const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: strin
 	const username = normalizeUsername(email, claims.sub);
 
 	const result = await withRls(c, claims, async (tx) => {
-		return tx
-			.insert(users)
-			.values({
-				firebaseId: claims.sub,
-				username,
-			})
-			.onConflictDoNothing({
-				target: users.firebaseId,
-			});
+		return insertUser(tx, { firebaseId: claims.sub, username });
 	});
 
 	if (result instanceof Error) {
@@ -154,19 +145,10 @@ const userHandler = async (c: Context) => {
 	const photoUrl = getStringClaim(session, "picture");
 
 	const userResult = await withRls(c, session, async (tx) => {
-		return tx
-			.insert(users)
-			.values({
-				firebaseId: userId,
-				username: normalizeUsername(email ?? undefined, userId),
-			})
-			.onConflictDoUpdate({
-				target: users.firebaseId,
-				set: {
-					updatedAt: sql`now()`,
-				},
-			})
-			.returning();
+		return upsertUser(tx, {
+			firebaseId: userId,
+			username: normalizeUsername(email ?? undefined, userId),
+		});
 	});
 
 	if (userResult instanceof Error) {
