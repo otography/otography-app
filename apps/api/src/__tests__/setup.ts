@@ -5,6 +5,10 @@ vi.mock("@repo/firebase-auth-rest/app", () => ({
 	cert: vi.fn((cred) => cred),
 }));
 
+vi.mock("../shared/middleware/csrf.middleware", () => ({
+	csrfProtection: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+}));
+
 const mockVerifySessionCookie = vi.fn();
 const mockCreateSessionCookie = vi.fn();
 const mockRevokeRefreshTokens = vi.fn();
