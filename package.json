@@ -26,8 +26,8 @@
 		"quality:fix": "turbo run quality:fix",
 		"check-types": "turbo run check-types",
 		"test": "turbo run test",
-		"check-dead-code": "sh -lc 'node ./node_modules/knip/bin/knip.js --exclude binaries'",
-		"check-dead-code:fix": "sh -lc 'node ./node_modules/knip/bin/knip.js --fix --exclude binaries'",
+		"check-dead-code": "knip --exclude binaries",
+		"check-dead-code:fix": "knip --fix --exclude binaries",
 		"hooks:install": "lefthook install"
 	},
 	"devDependencies": {

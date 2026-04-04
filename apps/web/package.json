@@ -11,7 +11,7 @@
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
 		"check-types": "next typegen && tsc --noEmit",
-		"test": "sh -lc 'node ../../node_modules/vitest/vitest.mjs run'"
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@t3-oss/env-nextjs": "^0.13.10",

@@ -16,7 +16,7 @@
 		"lint:github": "oxlint --format=github",
 		"lint:fix": "oxlint --fix",
 		"check-types": "tsc --noEmit",
-		"test": "sh -lc 'node ../../node_modules/vitest/vitest.mjs run'"
+		"test": "vitest run"
 	},
 	"dependencies": {
 		"@hono/arktype-validator": "^2.0.1",
