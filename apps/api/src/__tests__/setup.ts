@@ -1,11 +1,11 @@
 import { vi } from "vitest";
 
 // Set env vars BEFORE any module that calls getBootEnv()
-process.env.FIREBASE_API_KEY = "test-api-key";
+process.env.FIREBASE_API_KEY = "test-api-key" as never;
 process.env.FIREBASE_CLIENT_EMAIL = "test@example.com";
 process.env.FIREBASE_PRIVATE_KEY =
 	"-----BEGIN RSA PRIVATE KEY-----\ntest-key\n-----END RSA PRIVATE KEY-----";
-process.env.FIREBASE_PROJECT_ID = "test-project";
+process.env.FIREBASE_PROJECT_ID = "test-project" as never;
 process.env.APP_FRONTEND_URL = "http://localhost:3000";
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 

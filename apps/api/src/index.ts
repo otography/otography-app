@@ -11,16 +11,9 @@ import {
 	OAuthExchangeError,
 } from "@repo/errors";
 import { clearSessionCookie } from "./shared/session";
+import type { Bindings } from "./shared/types/bindings";
 
-export type Bindings = {
-	AUTH_COOKIE_DOMAIN: string | undefined;
-	APP_FRONTEND_URL: string;
-	DATABASE_URL: string;
-	FIREBASE_API_KEY: string;
-	FIREBASE_CLIENT_EMAIL: string;
-	FIREBASE_PRIVATE_KEY: string;
-	FIREBASE_PROJECT_ID: string;
-};
+export type { Bindings };
 
 const app = new Hono<{ Bindings: Bindings }>()
 	.use("/api/*", async (c, next) => {

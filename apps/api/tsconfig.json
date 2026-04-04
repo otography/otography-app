@@ -6,6 +6,6 @@
 		"jsxImportSource": "hono/jsx",
 		"module": "ESNext",
 		"moduleResolution": "bundler",
-		"types": ["vitest/globals", "@vitest/spy"]
+		"types": ["vitest/globals", "@vitest/spy", "@types/node"]
 	}
 }
