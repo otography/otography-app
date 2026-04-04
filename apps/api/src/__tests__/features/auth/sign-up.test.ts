@@ -8,15 +8,15 @@ vi.mock("../../../shared/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-	getDb: vi.fn(),
+	createDb: vi.fn(),
 }));
 
 import { signUpWithPassword } from "../../../shared/firebase-rest";
-import { getDb } from "../../../shared/db";
+import { createDb } from "../../../shared/db";
 
-// withRls が db.transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
+// withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
-	vi.mocked(getDb).mockReturnValue({
+	vi.mocked(createDb).mockReturnValue({
 		transaction: vi.fn(async (fn) => fn(txMethods)),
 	} as never);
 };

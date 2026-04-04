@@ -6,3 +6,8 @@ node_modules/
 .env.*.local
 .env.keys
 .env*.keys
+
+.dev.vars
+
+# wrangler local state
+.wrangler/

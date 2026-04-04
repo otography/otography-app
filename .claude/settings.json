@@ -1,22 +1,35 @@
 {
-  "enabledPlugins": {
-    "hono-skill@hono-skill": true
-  },
-  "permissions": {
-    "deny": [
-      "Read(.env)",
-      "Read(.env.*)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
-      "Bash(cat **/.env*)",
-      "Bash(head **/.env*)",
-      "Bash(tail **/.env*)",
-      "Bash(less **/.env*)",
-      "Bash(more **/.env*)",
-      "Bash(vim **/.env*)",
-      "Bash(nano **/.env*)",
-      "Bash(code **/.env*)",
-      "Bash(grep **/.env*)"
-    ]
-  }
+	"enabledPlugins": {
+		"hono-skill@hono-skill": true
+	},
+	"permissions": {
+		"deny": [
+			"Read(.env)",
+			"Read(.env.*)",
+			"Read(**/.env)",
+			"Read(**/.env.*)",
+			"Bash(cat **/.env*)",
+			"Bash(head **/.env*)",
+			"Bash(tail **/.env*)",
+			"Bash(less **/.env*)",
+			"Bash(more **/.env*)",
+			"Bash(vim **/.env*)",
+			"Bash(nano **/.env*)",
+			"Bash(code **/.env*)",
+			"Bash(grep **/.env*)",
+			"Read(.dev.vars)",
+			"Read(.dev.vars.*)",
+			"Read(**/.dev.vars)",
+			"Read(**/.dev.vars.*)",
+			"Bash(cat **/.dev.vars*)",
+			"Bash(head **/.dev.vars*)",
+			"Bash(tail **/.dev.vars*)",
+			"Bash(less **/.dev.vars*)",
+			"Bash(more **/.dev.vars*)",
+			"Bash(vim **/.dev.vars*)",
+			"Bash(nano **/.dev.vars*)",
+			"Bash(code **/.dev.vars*)",
+			"Bash(grep **/.dev.vars*)"
+		]
+	}
 }

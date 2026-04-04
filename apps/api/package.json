@@ -6,7 +6,9 @@
 		"./client": "./src/client.ts"
 	},
 	"scripts": {
-		"dev": "dotenvx run -- bun run --hot src/index.ts",
+		"dev": "wrangler dev",
+		"deploy": "wrangler deploy --minify",
+		"cf:typegen": "wrangler types --env-interface CloudflareBindings",
 		"db:generate": "dotenvx run -- bunx drizzle-kit generate",
 		"db:migrate": "dotenvx run -- bunx drizzle-kit migrate",
 		"db:push": "dotenvx run -- bunx drizzle-kit push",
@@ -19,6 +21,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
+		"@dotenvx/dotenvx": "^1.59.1",
 		"@hono/arktype-validator": "^2.0.1",
 		"@repo/errors": "workspace:*",
 		"@repo/firebase-auth-rest": "workspace:*",
@@ -30,9 +33,11 @@
 	"devDependencies": {
 		"@repo/typescript-config": "workspace:*",
 		"@types/bun": "latest",
+		"@types/node": "^25.5.2",
 		"@vitest/spy": "^4.1.2",
 		"drizzle-kit": "^1.0.0-beta.19",
 		"oxlint": "^1.56.0",
-		"typescript": "5.9.2"
+		"typescript": "5.9.2",
+		"wrangler": "^4.80.0"
 	}
 }

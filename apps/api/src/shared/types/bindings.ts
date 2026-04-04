@@ -1,4 +1,4 @@
-export type ServerEnv = {
+export type Bindings = {
 	AUTH_COOKIE_DOMAIN: string | undefined;
 	APP_FRONTEND_URL: string;
 	DATABASE_URL: string;
@@ -6,6 +6,4 @@ export type ServerEnv = {
 	FIREBASE_CLIENT_EMAIL: string;
 	FIREBASE_PRIVATE_KEY: string;
 	FIREBASE_PROJECT_ID: string;
-	PORT: number;
-	NODE_ENV: "development" | "production" | "test";
 };
