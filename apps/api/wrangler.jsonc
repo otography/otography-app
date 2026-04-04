@@ -1,0 +1,16 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "otography-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-04-04",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"no_handle_cross_request_promise_resolution"
+	],
+	"vars": {
+		"APP_FRONTEND_URL": "http://localhost:3000",
+		"AUTH_COOKIE_DOMAIN": "localhost",
+		"FIREBASE_API_KEY": "AIzaSyDqxumBWwkyWSIm3LOkrxBF5JQpqVMElb0",
+		"FIREBASE_PROJECT_ID": "otography-676f1",
+	}
+}

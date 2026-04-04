@@ -1,8 +1,6 @@
 import { Hono } from "hono";
-import { env } from "hono/adapter";
 import { cors } from "hono/cors";
 import { auth } from "./features/auth";
-import type { ServerEnv } from "./server-env";
 import { authSessionMiddleware } from "./shared/middleware";
 import { AuthError } from "@repo/errors/server";
 import {
@@ -14,11 +12,20 @@ import {
 } from "@repo/errors";
 import { clearSessionCookie } from "./shared/session";
 
-const app = new Hono()
+export type Bindings = {
+	AUTH_COOKIE_DOMAIN: string | undefined;
+	APP_FRONTEND_URL: string;
+	DATABASE_URL: string;
+	FIREBASE_API_KEY: string;
+	FIREBASE_CLIENT_EMAIL: string;
+	FIREBASE_PRIVATE_KEY: string;
+	FIREBASE_PROJECT_ID: string;
+};
+
+const app = new Hono<{ Bindings: Bindings }>()
 	.use("/api/*", async (c, next) => {
-		const { APP_FRONTEND_URL } = env<ServerEnv>(c);
 		const middleware = cors({
-			origin: APP_FRONTEND_URL,
+			origin: c.env.APP_FRONTEND_URL,
 			allowHeaders: ["Content-Type"],
 			allowMethods: ["GET", "POST", "OPTIONS"],
 			credentials: true,
@@ -30,6 +37,7 @@ const app = new Hono()
 	.onError((err, c) => {
 		// AuthError は clearCookie 処理が必要
 		if (err instanceof AuthError) {
+			console.error("AuthError:", err.message, err.cause);
 			if (err.clearCookie) clearSessionCookie(c);
 			return c.json({ message: err.message }, err.statusCode);
 		}
@@ -42,6 +50,7 @@ const app = new Hono()
 			err instanceof OAuthStateError ||
 			err instanceof OAuthExchangeError
 		) {
+			console.error("DomainError:", err.message, err.cause);
 			return c.json({ message: err.message }, err.statusCode);
 		}
 
@@ -52,12 +61,7 @@ const app = new Hono()
 	.route("/", auth)
 	.get("/", (c) => c.text("Hello Hono!"));
 
-const port = Number(process.env.PORT) || 3001;
-
-export default {
-	port,
-	fetch: app.fetch,
-};
+export default app;
 
 export { app };
 

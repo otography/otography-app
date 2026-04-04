@@ -1,0 +1,9 @@
+# Cloudflare Workers ローカル開発用
+# wrangler dev が .dev.vars を読み込む
+
+# Firebase
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+
+# Database
+DATABASE_URL=

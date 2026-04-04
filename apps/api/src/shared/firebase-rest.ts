@@ -1,8 +1,6 @@
 import { type } from "arktype";
 import type { Context } from "hono";
-import { env } from "hono/adapter";
 import { AuthRestError } from "@repo/errors";
-import type { ServerEnv } from "../server-env";
 
 const FIREBASE_IDENTITY_TOOLKIT_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
 
@@ -69,7 +67,7 @@ const createAuthRestError = (
 };
 
 const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<string, unknown>) => {
-	const { FIREBASE_API_KEY } = env<ServerEnv>(c);
+	const { FIREBASE_API_KEY } = c.env;
 	const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/${endpoint}`);
 	url.searchParams.set("key", FIREBASE_API_KEY);
 

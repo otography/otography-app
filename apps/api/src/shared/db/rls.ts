@@ -2,16 +2,14 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { RlsError } from "@repo/errors";
-import { getDb, type DatabaseTransaction } from "./index";
+import { createDb, type DatabaseTransaction } from "./index";
 
 export async function withRls<T>(
 	c: Context,
 	claims: DecodedIdToken,
 	fn: (tx: DatabaseTransaction) => Promise<T>,
 ): Promise<T> {
-	const db = getDb(c);
-
-	return db.transaction(async (tx) => {
+	return createDb().transaction(async (tx) => {
 		const userId = typeof claims.sub === "string" ? claims.sub : null;
 
 		if (!userId) {
@@ -20,15 +18,20 @@ export async function withRls<T>(
 
 		const jwtClaims = JSON.stringify({ sub: userId });
 
-		await tx
+		console.log("RLS: userId =", userId);
+		console.log("RLS: jwtClaims =", jwtClaims);
+
+		const setConfigResult = await tx
 			.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
 			.catch((e) => {
 				throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
 			});
+		console.log("RLS: set_config result =", setConfigResult);
 
-		await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
+		const setRoleResult = await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
 			throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
 		});
+		console.log("RLS: set role result =", setRoleResult);
 
 		return await fn(tx);
 	});

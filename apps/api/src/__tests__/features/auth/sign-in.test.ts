@@ -8,7 +8,7 @@ vi.mock("../../../shared/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-	getDb: vi.fn(),
+	createDb: vi.fn(() => ({ transaction: vi.fn() })),
 }));
 
 import { signInWithPassword } from "../../../shared/firebase-rest";
