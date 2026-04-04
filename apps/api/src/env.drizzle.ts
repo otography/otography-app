@@ -12,6 +12,7 @@ import { type } from "arktype";
 export const env = createEnv({
 	server: {
 		DATABASE_URL: type("string.url"),
+		DATABASE_DIRECT_URL: type("string.url"),
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,
