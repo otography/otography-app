@@ -14,6 +14,7 @@ import {
 import { withRls } from "../../shared/db/rls";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 import { insertUser, upsertUser } from "./repository";
+import { normalizeUsername } from "./utils";
 
 const credentialsBodySchema = type({
 	email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
@@ -31,11 +32,6 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
 	}
 });
 
-const getStringClaim = (claims: Record<string, unknown>, key: string) => {
-	const value = claims[key];
-	return typeof value === "string" ? value : null;
-};
-
 const issueSessionCookie = async (c: Context, idToken: string) => {
 	const sessionCookie = await firebaseAuth
 		.createSessionCookie(idToken, {
@@ -45,30 +41,6 @@ const issueSessionCookie = async (c: Context, idToken: string) => {
 	if (sessionCookie instanceof Error) return sessionCookie;
 
 	setSessionCookie(c, sessionCookie);
-};
-
-const finishCredentialAuth = async (
-	c: Context,
-	idToken: string,
-	successMessage: string,
-	successStatus: 200 | 201,
-) => {
-	const sessionResult = await issueSessionCookie(c, idToken);
-	if (sessionResult instanceof Error) {
-		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
-	}
-
-	return c.json({ message: successMessage }, successStatus);
-};
-
-const normalizeUsername = (email: string | undefined, localId: string) => {
-	const base = email?.split("@")[0]?.trim().toLowerCase() ?? `user_${localId}`;
-	const normalized = base
-		.replace(/[^a-z0-9_]/g, "_")
-		.replace(/_+/g, "_")
-		.slice(0, 50);
-	const fallback = `user_${localId.slice(0, 12)}`;
-	return normalized.length > 0 ? normalized : fallback;
 };
 
 const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: string) => {
@@ -85,28 +57,22 @@ const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: strin
 	return result;
 };
 
-const handleCredentialAuth = async (
-	c: Context,
-	email: string,
-	password: string,
-	successMessage: string,
-	successStatus: 200 | 201,
-) => {
-	const result =
-		successStatus === 200
-			? await signInWithPassword(c, email, password)
-			: await signUpWithPassword(c, email, password);
-
+const signInHandler = async (c: Context, email: string, password: string) => {
+	const result = await signInWithPassword(c, email, password);
 	if (result instanceof Error) {
 		return c.json({ message: result.message }, result.statusCode);
 	}
 
-	return finishCredentialAuth(c, result.idToken, successMessage, successStatus);
+	const sessionResult = await issueSessionCookie(c, result.idToken);
+	if (sessionResult instanceof Error) {
+		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
+	}
+
+	return c.json({ message: "Signed in successfully." }, 200);
 };
 
 const signUpHandler = async (c: Context, email: string, password: string) => {
 	const signUpResult = await signUpWithPassword(c, email, password);
-
 	if (signUpResult instanceof Error) {
 		return c.json({ message: signUpResult.message }, signUpResult.statusCode);
 	}
@@ -124,25 +90,29 @@ const signUpHandler = async (c: Context, email: string, password: string) => {
 		return c.json({ message: "Failed to register user profile." }, 500);
 	}
 
-	return finishCredentialAuth(c, signUpResult.idToken, "Account created successfully.", 201);
+	const sessionResult = await issueSessionCookie(c, signUpResult.idToken);
+	if (sessionResult instanceof Error) {
+		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
+	}
+
+	return c.json({ message: "Account created successfully." }, 201);
 };
 
-const userHandler = async (c: Context) => {
+const getProfileHandler = async (c: Context) => {
 	const session = getAuthSession(c);
-
 	if (!session) {
 		return c.json({ message: "You are not logged in." }, 401);
 	}
 
 	const userId = session.sub;
-
 	if (!userId) {
 		clearSessionCookie(c);
 		return c.json({ message: "The current session is invalid." }, 401);
 	}
-	const email = getStringClaim(session, "email");
-	const displayName = getStringClaim(session, "name");
-	const photoUrl = getStringClaim(session, "picture");
+
+	const email = session.email ?? null;
+	const displayName = session.name ?? null;
+	const photoUrl = session.picture ?? null;
 
 	const userResult = await withRls(c, session, async (tx) => {
 		return upsertUser(tx, {
@@ -206,13 +176,13 @@ const signOutHandler = async (c: Context) => {
 const auth = new Hono()
 	.post("/api/auth/sign-in", csrfProtection(), credentialsValidator, (c) => {
 		const { email, password } = c.req.valid("json");
-		return handleCredentialAuth(c, email, password, "Signed in successfully.", 200);
+		return signInHandler(c, email, password);
 	})
 	.post("/api/auth/sign-up", csrfProtection(), credentialsValidator, (c) => {
 		const { email, password } = c.req.valid("json");
 		return signUpHandler(c, email, password);
 	})
-	.get("/api/user", requireAuthMiddleware(), userHandler)
+	.get("/api/user", requireAuthMiddleware(), getProfileHandler)
 	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);
 
 export { auth };
