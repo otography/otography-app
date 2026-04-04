@@ -17,8 +17,6 @@ export interface AuthActions {
 
 export interface AuthMeta {
 	displayedError: string | null;
-	googleAuthUrl: string;
-	appleAuthUrl: string;
 }
 
 export interface AuthContextValue {

@@ -5,18 +5,19 @@ import { testRequest } from "../../helpers/test-client";
 vi.mock("../../../shared/firebase-rest", () => ({
 	signInWithPassword: vi.fn(),
 	signUpWithPassword: vi.fn(),
-	signInWithIdp: vi.fn(),
 }));
 
 vi.mock("../../../shared/db", () => ({
 	getDb: vi.fn(),
 }));
+import { getDb } from "../../../shared/db";
 
-vi.mock("../../../shared/db/rls", () => ({
-	withRls: vi.fn(),
-}));
-
-import { withRls } from "../../../shared/db/rls";
+// withRls が db.transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
+const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+	vi.mocked(getDb).mockReturnValue({
+		transaction: vi.fn(async (fn) => fn(txMethods)),
+	} as never);
+};
 
 describe("GET /api/user", () => {
 	beforeEach(() => {
@@ -47,17 +48,29 @@ describe("GET /api/user", () => {
 			name: "Test User",
 			picture: "https://example.com/photo.jpg",
 		});
-
-		const mockProfile = {
-			id: "user123",
-			email: "test@example.com",
-			displayName: "Test User",
-			photoUrl: "https://example.com/photo.jpg",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		};
-
-		vi.mocked(withRls).mockResolvedValue([mockProfile]);
+		mockDbWithTransaction({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoUpdate: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([
+							{
+								id: "uuid-user",
+								firebaseId: "user123",
+								username: "test",
+								bio: null,
+								birthplace: null,
+								birthyear: null,
+								gender: null,
+								createdAt: new Date("2026-01-01T00:00:00.000Z"),
+								updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+								deletedAt: null,
+							},
+						]),
+					})),
+				})),
+			})),
+			execute: vi.fn().mockResolvedValue([]),
+		});
 
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },
@@ -75,13 +88,21 @@ describe("GET /api/user", () => {
 		});
 	});
 
-	it("returns 500 when withRls fails", async () => {
-		const { RlsError } = await import("@repo/errors");
+	it("returns 500 when user upsert fails", async () => {
 		mockVerifySessionCookie.mockResolvedValue({
 			sub: "user123",
 			email: "test@example.com",
 		});
-		vi.mocked(withRls).mockResolvedValue(new RlsError({ message: "RLS policy violation." }));
+		mockDbWithTransaction({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoUpdate: vi.fn(() => ({
+						returning: vi.fn().mockRejectedValue(new Error("DB error")),
+					})),
+				})),
+			})),
+			execute: vi.fn().mockResolvedValue([]),
+		});
 
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },

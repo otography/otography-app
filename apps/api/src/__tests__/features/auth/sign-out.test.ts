@@ -5,15 +5,10 @@ import { testRequest } from "../../helpers/test-client";
 vi.mock("../../../shared/firebase-rest", () => ({
 	signInWithPassword: vi.fn(),
 	signUpWithPassword: vi.fn(),
-	signInWithIdp: vi.fn(),
 }));
 
 vi.mock("../../../shared/db", () => ({
 	getDb: vi.fn(),
-}));
-
-vi.mock("../../../shared/db/rls", () => ({
-	withRls: vi.fn(),
 }));
 
 describe("POST /api/auth/sign-out", () => {

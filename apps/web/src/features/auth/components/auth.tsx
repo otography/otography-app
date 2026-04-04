@@ -132,37 +132,6 @@ function AuthCreateAccountButton() {
 	);
 }
 
-const oauthLinkStyle = (isPending: boolean) => ({
-	display: "inline-flex",
-	justifyContent: "center",
-	padding: "0.75rem 1rem",
-	borderRadius: "0.5rem",
-	border: "1px solid #d6d6d6",
-	color: "inherit",
-	textDecoration: "none",
-	backgroundColor: "#ffffff",
-	pointerEvents: (isPending ? "none" : "auto") as "none" | "auto",
-	opacity: isPending ? 0.6 : 1,
-});
-
-function AuthOAuthLinks() {
-	const {
-		state,
-		meta: { googleAuthUrl, appleAuthUrl },
-	} = useAuthContext();
-
-	return (
-		<div style={{ display: "grid", gap: "0.75rem" }}>
-			<a href={googleAuthUrl} style={oauthLinkStyle(state.pendingMode !== null)}>
-				Continue with Google
-			</a>
-			<a href={appleAuthUrl} style={oauthLinkStyle(state.pendingMode !== null)}>
-				Continue with Apple
-			</a>
-		</div>
-	);
-}
-
 export const Auth = {
 	Provider: AuthProvider,
 	SignInFrame: AuthSignInFrame,
@@ -172,5 +141,4 @@ export const Auth = {
 	Error: AuthError,
 	SubmitButton: AuthSubmitButton,
 	CreateAccountButton: AuthCreateAccountButton,
-	OAuthLinks: AuthOAuthLinks,
 } as const;

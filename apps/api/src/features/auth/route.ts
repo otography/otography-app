@@ -2,30 +2,18 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { sql } from "drizzle-orm";
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
-import { signInWithIdp, signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
-import {
-	buildOAuthFailureRedirect,
-	buildOAuthSuccessRedirect,
-	consumeOAuthState,
-	createOAuthAuthorizationUrl,
-	exchangeProviderAuthorizationCode,
-	getFirebaseProviderId,
-	getOAuthCallbackParams,
-	getOAuthCallbackUrl,
-	getOAuthProvider,
-	getOAuthProviderErrorMessage,
-} from "../../shared/oauth";
+import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
 import {
 	clearSessionCookie,
 	SESSION_COOKIE_MAX_AGE_MS,
 	setSessionCookie,
 } from "../../shared/session";
 import { withRls } from "../../shared/db/rls";
-import { profileInsertSchema, profiles } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
+import { insertUser, upsertUser } from "./repository";
 
 const credentialsBodySchema = type({
 	email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
@@ -73,90 +61,28 @@ const finishCredentialAuth = async (
 	return c.json({ message: successMessage }, successStatus);
 };
 
-const finishOAuthBrowserAuth = async (c: Context, idToken: string, returnTo?: string) => {
-	const sessionResult = await issueSessionCookie(c, idToken);
-	if (sessionResult instanceof Error) {
-		return c.redirect(buildOAuthFailureRedirect(c, sessionResult.message, returnTo), 302);
-	}
-
-	return c.redirect(buildOAuthSuccessRedirect(c, returnTo), 302);
+const normalizeUsername = (email: string | undefined, localId: string) => {
+	const base = email?.split("@")[0]?.trim().toLowerCase() ?? `user_${localId}`;
+	const normalized = base
+		.replace(/[^a-z0-9_]/g, "_")
+		.replace(/_+/g, "_")
+		.slice(0, 50);
+	const fallback = `user_${localId.slice(0, 12)}`;
+	return normalized.length > 0 ? normalized : fallback;
 };
 
-// Handler functions
-const oauthStartHandler = async (c: Context) => {
-	const provider = getOAuthProvider(c.req.param("provider") ?? "");
+const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: string) => {
+	const username = normalizeUsername(email, claims.sub);
 
-	if (!provider) {
-		return c.json({ message: "Unsupported OAuth provider." }, 404);
+	const result = await withRls(c, claims, async (tx) => {
+		return insertUser(tx, { firebaseId: claims.sub, username });
+	});
+
+	if (result instanceof Error) {
+		return new Error("Failed to create user record.");
 	}
 
-	const authorizationUrl = await createOAuthAuthorizationUrl(c, provider);
-	if (authorizationUrl instanceof Error) {
-		return c.redirect(buildOAuthFailureRedirect(c, authorizationUrl.message), 302);
-	}
-
-	return c.redirect(authorizationUrl, 302);
-};
-
-const oauthCallbackHandler = async (c: Context) => {
-	const provider = getOAuthProvider(c.req.param("provider") ?? "");
-
-	if (!provider) {
-		return c.json({ message: "Unsupported OAuth provider." }, 404);
-	}
-
-	const callbackParams = await getOAuthCallbackParams(c);
-
-	if (callbackParams.error) {
-		return c.redirect(
-			buildOAuthFailureRedirect(c, getOAuthProviderErrorMessage(provider, callbackParams.error)),
-			302,
-		);
-	}
-
-	const oauthStateResult = await consumeOAuthState(c, provider, callbackParams.state);
-	if (oauthStateResult instanceof Error) {
-		return c.redirect(
-			buildOAuthFailureRedirect(c, "The authentication session is invalid or expired."),
-			302,
-		);
-	}
-	const oauthState = oauthStateResult;
-
-	if (!callbackParams.code) {
-		return c.redirect(
-			buildOAuthFailureRedirect(
-				c,
-				"The authentication provider did not return an authorization code.",
-				oauthState.returnTo,
-			),
-			302,
-		);
-	}
-
-	const exchangeResult = await exchangeProviderAuthorizationCode(c, provider, callbackParams.code);
-	if (exchangeResult instanceof Error) {
-		return c.redirect(
-			buildOAuthFailureRedirect(c, exchangeResult.message, oauthState.returnTo),
-			302,
-		);
-	}
-	const providerIdToken = exchangeResult;
-
-	const firebaseAuthResult = await signInWithIdp(
-		c,
-		`id_token=${encodeURIComponent(providerIdToken)}&providerId=${encodeURIComponent(getFirebaseProviderId(provider))}`,
-		getOAuthCallbackUrl(c, provider),
-	);
-
-	if (firebaseAuthResult instanceof Error) {
-		return c.redirect(
-			buildOAuthFailureRedirect(c, firebaseAuthResult.message, oauthState.returnTo),
-			302,
-		);
-	}
-
-	return finishOAuthBrowserAuth(c, firebaseAuthResult.idToken, oauthState.returnTo);
+	return result;
 };
 
 const handleCredentialAuth = async (
@@ -178,6 +104,29 @@ const handleCredentialAuth = async (
 	return finishCredentialAuth(c, result.idToken, successMessage, successStatus);
 };
 
+const signUpHandler = async (c: Context, email: string, password: string) => {
+	const signUpResult = await signUpWithPassword(c, email, password);
+
+	if (signUpResult instanceof Error) {
+		return c.json({ message: signUpResult.message }, signUpResult.statusCode);
+	}
+
+	// ID トークンを検証して DecodedIdToken を取得
+	const claims = await firebaseAuth
+		.verifyIdToken(signUpResult.idToken)
+		.catch(() => new Error("Failed to verify sign-up token."));
+	if (claims instanceof Error) {
+		return c.json({ message: claims.message }, 401);
+	}
+
+	const registerResult = await registerAppUser(c, claims, signUpResult.email);
+	if (registerResult instanceof Error) {
+		return c.json({ message: "Failed to register user profile." }, 500);
+	}
+
+	return finishCredentialAuth(c, signUpResult.idToken, "Account created successfully.", 201);
+};
+
 const userHandler = async (c: Context) => {
 	const session = getAuthSession(c);
 
@@ -191,39 +140,34 @@ const userHandler = async (c: Context) => {
 		clearSessionCookie(c);
 		return c.json({ message: "The current session is invalid." }, 401);
 	}
+	const email = getStringClaim(session, "email");
+	const displayName = getStringClaim(session, "name");
+	const photoUrl = getStringClaim(session, "picture");
 
-	const profileInput = profileInsertSchema({
-		id: userId,
-		email: getStringClaim(session, "email"),
-		displayName: getStringClaim(session, "name"),
-		photoUrl: getStringClaim(session, "picture"),
+	const userResult = await withRls(c, session, async (tx) => {
+		return upsertUser(tx, {
+			firebaseId: userId,
+			username: normalizeUsername(email ?? undefined, userId),
+		});
 	});
 
-	if (profileInput instanceof type.errors) {
-		return c.json({ message: "Failed to normalize the current user profile." }, 500);
+	if (userResult instanceof Error) {
+		return c.json({ message: "Failed to fetch user profile." }, 500);
 	}
 
-	const rlsResult = await withRls(c, session, (tx) =>
-		tx
-			.insert(profiles)
-			.values(profileInput)
-			.onConflictDoUpdate({
-				target: profiles.id,
-				set: {
-					email: getStringClaim(session, "email"),
-					displayName: getStringClaim(session, "name"),
-					photoUrl: getStringClaim(session, "picture"),
-					updatedAt: sql`now()`,
-				},
-			})
-			.returning(),
-	);
-
-	if (rlsResult instanceof Error) {
-		return c.json({ message: "Failed to fetch user profile." }, rlsResult.statusCode);
+	const [user] = userResult;
+	if (!user) {
+		return c.json({ message: "Failed to fetch user profile." }, 500);
 	}
 
-	const [profile] = rlsResult;
+	const profile = {
+		id: user.firebaseId,
+		email,
+		displayName,
+		photoUrl,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+	};
 
 	return c.json({
 		message: "You are logged in!",
@@ -260,15 +204,13 @@ const signOutHandler = async (c: Context) => {
 
 // Chained routes for proper type inference
 const auth = new Hono()
-	.get("/api/auth/oauth/:provider/start", oauthStartHandler)
-	.on(["GET", "POST"], "/api/auth/oauth/:provider/callback", oauthCallbackHandler)
 	.post("/api/auth/sign-in", csrfProtection(), credentialsValidator, (c) => {
 		const { email, password } = c.req.valid("json");
 		return handleCredentialAuth(c, email, password, "Signed in successfully.", 200);
 	})
 	.post("/api/auth/sign-up", csrfProtection(), credentialsValidator, (c) => {
 		const { email, password } = c.req.valid("json");
-		return handleCredentialAuth(c, email, password, "Account created successfully.", 201);
+		return signUpHandler(c, email, password);
 	})
 	.get("/api/user", requireAuthMiddleware(), userHandler)
 	.post("/api/auth/sign-out", csrfProtection(), signOutHandler);

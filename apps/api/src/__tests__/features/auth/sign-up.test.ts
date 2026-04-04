@@ -1,26 +1,39 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockCreateSessionCookie } from "../../setup";
+import { mockCreateSessionCookie, mockVerifyIdToken } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 vi.mock("../../../shared/firebase-rest", () => ({
 	signInWithPassword: vi.fn(),
 	signUpWithPassword: vi.fn(),
-	signInWithIdp: vi.fn(),
 }));
 
 vi.mock("../../../shared/db", () => ({
 	getDb: vi.fn(),
 }));
 
-vi.mock("../../../shared/db/rls", () => ({
-	withRls: vi.fn(),
-}));
-
 import { signUpWithPassword } from "../../../shared/firebase-rest";
+import { getDb } from "../../../shared/db";
+
+// withRls が db.transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
+const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+	vi.mocked(getDb).mockReturnValue({
+		transaction: vi.fn(async (fn) => fn(txMethods)),
+	} as never);
+};
+
+const defaultTx = {
+	insert: vi.fn(() => ({
+		values: vi.fn(() => ({
+			onConflictDoNothing: vi.fn().mockResolvedValue([]),
+		})),
+	})),
+	execute: vi.fn().mockResolvedValue([]),
+};
 
 describe("POST /api/auth/sign-up", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		mockDbWithTransaction(defaultTx);
 	});
 
 	describe("error passthrough", () => {
@@ -57,12 +70,45 @@ describe("POST /api/auth/sign-up", () => {
 	});
 
 	describe("upstream dependency failure", () => {
+		it("returns 500 when app user registration fails", async () => {
+			vi.mocked(signUpWithPassword).mockResolvedValue({
+				idToken: "test-id-token",
+				localId: "user123",
+				expiresIn: "3600",
+				refreshToken: "test-refresh",
+			});
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
+			});
+			mockDbWithTransaction({
+				insert: vi.fn(() => ({
+					values: vi.fn(() => ({
+						onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
+					})),
+				})),
+				execute: vi.fn().mockResolvedValue([]),
+			});
+
+			const res = await testRequest("/api/auth/sign-up", {
+				method: "POST",
+				body: { email: "test@example.com", password: "password123" },
+			});
+
+			expect(res.status).toBe(500);
+			expect(await res.json()).toEqual({ message: "Failed to register user profile." });
+		});
+
 		it("returns 502 when createSessionCookie fails", async () => {
 			vi.mocked(signUpWithPassword).mockResolvedValue({
 				idToken: "test-id-token",
 				localId: "user123",
 				expiresIn: "3600",
 				refreshToken: "test-refresh",
+			});
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
 			});
 			mockCreateSessionCookie.mockRejectedValue(new Error("Firebase error"));
 
@@ -83,6 +129,10 @@ describe("POST /api/auth/sign-up", () => {
 				expiresIn: "3600",
 				refreshToken: "test-refresh",
 				isNewUser: true,
+			});
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
 			});
 			mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
 

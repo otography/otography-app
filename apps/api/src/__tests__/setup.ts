@@ -8,7 +8,6 @@ process.env.FIREBASE_PRIVATE_KEY =
 process.env.FIREBASE_PROJECT_ID = "test-project";
 process.env.APP_FRONTEND_URL = "http://localhost:3000";
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
-process.env.AUTH_OAUTH_STATE_SECRET = "test-oauth-state-secret";
 process.env.PORT = "3001";
 process.env.NODE_ENV = "test";
 
@@ -20,12 +19,14 @@ vi.mock("firebase-admin/app", () => ({
 const mockVerifySessionCookie = vi.fn();
 const mockCreateSessionCookie = vi.fn();
 const mockRevokeRefreshTokens = vi.fn();
+const mockVerifyIdToken = vi.fn();
 
 vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	getAuth: vi.fn(() => ({
 		verifySessionCookie: mockVerifySessionCookie,
 		createSessionCookie: mockCreateSessionCookie,
 		revokeRefreshTokens: mockRevokeRefreshTokens,
+		verifyIdToken: mockVerifyIdToken,
 	})),
 	FirebaseAuthError: class extends Error {
 		code: string;
@@ -37,4 +38,9 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	},
 }));
 
-export { mockCreateSessionCookie, mockRevokeRefreshTokens, mockVerifySessionCookie };
+export {
+	mockCreateSessionCookie,
+	mockRevokeRefreshTokens,
+	mockVerifyIdToken,
+	mockVerifySessionCookie,
+};

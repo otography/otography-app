@@ -5,15 +5,6 @@ import { env as getRuntimeEnv } from "hono/adapter";
 
 const server = {
 	AUTH_COOKIE_DOMAIN: type("string>0 | undefined"),
-	AUTH_OAUTH_STATE_SECRET: type("string>0"),
-	AUTH_APPLE_CLIENT_ID: type("string>0 | undefined"),
-	AUTH_APPLE_KEY_ID: type("string>0 | undefined"),
-	AUTH_APPLE_PRIVATE_KEY: type("string>0 | undefined").pipe((v) =>
-		v ? v.replaceAll("\\n", "\n") : v,
-	),
-	AUTH_APPLE_TEAM_ID: type("string>0 | undefined"),
-	AUTH_GOOGLE_CLIENT_ID: type("string>0 | undefined"),
-	AUTH_GOOGLE_CLIENT_SECRET: type("string>0 | undefined"),
 	APP_FRONTEND_URL: type("string.url"),
 	DATABASE_URL: type("string.url"),
 	FIREBASE_API_KEY: type("string>0"),

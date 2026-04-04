@@ -2,9 +2,7 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import type { Context } from "hono";
 import { RlsError } from "@repo/errors";
-import { getDb } from "./index";
-
-type DatabaseTransaction = Parameters<Parameters<ReturnType<typeof getDb>["transaction"]>[0]>[0];
+import { getDb, type DatabaseTransaction } from "./index";
 
 export async function withRls<T>(
 	c: Context,
@@ -42,6 +40,10 @@ export async function withRls<T>(
 		);
 		if (roleResult instanceof Error) return roleResult;
 
-		return fn(tx);
+		try {
+			return await fn(tx);
+		} catch (e) {
+			return new RlsError({ message: "Transaction failed.", cause: e });
+		}
 	});
 }

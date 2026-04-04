@@ -7,10 +7,10 @@
 	},
 	"scripts": {
 		"dev": "dotenvx run -- bun run --hot src/index.ts",
-		"db:generate": "dotenvx run -- drizzle-kit generate",
-		"db:migrate": "dotenvx run -- drizzle-kit migrate",
-		"db:push": "dotenvx run -- drizzle-kit push",
-		"db:studio": "dotenvx run -- drizzle-kit studio",
+		"db:generate": "dotenvx run -- bunx drizzle-kit generate",
+		"db:migrate": "dotenvx run -- bunx drizzle-kit migrate",
+		"db:push": "dotenvx run -- bunx drizzle-kit push",
+		"db:studio": "dotenvx run -- bunx drizzle-kit studio",
 		"lint": "oxlint",
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
@@ -26,7 +26,6 @@
 		"arktype": "^2.2.0",
 		"drizzle-orm": "^1.0.0-beta.19",
 		"hono": "^4.12.9",
-		"jose": "^6.2.2",
 		"postgres": "^3.4.8"
 	},
 	"devDependencies": {
