@@ -5,6 +5,7 @@ import {
 	date,
 	index,
 	integer,
+	pgRole,
 	pgTable,
 	primaryKey,
 	text,
@@ -12,6 +13,8 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+
+const authenticatedRole = pgRole("authenticated");
 
 export const users = pgTable(
 	"users",
