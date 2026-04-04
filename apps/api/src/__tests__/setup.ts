@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 
-vi.mock("firebase-admin/app", () => ({
+vi.mock("@repo/firebase-auth-rest/app", () => ({
 	initializeApp: vi.fn(() => ({})),
 	cert: vi.fn((cred) => cred),
 }));
