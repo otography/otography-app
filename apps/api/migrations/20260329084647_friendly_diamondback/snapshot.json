@@ -1,75 +1,9 @@
 {
 	"version": "8",
 	"dialect": "postgres",
-	"id": "6d72a6d0-fd00-4251-8466-2fb0c8a1e110",
+	"id": "51424ec9-4fc0-485e-8009-c0498577089e",
 	"prevIds": ["63e7aede-e7ac-4a4c-b518-938b4aab8929"],
 	"ddl": [
-		{
-			"values": ["person", "group"],
-			"name": "artist_type",
-			"entityType": "enums",
-			"schema": "public"
-		},
-		{
-			"values": [
-				"Hokkaido",
-				"Aomori",
-				"Iwate",
-				"Miyagi",
-				"Akita",
-				"Yamagata",
-				"Fukushima",
-				"Ibaraki",
-				"Tochigi",
-				"Gunma",
-				"Saitama",
-				"Chiba",
-				"Tokyo",
-				"Kanagawa",
-				"Niigata",
-				"Toyama",
-				"Ishikawa",
-				"Fukui",
-				"Yamanashi",
-				"Nagano",
-				"Gifu",
-				"Shizuoka",
-				"Aichi",
-				"Mie",
-				"Shiga",
-				"Kyoto",
-				"Osaka",
-				"Hyogo",
-				"Nara",
-				"Wakayama",
-				"Tottori",
-				"Shimane",
-				"Okayama",
-				"Hiroshima",
-				"Yamaguchi",
-				"Tokushima",
-				"Kagawa",
-				"Ehime",
-				"Kochi",
-				"Fukuoka",
-				"Saga",
-				"Nagasaki",
-				"Kumamoto",
-				"Oita",
-				"Miyazaki",
-				"Kagoshima",
-				"Okinawa"
-			],
-			"name": "birthplace",
-			"entityType": "enums",
-			"schema": "public"
-		},
-		{
-			"values": ["album", "playlist", "other"],
-			"name": "group_type",
-			"entityType": "enums",
-			"schema": "public"
-		},
 		{
 			"isRlsEnabled": false,
 			"name": "artists",
@@ -188,8 +122,8 @@
 			"table": "artists"
 		},
 		{
-			"type": "artist_type",
-			"typeSchema": "public",
+			"type": "varchar(20)",
+			"typeSchema": null,
 			"notNull": false,
 			"dimensions": 0,
 			"default": null,
@@ -214,8 +148,8 @@
 			"table": "artists"
 		},
 		{
-			"type": "birthplace",
-			"typeSchema": "public",
+			"type": "varchar(100)",
+			"typeSchema": null,
 			"notNull": false,
 			"dimensions": 0,
 			"default": null,
@@ -591,8 +525,8 @@
 			"table": "groups"
 		},
 		{
-			"type": "group_type",
-			"typeSchema": "public",
+			"type": "varchar(50)",
+			"typeSchema": null,
 			"notNull": false,
 			"dimensions": 0,
 			"default": null,
@@ -1098,8 +1032,8 @@
 			"table": "users"
 		},
 		{
-			"type": "birthplace",
-			"typeSchema": "public",
+			"type": "varchar(100)",
+			"typeSchema": null,
 			"notNull": false,
 			"dimensions": 0,
 			"default": null,
@@ -1837,6 +1771,27 @@
 			"entityType": "uniques"
 		},
 		{
+			"value": "\"type\" IS NULL OR \"type\" IN ('person', 'group')",
+			"name": "artists_type_check",
+			"entityType": "checks",
+			"schema": "public",
+			"table": "artists"
+		},
+		{
+			"value": "\"birthplace\" IS NULL OR \"birthplace\" IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')",
+			"name": "artists_birthplace_check",
+			"entityType": "checks",
+			"schema": "public",
+			"table": "artists"
+		},
+		{
+			"value": "\"type\" IS NULL OR \"type\" IN ('album', 'playlist', 'other')",
+			"name": "groups_type_check",
+			"entityType": "checks",
+			"schema": "public",
+			"table": "groups"
+		},
+		{
 			"value": "\"length\" >= 0",
 			"name": "songs_length_check",
 			"entityType": "checks",
@@ -1846,6 +1801,13 @@
 		{
 			"value": "\"birthyear\" >= 1900 AND \"birthyear\" <= EXTRACT(YEAR FROM CURRENT_DATE)",
 			"name": "users_birthyear_check",
+			"entityType": "checks",
+			"schema": "public",
+			"table": "users"
+		},
+		{
+			"value": "\"birthplace\" IS NULL OR \"birthplace\" IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')",
+			"name": "users_birthplace_check",
 			"entityType": "checks",
 			"schema": "public",
 			"table": "users"

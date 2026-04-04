@@ -1,17 +1,48 @@
-CREATE TYPE "artist_type" AS ENUM('person', 'group');--> statement-breakpoint
-CREATE TYPE "birthplace" AS ENUM('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa');--> statement-breakpoint
-CREATE TYPE "group_type" AS ENUM('album', 'playlist', 'other');--> statement-breakpoint
+DO $$
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+		CREATE ROLE authenticated;
+	END IF;
+END
+$$;--> statement-breakpoint
+CREATE OR REPLACE FUNCTION public.requesting_user_id()
+RETURNS text
+LANGUAGE sql
+STABLE
+RETURNS NULL ON NULL INPUT
+SET search_path = pg_catalog
+AS $$
+    SELECT NULLIF(
+        current_setting('request.jwt.claims', true)::json->>'sub',
+        ''
+    )::text;
+$$;--> statement-breakpoint
+CREATE TABLE "profiles" (
+	"id" text PRIMARY KEY,
+	"email" text,
+	"display_name" text,
+	"photo_url" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
+CREATE POLICY "profiles_select_own" ON "profiles" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("profiles"."id" = requesting_user_id());--> statement-breakpoint
+CREATE POLICY "profiles_insert_own" ON "profiles" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("profiles"."id" = requesting_user_id());--> statement-breakpoint
+CREATE POLICY "profiles_update_own" ON "profiles" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("profiles"."id" = requesting_user_id()) WITH CHECK ("profiles"."id" = requesting_user_id());--> statement-breakpoint
 CREATE TABLE "artists" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"name" varchar(255) NOT NULL,
 	"ipi_code" varchar(20),
-	"type" "artist_type",
+	"type" varchar(20),
 	"gender" varchar(20),
-	"birthplace" "birthplace",
+	"birthplace" varchar(100),
 	"birthdate" date,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp
+	"deleted_at" timestamp,
+	CONSTRAINT "artists_type_check" CHECK ("type" IS NULL OR "type" IN ('person', 'group')),
+	CONSTRAINT "artists_birthplace_check" CHECK ("birthplace" IS NULL OR "birthplace" IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa'))
 );
 --> statement-breakpoint
 CREATE TABLE "favorite_artists" (
@@ -54,11 +85,12 @@ CREATE TABLE "group_songs" (
 CREATE TABLE "groups" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"name" varchar(255) NOT NULL,
-	"type" "group_type",
+	"type" varchar(50),
 	"description" varchar(255),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp
+	"deleted_at" timestamp,
+	CONSTRAINT "groups_type_check" CHECK ("type" IS NULL OR "type" IN ('album', 'playlist', 'other'))
 );
 --> statement-breakpoint
 CREATE TABLE "post_likes" (
@@ -109,13 +141,14 @@ CREATE TABLE "users" (
 	"firebase_id" varchar(128) NOT NULL UNIQUE,
 	"username" varchar(50) NOT NULL,
 	"bio" text,
-	"birthplace" "birthplace",
+	"birthplace" varchar(100),
 	"birthyear" integer,
 	"gender" varchar(20),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
-	CONSTRAINT "users_birthyear_check" CHECK ("birthyear" >= 1900 AND "birthyear" <= EXTRACT(YEAR FROM CURRENT_DATE))
+	CONSTRAINT "users_birthyear_check" CHECK ("birthyear" >= 1900 AND "birthyear" <= EXTRACT(YEAR FROM CURRENT_DATE)),
+	CONSTRAINT "users_birthplace_check" CHECK ("birthplace" IS NULL OR "birthplace" IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa'))
 );
 --> statement-breakpoint
 CREATE INDEX "idx_artists_name" ON "artists" ("name");--> statement-breakpoint

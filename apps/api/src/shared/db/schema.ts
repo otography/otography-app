@@ -1,4 +1,3 @@
-import { type } from "arktype";
 import { sql } from "drizzle-orm";
 import {
 	boolean,
@@ -6,7 +5,6 @@ import {
 	date,
 	index,
 	integer,
-	pgEnum,
 	pgPolicy,
 	pgRole,
 	pgTable,
@@ -16,59 +14,8 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core";
+import { type } from "arktype";
 
-export const birthplaceEnum = pgEnum("birthplace", [
-	"Hokkaido",
-	"Aomori",
-	"Iwate",
-	"Miyagi",
-	"Akita",
-	"Yamagata",
-	"Fukushima",
-	"Ibaraki",
-	"Tochigi",
-	"Gunma",
-	"Saitama",
-	"Chiba",
-	"Tokyo",
-	"Kanagawa",
-	"Niigata",
-	"Toyama",
-	"Ishikawa",
-	"Fukui",
-	"Yamanashi",
-	"Nagano",
-	"Gifu",
-	"Shizuoka",
-	"Aichi",
-	"Mie",
-	"Shiga",
-	"Kyoto",
-	"Osaka",
-	"Hyogo",
-	"Nara",
-	"Wakayama",
-	"Tottori",
-	"Shimane",
-	"Okayama",
-	"Hiroshima",
-	"Yamaguchi",
-	"Tokushima",
-	"Kagawa",
-	"Ehime",
-	"Kochi",
-	"Fukuoka",
-	"Saga",
-	"Nagasaki",
-	"Kumamoto",
-	"Oita",
-	"Miyazaki",
-	"Kagoshima",
-	"Okinawa",
-]);
-
-export const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
-export const groupTypeEnum = pgEnum("group_type", ["album", "playlist", "other"]);
 const authenticatedRole = pgRole("authenticated");
 
 export const profiles = pgTable(
@@ -118,7 +65,7 @@ export const users = pgTable(
 		firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
 		username: varchar("username", { length: 50 }).notNull(),
 		bio: text("bio"),
-		birthplace: birthplaceEnum("birthplace"),
+		birthplace: varchar("birthplace", { length: 100 }),
 		birthyear: integer("birthyear"),
 		gender: varchar("gender", { length: 20 }),
 		createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -130,6 +77,10 @@ export const users = pgTable(
 			"users_birthyear_check",
 			sql`${table.birthyear} >= 1900 AND ${table.birthyear} <= EXTRACT(YEAR FROM CURRENT_DATE)`,
 		),
+		check(
+			"users_birthplace_check",
+			sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
+		),
 		index("idx_users_username").on(table.username),
 	],
 );
@@ -140,15 +91,23 @@ export const artists = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		name: varchar("name", { length: 255 }).notNull(),
 		ipiCode: varchar("ipi_code", { length: 20 }),
-		type: artistTypeEnum("type"),
+		type: varchar("type", { length: 20 }),
 		gender: varchar("gender", { length: 20 }),
-		birthplace: birthplaceEnum("birthplace"),
+		birthplace: varchar("birthplace", { length: 100 }),
 		birthdate: date("birthdate"),
 		createdAt: timestamp("created_at").notNull().defaultNow(),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 		deletedAt: timestamp("deleted_at"),
 	},
-	(table) => [index("idx_artists_name").on(table.name), index("idx_artists_type").on(table.type)],
+	(table) => [
+		check("artists_type_check", sql`${table.type} IS NULL OR ${table.type} IN ('person', 'group')`),
+		check(
+			"artists_birthplace_check",
+			sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
+		),
+		index("idx_artists_name").on(table.name),
+		index("idx_artists_type").on(table.type),
+	],
 );
 
 export const favoriteArtists = pgTable(
@@ -215,13 +174,17 @@ export const groups = pgTable(
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
 		name: varchar("name", { length: 255 }).notNull(),
-		type: groupTypeEnum("type"),
+		type: varchar("type", { length: 50 }),
 		description: varchar("description", { length: 255 }),
 		createdAt: timestamp("created_at").notNull().defaultNow(),
 		updatedAt: timestamp("updated_at").notNull().defaultNow(),
 		deletedAt: timestamp("deleted_at"),
 	},
 	(table) => [
+		check(
+			"groups_type_check",
+			sql`${table.type} IS NULL OR ${table.type} IN ('album', 'playlist', 'other')`,
+		),
 		index("idx_groups_name").on(table.name),
 		index("idx_groups_not_deleted")
 			.on(table.id)
@@ -340,42 +303,3 @@ export const postLikes = pgTable(
 		index("idx_post_likes_post_id").on(table.postId),
 	],
 );
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-
-export type Profile = typeof profiles.$inferSelect;
-export type NewProfile = typeof profiles.$inferInsert;
-
-export type Artist = typeof artists.$inferSelect;
-export type NewArtist = typeof artists.$inferInsert;
-
-export type FavoriteArtist = typeof favoriteArtists.$inferSelect;
-export type NewFavoriteArtist = typeof favoriteArtists.$inferInsert;
-
-export type Song = typeof songs.$inferSelect;
-export type NewSong = typeof songs.$inferInsert;
-
-export type SongArtist = typeof songArtists.$inferSelect;
-export type NewSongArtist = typeof songArtists.$inferInsert;
-
-export type Group = typeof groups.$inferSelect;
-export type NewGroup = typeof groups.$inferInsert;
-
-export type GroupSong = typeof groupSongs.$inferSelect;
-export type NewGroupSong = typeof groupSongs.$inferInsert;
-
-export type Genre = typeof genres.$inferSelect;
-export type NewGenre = typeof genres.$inferInsert;
-
-export type SongGenre = typeof songGenres.$inferSelect;
-export type NewSongGenre = typeof songGenres.$inferInsert;
-
-export type FavoriteSong = typeof favoriteSongs.$inferSelect;
-export type NewFavoriteSong = typeof favoriteSongs.$inferInsert;
-
-export type Post = typeof posts.$inferSelect;
-export type NewPost = typeof posts.$inferInsert;
-
-export type PostLike = typeof postLikes.$inferSelect;
-export type NewPostLike = typeof postLikes.$inferInsert;

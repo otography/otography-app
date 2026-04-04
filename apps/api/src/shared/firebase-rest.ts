@@ -117,12 +117,3 @@ export const signUpWithPassword = async (c: Context, email: string, password: st
 		returnSecureToken: true,
 	});
 };
-
-export const signInWithIdp = async (c: Context, postBody: string, requestUri: string) => {
-	return requestFirebaseAuth(c, "accounts:signInWithIdp", {
-		postBody,
-		requestUri,
-		returnIdpCredential: true,
-		returnSecureToken: true,
-	});
-};

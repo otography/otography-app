@@ -5,7 +5,6 @@ import { testRequest } from "../../helpers/test-client";
 vi.mock("../../../shared/firebase-rest", () => ({
 	signInWithPassword: vi.fn(),
 	signUpWithPassword: vi.fn(),
-	signInWithIdp: vi.fn(),
 }));
 
 vi.mock("../../../shared/db", () => ({
@@ -17,10 +16,19 @@ vi.mock("../../../shared/db/rls", () => ({
 }));
 
 import { signUpWithPassword } from "../../../shared/firebase-rest";
+import { getDb } from "../../../shared/db";
 
 describe("POST /api/auth/sign-up", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+
+		vi.mocked(getDb).mockReturnValue({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoNothing: vi.fn().mockResolvedValue([]),
+				})),
+			})),
+		} as never);
 	});
 
 	describe("error passthrough", () => {
@@ -57,6 +65,31 @@ describe("POST /api/auth/sign-up", () => {
 	});
 
 	describe("upstream dependency failure", () => {
+		it("returns 500 when app user registration fails", async () => {
+			vi.mocked(signUpWithPassword).mockResolvedValue({
+				idToken: "test-id-token",
+				localId: "user123",
+				expiresIn: "3600",
+				refreshToken: "test-refresh",
+			});
+
+			vi.mocked(getDb).mockReturnValue({
+				insert: vi.fn(() => ({
+					values: vi.fn(() => ({
+						onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
+					})),
+				})),
+			} as never);
+
+			const res = await testRequest("/api/auth/sign-up", {
+				method: "POST",
+				body: { email: "test@example.com", password: "password123" },
+			});
+
+			expect(res.status).toBe(500);
+			expect(await res.json()).toEqual({ message: "Failed to register user profile." });
+		});
+
 		it("returns 502 when createSessionCookie fails", async () => {
 			vi.mocked(signUpWithPassword).mockResolvedValue({
 				idToken: "test-id-token",

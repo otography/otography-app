@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
-import { env } from "@/env";
 import { api } from "@/lib/api";
 import {
 	type AuthActions,
@@ -81,8 +80,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 	const meta: AuthMeta = useMemo(
 		() => ({
 			displayedError: state.error ?? searchParams.get("error"),
-			googleAuthUrl: new URL("/api/auth/oauth/google/start", env.NEXT_PUBLIC_API_URL).toString(),
-			appleAuthUrl: new URL("/api/auth/oauth/apple/start", env.NEXT_PUBLIC_API_URL).toString(),
 		}),
 		[state.error, searchParams],
 	);

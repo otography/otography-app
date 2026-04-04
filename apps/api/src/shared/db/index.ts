@@ -28,7 +28,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import type { Context } from "hono";
 import postgres from "postgres";
 import { getEnv } from "../../env";
-import { profiles } from "./schema";
+import { profiles, users } from "./schema";
 
 const createDb = (connectionString: string) => {
 	// Disable prepared statements (prepare: false) as they are not supported for "Transaction" pool mode
@@ -38,6 +38,7 @@ const createDb = (connectionString: string) => {
 		client,
 		schema: {
 			profiles,
+			users,
 		},
 	});
 };

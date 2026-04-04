@@ -5,7 +5,6 @@ import { testRequest } from "../../helpers/test-client";
 vi.mock("../../../shared/firebase-rest", () => ({
 	signInWithPassword: vi.fn(),
 	signUpWithPassword: vi.fn(),
-	signInWithIdp: vi.fn(),
 }));
 
 vi.mock("../../../shared/db", () => ({
