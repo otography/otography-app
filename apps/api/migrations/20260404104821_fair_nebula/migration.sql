@@ -1,35 +1,3 @@
-DO $$
-BEGIN
-	IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-		CREATE ROLE authenticated;
-	END IF;
-END
-$$;--> statement-breakpoint
-CREATE OR REPLACE FUNCTION public.requesting_user_id()
-RETURNS text
-LANGUAGE sql
-STABLE
-RETURNS NULL ON NULL INPUT
-SET search_path = pg_catalog
-AS $$
-    SELECT NULLIF(
-        current_setting('request.jwt.claims', true)::json->>'sub',
-        ''
-    )::text;
-$$;--> statement-breakpoint
-CREATE TABLE "profiles" (
-	"id" text PRIMARY KEY,
-	"email" text,
-	"display_name" text,
-	"photo_url" text,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE POLICY "profiles_select_own" ON "profiles" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("profiles"."id" = requesting_user_id());--> statement-breakpoint
-CREATE POLICY "profiles_insert_own" ON "profiles" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("profiles"."id" = requesting_user_id());--> statement-breakpoint
-CREATE POLICY "profiles_update_own" ON "profiles" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("profiles"."id" = requesting_user_id()) WITH CHECK ("profiles"."id" = requesting_user_id());--> statement-breakpoint
 CREATE TABLE "artists" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"name" varchar(255) NOT NULL,

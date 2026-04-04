@@ -11,10 +11,6 @@ vi.mock("../../../shared/db", () => ({
 	getDb: vi.fn(),
 }));
 
-vi.mock("../../../shared/db/rls", () => ({
-	withRls: vi.fn(),
-}));
-
 import { signInWithPassword } from "../../../shared/firebase-rest";
 
 describe("POST /api/auth/sign-in", () => {

@@ -5,7 +5,6 @@ import type { Context } from "hono";
 import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
-import { RlsError } from "@repo/errors";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
 import {
 	clearSessionCookie,
@@ -13,8 +12,7 @@ import {
 	setSessionCookie,
 } from "../../shared/session";
 import { getDb } from "../../shared/db";
-import { withRls } from "../../shared/db/rls";
-import { profileInsertSchema, profiles, users } from "../../shared/db/schema";
+import { users } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
 const credentialsBodySchema = type({
@@ -138,39 +136,42 @@ const userHandler = async (c: Context) => {
 		clearSessionCookie(c);
 		return c.json({ message: "The current session is invalid." }, 401);
 	}
-	const profileInput = profileInsertSchema({
-		id: userId,
-		email: getStringClaim(session, "email"),
-		displayName: getStringClaim(session, "name"),
-		photoUrl: getStringClaim(session, "picture"),
-	});
+	const email = getStringClaim(session, "email");
+	const displayName = getStringClaim(session, "name");
+	const photoUrl = getStringClaim(session, "picture");
+	const db = getDb(c);
 
-	if (profileInput instanceof type.errors) {
-		return c.json({ message: "Failed to normalize the current user profile." }, 500);
+	const userResult = await db
+		.insert(users)
+		.values({
+			firebaseId: userId,
+			username: normalizeUsername(email ?? undefined, userId),
+		})
+		.onConflictDoUpdate({
+			target: users.firebaseId,
+			set: {
+				updatedAt: sql`now()`,
+			},
+		})
+		.returning()
+		.catch(() => new Error("Failed to fetch user profile."));
+	if (userResult instanceof Error) {
+		return c.json({ message: "Failed to fetch user profile." }, 500);
 	}
 
-	const rlsResult = await withRls(c, session, (tx) =>
-		tx
-			.insert(profiles)
-			.values(profileInput)
-			.onConflictDoUpdate({
-				target: profiles.id,
-				set: {
-					email: getStringClaim(session, "email"),
-					displayName: getStringClaim(session, "name"),
-					photoUrl: getStringClaim(session, "picture"),
-					updatedAt: sql`now()`,
-				},
-			})
-			.returning(),
-	);
-
-	if (rlsResult instanceof Error) {
-		const status = rlsResult instanceof RlsError ? rlsResult.statusCode : 500;
-		return c.json({ message: "Failed to fetch user profile." }, status);
+	const [user] = userResult;
+	if (!user) {
+		return c.json({ message: "Failed to fetch user profile." }, 500);
 	}
 
-	const [profile] = rlsResult;
+	const profile = {
+		id: user.firebaseId,
+		email,
+		displayName,
+		photoUrl,
+		createdAt: user.createdAt,
+		updatedAt: user.updatedAt,
+	};
 
 	return c.json({
 		message: "You are logged in!",

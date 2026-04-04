@@ -1,8 +1,8 @@
 {
 	"version": "8",
 	"dialect": "postgres",
-	"id": "51424ec9-4fc0-485e-8009-c0498577089e",
-	"prevIds": ["63e7aede-e7ac-4a4c-b518-938b4aab8929"],
+	"id": "82ad4bc4-307b-4ee4-94c7-775f0defe946",
+	"prevIds": ["00000000-0000-0000-0000-000000000000"],
 	"ddl": [
 		{
 			"isRlsEnabled": false,
@@ -49,12 +49,6 @@
 		{
 			"isRlsEnabled": false,
 			"name": "posts",
-			"entityType": "tables",
-			"schema": "public"
-		},
-		{
-			"isRlsEnabled": true,
-			"name": "profiles",
 			"entityType": "tables",
 			"schema": "public"
 		},
@@ -718,84 +712,6 @@
 			"entityType": "columns",
 			"schema": "public",
 			"table": "posts"
-		},
-		{
-			"type": "text",
-			"typeSchema": null,
-			"notNull": true,
-			"dimensions": 0,
-			"default": null,
-			"generated": null,
-			"identity": null,
-			"name": "id",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"type": "text",
-			"typeSchema": null,
-			"notNull": false,
-			"dimensions": 0,
-			"default": null,
-			"generated": null,
-			"identity": null,
-			"name": "email",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"type": "text",
-			"typeSchema": null,
-			"notNull": false,
-			"dimensions": 0,
-			"default": null,
-			"generated": null,
-			"identity": null,
-			"name": "display_name",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"type": "text",
-			"typeSchema": null,
-			"notNull": false,
-			"dimensions": 0,
-			"default": null,
-			"generated": null,
-			"identity": null,
-			"name": "photo_url",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"type": "timestamp with time zone",
-			"typeSchema": null,
-			"notNull": true,
-			"dimensions": 0,
-			"default": "now()",
-			"generated": null,
-			"identity": null,
-			"name": "created_at",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"type": "timestamp with time zone",
-			"typeSchema": null,
-			"notNull": true,
-			"dimensions": 0,
-			"default": "now()",
-			"generated": null,
-			"identity": null,
-			"name": "updated_at",
-			"entityType": "columns",
-			"schema": "public",
-			"table": "profiles"
 		},
 		{
 			"type": "uuid",
@@ -1731,14 +1647,6 @@
 		{
 			"columns": ["id"],
 			"nameExplicit": false,
-			"name": "profiles_pkey",
-			"schema": "public",
-			"table": "profiles",
-			"entityType": "pks"
-		},
-		{
-			"columns": ["id"],
-			"nameExplicit": false,
 			"name": "songs_pkey",
 			"schema": "public",
 			"table": "songs",
@@ -1811,39 +1719,6 @@
 			"entityType": "checks",
 			"schema": "public",
 			"table": "users"
-		},
-		{
-			"as": "PERMISSIVE",
-			"for": "SELECT",
-			"roles": ["authenticated"],
-			"using": "\"profiles\".\"id\" = requesting_user_id()",
-			"withCheck": null,
-			"name": "profiles_select_own",
-			"entityType": "policies",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"as": "PERMISSIVE",
-			"for": "INSERT",
-			"roles": ["authenticated"],
-			"using": null,
-			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
-			"name": "profiles_insert_own",
-			"entityType": "policies",
-			"schema": "public",
-			"table": "profiles"
-		},
-		{
-			"as": "PERMISSIVE",
-			"for": "UPDATE",
-			"roles": ["authenticated"],
-			"using": "\"profiles\".\"id\" = requesting_user_id()",
-			"withCheck": "\"profiles\".\"id\" = requesting_user_id()",
-			"name": "profiles_update_own",
-			"entityType": "policies",
-			"schema": "public",
-			"table": "profiles"
 		}
 	],
 	"renames": []

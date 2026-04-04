@@ -10,16 +10,34 @@ vi.mock("../../../shared/firebase-rest", () => ({
 vi.mock("../../../shared/db", () => ({
 	getDb: vi.fn(),
 }));
-
-vi.mock("../../../shared/db/rls", () => ({
-	withRls: vi.fn(),
-}));
-
-import { withRls } from "../../../shared/db/rls";
+import { getDb } from "../../../shared/db";
 
 describe("GET /api/user", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+
+		vi.mocked(getDb).mockReturnValue({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoUpdate: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([
+							{
+								id: "uuid-user",
+								firebaseId: "user123",
+								username: "test",
+								bio: null,
+								birthplace: null,
+								birthyear: null,
+								gender: null,
+								createdAt: new Date("2026-01-01T00:00:00.000Z"),
+								updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+								deletedAt: null,
+							},
+						]),
+					})),
+				})),
+			})),
+		} as never);
 	});
 
 	it("returns 401 when no session cookie is present", async () => {
@@ -47,17 +65,6 @@ describe("GET /api/user", () => {
 			picture: "https://example.com/photo.jpg",
 		});
 
-		const mockProfile = {
-			id: "user123",
-			email: "test@example.com",
-			displayName: "Test User",
-			photoUrl: "https://example.com/photo.jpg",
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		};
-
-		vi.mocked(withRls).mockResolvedValue([mockProfile]);
-
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },
 		});
@@ -74,13 +81,20 @@ describe("GET /api/user", () => {
 		});
 	});
 
-	it("returns 500 when withRls fails", async () => {
-		const { RlsError } = await import("@repo/errors");
+	it("returns 500 when user upsert fails", async () => {
 		mockVerifySessionCookie.mockResolvedValue({
 			sub: "user123",
 			email: "test@example.com",
 		});
-		vi.mocked(withRls).mockResolvedValue(new RlsError({ message: "RLS policy violation." }));
+		vi.mocked(getDb).mockReturnValue({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoUpdate: vi.fn(() => ({
+						returning: vi.fn().mockRejectedValue(new Error("DB error")),
+					})),
+				})),
+			})),
+		} as never);
 
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },
