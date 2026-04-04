@@ -5,6 +5,7 @@ import {
 	date,
 	index,
 	integer,
+	pgPolicy,
 	pgRole,
 	pgTable,
 	primaryKey,
@@ -40,6 +41,22 @@ export const users = pgTable(
 			sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
 		),
 		index("idx_users_username").on(table.username),
+		pgPolicy("users_select_all", {
+			for: "select",
+			to: "public",
+			using: sql`true`,
+		}),
+		pgPolicy("users_insert_own", {
+			for: "insert",
+			to: authenticatedRole,
+			withCheck: sql`${table.firebaseId} = requesting_user_id()`,
+		}),
+		pgPolicy("users_update_own", {
+			for: "update",
+			to: authenticatedRole,
+			using: sql`${table.firebaseId} = requesting_user_id()`,
+			withCheck: sql`${table.firebaseId} = requesting_user_id()`,
+		}),
 	],
 );
 
