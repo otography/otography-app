@@ -18,20 +18,15 @@ export async function withRls<T>(
 
 		const jwtClaims = JSON.stringify({ sub: userId });
 
-		console.log("RLS: userId =", userId);
-		console.log("RLS: jwtClaims =", jwtClaims);
-
-		const setConfigResult = await tx
+		await tx
 			.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
 			.catch((e) => {
 				throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
 			});
-		console.log("RLS: set_config result =", setConfigResult);
 
-		const setRoleResult = await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
+		await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
 			throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
 		});
-		console.log("RLS: set role result =", setRoleResult);
 
 		return await fn(tx);
 	});

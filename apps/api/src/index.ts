@@ -37,7 +37,6 @@ const app = new Hono<{ Bindings: Bindings }>()
 	.onError((err, c) => {
 		// AuthError は clearCookie 処理が必要
 		if (err instanceof AuthError) {
-			console.error("AuthError:", err.message, err.cause);
 			if (err.clearCookie) clearSessionCookie(c);
 			return c.json({ message: err.message }, err.statusCode);
 		}
@@ -50,7 +49,6 @@ const app = new Hono<{ Bindings: Bindings }>()
 			err instanceof OAuthStateError ||
 			err instanceof OAuthExchangeError
 		) {
-			console.error("DomainError:", err.message, err.cause);
 			return c.json({ message: err.message }, err.statusCode);
 		}
 
