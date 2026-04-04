@@ -26,9 +26,9 @@ export const users = pgTable(
 		birthplace: varchar("birthplace", { length: 100 }),
 		birthyear: integer("birthyear"),
 		gender: varchar("gender", { length: 20 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		check(
@@ -53,9 +53,9 @@ export const artists = pgTable(
 		gender: varchar("gender", { length: 20 }),
 		birthplace: varchar("birthplace", { length: 100 }),
 		birthdate: date("birthdate"),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		check("artists_type_check", sql`${table.type} IS NULL OR ${table.type} IN ('person', 'group')`),
@@ -80,8 +80,8 @@ export const favoriteArtists = pgTable(
 		comment: text("comment"),
 		emoji: varchar("emoji", { length: 20 }),
 		color: varchar("color", { length: 20 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.userId, table.artistId] }),
@@ -96,9 +96,9 @@ export const songs = pgTable(
 		title: varchar("title", { length: 255 }).notNull(),
 		length: integer("length"),
 		isrcs: varchar("isrcs", { length: 50 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		check("songs_length_check", sql`${table.length} >= 0`),
@@ -119,7 +119,7 @@ export const songArtists = pgTable(
 			.notNull()
 			.references(() => artists.id, { onDelete: "cascade" }),
 		isGuest: boolean("is_guest").notNull(),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.songId, table.artistId] }),
@@ -134,9 +134,9 @@ export const groups = pgTable(
 		name: varchar("name", { length: 255 }).notNull(),
 		type: varchar("type", { length: 50 }),
 		description: varchar("description", { length: 255 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		check(
@@ -159,7 +159,7 @@ export const groupSongs = pgTable(
 		songId: uuid("song_id")
 			.notNull()
 			.references(() => songs.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.groupId, table.songId] }),
@@ -173,9 +173,9 @@ export const genres = pgTable(
 		id: uuid("id").defaultRandom().primaryKey(),
 		name: varchar("name", { length: 100 }).notNull().unique(),
 		description: varchar("description", { length: 255 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		index("idx_genres_not_deleted")
@@ -193,7 +193,7 @@ export const songGenres = pgTable(
 		genreId: uuid("genre_id")
 			.notNull()
 			.references(() => genres.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.songId, table.genreId] }),
@@ -213,7 +213,7 @@ export const favoriteSongs = pgTable(
 		comment: text("comment"),
 		emoji: varchar("emoji", { length: 20 }),
 		color: varchar("color", { length: 20 }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.userId, table.songId] }),
@@ -232,9 +232,9 @@ export const posts = pgTable(
 			.notNull()
 			.references(() => songs.id, { onDelete: "cascade" }),
 		content: text("content").notNull(),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
-		updatedAt: timestamp("updated_at").notNull().defaultNow(),
-		deletedAt: timestamp("deleted_at"),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+		deletedAt: timestamp("deleted_at", { withTimezone: true }),
 	},
 	(table) => [
 		index("idx_posts_user_id").on(table.userId),
@@ -254,7 +254,7 @@ export const postLikes = pgTable(
 		postId: uuid("post_id")
 			.notNull()
 			.references(() => posts.id, { onDelete: "cascade" }),
-		createdAt: timestamp("created_at").notNull().defaultNow(),
+		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 	},
 	(table) => [
 		primaryKey({ columns: [table.userId, table.postId] }),
