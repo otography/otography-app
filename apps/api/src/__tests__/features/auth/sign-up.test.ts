@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockCreateSessionCookie } from "../../setup";
+import { mockCreateSessionCookie, mockVerifyIdToken } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 vi.mock("../../../shared/firebase-rest", () => ({
@@ -14,17 +14,26 @@ vi.mock("../../../shared/db", () => ({
 import { signUpWithPassword } from "../../../shared/firebase-rest";
 import { getDb } from "../../../shared/db";
 
+// withRls が db.transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
+const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+	vi.mocked(getDb).mockReturnValue({
+		transaction: vi.fn(async (fn) => fn(txMethods)),
+	} as never);
+};
+
+const defaultTx = {
+	insert: vi.fn(() => ({
+		values: vi.fn(() => ({
+			onConflictDoNothing: vi.fn().mockResolvedValue([]),
+		})),
+	})),
+	execute: vi.fn().mockResolvedValue([]),
+};
+
 describe("POST /api/auth/sign-up", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-
-		vi.mocked(getDb).mockReturnValue({
-			insert: vi.fn(() => ({
-				values: vi.fn(() => ({
-					onConflictDoNothing: vi.fn().mockResolvedValue([]),
-				})),
-			})),
-		} as never);
+		mockDbWithTransaction(defaultTx);
 	});
 
 	describe("error passthrough", () => {
@@ -68,14 +77,18 @@ describe("POST /api/auth/sign-up", () => {
 				expiresIn: "3600",
 				refreshToken: "test-refresh",
 			});
-
-			vi.mocked(getDb).mockReturnValue({
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
+			});
+			mockDbWithTransaction({
 				insert: vi.fn(() => ({
 					values: vi.fn(() => ({
 						onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
 					})),
 				})),
-			} as never);
+				execute: vi.fn().mockResolvedValue([]),
+			});
 
 			const res = await testRequest("/api/auth/sign-up", {
 				method: "POST",
@@ -92,6 +105,10 @@ describe("POST /api/auth/sign-up", () => {
 				localId: "user123",
 				expiresIn: "3600",
 				refreshToken: "test-refresh",
+			});
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
 			});
 			mockCreateSessionCookie.mockRejectedValue(new Error("Firebase error"));
 
@@ -112,6 +129,10 @@ describe("POST /api/auth/sign-up", () => {
 				expiresIn: "3600",
 				refreshToken: "test-refresh",
 				isNewUser: true,
+			});
+			mockVerifyIdToken.mockResolvedValue({
+				sub: "user123",
+				email: "test@example.com",
 			});
 			mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
 

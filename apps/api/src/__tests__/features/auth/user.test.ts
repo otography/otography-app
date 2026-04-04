@@ -12,32 +12,16 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { getDb } from "../../../shared/db";
 
+// withRls が db.transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
+const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+	vi.mocked(getDb).mockReturnValue({
+		transaction: vi.fn(async (fn) => fn(txMethods)),
+	} as never);
+};
+
 describe("GET /api/user", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-
-		vi.mocked(getDb).mockReturnValue({
-			insert: vi.fn(() => ({
-				values: vi.fn(() => ({
-					onConflictDoUpdate: vi.fn(() => ({
-						returning: vi.fn().mockResolvedValue([
-							{
-								id: "uuid-user",
-								firebaseId: "user123",
-								username: "test",
-								bio: null,
-								birthplace: null,
-								birthyear: null,
-								gender: null,
-								createdAt: new Date("2026-01-01T00:00:00.000Z"),
-								updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-								deletedAt: null,
-							},
-						]),
-					})),
-				})),
-			})),
-		} as never);
 	});
 
 	it("returns 401 when no session cookie is present", async () => {
@@ -64,6 +48,29 @@ describe("GET /api/user", () => {
 			name: "Test User",
 			picture: "https://example.com/photo.jpg",
 		});
+		mockDbWithTransaction({
+			insert: vi.fn(() => ({
+				values: vi.fn(() => ({
+					onConflictDoUpdate: vi.fn(() => ({
+						returning: vi.fn().mockResolvedValue([
+							{
+								id: "uuid-user",
+								firebaseId: "user123",
+								username: "test",
+								bio: null,
+								birthplace: null,
+								birthyear: null,
+								gender: null,
+								createdAt: new Date("2026-01-01T00:00:00.000Z"),
+								updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+								deletedAt: null,
+							},
+						]),
+					})),
+				})),
+			})),
+			execute: vi.fn().mockResolvedValue([]),
+		});
 
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },
@@ -86,7 +93,7 @@ describe("GET /api/user", () => {
 			sub: "user123",
 			email: "test@example.com",
 		});
-		vi.mocked(getDb).mockReturnValue({
+		mockDbWithTransaction({
 			insert: vi.fn(() => ({
 				values: vi.fn(() => ({
 					onConflictDoUpdate: vi.fn(() => ({
@@ -94,7 +101,8 @@ describe("GET /api/user", () => {
 					})),
 				})),
 			})),
-		} as never);
+			execute: vi.fn().mockResolvedValue([]),
+		});
 
 		const res = await testRequest("/api/user", {
 			cookie: { otography_session: "valid-session" },

@@ -40,6 +40,10 @@ export async function withRls<T>(
 		);
 		if (roleResult instanceof Error) return roleResult;
 
-		return fn(tx);
+		try {
+			return await fn(tx);
+		} catch (e) {
+			return new RlsError({ message: "Transaction failed.", cause: e });
+		}
 	});
 }

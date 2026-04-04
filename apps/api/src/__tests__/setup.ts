@@ -19,12 +19,14 @@ vi.mock("firebase-admin/app", () => ({
 const mockVerifySessionCookie = vi.fn();
 const mockCreateSessionCookie = vi.fn();
 const mockRevokeRefreshTokens = vi.fn();
+const mockVerifyIdToken = vi.fn();
 
 vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	getAuth: vi.fn(() => ({
 		verifySessionCookie: mockVerifySessionCookie,
 		createSessionCookie: mockCreateSessionCookie,
 		revokeRefreshTokens: mockRevokeRefreshTokens,
+		verifyIdToken: mockVerifyIdToken,
 	})),
 	FirebaseAuthError: class extends Error {
 		code: string;
@@ -36,4 +38,9 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
 	},
 }));
 
-export { mockCreateSessionCookie, mockRevokeRefreshTokens, mockVerifySessionCookie };
+export {
+	mockCreateSessionCookie,
+	mockRevokeRefreshTokens,
+	mockVerifyIdToken,
+	mockVerifySessionCookie,
+};
