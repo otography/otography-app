@@ -26,8 +26,9 @@
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import type { Context } from "hono";
+import { env } from "hono/adapter";
 import postgres from "postgres";
-import { getEnv } from "../../env";
+import type { ServerEnv } from "../../server-env";
 import * as schema from "./schema";
 
 const createDb = (connectionString: string) => {
@@ -52,8 +53,8 @@ export const getDb = (c: Context) => {
 		return globalThis.__otography_db__;
 	}
 
-	const env = getEnv(c);
-	const db = createDb(env.DATABASE_URL);
+	const { DATABASE_URL } = env<ServerEnv>(c);
+	const db = createDb(DATABASE_URL);
 	globalThis.__otography_db__ = db;
 	return db;
 };

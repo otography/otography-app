@@ -1,14 +1,15 @@
 import { Hono } from "hono";
+import { env } from "hono/adapter";
 import { cors } from "hono/cors";
 import { auth } from "./features/auth";
-import { getBootEnv, getEnv } from "./env";
+import type { ServerEnv } from "./server-env";
 import { authSessionMiddleware } from "./shared/middleware";
 
 const app = new Hono()
 	.use("/api/*", async (c, next) => {
-		const env = getEnv(c);
+		const { APP_FRONTEND_URL } = env<ServerEnv>(c);
 		const middleware = cors({
-			origin: env.APP_FRONTEND_URL,
+			origin: APP_FRONTEND_URL,
 			allowHeaders: ["Content-Type"],
 			allowMethods: ["GET", "POST", "OPTIONS"],
 			credentials: true,
@@ -20,7 +21,7 @@ const app = new Hono()
 	.route("/", auth)
 	.get("/", (c) => c.text("Hello Hono!"));
 
-const port = getBootEnv().PORT;
+const port = Number(process.env.PORT) || 3001;
 
 export default {
 	port,
