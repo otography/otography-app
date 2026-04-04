@@ -1,11 +1,9 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
-import type { Context } from "hono";
 import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
 
 export async function withRls<T>(
-	c: Context,
 	claims: DecodedIdToken,
 	fn: (tx: DatabaseTransaction) => Promise<T>,
 ): Promise<T> {

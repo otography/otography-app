@@ -1,5 +1,4 @@
 import { type } from "arktype";
-import type { Context } from "hono";
 import { AuthRestError } from "@repo/errors";
 
 const FIREBASE_IDENTITY_TOOLKIT_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
@@ -66,10 +65,13 @@ const createAuthRestError = (
 	});
 };
 
-const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<string, unknown>) => {
-	const { FIREBASE_API_KEY } = c.env;
+const requestFirebaseAuth = async (
+	firebaseApiKey: string,
+	endpoint: string,
+	body: Record<string, unknown>,
+) => {
 	const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/${endpoint}`);
-	url.searchParams.set("key", FIREBASE_API_KEY);
+	url.searchParams.set("key", firebaseApiKey);
 
 	const response = await fetch(url, {
 		method: "POST",
@@ -102,16 +104,24 @@ const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<st
 	return parsedPayload;
 };
 
-export const signInWithPassword = async (c: Context, email: string, password: string) => {
-	return requestFirebaseAuth(c, "accounts:signInWithPassword", {
+export const signInWithPassword = async (
+	firebaseApiKey: string,
+	email: string,
+	password: string,
+) => {
+	return requestFirebaseAuth(firebaseApiKey, "accounts:signInWithPassword", {
 		email,
 		password,
 		returnSecureToken: true,
 	});
 };
 
-export const signUpWithPassword = async (c: Context, email: string, password: string) => {
-	return requestFirebaseAuth(c, "accounts:signUp", {
+export const signUpWithPassword = async (
+	firebaseApiKey: string,
+	email: string,
+	password: string,
+) => {
+	return requestFirebaseAuth(firebaseApiKey, "accounts:signUp", {
 		email,
 		password,
 		returnSecureToken: true,

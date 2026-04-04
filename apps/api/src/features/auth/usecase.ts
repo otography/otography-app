@@ -1,19 +1,13 @@
-import type { Context } from "hono";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
-import {
-	clearSessionCookie,
-	SESSION_COOKIE_MAX_AGE_MS,
-	setSessionCookie,
-} from "../../shared/session";
+import { SESSION_COOKIE_MAX_AGE_MS } from "../../shared/session";
 import { withRls } from "../../shared/db/rls";
-import { getAuthSession } from "../../shared/middleware";
 import { insertUser, upsertUser } from "./repository";
 import { normalizeUsername } from "./utils";
 
-const issueSessionCookie = async (c: Context, idToken: string) => {
+const createSessionCookie = async (idToken: string) => {
 	const sessionCookie = await firebaseAuth
 		.createSessionCookie(idToken, {
 			expiresIn: SESSION_COOKIE_MAX_AGE_MS,
@@ -22,13 +16,13 @@ const issueSessionCookie = async (c: Context, idToken: string) => {
 			throw AuthError.fromFirebase(e, "Session creation failed.", 502);
 		});
 
-	setSessionCookie(c, sessionCookie);
+	return sessionCookie;
 };
 
-const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: string) => {
+const registerAppUser = async (claims: DecodedIdToken, email?: string) => {
 	const username = normalizeUsername(email, claims.sub);
 	try {
-		return await withRls(c, claims, async (tx) => {
+		return await withRls(claims, async (tx) => {
 			return insertUser(tx, { firebaseId: claims.sub, username });
 		});
 	} catch (e) {
@@ -41,14 +35,14 @@ const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: strin
 	}
 };
 
-export const signIn = async (c: Context, email: string, password: string) => {
-	const result = await signInWithPassword(c, email, password);
-	await issueSessionCookie(c, result.idToken);
-	return c.json({ message: "Signed in successfully." }, 200);
+export const signIn = async (firebaseApiKey: string, email: string, password: string) => {
+	const result = await signInWithPassword(firebaseApiKey, email, password);
+	const sessionCookie = await createSessionCookie(result.idToken);
+	return { sessionCookie };
 };
 
-export const signUp = async (c: Context, email: string, password: string) => {
-	const signUpResult = await signUpWithPassword(c, email, password);
+export const signUp = async (firebaseApiKey: string, email: string, password: string) => {
+	const signUpResult = await signUpWithPassword(firebaseApiKey, email, password);
 
 	// ID トークンを検証して DecodedIdToken を取得
 	const claims = await firebaseAuth.verifyIdToken(signUpResult.idToken).catch(() => {
@@ -59,18 +53,13 @@ export const signUp = async (c: Context, email: string, password: string) => {
 		});
 	});
 
-	await registerAppUser(c, claims, signUpResult.email);
-	await issueSessionCookie(c, signUpResult.idToken);
+	await registerAppUser(claims, signUpResult.email);
+	const sessionCookie = await createSessionCookie(signUpResult.idToken);
 
-	return c.json({ message: "Account created successfully." }, 201);
+	return { sessionCookie };
 };
 
-export const getProfile = async (c: Context) => {
-	const session = getAuthSession(c);
-	if (!session) {
-		return c.json({ message: "You are not logged in." }, 401);
-	}
-
+export const getProfile = async (session: DecodedIdToken) => {
 	const userId = session.sub;
 	if (!userId) {
 		throw new AuthError({
@@ -87,7 +76,7 @@ export const getProfile = async (c: Context) => {
 
 	const userResult = await (async () => {
 		try {
-			return await withRls(c, session, async (tx) => {
+			return await withRls(session, async (tx) => {
 				return upsertUser(tx, {
 					firebaseId: userId,
 					username: normalizeUsername(email ?? undefined, userId),
@@ -112,24 +101,20 @@ export const getProfile = async (c: Context) => {
 		});
 	}
 
-	const profile = {
-		id: user.firebaseId,
-		email,
-		displayName,
-		photoUrl,
-		createdAt: user.createdAt,
-		updatedAt: user.updatedAt,
-	};
-
-	return c.json({
-		message: "You are logged in!",
-		profile,
+	return {
+		profile: {
+			id: user.firebaseId,
+			email,
+			displayName,
+			photoUrl,
+			createdAt: user.createdAt,
+			updatedAt: user.updatedAt,
+		},
 		userId,
-	});
+	};
 };
 
-export const signOut = async (c: Context) => {
-	const session = getAuthSession(c);
+export const signOut = async (session: DecodedIdToken | null) => {
 	const userId = session?.sub ?? null;
 
 	if (userId) {
@@ -140,13 +125,11 @@ export const signOut = async (c: Context) => {
 		if (revokeResult instanceof Error) {
 			// セッションが既に無効な場合はローカルでサインアウト成功とする
 			if (revokeResult.clearCookie) {
-				clearSessionCookie(c);
-				return c.body(null, 204);
+				return { clearSession: true };
 			}
 			throw revokeResult;
 		}
 	}
 
-	clearSessionCookie(c);
-	return c.body(null, 204);
+	return { clearSession: true };
 };
