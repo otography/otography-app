@@ -1,7 +1,8 @@
 import { type } from "arktype";
 import type { Context } from "hono";
+import { env } from "hono/adapter";
 import { AuthRestError } from "@repo/errors";
-import { getEnv } from "../env";
+import type { ServerEnv } from "../server-env";
 
 const FIREBASE_IDENTITY_TOOLKIT_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
 
@@ -68,9 +69,9 @@ const createAuthRestError = (
 };
 
 const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<string, unknown>) => {
-	const env = getEnv(c);
+	const { FIREBASE_API_KEY } = env<ServerEnv>(c);
 	const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/${endpoint}`);
-	url.searchParams.set("key", env.FIREBASE_API_KEY);
+	url.searchParams.set("key", FIREBASE_API_KEY);
 
 	const response = await fetch(url, {
 		method: "POST",
@@ -78,25 +79,26 @@ const requestFirebaseAuth = async (c: Context, endpoint: string, body: Record<st
 			"Content-Type": "application/json",
 		},
 		body: JSON.stringify(body),
-	}).catch((e) => createAuthRestError(undefined, 503, e));
-	if (response instanceof Error) return response;
+	}).catch((e) => {
+		throw createAuthRestError(undefined, 503, e);
+	});
 
 	const payload = await (response.json() as Promise<unknown>).catch(() => null);
 
 	if (!response.ok) {
 		const parsedError = firebaseErrorResponseSchema(payload);
 		const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
-		return createAuthRestError(code);
+		throw createAuthRestError(code);
 	}
 
 	if (!payload) {
-		return createAuthRestError(undefined, 502);
+		throw createAuthRestError(undefined, 502);
 	}
 
 	const parsedPayload = firebaseEmailPasswordAuthResponseSchema(payload);
 
 	if (parsedPayload instanceof type.errors) {
-		return createAuthRestError(undefined, 502);
+		throw createAuthRestError(undefined, 502);
 	}
 
 	return parsedPayload;

@@ -1,6 +1,3 @@
-import { createEnv } from "@t3-oss/env-core";
-import { type } from "arktype";
-
 /**
  * Drizzle Kit 用の環境変数
  *
@@ -9,11 +6,13 @@ import { type } from "arktype";
  * DB 操作に不要なアプリ実行用の環境変数を設定せずに
  * drizzle コマンドを実行可能にする。
  */
-export const env = createEnv({
-	server: {
-		DATABASE_URL: type("string.url"),
-		DATABASE_DIRECT_URL: type("string.url"),
-	},
-	runtimeEnv: process.env,
-	emptyStringAsUndefined: true,
-});
+
+interface DrizzleEnv {
+	DATABASE_URL: string;
+	DATABASE_DIRECT_URL: string;
+}
+
+export const env: DrizzleEnv = {
+	DATABASE_URL: process.env.DATABASE_URL!,
+	DATABASE_DIRECT_URL: process.env.DATABASE_DIRECT_URL!,
+};
