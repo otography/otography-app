@@ -8,8 +8,15 @@ process.env.FIREBASE_PRIVATE_KEY =
 process.env.FIREBASE_PROJECT_ID = "test-project";
 process.env.APP_FRONTEND_URL = "http://localhost:3000";
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
-process.env.PORT = "3001";
-process.env.NODE_ENV = "test";
+
+vi.mock("cloudflare:workers", () => ({
+	env: {
+		FIREBASE_CLIENT_EMAIL: "test@example.com",
+		FIREBASE_PRIVATE_KEY:
+			"-----BEGIN RSA PRIVATE KEY-----\ntest-key\n-----END RSA PRIVATE KEY-----",
+		FIREBASE_PROJECT_ID: "test-project",
+	},
+}));
 
 vi.mock("firebase-admin/app", () => ({
 	initializeApp: vi.fn(() => ({})),
