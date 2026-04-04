@@ -31,6 +31,7 @@
 		"postgres": "^3.4.8"
 	},
 	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "^0.14.1",
 		"@repo/typescript-config": "workspace:*",
 		"@types/bun": "latest",
 		"@types/node": "^25.5.2",
