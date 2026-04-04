@@ -1,20 +1,21 @@
 import type { Context } from "hono";
+import { env } from "hono/adapter";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { getEnv } from "../env";
+import type { ServerEnv } from "../server-env";
 
 const SESSION_COOKIE_NAME = "otography_session";
 export const SESSION_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 5;
 
 const createSessionCookieOptions = (c: Context) => {
-	const env = getEnv(c);
+	const { AUTH_COOKIE_DOMAIN, NODE_ENV } = env<ServerEnv>(c);
 
 	return {
-		domain: env.AUTH_COOKIE_DOMAIN || undefined,
+		domain: AUTH_COOKIE_DOMAIN || undefined,
 		httpOnly: true,
 		maxAge: SESSION_COOKIE_MAX_AGE_MS / 1000,
 		path: "/",
 		sameSite: "Lax" as const,
-		secure: env.NODE_ENV === "production",
+		secure: NODE_ENV === "production",
 	};
 };
 
@@ -27,10 +28,10 @@ export const setSessionCookie = (c: Context, sessionCookie: string) => {
 };
 
 export const clearSessionCookie = (c: Context) => {
-	const env = getEnv(c);
+	const { AUTH_COOKIE_DOMAIN } = env<ServerEnv>(c);
 
 	deleteCookie(c, SESSION_COOKIE_NAME, {
-		domain: env.AUTH_COOKIE_DOMAIN || undefined,
+		domain: AUTH_COOKIE_DOMAIN || undefined,
 		path: "/",
 	});
 };

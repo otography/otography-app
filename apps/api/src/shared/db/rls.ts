@@ -8,42 +8,28 @@ export async function withRls<T>(
 	c: Context,
 	claims: DecodedIdToken,
 	fn: (tx: DatabaseTransaction) => Promise<T>,
-): Promise<RlsError | T> {
+): Promise<T> {
 	const db = getDb(c);
 
 	return db.transaction(async (tx) => {
 		const userId = typeof claims.sub === "string" ? claims.sub : null;
 
 		if (!userId) {
-			return new RlsError({ message: "Missing user identifier in session." });
+			throw new RlsError({ message: "Missing user identifier in session." });
 		}
 
 		const jwtClaims = JSON.stringify({ sub: userId });
 
-		const claimsResult = await tx
+		await tx
 			.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
-			.catch(
-				(e) =>
-					new RlsError({
-						message: "Failed to set JWT claims for RLS.",
-						cause: e,
-					}),
-			);
-		if (claimsResult instanceof Error) return claimsResult;
+			.catch((e) => {
+				throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
+			});
 
-		const roleResult = await tx.execute(sql.raw("set local role authenticated")).catch(
-			(e) =>
-				new RlsError({
-					message: "Failed to switch to 'authenticated' role.",
-					cause: e,
-				}),
-		);
-		if (roleResult instanceof Error) return roleResult;
+		await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
+			throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
+		});
 
-		try {
-			return await fn(tx);
-		} catch (e) {
-			return new RlsError({ message: "Transaction failed.", cause: e });
-		}
+		return await fn(tx);
 	});
 }

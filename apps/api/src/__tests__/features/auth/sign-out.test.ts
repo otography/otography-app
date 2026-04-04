@@ -51,6 +51,6 @@ describe("POST /api/auth/sign-out", () => {
 		});
 
 		expect(res.status).toBe(502);
-		expect(await res.json()).toEqual({ message: "Failed to sign you out. Please try again." });
+		expect(await res.json()).toEqual({ message: "Failed to sign you out." });
 	});
 });

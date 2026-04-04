@@ -18,63 +18,49 @@ const issueSessionCookie = async (c: Context, idToken: string) => {
 		.createSessionCookie(idToken, {
 			expiresIn: SESSION_COOKIE_MAX_AGE_MS,
 		})
-		.catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
-	if (sessionCookie instanceof Error) return sessionCookie;
+		.catch((e) => {
+			throw AuthError.fromFirebase(e, "Session creation failed.", 502);
+		});
 
 	setSessionCookie(c, sessionCookie);
 };
 
 const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: string) => {
 	const username = normalizeUsername(email, claims.sub);
-
-	const result = await withRls(c, claims, async (tx) => {
-		return insertUser(tx, { firebaseId: claims.sub, username });
-	});
-
-	if (result instanceof Error) {
-		return new Error("Failed to create user record.");
+	try {
+		return await withRls(c, claims, async (tx) => {
+			return insertUser(tx, { firebaseId: claims.sub, username });
+		});
+	} catch (e) {
+		throw new AuthError({
+			message: "Failed to create user record.",
+			code: "registration-failed",
+			statusCode: 500,
+			cause: e,
+		});
 	}
-
-	return result;
 };
 
 export const signIn = async (c: Context, email: string, password: string) => {
 	const result = await signInWithPassword(c, email, password);
-	if (result instanceof Error) {
-		return c.json({ message: result.message }, result.statusCode);
-	}
-
-	const sessionResult = await issueSessionCookie(c, result.idToken);
-	if (sessionResult instanceof Error) {
-		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
-	}
-
+	await issueSessionCookie(c, result.idToken);
 	return c.json({ message: "Signed in successfully." }, 200);
 };
 
 export const signUp = async (c: Context, email: string, password: string) => {
 	const signUpResult = await signUpWithPassword(c, email, password);
-	if (signUpResult instanceof Error) {
-		return c.json({ message: signUpResult.message }, signUpResult.statusCode);
-	}
 
 	// ID トークンを検証して DecodedIdToken を取得
-	const claims = await firebaseAuth
-		.verifyIdToken(signUpResult.idToken)
-		.catch(() => new Error("Failed to verify sign-up token."));
-	if (claims instanceof Error) {
-		return c.json({ message: claims.message }, 401);
-	}
+	const claims = await firebaseAuth.verifyIdToken(signUpResult.idToken).catch(() => {
+		throw new AuthError({
+			message: "Failed to verify sign-up token.",
+			code: "token-verification-failed",
+			statusCode: 401,
+		});
+	});
 
-	const registerResult = await registerAppUser(c, claims, signUpResult.email);
-	if (registerResult instanceof Error) {
-		return c.json({ message: "Failed to register user profile." }, 500);
-	}
-
-	const sessionResult = await issueSessionCookie(c, signUpResult.idToken);
-	if (sessionResult instanceof Error) {
-		return c.json({ message: sessionResult.message }, sessionResult.statusCode);
-	}
+	await registerAppUser(c, claims, signUpResult.email);
+	await issueSessionCookie(c, signUpResult.idToken);
 
 	return c.json({ message: "Account created successfully." }, 201);
 };
@@ -87,28 +73,43 @@ export const getProfile = async (c: Context) => {
 
 	const userId = session.sub;
 	if (!userId) {
-		clearSessionCookie(c);
-		return c.json({ message: "The current session is invalid." }, 401);
+		throw new AuthError({
+			message: "The current session is invalid.",
+			code: "invalid-session",
+			statusCode: 401,
+			clearCookie: true,
+		});
 	}
 
 	const email = session.email ?? null;
 	const displayName = session.name ?? null;
 	const photoUrl = session.picture ?? null;
 
-	const userResult = await withRls(c, session, async (tx) => {
-		return upsertUser(tx, {
-			firebaseId: userId,
-			username: normalizeUsername(email ?? undefined, userId),
-		});
-	});
-
-	if (userResult instanceof Error) {
-		return c.json({ message: "Failed to fetch user profile." }, 500);
-	}
+	const userResult = await (async () => {
+		try {
+			return await withRls(c, session, async (tx) => {
+				return upsertUser(tx, {
+					firebaseId: userId,
+					username: normalizeUsername(email ?? undefined, userId),
+				});
+			});
+		} catch (e) {
+			throw new AuthError({
+				message: "Failed to fetch user profile.",
+				code: "db-error",
+				statusCode: 500,
+				cause: e,
+			});
+		}
+	})();
 
 	const [user] = userResult;
 	if (!user) {
-		return c.json({ message: "Failed to fetch user profile." }, 500);
+		throw new AuthError({
+			message: "Failed to fetch user profile.",
+			code: "user-not-found",
+			statusCode: 500,
+		});
 	}
 
 	const profile = {
@@ -137,15 +138,12 @@ export const signOut = async (c: Context) => {
 			.catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
 
 		if (revokeResult instanceof Error) {
+			// セッションが既に無効な場合はローカルでサインアウト成功とする
 			if (revokeResult.clearCookie) {
 				clearSessionCookie(c);
 				return c.body(null, 204);
 			}
-
-			return c.json(
-				{ message: "Failed to sign you out. Please try again." },
-				revokeResult.statusCode,
-			);
+			throw revokeResult;
 		}
 	}
 

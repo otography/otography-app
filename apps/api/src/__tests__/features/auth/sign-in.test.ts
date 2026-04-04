@@ -19,9 +19,9 @@ describe("POST /api/auth/sign-in", () => {
 	});
 
 	describe("error passthrough", () => {
-		it("returns 401 when signInWithPassword returns AuthRestError", async () => {
+		it("returns 401 when signInWithPassword throws AuthRestError", async () => {
 			const { AuthRestError } = await import("@repo/errors");
-			vi.mocked(signInWithPassword).mockResolvedValue(
+			vi.mocked(signInWithPassword).mockRejectedValue(
 				new AuthRestError({ message: "Invalid email address or password.", statusCode: 401 }),
 			);
 
@@ -36,7 +36,7 @@ describe("POST /api/auth/sign-in", () => {
 
 		it("returns 409 when email already exists", async () => {
 			const { AuthRestError } = await import("@repo/errors");
-			vi.mocked(signInWithPassword).mockResolvedValue(
+			vi.mocked(signInWithPassword).mockRejectedValue(
 				new AuthRestError({
 					message: "This email address is already registered.",
 					statusCode: 409,
