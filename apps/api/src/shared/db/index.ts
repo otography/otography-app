@@ -42,7 +42,8 @@ const createDb = (connectionString: string) => {
 	});
 };
 
-type Database = ReturnType<typeof createDb>;
+export type Database = ReturnType<typeof createDb>;
+export type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 declare global {
 	var __otography_db__: Database | undefined;

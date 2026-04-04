@@ -1,9 +1,6 @@
 import { sql } from "drizzle-orm";
 import { users } from "../../shared/db/schema";
-import { getDb } from "../../shared/db";
-
-type Database = ReturnType<typeof getDb>;
-type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
+import { type DatabaseTransaction } from "../../shared/db";
 
 // firebaseId でユーザーを登録（重複時は無視）
 export const insertUser = async (
