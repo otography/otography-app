@@ -2,6 +2,7 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { firebaseAuth } from "../../shared/firebase-auth";
 import { AuthError } from "@repo/errors/server";
@@ -11,7 +12,7 @@ import {
 	SESSION_COOKIE_MAX_AGE_MS,
 	setSessionCookie,
 } from "../../shared/session";
-import { getDb } from "../../shared/db";
+import { withRls } from "../../shared/db/rls";
 import { users } from "../../shared/db/schema";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 
@@ -71,20 +72,24 @@ const normalizeUsername = (email: string | undefined, localId: string) => {
 	return normalized.length > 0 ? normalized : fallback;
 };
 
-const registerAppUser = async (c: Context, localId: string, email?: string) => {
-	const db = getDb(c);
-	const username = normalizeUsername(email, localId);
+const registerAppUser = async (c: Context, claims: DecodedIdToken, email?: string) => {
+	const username = normalizeUsername(email, claims.sub);
 
-	const result = await db
-		.insert(users)
-		.values({
-			firebaseId: localId,
-			username,
-		})
-		.onConflictDoNothing({
-			target: users.firebaseId,
-		})
-		.catch(() => new Error("Failed to create user record."));
+	const result = await withRls(c, claims, async (tx) => {
+		return tx
+			.insert(users)
+			.values({
+				firebaseId: claims.sub,
+				username,
+			})
+			.onConflictDoNothing({
+				target: users.firebaseId,
+			});
+	});
+
+	if (result instanceof Error) {
+		return new Error("Failed to create user record.");
+	}
 
 	return result;
 };
@@ -115,7 +120,15 @@ const signUpHandler = async (c: Context, email: string, password: string) => {
 		return c.json({ message: signUpResult.message }, signUpResult.statusCode);
 	}
 
-	const registerResult = await registerAppUser(c, signUpResult.localId, signUpResult.email);
+	// ID トークンを検証して DecodedIdToken を取得
+	const claims = await firebaseAuth
+		.verifyIdToken(signUpResult.idToken)
+		.catch(() => new Error("Failed to verify sign-up token."));
+	if (claims instanceof Error) {
+		return c.json({ message: claims.message }, 401);
+	}
+
+	const registerResult = await registerAppUser(c, claims, signUpResult.email);
 	if (registerResult instanceof Error) {
 		return c.json({ message: "Failed to register user profile." }, 500);
 	}
@@ -139,22 +152,23 @@ const userHandler = async (c: Context) => {
 	const email = getStringClaim(session, "email");
 	const displayName = getStringClaim(session, "name");
 	const photoUrl = getStringClaim(session, "picture");
-	const db = getDb(c);
 
-	const userResult = await db
-		.insert(users)
-		.values({
-			firebaseId: userId,
-			username: normalizeUsername(email ?? undefined, userId),
-		})
-		.onConflictDoUpdate({
-			target: users.firebaseId,
-			set: {
-				updatedAt: sql`now()`,
-			},
-		})
-		.returning()
-		.catch(() => new Error("Failed to fetch user profile."));
+	const userResult = await withRls(c, session, async (tx) => {
+		return tx
+			.insert(users)
+			.values({
+				firebaseId: userId,
+				username: normalizeUsername(email ?? undefined, userId),
+			})
+			.onConflictDoUpdate({
+				target: users.firebaseId,
+				set: {
+					updatedAt: sql`now()`,
+				},
+			})
+			.returning();
+	});
+
 	if (userResult instanceof Error) {
 		return c.json({ message: "Failed to fetch user profile." }, 500);
 	}
