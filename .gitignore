@@ -40,5 +40,8 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Local PostgreSQL data
+.data/
+
 # opensrc - source code for packages
 opensrc/
