@@ -107,13 +107,13 @@
           # データ削除
           echo "Resetting database..."
           rm -rf "$DATA_DIR"
-          echo "Database reset complete. Run 'db:start' to reinitialize."
+          echo "Database reset complete. Run 'db-start' to reinitialize."
         '';
 
         psqlScript = pkgs.writeShellScript "db-psql" ''
           set -euo pipefail
           exec ${pkgs.postgresql_15}/bin/psql \
-            -h localhost -p 54322 -U postgres "$@"
+            -h localhost -p ${port} -U postgres "$@"
         '';
       in
       {

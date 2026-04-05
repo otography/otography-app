@@ -10,15 +10,15 @@ pull:
 
 # ローカルPostgreSQLを起動
 db-start:
-    nix run .#db:start
+    nix run .#db-start
 
 # ローカルPostgreSQLを停止
 db-stop:
-    nix run .#db:stop
+    nix run .#db-stop
 
 # ローカルPostgreSQLをリセット (データ全削除)
 db-reset:
-    nix run .#db:reset
+    nix run .#db-reset
 
 # psqlでローカルPostgreSQLに接続
 db-psql *args="":
@@ -52,7 +52,7 @@ api:
 web:
     bun run dev --filter=web
 
-# セットアップ: pull -> install -> db:start -> db:migrate -> dev
+# セットアップ: pull -> install -> db-start -> db-migrate -> dev
 setup:
     just pull
     bun install
