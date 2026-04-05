@@ -21,7 +21,6 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@dotenvx/dotenvx": "^1.59.1",
 		"@hono/arktype-validator": "^2.0.1",
 		"@repo/errors": "workspace:*",
 		"@repo/firebase-auth-rest": "workspace:*",
