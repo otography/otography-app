@@ -9,10 +9,10 @@
 		"dev": "wrangler dev",
 		"deploy": "wrangler deploy --minify",
 		"cf:typegen": "wrangler types --env-interface CloudflareBindings",
-		"db:generate": "dotenvx run -- bunx drizzle-kit generate",
-		"db:migrate": "dotenvx run -- bunx drizzle-kit migrate",
-		"db:push": "dotenvx run -- bunx drizzle-kit push",
-		"db:studio": "dotenvx run -- bunx drizzle-kit studio",
+		"db:generate": "DATABASE_URL=postgresql://postgres@localhost:54322/postgres DATABASE_DIRECT_URL=postgresql://postgres@localhost:54322/postgres bunx drizzle-kit generate",
+		"db:migrate": "DATABASE_URL=postgresql://postgres@localhost:54322/postgres DATABASE_DIRECT_URL=postgresql://postgres@localhost:54322/postgres bunx drizzle-kit migrate",
+		"db:push": "DATABASE_URL=postgresql://postgres@localhost:54322/postgres DATABASE_DIRECT_URL=postgresql://postgres@localhost:54322/postgres bunx drizzle-kit push",
+		"db:studio": "DATABASE_URL=postgresql://postgres@localhost:54322/postgres DATABASE_DIRECT_URL=postgresql://postgres@localhost:54322/postgres bunx drizzle-kit studio",
 		"lint": "oxlint",
 		"lint:type-aware": "oxlint --type-aware",
 		"lint:github": "oxlint --format=github",
@@ -21,7 +21,6 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@dotenvx/dotenvx": "^1.59.1",
 		"@hono/arktype-validator": "^2.0.1",
 		"@repo/errors": "workspace:*",
 		"@repo/firebase-auth-rest": "workspace:*",

@@ -9,8 +9,6 @@
 		"AUTH_COOKIE_DOMAIN": "localhost",
 		"DATABASE_URL": "postgresql://test:test@localhost:5432/test",
 		"FIREBASE_API_KEY": "AIzaSyDqxumBWwkyWSIm3LOkrxBF5JQpqVMElb0",
-		"FIREBASE_CLIENT_EMAIL": "test@example.com",
-		"FIREBASE_PRIVATE_KEY": "-----BEGIN RSA PRIVATE KEY-----\ntest-key\n-----END RSA PRIVATE KEY-----",
 		"FIREBASE_PROJECT_ID": "otography-676f1",
 	},
 }
