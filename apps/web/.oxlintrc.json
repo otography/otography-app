@@ -1,12 +1,12 @@
 {
-	"extends": ["../../.oxlintrc.json"],
-	"plugins": ["react", "react-perf", "nextjs", "promise", "jsdoc"],
-	"categories": {
-		"correctness": "error",
-		"suspicious": "warn"
-	},
-	"rules": {
-		"react/react-in-jsx-scope": "off"
-	},
-	"ignorePatterns": [".next/**", "out/**", "build/**", "next-env.d.ts", "dist/**"]
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": ["react", "react-perf", "nextjs", "promise", "jsdoc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off"
+  },
+  "ignorePatterns": [".next/**", "out/**", "build/**", "next-env.d.ts", "dist/**"]
 }

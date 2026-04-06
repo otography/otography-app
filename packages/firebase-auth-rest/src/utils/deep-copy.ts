@@ -22,7 +22,7 @@
  * @returns A deep copy of the provided object or array.
  */
 export function deepCopy<T>(value: T): T {
-	return deepExtend(undefined, value);
+  return deepExtend(undefined, value);
 }
 
 /**
@@ -41,39 +41,39 @@ export function deepCopy<T>(value: T): T {
  * @returns The target value.
  */
 export function deepExtend(target: any, source: any): any {
-	if (!(source instanceof Object)) {
-		return source;
-	}
+  if (!(source instanceof Object)) {
+    return source;
+  }
 
-	switch (source.constructor) {
-		case Date: {
-			// Treat Dates like scalars; if the target date object had any child
-			// properties - they will be lost!
-			const dateValue = source as any as Date;
-			return new Date(dateValue.getTime());
-		}
-		case Object:
-			if (target === undefined) {
-				target = {};
-			}
-			break;
+  switch (source.constructor) {
+    case Date: {
+      // Treat Dates like scalars; if the target date object had any child
+      // properties - they will be lost!
+      const dateValue = source as any as Date;
+      return new Date(dateValue.getTime());
+    }
+    case Object:
+      if (target === undefined) {
+        target = {};
+      }
+      break;
 
-		case Array:
-			// Always copy the array source and overwrite the target.
-			target = [];
-			break;
+    case Array:
+      // Always copy the array source and overwrite the target.
+      target = [];
+      break;
 
-		default:
-			// Not a plain Object - treat it as a scalar.
-			return source;
-	}
+    default:
+      // Not a plain Object - treat it as a scalar.
+      return source;
+  }
 
-	for (const prop in source) {
-		if (!Object.prototype.hasOwnProperty.call(source, prop)) {
-			continue;
-		}
-		target[prop] = deepExtend(target[prop], source[prop]);
-	}
+  for (const prop in source) {
+    if (!Object.prototype.hasOwnProperty.call(source, prop)) {
+      continue;
+    }
+    target[prop] = deepExtend(target[prop], source[prop]);
+  }
 
-	return target;
+  return target;
 }

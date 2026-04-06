@@ -31,15 +31,15 @@ import { DecodedIdToken } from "./token-verifier";
  * Contains the list of tenants for the current batch and the next page token if available.
  */
 export interface ListTenantsResult {
-	/**
-	 * The list of {@link Tenant} objects for the downloaded batch.
-	 */
-	tenants: Tenant[];
+  /**
+   * The list of {@link Tenant} objects for the downloaded batch.
+   */
+  tenants: Tenant[];
 
-	/**
-	 * The next page token if available. This is needed for the next batch download.
-	 */
-	pageToken?: string;
+  /**
+   * The next page token if available. This is needed for the next batch download.
+   */
+  pageToken?: string;
 }
 
 /**
@@ -60,79 +60,79 @@ export interface ListTenantsResult {
  * {@link TenantManager.authForTenant}.
  */
 export class TenantAwareAuth extends BaseAuth {
-	/**
-	 * The tenant identifier corresponding to this `TenantAwareAuth` instance.
-	 * All calls to the user management APIs, OIDC/SAML provider management APIs, email link
-	 * generation APIs, etc will only be applied within the scope of this tenant.
-	 */
-	public readonly tenantId!: string;
+  /**
+   * The tenant identifier corresponding to this `TenantAwareAuth` instance.
+   * All calls to the user management APIs, OIDC/SAML provider management APIs, email link
+   * generation APIs, etc will only be applied within the scope of this tenant.
+   */
+  public readonly tenantId!: string;
 
-	/**
-	 * The TenantAwareAuth class constructor.
-	 *
-	 * @param app - The app that created this tenant.
-	 * @param tenantId - The corresponding tenant ID.
-	 * @constructor
-	 * @internal
-	 */
-	constructor(app: App, tenantId: string) {
-		super(
-			app,
-			new TenantAwareAuthRequestHandler(app, tenantId),
-			createFirebaseTokenGenerator(app, tenantId),
-		);
-		utils.addReadonlyGetter(this, "tenantId", tenantId);
-	}
+  /**
+   * The TenantAwareAuth class constructor.
+   *
+   * @param app - The app that created this tenant.
+   * @param tenantId - The corresponding tenant ID.
+   * @constructor
+   * @internal
+   */
+  constructor(app: App, tenantId: string) {
+    super(
+      app,
+      new TenantAwareAuthRequestHandler(app, tenantId),
+      createFirebaseTokenGenerator(app, tenantId),
+    );
+    utils.addReadonlyGetter(this, "tenantId", tenantId);
+  }
 
-	/**
-	 * {@inheritdoc BaseAuth.verifyIdToken}
-	 */
-	public verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
-		return super.verifyIdToken(idToken, checkRevoked).then((decodedClaims) => {
-			// Validate tenant ID.
-			if (decodedClaims.firebase.tenant !== this.tenantId) {
-				throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
-			}
-			return decodedClaims;
-		});
-	}
+  /**
+   * {@inheritdoc BaseAuth.verifyIdToken}
+   */
+  public verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
+    return super.verifyIdToken(idToken, checkRevoked).then((decodedClaims) => {
+      // Validate tenant ID.
+      if (decodedClaims.firebase.tenant !== this.tenantId) {
+        throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
+      }
+      return decodedClaims;
+    });
+  }
 
-	/**
-	 * {@inheritdoc BaseAuth.createSessionCookie}
-	 */
-	public createSessionCookie(
-		idToken: string,
-		sessionCookieOptions: SessionCookieOptions,
-	): Promise<string> {
-		// Validate arguments before processing.
-		if (!validator.isNonEmptyString(idToken)) {
-			return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_ID_TOKEN));
-		}
-		if (
-			!validator.isNonNullObject(sessionCookieOptions) ||
-			!validator.isNumber(sessionCookieOptions.expiresIn)
-		) {
-			return Promise.reject(
-				new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION),
-			);
-		}
-		// This will verify the ID token and then match the tenant ID before creating the session cookie.
-		return this.verifyIdToken(idToken).then(() => {
-			return super.createSessionCookie(idToken, sessionCookieOptions);
-		});
-	}
+  /**
+   * {@inheritdoc BaseAuth.createSessionCookie}
+   */
+  public createSessionCookie(
+    idToken: string,
+    sessionCookieOptions: SessionCookieOptions,
+  ): Promise<string> {
+    // Validate arguments before processing.
+    if (!validator.isNonEmptyString(idToken)) {
+      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_ID_TOKEN));
+    }
+    if (
+      !validator.isNonNullObject(sessionCookieOptions) ||
+      !validator.isNumber(sessionCookieOptions.expiresIn)
+    ) {
+      return Promise.reject(
+        new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION),
+      );
+    }
+    // This will verify the ID token and then match the tenant ID before creating the session cookie.
+    return this.verifyIdToken(idToken).then(() => {
+      return super.createSessionCookie(idToken, sessionCookieOptions);
+    });
+  }
 
-	/**
-	 * {@inheritdoc BaseAuth.verifySessionCookie}
-	 */
-	public verifySessionCookie(sessionCookie: string, checkRevoked = false): Promise<DecodedIdToken> {
-		return super.verifySessionCookie(sessionCookie, checkRevoked).then((decodedClaims) => {
-			if (decodedClaims.firebase.tenant !== this.tenantId) {
-				throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
-			}
-			return decodedClaims;
-		});
-	}
+  /**
+   * {@inheritdoc BaseAuth.verifySessionCookie}
+   */
+  public verifySessionCookie(sessionCookie: string, checkRevoked = false): Promise<DecodedIdToken> {
+    return super.verifySessionCookie(sessionCookie, checkRevoked).then((decodedClaims) => {
+      if (decodedClaims.firebase.tenant !== this.tenantId) {
+        throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
+      }
+      return decodedClaims;
+    });
+  }
 }
 
 /**
@@ -147,130 +147,130 @@ export class TenantAwareAuth extends BaseAuth {
  * </ul>
  */
 export class TenantManager {
-	private readonly authRequestHandler: AuthRequestHandler;
-	private readonly tenantsMap: { [key: string]: TenantAwareAuth };
+  private readonly authRequestHandler: AuthRequestHandler;
+  private readonly tenantsMap: { [key: string]: TenantAwareAuth };
 
-	/**
-	 * Initializes a TenantManager instance for a specified FirebaseApp.
-	 *
-	 * @param app - The app for this TenantManager instance.
-	 *
-	 * @constructor
-	 * @internal
-	 */
-	constructor(private readonly app: App) {
-		this.authRequestHandler = new AuthRequestHandler(app);
-		this.tenantsMap = {};
-	}
+  /**
+   * Initializes a TenantManager instance for a specified FirebaseApp.
+   *
+   * @param app - The app for this TenantManager instance.
+   *
+   * @constructor
+   * @internal
+   */
+  constructor(private readonly app: App) {
+    this.authRequestHandler = new AuthRequestHandler(app);
+    this.tenantsMap = {};
+  }
 
-	/**
-	 * Returns a `TenantAwareAuth` instance bound to the given tenant ID.
-	 *
-	 * @param tenantId - The tenant ID whose `TenantAwareAuth` instance is to be returned.
-	 *
-	 * @returns The `TenantAwareAuth` instance corresponding to this tenant identifier.
-	 */
-	public authForTenant(tenantId: string): TenantAwareAuth {
-		if (!validator.isNonEmptyString(tenantId)) {
-			throw new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID);
-		}
-		if (typeof this.tenantsMap[tenantId] === "undefined") {
-			this.tenantsMap[tenantId] = new TenantAwareAuth(this.app, tenantId);
-		}
-		return this.tenantsMap[tenantId];
-	}
+  /**
+   * Returns a `TenantAwareAuth` instance bound to the given tenant ID.
+   *
+   * @param tenantId - The tenant ID whose `TenantAwareAuth` instance is to be returned.
+   *
+   * @returns The `TenantAwareAuth` instance corresponding to this tenant identifier.
+   */
+  public authForTenant(tenantId: string): TenantAwareAuth {
+    if (!validator.isNonEmptyString(tenantId)) {
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID);
+    }
+    if (typeof this.tenantsMap[tenantId] === "undefined") {
+      this.tenantsMap[tenantId] = new TenantAwareAuth(this.app, tenantId);
+    }
+    return this.tenantsMap[tenantId];
+  }
 
-	/**
-	 * Gets the tenant configuration for the tenant corresponding to a given `tenantId`.
-	 *
-	 * @param tenantId - The tenant identifier corresponding to the tenant whose data to fetch.
-	 *
-	 * @returns A promise fulfilled with the tenant configuration to the provided `tenantId`.
-	 */
-	public getTenant(tenantId: string): Promise<Tenant> {
-		return this.authRequestHandler.getTenant(tenantId).then((response: TenantServerResponse) => {
-			return new Tenant(response);
-		});
-	}
+  /**
+   * Gets the tenant configuration for the tenant corresponding to a given `tenantId`.
+   *
+   * @param tenantId - The tenant identifier corresponding to the tenant whose data to fetch.
+   *
+   * @returns A promise fulfilled with the tenant configuration to the provided `tenantId`.
+   */
+  public getTenant(tenantId: string): Promise<Tenant> {
+    return this.authRequestHandler.getTenant(tenantId).then((response: TenantServerResponse) => {
+      return new Tenant(response);
+    });
+  }
 
-	/**
-	 * Retrieves a list of tenants (single batch only) with a size of `maxResults`
-	 * starting from the offset as specified by `pageToken`. This is used to
-	 * retrieve all the tenants of a specified project in batches.
-	 *
-	 * @param maxResults - The page size, 1000 if undefined. This is also
-	 *   the maximum allowed limit.
-	 * @param pageToken - The next page token. If not specified, returns
-	 *   tenants starting without any offset.
-	 *
-	 * @returns A promise that resolves with
-	 *   a batch of downloaded tenants and the next page token.
-	 */
-	public listTenants(maxResults?: number, pageToken?: string): Promise<ListTenantsResult> {
-		return this.authRequestHandler
-			.listTenants(maxResults, pageToken)
-			.then((response: { tenants: TenantServerResponse[]; nextPageToken?: string }) => {
-				// List of tenants to return.
-				const tenants: Tenant[] = [];
-				// Convert each user response to a Tenant.
-				response.tenants.forEach((tenantResponse: TenantServerResponse) => {
-					tenants.push(new Tenant(tenantResponse));
-				});
-				// Return list of tenants and the next page token if available.
-				const result = {
-					tenants,
-					pageToken: response.nextPageToken,
-				};
-				// Delete result.pageToken if undefined.
-				if (typeof result.pageToken === "undefined") {
-					delete result.pageToken;
-				}
-				return result;
-			});
-	}
+  /**
+   * Retrieves a list of tenants (single batch only) with a size of `maxResults`
+   * starting from the offset as specified by `pageToken`. This is used to
+   * retrieve all the tenants of a specified project in batches.
+   *
+   * @param maxResults - The page size, 1000 if undefined. This is also
+   *   the maximum allowed limit.
+   * @param pageToken - The next page token. If not specified, returns
+   *   tenants starting without any offset.
+   *
+   * @returns A promise that resolves with
+   *   a batch of downloaded tenants and the next page token.
+   */
+  public listTenants(maxResults?: number, pageToken?: string): Promise<ListTenantsResult> {
+    return this.authRequestHandler
+      .listTenants(maxResults, pageToken)
+      .then((response: { tenants: TenantServerResponse[]; nextPageToken?: string }) => {
+        // List of tenants to return.
+        const tenants: Tenant[] = [];
+        // Convert each user response to a Tenant.
+        response.tenants.forEach((tenantResponse: TenantServerResponse) => {
+          tenants.push(new Tenant(tenantResponse));
+        });
+        // Return list of tenants and the next page token if available.
+        const result = {
+          tenants,
+          pageToken: response.nextPageToken,
+        };
+        // Delete result.pageToken if undefined.
+        if (typeof result.pageToken === "undefined") {
+          delete result.pageToken;
+        }
+        return result;
+      });
+  }
 
-	/**
-	 * Deletes an existing tenant.
-	 *
-	 * @param tenantId - The `tenantId` corresponding to the tenant to delete.
-	 *
-	 * @returns An empty promise fulfilled once the tenant has been deleted.
-	 */
-	public deleteTenant(tenantId: string): Promise<void> {
-		return this.authRequestHandler.deleteTenant(tenantId);
-	}
+  /**
+   * Deletes an existing tenant.
+   *
+   * @param tenantId - The `tenantId` corresponding to the tenant to delete.
+   *
+   * @returns An empty promise fulfilled once the tenant has been deleted.
+   */
+  public deleteTenant(tenantId: string): Promise<void> {
+    return this.authRequestHandler.deleteTenant(tenantId);
+  }
 
-	/**
-	 * Creates a new tenant.
-	 * When creating new tenants, tenants that use separate billing and quota will require their
-	 * own project and must be defined as `full_service`.
-	 *
-	 * @param tenantOptions - The properties to set on the new tenant configuration to be created.
-	 *
-	 * @returns A promise fulfilled with the tenant configuration corresponding to the newly
-	 *   created tenant.
-	 */
-	public createTenant(tenantOptions: CreateTenantRequest): Promise<Tenant> {
-		return this.authRequestHandler
-			.createTenant(tenantOptions)
-			.then((response: TenantServerResponse) => {
-				return new Tenant(response);
-			});
-	}
+  /**
+   * Creates a new tenant.
+   * When creating new tenants, tenants that use separate billing and quota will require their
+   * own project and must be defined as `full_service`.
+   *
+   * @param tenantOptions - The properties to set on the new tenant configuration to be created.
+   *
+   * @returns A promise fulfilled with the tenant configuration corresponding to the newly
+   *   created tenant.
+   */
+  public createTenant(tenantOptions: CreateTenantRequest): Promise<Tenant> {
+    return this.authRequestHandler
+      .createTenant(tenantOptions)
+      .then((response: TenantServerResponse) => {
+        return new Tenant(response);
+      });
+  }
 
-	/**
-	 * Updates an existing tenant configuration.
-	 *
-	 * @param tenantId - The `tenantId` corresponding to the tenant to delete.
-	 * @param tenantOptions - The properties to update on the provided tenant.
-	 *
-	 * @returns A promise fulfilled with the update tenant data.
-	 */
-	public updateTenant(tenantId: string, tenantOptions: UpdateTenantRequest): Promise<Tenant> {
-		return this.authRequestHandler
-			.updateTenant(tenantId, tenantOptions)
-			.then((response: TenantServerResponse) => {
-				return new Tenant(response);
-			});
-	}
+  /**
+   * Updates an existing tenant configuration.
+   *
+   * @param tenantId - The `tenantId` corresponding to the tenant to delete.
+   * @param tenantOptions - The properties to update on the provided tenant.
+   *
+   * @returns A promise fulfilled with the update tenant data.
+   */
+  public updateTenant(tenantId: string, tenantOptions: UpdateTenantRequest): Promise<Tenant> {
+    return this.authRequestHandler
+      .updateTenant(tenantId, tenantOptions)
+      .then((response: TenantServerResponse) => {
+        return new Tenant(response);
+      });
+  }
 }

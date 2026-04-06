@@ -1,72 +1,72 @@
 {
-	"$schema": "https://turborepo.dev/schema.json",
-	"ui": "tui",
-	"tasks": {
-		"build": {
-			"dependsOn": ["^build"],
-			"inputs": ["$TURBO_DEFAULT$", ".env*"],
-			"outputs": [".next/**", "!.next/cache/**"]
-		},
-		"check-types": {
-			"dependsOn": ["^check-types"]
-		},
-		"dev": {
-			"cache": false,
-			"persistent": true
-		},
-		"test": {
-			"dependsOn": ["^build"],
-			"inputs": ["$TURBO_DEFAULT$", ".env*"]
-		},
-		"quality": {
-			"dependsOn": ["//#_lint", "//#_format", "//#check-dead-code"]
-		},
-		"quality:fix": {
-			"dependsOn": ["//#_lint:fix", "//#_format:fix"],
-			"cache": false
-		},
-		"check-dead-code": {
-			"dependsOn": ["//#check-dead-code"]
-		},
-		"lint": {
-			"dependsOn": ["//#_lint"]
-		},
-		"lint:type-aware": {
-			"dependsOn": ["//#_lint:type-aware"]
-		},
-		"lint:github": {
-			"dependsOn": ["//#_lint:github"]
-		},
-		"lint:fix": {
-			"dependsOn": ["//#_lint:fix"],
-			"cache": false
-		},
-		"lint:fix:type-aware": {
-			"dependsOn": ["//#_lint:fix:type-aware"],
-			"cache": false
-		},
-		"format": {
-			"dependsOn": ["//#_format"]
-		},
-		"format:fix": {
-			"dependsOn": ["//#_format:fix"],
-			"cache": false
-		},
-		"//#_lint": {},
-		"//#_lint:type-aware": {},
-		"//#_lint:github": {},
-		"//#_lint:fix": {
-			"cache": false
-		},
-		"//#_lint:fix:type-aware": {
-			"cache": false
-		},
-		"//#_format": {},
-		"//#_format:fix": {
-			"cache": false
-		},
-		"//#check-dead-code": {
-			"inputs": ["$TURBO_DEFAULT$", "knip.jsonc", "apps/*/package.json", "packages/*/package.json"]
-		}
-	}
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "test": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"]
+    },
+    "quality": {
+      "dependsOn": ["//#_lint", "//#_format", "//#check-dead-code"]
+    },
+    "quality:fix": {
+      "dependsOn": ["//#_lint:fix", "//#_format:fix"],
+      "cache": false
+    },
+    "check-dead-code": {
+      "dependsOn": ["//#check-dead-code"]
+    },
+    "lint": {
+      "dependsOn": ["//#_lint"]
+    },
+    "lint:type-aware": {
+      "dependsOn": ["//#_lint:type-aware"]
+    },
+    "lint:github": {
+      "dependsOn": ["//#_lint:github"]
+    },
+    "lint:fix": {
+      "dependsOn": ["//#_lint:fix"],
+      "cache": false
+    },
+    "lint:fix:type-aware": {
+      "dependsOn": ["//#_lint:fix:type-aware"],
+      "cache": false
+    },
+    "format": {
+      "dependsOn": ["//#_format"]
+    },
+    "format:fix": {
+      "dependsOn": ["//#_format:fix"],
+      "cache": false
+    },
+    "//#_lint": {},
+    "//#_lint:type-aware": {},
+    "//#_lint:github": {},
+    "//#_lint:fix": {
+      "cache": false
+    },
+    "//#_lint:fix:type-aware": {
+      "cache": false
+    },
+    "//#_format": {},
+    "//#_format:fix": {
+      "cache": false
+    },
+    "//#check-dead-code": {
+      "inputs": ["$TURBO_DEFAULT$", "knip.jsonc", "apps/*/package.json", "packages/*/package.json"]
+    }
+  }
 }

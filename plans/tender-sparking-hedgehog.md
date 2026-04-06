@@ -32,24 +32,24 @@
 ```tsx
 // state / actions / meta の汎用インターフェース
 interface AuthState {
-	email: string;
-	password: string;
-	error: string | null;
-	pendingMode: AuthMode | null;
+  email: string;
+  password: string;
+  error: string | null;
+  pendingMode: AuthMode | null;
 }
 
 type AuthMode = "sign-in" | "sign-up";
 
 interface AuthActions {
-	update: (updater: (state: AuthState) => AuthState) => void;
-	signIn: () => Promise<void>;
-	signUp: () => Promise<void>;
+  update: (updater: (state: AuthState) => AuthState) => void;
+  signIn: () => Promise<void>;
+  signUp: () => Promise<void>;
 }
 
 interface AuthMeta {
-	displayedError: string | null;
-	googleAuthUrl: string;
-	appleAuthUrl: string;
+  displayedError: string | null;
+  googleAuthUrl: string;
+  appleAuthUrl: string;
 }
 
 // Context = createContext<AuthContextValue | null>(null)
@@ -91,30 +91,30 @@ interface AuthMeta {
 ```tsx
 // sign-in variant
 function SignInForm() {
-	return (
-		<Auth.Provider>
-			<Auth.Frame>
-				<Auth.EmailField />
-				<Auth.PasswordField />
-				<Auth.Error />
-				<Auth.SubmitButton />
-			</Auth.Frame>
-		</Auth.Provider>
-	);
+  return (
+    <Auth.Provider>
+      <Auth.Frame>
+        <Auth.EmailField />
+        <Auth.PasswordField />
+        <Auth.Error />
+        <Auth.SubmitButton />
+      </Auth.Frame>
+    </Auth.Provider>
+  );
 }
 
 // sign-up variant
 function SignUpForm() {
-	return (
-		<Auth.Provider>
-			<Auth.Frame>
-				<Auth.EmailField />
-				<Auth.PasswordField />
-				<Auth.Error />
-				<Auth.CreateAccountButton />
-			</Auth.Frame>
-		</Auth.Provider>
-	);
+  return (
+    <Auth.Provider>
+      <Auth.Frame>
+        <Auth.EmailField />
+        <Auth.PasswordField />
+        <Auth.Error />
+        <Auth.CreateAccountButton />
+      </Auth.Frame>
+    </Auth.Provider>
+  );
 }
 ```
 

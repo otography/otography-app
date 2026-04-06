@@ -36,17 +36,17 @@
 
 ```jsonc
 {
-	"name": "otography-api",
-	"main": "src/index.ts",
-	"compatibility_flags": ["nodejs_compat"],
-	"compatibility_date": "2026-03-24",
-	"hyperdrive": [
-		{
-			"binding": "HYPERDRIVE",
-			"id": "", // wrangler hyperdrive create で取得
-			"localConnectionString": "", // ローカル開発用の DATABASE_URL
-		},
-	],
+  "name": "otography-api",
+  "main": "src/index.ts",
+  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-03-24",
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "", // wrangler hyperdrive create で取得
+      "localConnectionString": "", // ローカル開発用の DATABASE_URL
+    },
+  ],
 }
 ```
 
@@ -60,27 +60,27 @@ import "hono";
 import type { DecodedIdToken } from "firebase-admin/auth";
 
 declare module "hono" {
-	interface ContextVariableMap {
-		authSession: {
-			claims: DecodedIdToken;
-			sessionCookie: string;
-		} | null;
-		jwtPayload: DecodedIdToken | null;
-		userId: string | null;
-	}
+  interface ContextVariableMap {
+    authSession: {
+      claims: DecodedIdToken;
+      sessionCookie: string;
+    } | null;
+    jwtPayload: DecodedIdToken | null;
+    userId: string | null;
+  }
 
-	interface Bindings {
-		HYPERDRIVE: Hyperdrive;
-		DATABASE_URL: string;
-		AUTH_COOKIE_DOMAIN?: string;
-		APP_FRONTEND_URL: string;
-		FIREBASE_API_KEY: string;
-		FIREBASE_CLIENT_EMAIL: string;
-		FIREBASE_PRIVATE_KEY: string;
-		FIREBASE_PROJECT_ID: string;
-		PORT?: string;
-		NODE_ENV?: "development" | "production" | "test";
-	}
+  interface Bindings {
+    HYPERDRIVE: Hyperdrive;
+    DATABASE_URL: string;
+    AUTH_COOKIE_DOMAIN?: string;
+    APP_FRONTEND_URL: string;
+    FIREBASE_API_KEY: string;
+    FIREBASE_CLIENT_EMAIL: string;
+    FIREBASE_PRIVATE_KEY: string;
+    FIREBASE_PROJECT_ID: string;
+    PORT?: string;
+    NODE_ENV?: "development" | "production" | "test";
+  }
 }
 ```
 
@@ -116,21 +116,21 @@ import type { Context, Next } from "hono";
 import { profiles } from "./schema";
 
 export const getDb = async (c: Context) => {
-	const client = new Client({
-		connectionString: c.env.HYPERDRIVE.connectionString,
-	});
-	await client.connect();
+  const client = new Client({
+    connectionString: c.env.HYPERDRIVE.connectionString,
+  });
+  await client.connect();
 
-	c.set("__pg_client", client);
-	return drizzle(client, { schema: { profiles } });
+  c.set("__pg_client", client);
+  return drizzle(client, { schema: { profiles } });
 };
 
 export const dbCleanupMiddleware = () => async (c: Context, next: Next) => {
-	await next();
-	const client = c.get("__pg_client");
-	if (client) {
-		await client.end();
-	}
+  await next();
+  const client = c.get("__pg_client");
+  if (client) {
+    await client.end();
+  }
 };
 ```
 

@@ -20,7 +20,7 @@
  * See {@link BaseAuth.getUsers}.
  */
 export interface UidIdentifier {
-	uid: string;
+  uid: string;
 }
 
 /**
@@ -29,7 +29,7 @@ export interface UidIdentifier {
  * See {@link BaseAuth.getUsers}.
  */
 export interface EmailIdentifier {
-	email: string;
+  email: string;
 }
 
 /**
@@ -38,7 +38,7 @@ export interface EmailIdentifier {
  * See {@link BaseAuth.getUsers}.
  */
 export interface PhoneIdentifier {
-	phoneNumber: string;
+  phoneNumber: string;
 }
 
 /**
@@ -47,8 +47,8 @@ export interface PhoneIdentifier {
  * See {@link BaseAuth.getUsers}.
  */
 export interface ProviderIdentifier {
-	providerId: string;
-	providerUid: string;
+  providerId: string;
+  providerUid: string;
 }
 
 /**
@@ -62,18 +62,18 @@ export type UserIdentifier = UidIdentifier | EmailIdentifier | PhoneIdentifier |
  */
 
 export function isUidIdentifier(id: UserIdentifier): id is UidIdentifier {
-	return (id as UidIdentifier).uid !== undefined;
+  return (id as UidIdentifier).uid !== undefined;
 }
 
 export function isEmailIdentifier(id: UserIdentifier): id is EmailIdentifier {
-	return (id as EmailIdentifier).email !== undefined;
+  return (id as EmailIdentifier).email !== undefined;
 }
 
 export function isPhoneIdentifier(id: UserIdentifier): id is PhoneIdentifier {
-	return (id as PhoneIdentifier).phoneNumber !== undefined;
+  return (id as PhoneIdentifier).phoneNumber !== undefined;
 }
 
 export function isProviderIdentifier(id: ProviderIdentifier): id is ProviderIdentifier {
-	const pid = id as ProviderIdentifier;
-	return pid.providerId !== undefined && pid.providerUid !== undefined;
+  const pid = id as ProviderIdentifier;
+  return pid.providerId !== undefined && pid.providerUid !== undefined;
 }

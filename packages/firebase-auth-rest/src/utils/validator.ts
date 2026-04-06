@@ -22,7 +22,7 @@
  * @returns Whether the value is byte buffer or not.
  */
 export function isBuffer(value: any): value is Buffer {
-	return value instanceof Buffer;
+  return value instanceof Buffer;
 }
 
 /**
@@ -32,7 +32,7 @@ export function isBuffer(value: any): value is Buffer {
  * @returns Whether the value is an array or not.
  */
 export function isArray<T>(value: any): value is T[] {
-	return Array.isArray(value);
+  return Array.isArray(value);
 }
 
 /**
@@ -42,7 +42,7 @@ export function isArray<T>(value: any): value is T[] {
  * @returns Whether the value is a non-empty array or not.
  */
 export function isNonEmptyArray<T>(value: any): value is T[] {
-	return isArray(value) && value.length !== 0;
+  return isArray(value) && value.length !== 0;
 }
 
 /**
@@ -52,7 +52,7 @@ export function isNonEmptyArray<T>(value: any): value is T[] {
  * @returns Whether the value is a boolean or not.
  */
 export function isBoolean(value: any): boolean {
-	return typeof value === "boolean";
+  return typeof value === "boolean";
 }
 
 /**
@@ -62,7 +62,7 @@ export function isBoolean(value: any): boolean {
  * @returns Whether the value is a number or not.
  */
 export function isNumber(value: any): boolean {
-	return typeof value === "number" && !isNaN(value);
+  return typeof value === "number" && !isNaN(value);
 }
 
 /**
@@ -72,7 +72,7 @@ export function isNumber(value: any): boolean {
  * @returns Whether the value is a string or not.
  */
 export function isString(value: any): value is string {
-	return typeof value === "string";
+  return typeof value === "string";
 }
 
 /**
@@ -82,7 +82,7 @@ export function isString(value: any): value is string {
  * @returns Whether the value is a non-empty string or not.
  */
 export function isNonEmptyString(value: any): value is string {
-	return isString(value) && value !== "";
+  return isString(value) && value !== "";
 }
 
 /**
@@ -92,7 +92,7 @@ export function isNonEmptyString(value: any): value is string {
  * @returns Whether the value is an object or not.
  */
 export function isObject(value: any): boolean {
-	return typeof value === "object" && !isArray(value);
+  return typeof value === "object" && !isArray(value);
 }
 
 /**
@@ -102,7 +102,7 @@ export function isObject(value: any): boolean {
  * @returns Whether the value is a non-null object or not.
  */
 export function isNonNullObject<T>(value: T | null | undefined): value is T {
-	return isObject(value) && value !== null;
+  return isObject(value) && value !== null;
 }
 
 /**
@@ -112,7 +112,7 @@ export function isNonNullObject<T>(value: T | null | undefined): value is T {
  * @returns Whether the string is a valid Firebase Auth uid.
  */
 export function isUid(uid: any): boolean {
-	return typeof uid === "string" && uid.length > 0 && uid.length <= 128;
+  return typeof uid === "string" && uid.length > 0 && uid.length <= 128;
 }
 
 /**
@@ -122,8 +122,8 @@ export function isUid(uid: any): boolean {
  * @returns Whether the string is a valid Firebase Auth password.
  */
 export function isPassword(password: any): boolean {
-	// A password must be a string of at least 6 characters.
-	return typeof password === "string" && password.length >= 6;
+  // A password must be a string of at least 6 characters.
+  return typeof password === "string" && password.length >= 6;
 }
 
 /**
@@ -133,12 +133,12 @@ export function isPassword(password: any): boolean {
  * @returns Whether the string is valid email or not.
  */
 export function isEmail(email: any): boolean {
-	if (typeof email !== "string") {
-		return false;
-	}
-	// There must at least one character before the @ symbol and another after.
-	const re = /^[^@]+@[^@]+$/;
-	return re.test(email);
+  if (typeof email !== "string") {
+    return false;
+  }
+  // There must at least one character before the @ symbol and another after.
+  const re = /^[^@]+@[^@]+$/;
+  return re.test(email);
 }
 
 /**
@@ -148,16 +148,16 @@ export function isEmail(email: any): boolean {
  * @returns Whether the string is a valid phone number or not.
  */
 export function isPhoneNumber(phoneNumber: any): boolean {
-	if (typeof phoneNumber !== "string") {
-		return false;
-	}
-	// Phone number validation is very lax here. Backend will enforce E.164
-	// spec compliance and will normalize accordingly.
-	// The phone number string must be non-empty and starts with a plus sign.
-	const re1 = /^\+/;
-	// The phone number string must contain at least one alphanumeric character.
-	const re2 = /[\da-zA-Z]+/;
-	return re1.test(phoneNumber) && re2.test(phoneNumber);
+  if (typeof phoneNumber !== "string") {
+    return false;
+  }
+  // Phone number validation is very lax here. Backend will enforce E.164
+  // spec compliance and will normalize accordingly.
+  // The phone number string must be non-empty and starts with a plus sign.
+  const re1 = /^\+/;
+  // The phone number string must contain at least one alphanumeric character.
+  const re2 = /[\da-zA-Z]+/;
+  return re1.test(phoneNumber) && re2.test(phoneNumber);
 }
 
 /**
@@ -167,11 +167,11 @@ export function isPhoneNumber(phoneNumber: any): boolean {
  * @returns Whether the string is a valid ISO date string.
  */
 export function isISODateString(dateString: any): boolean {
-	try {
-		return isNonEmptyString(dateString) && new Date(dateString).toISOString() === dateString;
-	} catch {
-		return false;
-	}
+  try {
+    return isNonEmptyString(dateString) && new Date(dateString).toISOString() === dateString;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -181,11 +181,11 @@ export function isISODateString(dateString: any): boolean {
  * @returns Whether the string is a valid UTC date string.
  */
 export function isUTCDateString(dateString: any): boolean {
-	try {
-		return isNonEmptyString(dateString) && new Date(dateString).toUTCString() === dateString;
-	} catch {
-		return false;
-	}
+  try {
+    return isNonEmptyString(dateString) && new Date(dateString).toUTCString() === dateString;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -195,47 +195,47 @@ export function isUTCDateString(dateString: any): boolean {
  * @returns Whether the string is valid web URL or not.
  */
 export function isURL(urlStr: any): boolean {
-	if (typeof urlStr !== "string") {
-		return false;
-	}
-	// Lookup illegal characters.
-	const re = /[^a-z0-9:/?#[\]@!$&'()*+,;=.\-_~%]/i;
-	if (re.test(urlStr)) {
-		return false;
-	}
-	try {
-		const uri = new URL(urlStr);
-		const scheme = uri.protocol;
-		if (scheme !== "http:" && scheme !== "https:") {
-			return false;
-		}
-		const hostname = uri.hostname;
-		// Validate hostname strictly to match previous behavior and prevent weak/invalid domains.
-		// Must be alphanumeric with optional dashes, separated by dots.
-		// Cannot start/end with dot or dash (mostly).
-		// This regex is safe (no nested quantifiers with overlap).
-		if (
-			!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/.test(
-				hostname,
-			)
-		) {
-			// Check for IPv6 literals which are valid but behave differently.
-			// Node 'new URL' keeps brackets for IPv6: [::1] -> [::1]
-			// Check for IPv6 address (simple check for brackets)
-			if (!/^\[[a-fA-F0-9:.]+\]$/.test(hostname)) {
-				return false;
-			}
-		}
-		// Restore strict pathname validation: (/chars+)*/?
-		// Where chars can be a combination of: a-z A-Z 0-9 - _ . ~ ! $ & ' ( ) * + , ; = : @ %
-		const pathnameRe = /^(\/[\w\-.~!$'()*+,;=:@%]+)*\/?$/;
-		// Validate pathname.
-		const pathname = uri.pathname;
-		if (pathname && pathname !== "/" && !pathnameRe.test(pathname)) {
-			return false;
-		}
-		return true;
-	} catch {
-		return false;
-	}
+  if (typeof urlStr !== "string") {
+    return false;
+  }
+  // Lookup illegal characters.
+  const re = /[^a-z0-9:/?#[\]@!$&'()*+,;=.\-_~%]/i;
+  if (re.test(urlStr)) {
+    return false;
+  }
+  try {
+    const uri = new URL(urlStr);
+    const scheme = uri.protocol;
+    if (scheme !== "http:" && scheme !== "https:") {
+      return false;
+    }
+    const hostname = uri.hostname;
+    // Validate hostname strictly to match previous behavior and prevent weak/invalid domains.
+    // Must be alphanumeric with optional dashes, separated by dots.
+    // Cannot start/end with dot or dash (mostly).
+    // This regex is safe (no nested quantifiers with overlap).
+    if (
+      !/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/.test(
+        hostname,
+      )
+    ) {
+      // Check for IPv6 literals which are valid but behave differently.
+      // Node 'new URL' keeps brackets for IPv6: [::1] -> [::1]
+      // Check for IPv6 address (simple check for brackets)
+      if (!/^\[[a-fA-F0-9:.]+\]$/.test(hostname)) {
+        return false;
+      }
+    }
+    // Restore strict pathname validation: (/chars+)*/?
+    // Where chars can be a combination of: a-z A-Z 0-9 - _ . ~ ! $ & ' ( ) * + , ; = : @ %
+    const pathnameRe = /^(\/[\w\-.~!$'()*+,;=:@%]+)*\/?$/;
+    // Validate pathname.
+    const pathname = uri.pathname;
+    if (pathname && pathname !== "/" && !pathnameRe.test(pathname)) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }

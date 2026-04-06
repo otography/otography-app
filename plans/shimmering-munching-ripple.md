@@ -34,8 +34,8 @@ const emailSchema = type("string.email");
 
 // After
 const credentialsBodySchema = type({
-	email: "string.email",
-	password: "string >= 6",
+  email: "string.email",
+  password: "string >= 6",
 });
 ```
 
@@ -45,14 +45,14 @@ const credentialsBodySchema = type({
 import { arktypeValidator } from "@hono/arktype-validator";
 
 const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (result, c) => {
-	if (!result.success) {
-		return c.json(
-			{
-				message: "Please provide a valid email address and a password with at least 6 characters.",
-			},
-			400,
-		);
-	}
+  if (!result.success) {
+    return c.json(
+      {
+        message: "Please provide a valid email address and a password with at least 6 characters.",
+      },
+      400,
+    );
+  }
 });
 ```
 

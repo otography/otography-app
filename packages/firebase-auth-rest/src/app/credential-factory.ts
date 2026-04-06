@@ -31,9 +31,9 @@ const globalCertCreds: { [key: string]: ServiceAccountCredential } = {};
  *   provided service account that can be used to initialize an app.
  */
 export function cert(serviceAccount: ServiceAccount): Credential {
-	const stringifiedServiceAccount = JSON.stringify(serviceAccount);
-	if (!(stringifiedServiceAccount in globalCertCreds)) {
-		globalCertCreds[stringifiedServiceAccount] = new ServiceAccountCredential(serviceAccount);
-	}
-	return globalCertCreds[stringifiedServiceAccount]!;
+  const stringifiedServiceAccount = JSON.stringify(serviceAccount);
+  if (!(stringifiedServiceAccount in globalCertCreds)) {
+    globalCertCreds[stringifiedServiceAccount] = new ServiceAccountCredential(serviceAccount);
+  }
+  return globalCertCreds[stringifiedServiceAccount]!;
 }

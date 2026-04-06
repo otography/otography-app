@@ -74,8 +74,8 @@ QkKj4Q==
 -----END RSA PRIVATE KEY-----`;
 
 const developerClaims = {
-	one: "uno",
-	two: "dos",
+  one: "uno",
+  two: "dos",
 };
 
 // ---- 鍵のインポート (キャッシュ付き) ----
@@ -92,54 +92,54 @@ let _mismatchPublicKeyPem: string | null = null;
 import crypto from "crypto";
 
 function toPkcs8Pem(pem: string): string {
-	if (/-----BEGIN RSA PRIVATE KEY-----/.test(pem)) {
-		const key = crypto.createPrivateKey({ key: pem, format: "pem" });
-		return key.export({ format: "pem", type: "pkcs8" }) as string;
-	}
-	return pem;
+  if (/-----BEGIN RSA PRIVATE KEY-----/.test(pem)) {
+    const key = crypto.createPrivateKey({ key: pem, format: "pem" });
+    return key.export({ format: "pem", type: "pkcs8" }) as string;
+  }
+  return pem;
 }
 
 async function getPrivateCryptoKey(): Promise<CryptoKey> {
-	if (!_privateCryptoKey) {
-		_privateCryptoKey = await jose.importPKCS8(toPkcs8Pem(mockPrivateKeyPem), "RS256");
-	}
-	return _privateCryptoKey;
+  if (!_privateCryptoKey) {
+    _privateCryptoKey = await jose.importPKCS8(toPkcs8Pem(mockPrivateKeyPem), "RS256");
+  }
+  return _privateCryptoKey;
 }
 
 export async function getPublicKeyPem(): Promise<string> {
-	if (!_publicKeyPem) {
-		// node:crypto で公開鍵PEMを直接導出（PKCS#1 → SPKI PEM）
-		const privateKey = crypto.createPrivateKey({
-			key: toPkcs8Pem(mockPrivateKeyPem),
-			format: "pem",
-		});
-		const publicKey = crypto.createPublicKey(privateKey);
-		_publicKeyPem = publicKey.export({ format: "pem", type: "spki" }) as string;
-	}
-	return _publicKeyPem!;
+  if (!_publicKeyPem) {
+    // node:crypto で公開鍵PEMを直接導出（PKCS#1 → SPKI PEM）
+    const privateKey = crypto.createPrivateKey({
+      key: toPkcs8Pem(mockPrivateKeyPem),
+      format: "pem",
+    });
+    const publicKey = crypto.createPublicKey(privateKey);
+    _publicKeyPem = publicKey.export({ format: "pem", type: "spki" }) as string;
+  }
+  return _publicKeyPem!;
 }
 
 export async function getMismatchPublicKeyPem(): Promise<string> {
-	if (!_mismatchPublicKeyPem) {
-		const privateKey = crypto.createPrivateKey({
-			key: toPkcs8Pem(mismatchPrivateKeyPem),
-			format: "pem",
-		});
-		const publicKey = crypto.createPublicKey(privateKey);
-		_mismatchPublicKeyPem = publicKey.export({ format: "pem", type: "spki" }) as string;
-	}
-	return _mismatchPublicKeyPem!;
+  if (!_mismatchPublicKeyPem) {
+    const privateKey = crypto.createPrivateKey({
+      key: toPkcs8Pem(mismatchPrivateKeyPem),
+      format: "pem",
+    });
+    const publicKey = crypto.createPublicKey(privateKey);
+    _mismatchPublicKeyPem = publicKey.export({ format: "pem", type: "spki" }) as string;
+  }
+  return _mismatchPublicKeyPem!;
 }
 
 // ---- JWT 生成 (jose 版) ----
 
 interface TokenOverrides {
-	algorithm?: string;
-	header?: Record<string, string>;
-	audience?: string;
-	expiresIn?: string | number;
-	issuer?: string;
-	subject?: string;
+  algorithm?: string;
+  header?: Record<string, string>;
+  audience?: string;
+  expiresIn?: string | number;
+  issuer?: string;
+  subject?: string;
 }
 
 /**
@@ -147,89 +147,89 @@ interface TokenOverrides {
  * オリジナルの mocks.generateIdToken() に相当。
  */
 export async function generateIdToken(
-	overrides?: TokenOverrides,
-	extraClaims?: Record<string, unknown>,
+  overrides?: TokenOverrides,
+  extraClaims?: Record<string, unknown>,
 ): Promise<string> {
-	const options = {
-		aud: overrides?.audience ?? projectId,
-		expireIn: overrides?.expiresIn ?? `${ONE_HOUR_IN_SECONDS}s`,
-		iss: overrides?.issuer ?? `https://securetoken.google.com/${projectId}`,
-		sub: overrides?.subject ?? uid,
-		alg: overrides?.algorithm ?? "RS256",
-		kid: overrides?.header?.kid ?? mockPrivateKeyKid,
-	};
+  const options = {
+    aud: overrides?.audience ?? projectId,
+    expireIn: overrides?.expiresIn ?? `${ONE_HOUR_IN_SECONDS}s`,
+    iss: overrides?.issuer ?? `https://securetoken.google.com/${projectId}`,
+    sub: overrides?.subject ?? uid,
+    alg: overrides?.algorithm ?? "RS256",
+    kid: overrides?.header?.kid ?? mockPrivateKeyKid,
+  };
 
-	const payload = {
-		...developerClaims,
-		iat: Math.floor(Date.now() / 1000) - 1,
-		...extraClaims,
-	};
+  const payload = {
+    ...developerClaims,
+    iat: Math.floor(Date.now() / 1000) - 1,
+    ...extraClaims,
+  };
 
-	const key =
-		options.alg === "none"
-			? await getPrivateCryptoKey() // none の場合でも署名は不要だが jose では扱いが異なる
-			: options.alg === "RS384"
-				? await getPrivateCryptoKey()
-				: await getPrivateCryptoKey();
+  const key =
+    options.alg === "none"
+      ? await getPrivateCryptoKey() // none の場合でも署名は不要だが jose では扱いが異なる
+      : options.alg === "RS384"
+        ? await getPrivateCryptoKey()
+        : await getPrivateCryptoKey();
 
-	if (options.alg === "none") {
-		// unsigned (emulator) トークン: ヘッダーの alg を none にして署名なしで手動構築
-		const header = { alg: "none", typ: "JWT", ...overrides?.header };
-		const encoder = new TextEncoder();
-		const headerB64 = jose.base64url.encode(encoder.encode(JSON.stringify(header)));
-		const payloadB64 = jose.base64url.encode(encoder.encode(JSON.stringify(payload)));
-		return `${headerB64}.${payloadB64}.`;
-	}
+  if (options.alg === "none") {
+    // unsigned (emulator) トークン: ヘッダーの alg を none にして署名なしで手動構築
+    const header = { alg: "none", typ: "JWT", ...overrides?.header };
+    const encoder = new TextEncoder();
+    const headerB64 = jose.base64url.encode(encoder.encode(JSON.stringify(header)));
+    const payloadB64 = jose.base64url.encode(encoder.encode(JSON.stringify(payload)));
+    return `${headerB64}.${payloadB64}.`;
+  }
 
-	let signer = new jose.SignJWT(payload as Record<string, unknown>)
-		.setProtectedHeader({ alg: options.alg as string, kid: options.kid, typ: "JWT" })
-		.setAudience(options.aud)
-		.setIssuer(options.iss)
-		.setSubject(options.sub)
-		.setIssuedAt(payload.iat);
+  let signer = new jose.SignJWT(payload as Record<string, unknown>)
+    .setProtectedHeader({ alg: options.alg as string, kid: options.kid, typ: "JWT" })
+    .setAudience(options.aud)
+    .setIssuer(options.iss)
+    .setSubject(options.sub)
+    .setIssuedAt(payload.iat);
 
-	if (typeof options.expireIn === "string") {
-		signer = signer.setExpirationTime(options.expireIn);
-	} else {
-		signer = signer.setExpirationTime(payload.iat + (options.expireIn as number));
-	}
+  if (typeof options.expireIn === "string") {
+    signer = signer.setExpirationTime(options.expireIn);
+  } else {
+    signer = signer.setExpirationTime(payload.iat + (options.expireIn as number));
+  }
 
-	return signer.sign(key);
+  return signer.sign(key);
 }
 
 // ---- モック FirebaseApp ----
 
 interface MockFirebaseApp {
-	options: {
-		credential?: {
-			getAccessToken: () => Promise<{ access_token: string; expires_in: number }>;
-		};
-		projectId?: string;
-		[key: string]: any;
-	};
-	name: string;
-	delete: () => Promise<void>;
-	INTERNAL: {
-		getToken: () => Promise<{ accessToken: string } | null>;
-	};
+  options: {
+    credential?: {
+      getAccessToken: () => Promise<{ access_token: string; expires_in: number }>;
+    };
+    projectId?: string;
+    [key: string]: any;
+  };
+  name: string;
+  delete: () => Promise<void>;
+  INTERNAL: {
+    getToken: () => Promise<{ accessToken: string } | null>;
+  };
 }
 
 export function createMockApp(overrides?: Partial<MockFirebaseApp["options"]>): MockFirebaseApp {
-	const options: MockFirebaseApp["options"] = {
-		credential: {
-			getAccessToken: async () => ({ access_token: "mock-access-token", expires_in: 3600 }),
-		},
-		projectId,
-		databaseURL: "https://databaseName.firebaseio.com",
-		...overrides,
-	};
+  const options: MockFirebaseApp["options"] = {
+    credential: {
+      getAccessToken: async () => ({ access_token: "mock-access-token", expires_in: 3600 }),
+    },
+    projectId,
+    databaseURL: "https://databaseName.firebaseio.com",
+    ...overrides,
+  };
 
-	return {
-		options,
-		name: appName,
-		delete: async () => {},
-		INTERNAL: {
-			getToken: async () => ({ accessToken: "mock-access-token" }),
-		},
-	};
+  return {
+    options,
+    name: appName,
+    delete: async () => {},
+    INTERNAL: {
+      getToken: async () => ({ accessToken: "mock-access-token" }),
+    },
+  };
 }

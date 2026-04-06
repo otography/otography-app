@@ -1,12 +1,12 @@
 {
-	"extends": "@repo/typescript-config/base.json",
-	"compilerOptions": {
-		"lib": ["es2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"outDir": "./dist",
-		"rootDir": "./src",
-		"skipLibCheck": true
-	},
-	"include": ["src"]
+  "extends": "@repo/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["es2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "skipLibCheck": true
+  },
+  "include": ["src"]
 }

@@ -4,28 +4,28 @@ import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
 
 export async function withRls<T>(
-	claims: DecodedIdToken,
-	fn: (tx: DatabaseTransaction) => Promise<T>,
+  claims: DecodedIdToken,
+  fn: (tx: DatabaseTransaction) => Promise<T>,
 ): Promise<T> {
-	return createDb().transaction(async (tx) => {
-		const userId = typeof claims.sub === "string" ? claims.sub : null;
+  return createDb().transaction(async (tx) => {
+    const userId = typeof claims.sub === "string" ? claims.sub : null;
 
-		if (!userId) {
-			throw new RlsError({ message: "Missing user identifier in session." });
-		}
+    if (!userId) {
+      throw new RlsError({ message: "Missing user identifier in session." });
+    }
 
-		const jwtClaims = JSON.stringify({ sub: userId });
+    const jwtClaims = JSON.stringify({ sub: userId });
 
-		await tx
-			.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
-			.catch((e) => {
-				throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
-			});
+    await tx
+      .execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
+      .catch((e) => {
+        throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
+      });
 
-		await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
-			throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
-		});
+    await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
+      throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
+    });
 
-		return await fn(tx);
-	});
+    return await fn(tx);
+  });
 }

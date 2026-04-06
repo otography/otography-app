@@ -8,11 +8,11 @@
  */
 
 interface DrizzleEnv {
-	DATABASE_URL: string;
-	DATABASE_DIRECT_URL: string;
+  DATABASE_URL: string;
+  DATABASE_DIRECT_URL: string;
 }
 
 export const env: DrizzleEnv = {
-	DATABASE_URL: process.env.DATABASE_URL!,
-	DATABASE_DIRECT_URL: process.env.DATABASE_DIRECT_URL!,
+  DATABASE_URL: process.env.DATABASE_URL!,
+  DATABASE_DIRECT_URL: process.env.DATABASE_DIRECT_URL!,
 };

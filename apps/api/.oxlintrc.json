@@ -1,4 +1,4 @@
 {
-	"extends": ["../../.oxlintrc.json"],
-	"plugins": ["import", "node"]
+  "extends": ["../../.oxlintrc.json"],
+  "plugins": ["import", "node"]
 }
