@@ -20,11 +20,11 @@ import { ServiceAccountCredential } from "../app/credential-internal";
 import * as validator from "./validator";
 
 export function getSdkVersion(): string {
-	return "12.0.0"; // firebase-admin-rest固定バージョン
+  return "12.0.0"; // firebase-admin-rest固定バージョン
 }
 
 export function getMetricsHeader(): string {
-	return `fire-admin-rest/${getSdkVersion()}`;
+  return `fire-admin-rest/${getSdkVersion()}`;
 }
 
 /**
@@ -35,13 +35,13 @@ export function getMetricsHeader(): string {
  * @param value - The value associated with the property.
  */
 export function addReadonlyGetter(obj: object, prop: string, value: any): void {
-	Object.defineProperty(obj, prop, {
-		value,
-		// Make this property read-only.
-		writable: false,
-		// Include this property during enumeration of obj's properties.
-		enumerable: true,
-	});
+  Object.defineProperty(obj, prop, {
+    value,
+    // Make this property read-only.
+    writable: false,
+    // Include this property during enumeration of obj's properties.
+    enumerable: true,
+  });
 }
 
 /**
@@ -54,21 +54,21 @@ export function addReadonlyGetter(obj: object, prop: string, value: any): void {
  * @returns A project ID string or null.
  */
 function getExplicitProjectId(app: App): string | null {
-	const options = app.options;
-	if (validator.isNonEmptyString(options.projectId)) {
-		return options.projectId;
-	}
+  const options = app.options;
+  if (validator.isNonEmptyString(options.projectId)) {
+    return options.projectId;
+  }
 
-	const credential = app.options.credential;
-	if (credential instanceof ServiceAccountCredential) {
-		return credential.projectId;
-	}
+  const credential = app.options.credential;
+  if (credential instanceof ServiceAccountCredential) {
+    return credential.projectId;
+  }
 
-	const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
-	if (validator.isNonEmptyString(projectId)) {
-		return projectId;
-	}
-	return null;
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GCLOUD_PROJECT;
+  if (validator.isNonEmptyString(projectId)) {
+    return projectId;
+  }
+  return null;
 }
 
 /**
@@ -83,8 +83,8 @@ function getExplicitProjectId(app: App): string | null {
  * @returns A project ID string or null.
  */
 export function findProjectId(app: App): Promise<string | null> {
-	const projectId = getExplicitProjectId(app);
-	return Promise.resolve(projectId || null);
+  const projectId = getExplicitProjectId(app);
+  return Promise.resolve(projectId || null);
 }
 
 /**
@@ -94,7 +94,7 @@ export function findProjectId(app: App): Promise<string | null> {
  * @returns The base64-encoded result.
  */
 export function toWebSafeBase64(data: Buffer): string {
-	return data.toString("base64").replace(/\//g, "_").replace(/\+/g, "-");
+  return data.toString("base64").replace(/\//g, "_").replace(/\+/g, "-");
 }
 
 /**
@@ -109,12 +109,12 @@ export function toWebSafeBase64(data: Buffer): string {
  * @returns The resulting formatted string.
  */
 export function formatString(str: string, params?: object): string {
-	let formatted = str;
-	const safeParams = params as { [key: string]: string } | undefined;
-	Object.keys(safeParams || {}).forEach((key) => {
-		formatted = formatted.replace(new RegExp("{" + key + "}", "g"), safeParams![key] as string);
-	});
-	return formatted;
+  let formatted = str;
+  const safeParams = params as { [key: string]: string } | undefined;
+  Object.keys(safeParams || {}).forEach((key) => {
+    formatted = formatted.replace(new RegExp("{" + key + "}", "g"), safeParams![key] as string);
+  });
+  return formatted;
 }
 
 /**
@@ -129,29 +129,29 @@ export function formatString(str: string, params?: object): string {
  * @returns The computed update mask list.
  */
 export function generateUpdateMask(obj: any, terminalPaths: string[] = [], root = ""): string[] {
-	const updateMask: string[] = [];
-	if (!validator.isNonNullObject(obj)) {
-		return updateMask;
-	}
-	for (const key in obj) {
-		if (typeof obj[key] !== "undefined") {
-			const nextPath = root ? `${root}.${key}` : key;
-			// We hit maximum path.
-			// Consider switching to Set<string> if the list grows too large.
-			if (terminalPaths.indexOf(nextPath) !== -1) {
-				// Add key and stop traversing this branch.
-				updateMask.push(key);
-			} else {
-				const maskList = generateUpdateMask(obj[key], terminalPaths, nextPath);
-				if (maskList.length > 0) {
-					maskList.forEach((mask) => {
-						updateMask.push(`${key}.${mask}`);
-					});
-				} else {
-					updateMask.push(key);
-				}
-			}
-		}
-	}
-	return updateMask;
+  const updateMask: string[] = [];
+  if (!validator.isNonNullObject(obj)) {
+    return updateMask;
+  }
+  for (const key in obj) {
+    if (typeof obj[key] !== "undefined") {
+      const nextPath = root ? `${root}.${key}` : key;
+      // We hit maximum path.
+      // Consider switching to Set<string> if the list grows too large.
+      if (terminalPaths.indexOf(nextPath) !== -1) {
+        // Add key and stop traversing this branch.
+        updateMask.push(key);
+      } else {
+        const maskList = generateUpdateMask(obj[key], terminalPaths, nextPath);
+        if (maskList.length > 0) {
+          maskList.forEach((mask) => {
+            updateMask.push(`${key}.${mask}`);
+          });
+        } else {
+          updateMask.push(key);
+        }
+      }
+    }
+  }
+  return updateMask;
 }

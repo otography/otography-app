@@ -1,36 +1,36 @@
 {
-	"$schema": "https://unpkg.com/knip@6/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema.json",
 
-	// drizzle.config.ts loads env vars at top level, disable plugin
-	"drizzle": false,
+  // drizzle.config.ts loads env vars at top level, disable plugin
+  "drizzle": false,
 
-	// Root workspace — no source files at root level
-	"entry": [],
-	"project": [],
+  // Root workspace — no source files at root level
+  "entry": [],
+  "project": [],
 
-	// Exclude non-source directories
-	"ignore": [".agents/**", ".claude/**"],
+  // Exclude non-source directories
+  "ignore": [".agents/**", ".claude/**"],
 
-	"workspaces": {
-		"packages/typescript-config": {
-			"entry": [],
-			"project": [],
-			// tsconfig plugin references are not code imports
-			"ignoreDependencies": ["next"],
-		},
-		"packages/eslint-config": {
-			"entry": [],
-			"project": [],
-		},
-		"apps/web": {
-			"entry": ["src/env.ts"],
-			"project": ["src/**/*.{ts,tsx}"],
-		},
-		"apps/api": {
-			"entry": [],
-			"project": ["src/**/*.ts"],
-			"ignore": ["src/env.drizzle.ts"],
-			"ignoreDependencies": ["cloudflare"],
-		},
-	},
+  "workspaces": {
+    "packages/typescript-config": {
+      "entry": [],
+      "project": [],
+      // tsconfig plugin references are not code imports
+      "ignoreDependencies": ["next"],
+    },
+    "packages/eslint-config": {
+      "entry": [],
+      "project": [],
+    },
+    "apps/web": {
+      "entry": ["src/env.ts"],
+      "project": ["src/**/*.{ts,tsx}"],
+    },
+    "apps/api": {
+      "entry": [],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/env.drizzle.ts"],
+      "ignoreDependencies": ["cloudflare"],
+    },
+  },
 }

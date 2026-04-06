@@ -29,12 +29,12 @@ import { Auth } from "./auth";
  * given app.
  */
 export function getAuth(app?: App): Auth {
-	if (typeof app === "undefined") {
-		app = getApp();
-	}
+  if (typeof app === "undefined") {
+    app = getApp();
+  }
 
-	const firebaseApp: FirebaseApp = app as FirebaseApp;
-	return firebaseApp.getOrInitService("auth", (app) => new Auth(app));
+  const firebaseApp: FirebaseApp = app as FirebaseApp;
+  return firebaseApp.getOrInitService("auth", (app) => new Auth(app));
 }
 
 export type { ActionCodeSettings } from "./action-code-settings-builder";
@@ -42,68 +42,68 @@ export type { ActionCodeSettings } from "./action-code-settings-builder";
 export { Auth } from "./auth";
 
 export type {
-	AllowByDefault,
-	AllowByDefaultWrap,
-	AllowlistOnly,
-	AllowlistOnlyWrap,
-	AuthFactorType,
-	AuthProviderConfig,
-	AuthProviderConfigFilter,
-	BaseAuthProviderConfig,
-	BaseCreateMultiFactorInfoRequest,
-	BaseUpdateMultiFactorInfoRequest,
-	CreateMultiFactorInfoRequest,
-	CreatePhoneMultiFactorInfoRequest,
-	CreateRequest,
-	EmailSignInProviderConfig,
-	ListProviderConfigResults,
-	MultiFactorConfig,
-	MultiFactorConfigState,
-	MultiFactorCreateSettings,
-	MultiFactorUpdateSettings,
-	MultiFactorProviderConfig,
-	OAuthResponseType,
-	OIDCAuthProviderConfig,
-	OIDCUpdateAuthProviderRequest,
-	RecaptchaAction,
-	RecaptchaConfig,
-	RecaptchaKey,
-	RecaptchaKeyClientType,
-	RecaptchaManagedRule,
-	RecaptchaTollFraudManagedRule,
-	RecaptchaProviderEnforcementState,
-	SAMLAuthProviderConfig,
-	SAMLUpdateAuthProviderRequest,
-	SmsRegionConfig,
-	UserProvider,
-	UpdateAuthProviderRequest,
-	UpdateMultiFactorInfoRequest,
-	UpdatePhoneMultiFactorInfoRequest,
-	UpdateRequest,
-	TotpMultiFactorProviderConfig,
-	PasswordPolicyConfig,
-	PasswordPolicyEnforcementState,
-	CustomStrengthOptionsConfig,
-	EmailPrivacyConfig,
-	MobileLinksConfig,
-	MobileLinksDomain,
+  AllowByDefault,
+  AllowByDefaultWrap,
+  AllowlistOnly,
+  AllowlistOnlyWrap,
+  AuthFactorType,
+  AuthProviderConfig,
+  AuthProviderConfigFilter,
+  BaseAuthProviderConfig,
+  BaseCreateMultiFactorInfoRequest,
+  BaseUpdateMultiFactorInfoRequest,
+  CreateMultiFactorInfoRequest,
+  CreatePhoneMultiFactorInfoRequest,
+  CreateRequest,
+  EmailSignInProviderConfig,
+  ListProviderConfigResults,
+  MultiFactorConfig,
+  MultiFactorConfigState,
+  MultiFactorCreateSettings,
+  MultiFactorUpdateSettings,
+  MultiFactorProviderConfig,
+  OAuthResponseType,
+  OIDCAuthProviderConfig,
+  OIDCUpdateAuthProviderRequest,
+  RecaptchaAction,
+  RecaptchaConfig,
+  RecaptchaKey,
+  RecaptchaKeyClientType,
+  RecaptchaManagedRule,
+  RecaptchaTollFraudManagedRule,
+  RecaptchaProviderEnforcementState,
+  SAMLAuthProviderConfig,
+  SAMLUpdateAuthProviderRequest,
+  SmsRegionConfig,
+  UserProvider,
+  UpdateAuthProviderRequest,
+  UpdateMultiFactorInfoRequest,
+  UpdatePhoneMultiFactorInfoRequest,
+  UpdateRequest,
+  TotpMultiFactorProviderConfig,
+  PasswordPolicyConfig,
+  PasswordPolicyEnforcementState,
+  CustomStrengthOptionsConfig,
+  EmailPrivacyConfig,
+  MobileLinksConfig,
+  MobileLinksDomain,
 } from "./auth-config";
 
 export { BaseAuth } from "./base-auth";
 
 export type {
-	DeleteUsersResult,
-	GetUsersResult,
-	ListUsersResult,
-	SessionCookieOptions,
+  DeleteUsersResult,
+  GetUsersResult,
+  ListUsersResult,
+  SessionCookieOptions,
 } from "./base-auth";
 
 export type {
-	EmailIdentifier,
-	PhoneIdentifier,
-	ProviderIdentifier,
-	UidIdentifier,
-	UserIdentifier,
+  EmailIdentifier,
+  PhoneIdentifier,
+  ProviderIdentifier,
+  UidIdentifier,
+  UserIdentifier,
 } from "./identifier";
 
 export type { CreateTenantRequest, Tenant, UpdateTenantRequest } from "./tenant";
@@ -119,20 +119,20 @@ export { ProjectConfigManager } from "./project-config-manager";
 export type { DecodedIdToken, DecodedAuthBlockingToken } from "./token-verifier";
 
 export type {
-	HashAlgorithmType,
-	UserImportOptions,
-	UserImportRecord,
-	UserImportResult,
-	UserMetadataRequest,
-	UserProviderRequest,
+  HashAlgorithmType,
+  UserImportOptions,
+  UserImportRecord,
+  UserImportResult,
+  UserMetadataRequest,
+  UserProviderRequest,
 } from "./user-import-builder";
 
 export type {
-	MultiFactorInfo,
-	MultiFactorSettings,
-	PhoneMultiFactorInfo,
-	UserInfo,
-	UserMetadata,
+  MultiFactorInfo,
+  MultiFactorSettings,
+  PhoneMultiFactorInfo,
+  UserInfo,
+  UserMetadata,
 } from "./user-record";
 
 export { UserRecord } from "./user-record";

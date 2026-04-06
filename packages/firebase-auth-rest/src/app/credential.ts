@@ -16,17 +16,17 @@
  */
 
 export interface ServiceAccount {
-	projectId?: string;
-	clientEmail?: string;
-	privateKey?: string;
+  projectId?: string;
+  clientEmail?: string;
+  privateKey?: string;
 }
 
 /**
  * Interface for Google OAuth 2.0 access tokens.
  */
 export interface GoogleOAuthAccessToken {
-	access_token: string;
-	expires_in: number;
+  access_token: string;
+  expires_in: number;
 }
 
 /**
@@ -37,11 +37,11 @@ export interface GoogleOAuthAccessToken {
  * use the default implementations provided by the `firebase-admin/app` module.
  */
 export interface Credential {
-	/**
-	 * Returns a Google OAuth2 access token object used to authenticate with
-	 * Firebase services.
-	 *
-	 * @returns A Google OAuth2 access token object.
-	 */
-	getAccessToken(): Promise<GoogleOAuthAccessToken>;
+  /**
+   * Returns a Google OAuth2 access token object used to authenticate with
+   * Firebase services.
+   *
+   * @returns A Google OAuth2 access token object.
+   */
+  getAccessToken(): Promise<GoogleOAuthAccessToken>;
 }

@@ -1,21 +1,21 @@
 {
-	"$schema": "https://json.schemastore.org/tsconfig",
-	"extends": "@repo/typescript-config/nextjs.json",
-	"compilerOptions": {
-		"incremental": true,
-		"plugins": [
-			{
-				"name": "next"
-			}
-		],
-		"strictNullChecks": true,
-		"paths": {
-			"@/*": ["./src/*"],
-			"api": ["../api/src/index.ts"],
-			"api/client": ["../api/src/client.ts"],
-			"cloudflare:workers": ["../api/worker-configuration.d.ts"]
-		}
-	},
-	"include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "next.config.js", ".next/types/**/*.ts"],
-	"exclude": ["node_modules", "../api/src"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "@repo/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "strictNullChecks": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "api": ["../api/src/index.ts"],
+      "api/client": ["../api/src/client.ts"],
+      "cloudflare:workers": ["../api/worker-configuration.d.ts"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", "next-env.d.ts", "next.config.js", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "../api/src"]
 }

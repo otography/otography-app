@@ -76,16 +76,16 @@ bun remove @supabase/ssr @supabase/supabase-js
 ```typescript
 // apps/api/src/env.ts
 export const env = createEnv({
-	server: {
-		DATABASE_URL: type("string.url"),
-		FIREBASE_PROJECT_ID: type("string>0"),
-		FIREBASE_API_KEY: type("string>0"),
-		FIREBASE_CLIENT_EMAIL: type("string.email"),
-		FIREBASE_PRIVATE_KEY: type("string>0"),
-		APP_FRONTEND_URL: type("string.url"),
-		AUTH_COOKIE_DOMAIN: type("string>0 | undefined"),
-		PORT: type("string.numeric.parse | undefined"),
-	},
+  server: {
+    DATABASE_URL: type("string.url"),
+    FIREBASE_PROJECT_ID: type("string>0"),
+    FIREBASE_API_KEY: type("string>0"),
+    FIREBASE_CLIENT_EMAIL: type("string.email"),
+    FIREBASE_PRIVATE_KEY: type("string>0"),
+    APP_FRONTEND_URL: type("string.url"),
+    AUTH_COOKIE_DOMAIN: type("string>0 | undefined"),
+    PORT: type("string.numeric.parse | undefined"),
+  },
 });
 ```
 
@@ -115,7 +115,7 @@ Firebase Admin SDK を使って ID token から session cookie を生成し、`H
 
 ```typescript
 const sessionCookie = await firebaseAuth.createSessionCookie(idToken, {
-	expiresIn: SESSION_COOKIE_MAX_AGE_MS,
+  expiresIn: SESSION_COOKIE_MAX_AGE_MS,
 });
 ```
 
@@ -152,9 +152,9 @@ API でのみ Firebase を理解し、DB には以下のような正規化され
 
 ```json
 {
-	"sub": "firebase-uid",
-	"role": "authenticated",
-	"email": "user@example.com"
+  "sub": "firebase-uid",
+  "role": "authenticated",
+  "email": "user@example.com"
 }
 ```
 
@@ -204,33 +204,33 @@ plan に不足していた項目:
 const authenticatedRole = pgRole("authenticated").existing();
 
 export const profiles = pgTable(
-	"profiles",
-	{
-		id: text("id").primaryKey(),
-		email: text("email"),
-		displayName: text("display_name"),
-		photoUrl: text("photo_url"),
-		createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-		updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-	},
-	(table) => [
-		pgPolicy("profiles_select_own", {
-			for: "select",
-			to: authenticatedRole,
-			using: sql`${table.id} = requesting_user_id()`,
-		}),
-		pgPolicy("profiles_insert_own", {
-			for: "insert",
-			to: authenticatedRole,
-			withCheck: sql`${table.id} = requesting_user_id()`,
-		}),
-		pgPolicy("profiles_update_own", {
-			for: "update",
-			to: authenticatedRole,
-			using: sql`${table.id} = requesting_user_id()`,
-			withCheck: sql`${table.id} = requesting_user_id()`,
-		}),
-	],
+  "profiles",
+  {
+    id: text("id").primaryKey(),
+    email: text("email"),
+    displayName: text("display_name"),
+    photoUrl: text("photo_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    pgPolicy("profiles_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.id} = requesting_user_id()`,
+    }),
+    pgPolicy("profiles_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.id} = requesting_user_id()`,
+    }),
+    pgPolicy("profiles_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${table.id} = requesting_user_id()`,
+      withCheck: sql`${table.id} = requesting_user_id()`,
+    }),
+  ],
 );
 ```
 

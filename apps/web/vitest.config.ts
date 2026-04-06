@@ -3,17 +3,17 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-	plugins: [react()],
-	resolve: {
-		alias: {
-			"@": path.resolve(__dirname, "src"),
-		},
-	},
-	test: {
-		globals: true,
-		environment: "jsdom",
-		include: ["src/**/*.test.{ts,tsx}"],
-		exclude: ["**/node_modules/**", "**/.next/**"],
-		setupFiles: ["./src/__tests__/setup.ts"],
-	},
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "src"),
+    },
+  },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    include: ["src/**/*.test.{ts,tsx}"],
+    exclude: ["**/node_modules/**", "**/.next/**"],
+    setupFiles: ["./src/__tests__/setup.ts"],
+  },
 });

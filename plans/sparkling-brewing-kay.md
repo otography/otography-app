@@ -75,18 +75,18 @@ import { AuthError, AuthRestError, RlsError } from "@repo/errors";
 import { getAuthFailure } from "./shared/firebase-auth-error";
 
 app.onError((err, c) => {
-	if (errore.isAbortError(err)) return c.json({ message: "Request cancelled." }, 499);
+  if (errore.isAbortError(err)) return c.json({ message: "Request cancelled." }, 499);
 
-	return errore.matchError(err, {
-		AuthRestError: (e) =>
-			c.json({ message: e.message }, e.status as 400 | 401 | 403 | 409 | 429 | 502 | 503),
-		AuthError: (e) => {
-			const failure = getAuthFailure(e);
-			return c.json(failure.body, failure.status);
-		},
-		RlsError: (e) => c.json({ message: e.message }, 500),
-		Error: () => c.json({ message: "Internal server error." }, 500),
-	});
+  return errore.matchError(err, {
+    AuthRestError: (e) =>
+      c.json({ message: e.message }, e.status as 400 | 401 | 403 | 409 | 429 | 502 | 503),
+    AuthError: (e) => {
+      const failure = getAuthFailure(e);
+      return c.json(failure.body, failure.status);
+    },
+    RlsError: (e) => c.json({ message: e.message }, 500),
+    Error: () => c.json({ message: "Internal server error." }, 500),
+  });
 });
 ```
 

@@ -1,22 +1,22 @@
 {
-	"name": "@repo/errors",
-	"version": "0.0.0",
-	"private": true,
-	"type": "module",
-	"exports": {
-		".": "./src/index.ts",
-		"./server": "./src/server.ts"
-	},
-	"scripts": {
-		"test": "vitest run"
-	},
-	"dependencies": {
-		"@repo/firebase-auth-rest": "workspace:*",
-		"errore": "^0.14.1",
-		"hono": "^4.12.9"
-	},
-	"devDependencies": {
-		"@repo/typescript-config": "workspace:*",
-		"@types/bun": "^1.3.11"
-	}
+  "name": "@repo/errors",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
+  },
+  "scripts": {
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@repo/firebase-auth-rest": "workspace:*",
+    "errore": "^0.14.1",
+    "hono": "^4.12.9"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/bun": "^1.3.11"
+  }
 }

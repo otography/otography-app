@@ -15,9 +15,9 @@
  */
 import { App } from "../app";
 import {
-	ProjectConfig,
-	ProjectConfigServerResponse,
-	UpdateProjectConfigRequest,
+  ProjectConfig,
+  ProjectConfigServerResponse,
+  UpdateProjectConfigRequest,
 } from "./project-config";
 import { AuthRequestHandler } from "./auth-api-request";
 
@@ -25,45 +25,45 @@ import { AuthRequestHandler } from "./auth-api-request";
  * Manages (gets and updates) the current project config.
  */
 export class ProjectConfigManager {
-	private readonly authRequestHandler: AuthRequestHandler;
-	/**
-	 * Initializes a ProjectConfigManager instance for a specified FirebaseApp.
-	 *
-	 * @param app - The app for this ProjectConfigManager instance.
-	 *
-	 * @constructor
-	 * @internal
-	 */
-	constructor(app: App) {
-		this.authRequestHandler = new AuthRequestHandler(app);
-	}
+  private readonly authRequestHandler: AuthRequestHandler;
+  /**
+   * Initializes a ProjectConfigManager instance for a specified FirebaseApp.
+   *
+   * @param app - The app for this ProjectConfigManager instance.
+   *
+   * @constructor
+   * @internal
+   */
+  constructor(app: App) {
+    this.authRequestHandler = new AuthRequestHandler(app);
+  }
 
-	/**
-	 * Get the project configuration.
-	 *
-	 * @returns A promise fulfilled with the project configuration.
-	 */
-	public getProjectConfig(): Promise<ProjectConfig> {
-		return this.authRequestHandler
-			.getProjectConfig()
-			.then((response: ProjectConfigServerResponse) => {
-				return new ProjectConfig(response);
-			});
-	}
-	/**
-	 * Updates an existing project configuration.
-	 *
-	 * @param projectConfigOptions - The properties to update on the project.
-	 *
-	 * @returns A promise fulfilled with the updated project config.
-	 */
-	public updateProjectConfig(
-		projectConfigOptions: UpdateProjectConfigRequest,
-	): Promise<ProjectConfig> {
-		return this.authRequestHandler
-			.updateProjectConfig(projectConfigOptions)
-			.then((response: ProjectConfigServerResponse) => {
-				return new ProjectConfig(response);
-			});
-	}
+  /**
+   * Get the project configuration.
+   *
+   * @returns A promise fulfilled with the project configuration.
+   */
+  public getProjectConfig(): Promise<ProjectConfig> {
+    return this.authRequestHandler
+      .getProjectConfig()
+      .then((response: ProjectConfigServerResponse) => {
+        return new ProjectConfig(response);
+      });
+  }
+  /**
+   * Updates an existing project configuration.
+   *
+   * @param projectConfigOptions - The properties to update on the project.
+   *
+   * @returns A promise fulfilled with the updated project config.
+   */
+  public updateProjectConfig(
+    projectConfigOptions: UpdateProjectConfigRequest,
+  ): Promise<ProjectConfig> {
+    return this.authRequestHandler
+      .updateProjectConfig(projectConfigOptions)
+      .then((response: ProjectConfigServerResponse) => {
+        return new ProjectConfig(response);
+      });
+  }
 }

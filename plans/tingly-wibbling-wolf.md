@@ -19,9 +19,9 @@
 
 ```ts
 const verifySessionCookie = (cookie: string) =>
-	firebaseAuth
-		.verifySessionCookie(cookie, true)
-		.catch((e) => AuthError.fromFirebase(e, "Failed to verify the Firebase session cookie."));
+  firebaseAuth
+    .verifySessionCookie(cookie, true)
+    .catch((e) => AuthError.fromFirebase(e, "Failed to verify the Firebase session cookie."));
 ```
 
 ### 2. authSessionMiddleware を更新
@@ -40,23 +40,23 @@ const verifySessionCookie = (cookie: string) =>
 
 ```ts
 export const requireAuthMiddleware = (): MiddlewareHandler => {
-	return async (c, next) => {
-		const sessionCookie = getSessionCookie(c);
+  return async (c, next) => {
+    const sessionCookie = getSessionCookie(c);
 
-		if (!sessionCookie) {
-			return c.json({ message: "You are not logged in." }, 401);
-		}
+    if (!sessionCookie) {
+      return c.json({ message: "You are not logged in." }, 401);
+    }
 
-		const claims = await verifySessionCookie(sessionCookie);
+    const claims = await verifySessionCookie(sessionCookie);
 
-		if (claims instanceof Error) {
-			if (claims.clearCookie) clearSessionCookie(c);
-			return c.json({ message: claims.message }, claims.statusCode);
-		}
+    if (claims instanceof Error) {
+      if (claims.clearCookie) clearSessionCookie(c);
+      return c.json({ message: claims.message }, claims.statusCode);
+    }
 
-		c.set("authSession", claims);
-		await next();
-	};
+    c.set("authSession", claims);
+    await next();
+  };
 };
 ```
 

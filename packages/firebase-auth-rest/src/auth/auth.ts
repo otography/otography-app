@@ -26,46 +26,46 @@ import { ProjectConfigManager } from "./project-config-manager";
  * An Auth instance can have multiple tenants.
  */
 export class Auth extends BaseAuth {
-	private readonly tenantManager_: TenantManager;
-	private readonly projectConfigManager_: ProjectConfigManager;
-	private readonly app_: App;
+  private readonly tenantManager_: TenantManager;
+  private readonly projectConfigManager_: ProjectConfigManager;
+  private readonly app_: App;
 
-	/**
-	 * @param app - The app for this Auth service.
-	 * @constructor
-	 * @internal
-	 */
-	constructor(app: App) {
-		super(app, new AuthRequestHandler(app));
-		this.app_ = app;
-		this.tenantManager_ = new TenantManager(app);
-		this.projectConfigManager_ = new ProjectConfigManager(app);
-	}
+  /**
+   * @param app - The app for this Auth service.
+   * @constructor
+   * @internal
+   */
+  constructor(app: App) {
+    super(app, new AuthRequestHandler(app));
+    this.app_ = app;
+    this.tenantManager_ = new TenantManager(app);
+    this.projectConfigManager_ = new ProjectConfigManager(app);
+  }
 
-	/**
-	 * Returns the app associated with this Auth instance.
-	 *
-	 * @returns The app associated with this Auth instance.
-	 */
-	get app(): App {
-		return this.app_;
-	}
+  /**
+   * Returns the app associated with this Auth instance.
+   *
+   * @returns The app associated with this Auth instance.
+   */
+  get app(): App {
+    return this.app_;
+  }
 
-	/**
-	 * Returns the tenant manager instance associated with the current project.
-	 *
-	 * @returns The tenant manager instance associated with the current project.
-	 */
-	public tenantManager(): TenantManager {
-		return this.tenantManager_;
-	}
+  /**
+   * Returns the tenant manager instance associated with the current project.
+   *
+   * @returns The tenant manager instance associated with the current project.
+   */
+  public tenantManager(): TenantManager {
+    return this.tenantManager_;
+  }
 
-	/**
-	 * Returns the project config manager instance associated with the current project.
-	 *
-	 * @returns The project config manager instance associated with the current project.
-	 */
-	public projectConfigManager(): ProjectConfigManager {
-		return this.projectConfigManager_;
-	}
+  /**
+   * Returns the project config manager instance associated with the current project.
+   *
+   * @returns The project config manager instance associated with the current project.
+   */
+  public projectConfigManager(): ProjectConfigManager {
+    return this.projectConfigManager_;
+  }
 }
