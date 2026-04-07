@@ -83,7 +83,7 @@ export class AppStore {
     return Array.from(this.appStore.values());
   }
 
-  public deleteApp(app: App): Promise<void> {
+  public async deleteApp(app: App): Promise<void> {
     if (typeof app !== "object" || app === null || !("options" in app)) {
       throw new FirebaseAppError(AppErrorCodes.INVALID_ARGUMENT, "Invalid app argument.");
     }
@@ -93,16 +93,16 @@ export class AppStore {
 
     // Delegate delete operation to the App instance itself. That will also remove the App
     // instance from the AppStore.
-    return (existingApp as FirebaseApp).delete();
+    await (existingApp as FirebaseApp).delete();
   }
 
-  public clearAllApps(): Promise<void> {
+  public async clearAllApps(): Promise<void> {
     const promises: Array<Promise<void>> = [];
     this.getApps().forEach((app) => {
       promises.push(this.deleteApp(app));
     });
 
-    return Promise.all(promises).then();
+    await Promise.all(promises);
   }
 
   /**
@@ -141,6 +141,6 @@ export function getApps(): App[] {
   return defaultAppStore.getApps();
 }
 
-export function deleteApp(app: App): Promise<void> {
-  return defaultAppStore.deleteApp(app);
+export async function deleteApp(app: App): Promise<void> {
+  await defaultAppStore.deleteApp(app);
 }

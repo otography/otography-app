@@ -43,12 +43,9 @@ export class ProjectConfigManager {
    *
    * @returns A promise fulfilled with the project configuration.
    */
-  public getProjectConfig(): Promise<ProjectConfig> {
-    return this.authRequestHandler
-      .getProjectConfig()
-      .then((response: ProjectConfigServerResponse) => {
-        return new ProjectConfig(response);
-      });
+  public async getProjectConfig(): Promise<ProjectConfig> {
+    const response: ProjectConfigServerResponse = await this.authRequestHandler.getProjectConfig();
+    return new ProjectConfig(response);
   }
   /**
    * Updates an existing project configuration.
@@ -57,13 +54,11 @@ export class ProjectConfigManager {
    *
    * @returns A promise fulfilled with the updated project config.
    */
-  public updateProjectConfig(
+  public async updateProjectConfig(
     projectConfigOptions: UpdateProjectConfigRequest,
   ): Promise<ProjectConfig> {
-    return this.authRequestHandler
-      .updateProjectConfig(projectConfigOptions)
-      .then((response: ProjectConfigServerResponse) => {
-        return new ProjectConfig(response);
-      });
+    const response: ProjectConfigServerResponse =
+      await this.authRequestHandler.updateProjectConfig(projectConfigOptions);
+    return new ProjectConfig(response);
   }
 }

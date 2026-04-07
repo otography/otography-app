@@ -194,37 +194,35 @@ class AuthResourceUrlBuilder {
    *     URL path.
    * @returns The corresponding resource URL.
    */
-  public getUrl(api?: string, params?: object): Promise<string> {
-    return this.getProjectId().then((projectId) => {
-      const baseParams = {
-        version: this.version,
-        projectId,
-        api: api || "",
-      };
-      const baseUrl = utils.formatString(this.urlFormat, baseParams);
-      // Substitute additional api related parameters.
-      return utils.formatString(baseUrl, params || {});
-    });
+  public async getUrl(api?: string, params?: object): Promise<string> {
+    const projectId = await this.getProjectId();
+    const baseParams = {
+      version: this.version,
+      projectId,
+      api: api || "",
+    };
+    const baseUrl = utils.formatString(this.urlFormat, baseParams);
+    // Substitute additional api related parameters.
+    return utils.formatString(baseUrl, params || {});
   }
 
-  private getProjectId(): Promise<string> {
+  private async getProjectId(): Promise<string> {
     if (this.projectId) {
-      return Promise.resolve(this.projectId);
+      return this.projectId;
     }
 
-    return utils.findProjectId(this.app).then((projectId) => {
-      if (!validator.isNonEmptyString(projectId)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_CREDENTIAL,
-          "Failed to determine project ID for Auth. Initialize the " +
-            "SDK with service account credentials or set project ID as an app option. " +
-            "Alternatively set the GOOGLE_CLOUD_PROJECT environment variable.",
-        );
-      }
+    const projectId = await utils.findProjectId(this.app);
+    if (!validator.isNonEmptyString(projectId)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_CREDENTIAL,
+        "Failed to determine project ID for Auth. Initialize the " +
+          "SDK with service account credentials or set project ID as an app option. " +
+          "Alternatively set the GOOGLE_CLOUD_PROJECT environment variable.",
+      );
+    }
 
-      this.projectId = projectId;
-      return projectId;
-    });
+    this.projectId = projectId;
+    return projectId;
   }
 }
 
@@ -261,10 +259,9 @@ class TenantAwareAuthResourceUrlBuilder extends AuthResourceUrlBuilder {
    *     URL path.
    * @returns The corresponding resource URL.
    */
-  public getUrl(api?: string, params?: object): Promise<string> {
-    return super.getUrl(api, params).then((url) => {
-      return utils.formatString(url, { tenantId: this.tenantId });
-    });
+  public async getUrl(api?: string, params?: object): Promise<string> {
+    const url = await super.getUrl(api, params);
+    return utils.formatString(url, { tenantId: this.tenantId });
   }
 }
 
@@ -273,12 +270,12 @@ class TenantAwareAuthResourceUrlBuilder extends AuthResourceUrlBuilder {
  * when communicating with the Auth Emulator.
  */
 class AuthHttpClient extends AuthorizedHttpClient {
-  public getToken(): Promise<string> {
+  public async getToken(): Promise<string> {
     if (useEmulator()) {
-      return Promise.resolve("owner");
+      return "owner";
     }
 
-    return super.getToken();
+    return await super.getToken();
   }
 }
 
@@ -1179,17 +1176,18 @@ export abstract class AbstractAuthRequestHandler {
    *
    * @returns A promise that resolves on success with the created session cookie.
    */
-  public createSessionCookie(idToken: string, expiresIn: number): Promise<string> {
+  public async createSessionCookie(idToken: string, expiresIn: number): Promise<string> {
     const request = {
       idToken,
       // Convert to seconds.
       validDuration: Math.floor(expiresIn / 1000),
     };
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_CREATE_SESSION_COOKIE,
       request,
-    ).then((response: any) => response.sessionCookie);
+    );
+    return response.sessionCookie;
   }
 
   /**
@@ -1198,15 +1196,15 @@ export abstract class AbstractAuthRequestHandler {
    * @param uid - The uid of the user to lookup.
    * @returns A promise that resolves with the user information.
    */
-  public getAccountInfoByUid(uid: string): Promise<object> {
+  public async getAccountInfoByUid(uid: string): Promise<object> {
     if (!validator.isUid(uid)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_UID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
     }
 
     const request = {
       localId: [uid],
     };
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_ACCOUNT_INFO,
       request,
@@ -1219,15 +1217,15 @@ export abstract class AbstractAuthRequestHandler {
    * @param email - The email of the user to lookup.
    * @returns A promise that resolves with the user information.
    */
-  public getAccountInfoByEmail(email: string): Promise<object> {
+  public async getAccountInfoByEmail(email: string): Promise<object> {
     if (!validator.isEmail(email)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_EMAIL));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_EMAIL);
     }
 
     const request = {
       email: [email],
     };
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_ACCOUNT_INFO,
       request,
@@ -1240,22 +1238,22 @@ export abstract class AbstractAuthRequestHandler {
    * @param phoneNumber - The phone number of the user to lookup.
    * @returns A promise that resolves with the user information.
    */
-  public getAccountInfoByPhoneNumber(phoneNumber: string): Promise<object> {
+  public async getAccountInfoByPhoneNumber(phoneNumber: string): Promise<object> {
     if (!validator.isPhoneNumber(phoneNumber)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PHONE_NUMBER));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PHONE_NUMBER);
     }
 
     const request = {
       phoneNumber: [phoneNumber],
     };
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_ACCOUNT_INFO,
       request,
     );
   }
 
-  public getAccountInfoByFederatedUid(providerId: string, rawId: string): Promise<object> {
+  public async getAccountInfoByFederatedUid(providerId: string, rawId: string): Promise<object> {
     if (!validator.isNonEmptyString(providerId) || !validator.isNonEmptyString(rawId)) {
       throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
@@ -1269,7 +1267,7 @@ export abstract class AbstractAuthRequestHandler {
       ],
     };
 
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_ACCOUNT_INFO,
       request,
@@ -1284,9 +1282,9 @@ export abstract class AbstractAuthRequestHandler {
    * @param A - promise that resolves with the set of successfully
    *     looked up users. Possibly empty if no users were looked up.
    */
-  public getAccountInfoByIdentifiers(identifiers: UserIdentifier[]): Promise<object> {
+  public async getAccountInfoByIdentifiers(identifiers: UserIdentifier[]): Promise<object> {
     if (identifiers.length === 0) {
-      return Promise.resolve({ users: [] });
+      return { users: [] };
     } else if (identifiers.length > MAX_GET_ACCOUNTS_BATCH_SIZE) {
       throw new FirebaseAuthError(
         AuthClientErrorCode.MAXIMUM_USER_COUNT_EXCEEDED,
@@ -1313,7 +1311,7 @@ export abstract class AbstractAuthRequestHandler {
       }
     }
 
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_ACCOUNTS_INFO,
       request,
@@ -1333,7 +1331,7 @@ export abstract class AbstractAuthRequestHandler {
    *     users and the next page token if available. For the last page, an empty list of users
    *     and no page token are returned.
    */
-  public downloadAccount(
+  public async downloadAccount(
     maxResults: number = MAX_DOWNLOAD_ACCOUNT_PAGE_SIZE,
     pageToken?: string,
   ): Promise<{ users: object[]; nextPageToken?: string }> {
@@ -1346,17 +1344,16 @@ export abstract class AbstractAuthRequestHandler {
     if (typeof request.nextPageToken === "undefined") {
       delete request.nextPageToken;
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_DOWNLOAD_ACCOUNT,
       request,
-    ).then((response: any) => {
-      // No more users available.
-      if (!response.users) {
-        response.users = [];
-      }
-      return response as { users: object[]; nextPageToken?: string };
-    });
+    );
+    // No more users available.
+    if (!response.users) {
+      response.users = [];
+    }
+    return response as { users: object[]; nextPageToken?: string };
   }
 
   /**
@@ -1372,7 +1369,7 @@ export abstract class AbstractAuthRequestHandler {
    *     with the result of the import. This includes the number of successful imports, the number
    *     of failed uploads and their corresponding errors.
    */
-  public uploadAccount(
+  public async uploadAccount(
     users: UserImportRecord[],
     options?: UserImportOptions,
   ): Promise<UserImportResult> {
@@ -1395,18 +1392,17 @@ export abstract class AbstractAuthRequestHandler {
     // If no remaining user in request after client side processing, there is no need
     // to send the request to the server.
     if (!request.users || request.users.length === 0) {
-      return Promise.resolve(userImportBuilder.buildResponse([]));
+      return userImportBuilder.buildResponse([]);
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_UPLOAD_ACCOUNT,
       request,
-    ).then((response: any) => {
-      // No error object is returned if no error encountered.
-      const failedUploads = (response.error || []) as Array<{ index: number; message: string }>;
-      // Rewrite response as UserImportResult and re-insert client previously detected errors.
-      return userImportBuilder.buildResponse(failedUploads);
-    });
+    );
+    // No error object is returned if no error encountered.
+    const failedUploads = (response.error || []) as Array<{ index: number; message: string }>;
+    // Rewrite response as UserImportResult and re-insert client previously detected errors.
+    return userImportBuilder.buildResponse(failedUploads);
   }
 
   /**
@@ -1415,24 +1411,27 @@ export abstract class AbstractAuthRequestHandler {
    * @param uid - The uid of the user to delete.
    * @returns A promise that resolves when the user is deleted.
    */
-  public deleteAccount(uid: string): Promise<object> {
+  public async deleteAccount(uid: string): Promise<object> {
     if (!validator.isUid(uid)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_UID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
     }
 
     const request = {
       localId: uid,
     };
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_DELETE_ACCOUNT,
       request,
     );
   }
 
-  public deleteAccounts(uids: string[], force: boolean): Promise<BatchDeleteAccountsResponse> {
+  public async deleteAccounts(
+    uids: string[],
+    force: boolean,
+  ): Promise<BatchDeleteAccountsResponse> {
     if (uids.length === 0) {
-      return Promise.resolve({});
+      return {};
     } else if (uids.length > MAX_DELETE_ACCOUNTS_BATCH_SIZE) {
       throw new FirebaseAuthError(
         AuthClientErrorCode.MAXIMUM_USER_COUNT_EXCEEDED,
@@ -1452,7 +1451,7 @@ export abstract class AbstractAuthRequestHandler {
       request.localIds!.push(uid);
     });
 
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_BATCH_DELETE_ACCOUNTS,
       request,
@@ -1467,16 +1466,14 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves when the operation completes
    *     with the user id that was edited.
    */
-  public setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<string> {
+  public async setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<string> {
     // Validate user UID.
     if (!validator.isUid(uid)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_UID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
     } else if (!validator.isObject(customUserClaims)) {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_ARGUMENT,
-          "CustomUserClaims argument must be an object or null.",
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_ARGUMENT,
+        "CustomUserClaims argument must be an object or null.",
       );
     }
     // Delete operation. Replace null with an empty object.
@@ -1488,13 +1485,12 @@ export abstract class AbstractAuthRequestHandler {
       localId: uid,
       customAttributes: JSON.stringify(customUserClaims),
     };
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_SET_ACCOUNT_INFO,
       request,
-    ).then((response: any) => {
-      return response.localId as string;
-    });
+    );
+    return response.localId as string;
   }
 
   /**
@@ -1505,15 +1501,13 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves when the operation completes
    *     with the user id that was edited.
    */
-  public updateExistingAccount(uid: string, properties: UpdateRequest): Promise<string> {
+  public async updateExistingAccount(uid: string, properties: UpdateRequest): Promise<string> {
     if (!validator.isUid(uid)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_UID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
     } else if (!validator.isNonNullObject(properties)) {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_ARGUMENT,
-          "Properties argument must be a non-null object.",
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_ARGUMENT,
+        "Properties argument must be a non-null object.",
       );
     } else if (validator.isNonNullObject(properties.providerToLink)) {
       // TODO(rsgowman): These checks overlap somewhat with
@@ -1624,26 +1618,21 @@ export abstract class AbstractAuthRequestHandler {
         request.mfa = {
           enrollments: [],
         };
-        try {
-          request.multiFactor.enrolledFactors.forEach((multiFactorInfo: any) => {
-            request.mfa.enrollments.push(convertMultiFactorInfoToServerFormat(multiFactorInfo));
-          });
-        } catch (e) {
-          return Promise.reject(e);
-        }
+        request.multiFactor.enrolledFactors.forEach((multiFactorInfo: any) => {
+          request.mfa.enrollments.push(convertMultiFactorInfoToServerFormat(multiFactorInfo));
+        });
         if (request.mfa.enrollments.length === 0) {
           delete request.mfa.enrollments;
         }
       }
       delete request.multiFactor;
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_SET_ACCOUNT_INFO,
       request,
-    ).then((response: any) => {
-      return response.localId as string;
-    });
+    );
+    return response.localId as string;
   }
 
   /**
@@ -1659,23 +1648,22 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves when the operation completes
    *     successfully with the user id of the corresponding user.
    */
-  public revokeRefreshTokens(uid: string): Promise<string> {
+  public async revokeRefreshTokens(uid: string): Promise<string> {
     // Validate user UID.
     if (!validator.isUid(uid)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_UID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_UID);
     }
     const request: any = {
       localId: uid,
       // validSince is in UTC seconds.
       validSince: Math.floor(new Date().getTime() / 1000),
     };
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_SET_ACCOUNT_INFO,
       request,
-    ).then((response: any) => {
-      return response.localId as string;
-    });
+    );
+    return response.localId as string;
   }
 
   /**
@@ -1685,13 +1673,11 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves when the operation completes
    *     with the user id that was created.
    */
-  public createNewAccount(properties: CreateRequest): Promise<string> {
+  public async createNewAccount(properties: CreateRequest): Promise<string> {
     if (!validator.isNonNullObject(properties)) {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_ARGUMENT,
-          "Properties argument must be a non-null object.",
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_ARGUMENT,
+        "Properties argument must be a non-null object.",
       );
     }
 
@@ -1716,38 +1702,33 @@ export abstract class AbstractAuthRequestHandler {
     if (validator.isNonNullObject(request.multiFactor)) {
       if (validator.isNonEmptyArray(request.multiFactor.enrolledFactors)) {
         const mfaInfo: AuthFactorInfo[] = [];
-        try {
-          request.multiFactor.enrolledFactors.forEach((multiFactorInfo) => {
-            // Enrollment time and uid are not allowed for signupNewUser endpoint.
-            // They will automatically be provisioned server side.
-            if ("enrollmentTime" in multiFactorInfo) {
-              throw new FirebaseAuthError(
-                AuthClientErrorCode.INVALID_ARGUMENT,
-                '"enrollmentTime" is not supported when adding second factors via "createUser()"',
-              );
-            } else if ("uid" in multiFactorInfo) {
-              throw new FirebaseAuthError(
-                AuthClientErrorCode.INVALID_ARGUMENT,
-                '"uid" is not supported when adding second factors via "createUser()"',
-              );
-            }
-            mfaInfo.push(convertMultiFactorInfoToServerFormat(multiFactorInfo));
-          });
-        } catch (e) {
-          return Promise.reject(e);
-        }
+        request.multiFactor.enrolledFactors.forEach((multiFactorInfo) => {
+          // Enrollment time and uid are not allowed for signupNewUser endpoint.
+          // They will automatically be provisioned server side.
+          if ("enrollmentTime" in multiFactorInfo) {
+            throw new FirebaseAuthError(
+              AuthClientErrorCode.INVALID_ARGUMENT,
+              '"enrollmentTime" is not supported when adding second factors via "createUser()"',
+            );
+          } else if ("uid" in multiFactorInfo) {
+            throw new FirebaseAuthError(
+              AuthClientErrorCode.INVALID_ARGUMENT,
+              '"uid" is not supported when adding second factors via "createUser()"',
+            );
+          }
+          mfaInfo.push(convertMultiFactorInfoToServerFormat(multiFactorInfo));
+        });
         request.mfaInfo = mfaInfo;
       }
       delete request.multiFactor;
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_SIGN_UP_NEW_USER,
       request,
-    ).then((response: any) => {
-      // Return the user id.
-      return response.localId as string;
-    });
+    );
+    // Return the user id.
+    return response.localId as string;
   }
 
   /**
@@ -1764,7 +1745,7 @@ export abstract class AbstractAuthRequestHandler {
    *     Required only for VERIFY_AND_CHANGE_EMAIL requests.
    * @returns A promise that resolves with the email action link.
    */
-  public getEmailActionLink(
+  public async getEmailActionLink(
     requestType: string,
     email: string,
     actionCodeSettings?: ActionCodeSettings,
@@ -1779,37 +1760,28 @@ export abstract class AbstractAuthRequestHandler {
     // ActionCodeSettings required for email link sign-in to determine the url where the sign-in will
     // be completed.
     if (typeof actionCodeSettings === "undefined" && requestType === "EMAIL_SIGNIN") {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_ARGUMENT,
-          "`actionCodeSettings` is required when `requestType` === 'EMAIL_SIGNIN'",
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_ARGUMENT,
+        "`actionCodeSettings` is required when `requestType` === 'EMAIL_SIGNIN'",
       );
     }
     if (typeof actionCodeSettings !== "undefined" || requestType === "EMAIL_SIGNIN") {
-      try {
-        const builder = new ActionCodeSettingsBuilder(actionCodeSettings!);
-        request = deepExtend(request, builder.buildRequest());
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      const builder = new ActionCodeSettingsBuilder(actionCodeSettings!);
+      request = deepExtend(request, builder.buildRequest());
     }
     if (requestType === "VERIFY_AND_CHANGE_EMAIL" && typeof newEmail === "undefined") {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_ARGUMENT,
-          "`newEmail` is required when `requestType` === 'VERIFY_AND_CHANGE_EMAIL'",
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_ARGUMENT,
+        "`newEmail` is required when `requestType` === 'VERIFY_AND_CHANGE_EMAIL'",
       );
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getAuthUrlBuilder(),
       FIREBASE_AUTH_GET_OOB_CODE,
       request,
-    ).then((response: any) => {
-      // Return the link.
-      return response.oobLink as string;
-    });
+    );
+    // Return the link.
+    return response.oobLink as string;
   }
 
   /**
@@ -1818,11 +1790,11 @@ export abstract class AbstractAuthRequestHandler {
    * @param providerId - The provider identifier of the configuration to lookup.
    * @returns A promise that resolves with the provider configuration information.
    */
-  public getOAuthIdpConfig(providerId: string): Promise<OIDCConfigServerResponse> {
+  public async getOAuthIdpConfig(providerId: string): Promise<OIDCConfigServerResponse> {
     if (!OIDCConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       GET_OAUTH_IDP_CONFIG,
       {},
@@ -1843,7 +1815,7 @@ export abstract class AbstractAuthRequestHandler {
    *     OIDC configurations and the next page token if available. For the last page, an empty list of provider
    *     configuration and no page token are returned.
    */
-  public listOAuthIdpConfigs(
+  public async listOAuthIdpConfigs(
     maxResults: number = MAX_LIST_PROVIDER_CONFIGURATION_PAGE_SIZE,
     pageToken?: string,
   ): Promise<object> {
@@ -1854,17 +1826,16 @@ export abstract class AbstractAuthRequestHandler {
     if (typeof pageToken !== "undefined") {
       request.pageToken = pageToken;
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       LIST_OAUTH_IDP_CONFIGS,
       request,
-    ).then((response: any) => {
-      if (!response.oauthIdpConfigs) {
-        response.oauthIdpConfigs = [];
-        delete response.nextPageToken;
-      }
-      return response as { oauthIdpConfigs: object[]; nextPageToken?: string };
-    });
+    );
+    if (!response.oauthIdpConfigs) {
+      response.oauthIdpConfigs = [];
+      delete response.nextPageToken;
+    }
+    return response as { oauthIdpConfigs: object[]; nextPageToken?: string };
   }
 
   /**
@@ -1873,18 +1844,16 @@ export abstract class AbstractAuthRequestHandler {
    * @param providerId - The identifier of the OIDC configuration to delete.
    * @returns A promise that resolves when the OIDC provider is deleted.
    */
-  public deleteOAuthIdpConfig(providerId: string): Promise<void> {
+  public async deleteOAuthIdpConfig(providerId: string): Promise<void> {
     if (!OIDCConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
-    return this.invokeRequestHandler(
+    await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       DELETE_OAUTH_IDP_CONFIG,
       {},
       { providerId },
-    ).then(() => {
-      // Return nothing.
-    });
+    );
   }
 
   /**
@@ -1894,29 +1863,25 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves with the newly created OIDC
    *     configuration.
    */
-  public createOAuthIdpConfig(options: OIDCAuthProviderConfig): Promise<OIDCConfigServerResponse> {
+  public async createOAuthIdpConfig(
+    options: OIDCAuthProviderConfig,
+  ): Promise<OIDCConfigServerResponse> {
     // Construct backend request.
-    let request;
-    try {
-      request = OIDCConfig.buildServerRequest(options) || {};
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const request = OIDCConfig.buildServerRequest(options) || {};
     const providerId = options.providerId;
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       CREATE_OAUTH_IDP_CONFIG,
       request,
       { providerId },
-    ).then((response: any) => {
-      if (!OIDCConfig.getProviderIdFromResourceName(response.name)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INTERNAL_ERROR,
-          "INTERNAL ASSERT FAILED: Unable to create new OIDC provider configuration",
-        );
-      }
-      return response as OIDCConfigServerResponse;
-    });
+    );
+    if (!OIDCConfig.getProviderIdFromResourceName(response.name)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INTERNAL_ERROR,
+        "INTERNAL ASSERT FAILED: Unable to create new OIDC provider configuration",
+      );
+    }
+    return response as OIDCConfigServerResponse;
   }
 
   /**
@@ -1927,35 +1892,29 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves with the modified provider
    *     configuration.
    */
-  public updateOAuthIdpConfig(
+  public async updateOAuthIdpConfig(
     providerId: string,
     options: OIDCUpdateAuthProviderRequest,
   ): Promise<OIDCConfigServerResponse> {
     if (!OIDCConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
     // Construct backend request.
-    let request: OIDCConfigServerRequest;
-    try {
-      request = OIDCConfig.buildServerRequest(options, true) || {};
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const request: OIDCConfigServerRequest = OIDCConfig.buildServerRequest(options, true) || {};
     const updateMask = utils.generateUpdateMask(request);
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       UPDATE_OAUTH_IDP_CONFIG,
       request,
       { providerId, updateMask: updateMask.join(",") },
-    ).then((response: any) => {
-      if (!OIDCConfig.getProviderIdFromResourceName(response.name)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INTERNAL_ERROR,
-          "INTERNAL ASSERT FAILED: Unable to update OIDC provider configuration",
-        );
-      }
-      return response as OIDCConfigServerResponse;
-    });
+    );
+    if (!OIDCConfig.getProviderIdFromResourceName(response.name)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INTERNAL_ERROR,
+        "INTERNAL ASSERT FAILED: Unable to update OIDC provider configuration",
+      );
+    }
+    return response as OIDCConfigServerResponse;
   }
 
   /**
@@ -1964,11 +1923,11 @@ export abstract class AbstractAuthRequestHandler {
    * @param providerId - The provider identifier of the configuration to lookup.
    * @returns A promise that resolves with the provider configuration information.
    */
-  public getInboundSamlConfig(providerId: string): Promise<SAMLConfigServerResponse> {
+  public async getInboundSamlConfig(providerId: string): Promise<SAMLConfigServerResponse> {
     if (!SAMLConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
-    return this.invokeRequestHandler(
+    return await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       GET_INBOUND_SAML_CONFIG,
       {},
@@ -1989,7 +1948,7 @@ export abstract class AbstractAuthRequestHandler {
    *     SAML configurations and the next page token if available. For the last page, an empty list of provider
    *     configuration and no page token are returned.
    */
-  public listInboundSamlConfigs(
+  public async listInboundSamlConfigs(
     maxResults: number = MAX_LIST_PROVIDER_CONFIGURATION_PAGE_SIZE,
     pageToken?: string,
   ): Promise<object> {
@@ -2000,17 +1959,16 @@ export abstract class AbstractAuthRequestHandler {
     if (typeof pageToken !== "undefined") {
       request.pageToken = pageToken;
     }
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       LIST_INBOUND_SAML_CONFIGS,
       request,
-    ).then((response: any) => {
-      if (!response.inboundSamlConfigs) {
-        response.inboundSamlConfigs = [];
-        delete response.nextPageToken;
-      }
-      return response as { inboundSamlConfigs: object[]; nextPageToken?: string };
-    });
+    );
+    if (!response.inboundSamlConfigs) {
+      response.inboundSamlConfigs = [];
+      delete response.nextPageToken;
+    }
+    return response as { inboundSamlConfigs: object[]; nextPageToken?: string };
   }
 
   /**
@@ -2019,18 +1977,16 @@ export abstract class AbstractAuthRequestHandler {
    * @param providerId - The identifier of the SAML configuration to delete.
    * @returns A promise that resolves when the SAML provider is deleted.
    */
-  public deleteInboundSamlConfig(providerId: string): Promise<void> {
+  public async deleteInboundSamlConfig(providerId: string): Promise<void> {
     if (!SAMLConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
-    return this.invokeRequestHandler(
+    await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       DELETE_INBOUND_SAML_CONFIG,
       {},
       { providerId },
-    ).then(() => {
-      // Return nothing.
-    });
+    );
   }
 
   /**
@@ -2040,31 +1996,25 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves with the newly created SAML
    *     configuration.
    */
-  public createInboundSamlConfig(
+  public async createInboundSamlConfig(
     options: SAMLAuthProviderConfig,
   ): Promise<SAMLConfigServerResponse> {
     // Construct backend request.
-    let request;
-    try {
-      request = SAMLConfig.buildServerRequest(options) || {};
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const request = SAMLConfig.buildServerRequest(options) || {};
     const providerId = options.providerId;
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       CREATE_INBOUND_SAML_CONFIG,
       request,
       { providerId },
-    ).then((response: any) => {
-      if (!SAMLConfig.getProviderIdFromResourceName(response.name)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INTERNAL_ERROR,
-          "INTERNAL ASSERT FAILED: Unable to create new SAML provider configuration",
-        );
-      }
-      return response as SAMLConfigServerResponse;
-    });
+    );
+    if (!SAMLConfig.getProviderIdFromResourceName(response.name)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INTERNAL_ERROR,
+        "INTERNAL ASSERT FAILED: Unable to create new SAML provider configuration",
+      );
+    }
+    return response as SAMLConfigServerResponse;
   }
 
   /**
@@ -2075,35 +2025,29 @@ export abstract class AbstractAuthRequestHandler {
    * @returns A promise that resolves with the modified provider
    *     configuration.
    */
-  public updateInboundSamlConfig(
+  public async updateInboundSamlConfig(
     providerId: string,
     options: SAMLUpdateAuthProviderRequest,
   ): Promise<SAMLConfigServerResponse> {
     if (!SAMLConfig.isProviderId(providerId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
     // Construct backend request.
-    let request: SAMLConfigServerRequest;
-    try {
-      request = SAMLConfig.buildServerRequest(options, true) || {};
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const request: SAMLConfigServerRequest = SAMLConfig.buildServerRequest(options, true) || {};
     const updateMask = utils.generateUpdateMask(request);
-    return this.invokeRequestHandler(
+    const response: any = await this.invokeRequestHandler(
       this.getProjectConfigUrlBuilder(),
       UPDATE_INBOUND_SAML_CONFIG,
       request,
       { providerId, updateMask: updateMask.join(",") },
-    ).then((response: any) => {
-      if (!SAMLConfig.getProviderIdFromResourceName(response.name)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INTERNAL_ERROR,
-          "INTERNAL ASSERT FAILED: Unable to update SAML provider configuration",
-        );
-      }
-      return response as SAMLConfigServerResponse;
-    });
+    );
+    if (!SAMLConfig.getProviderIdFromResourceName(response.name)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INTERNAL_ERROR,
+        "INTERNAL ASSERT FAILED: Unable to update SAML provider configuration",
+      );
+    }
+    return response as SAMLConfigServerResponse;
   }
 
   /**
@@ -2115,55 +2059,51 @@ export abstract class AbstractAuthRequestHandler {
    * @param additionalResourceParams - Additional resource related params if needed.
    * @returns A promise that resolves with the response.
    */
-  protected invokeRequestHandler(
+  protected async invokeRequestHandler(
     urlBuilder: AuthResourceUrlBuilder,
     apiSettings: ApiSettings,
     requestData: object | undefined,
     additionalResourceParams?: object,
   ): Promise<object> {
-    return urlBuilder
-      .getUrl(apiSettings.getEndpoint(), additionalResourceParams)
-      .then((url) => {
-        // Validate request.
-        if (requestData) {
-          const requestValidator = apiSettings.getRequestValidator();
-          requestValidator(requestData);
+    try {
+      const url = await urlBuilder.getUrl(apiSettings.getEndpoint(), additionalResourceParams);
+      // Validate request.
+      if (requestData) {
+        const requestValidator = apiSettings.getRequestValidator();
+        requestValidator(requestData);
+      }
+      // Process request.
+      const req: HttpRequestConfig = {
+        method: apiSettings.getHttpMethod(),
+        url,
+        headers: FIREBASE_AUTH_HEADERS,
+        data: requestData,
+        timeout: FIREBASE_AUTH_TIMEOUT,
+      };
+      const response = await this.httpClient.send(req);
+      // Validate response.
+      const responseValidator = apiSettings.getResponseValidator();
+      responseValidator(response.data);
+      // Return entire response.
+      return response.data;
+    } catch (err) {
+      if (err instanceof RequestResponseError) {
+        const error = err.response.data;
+        const errorCode = AbstractAuthRequestHandler.getErrorCode(error);
+        if (!errorCode) {
+          throw new FirebaseAuthError(
+            AuthClientErrorCode.INTERNAL_ERROR,
+            "Error returned from server: " +
+              error +
+              ". Additionally, an " +
+              "internal error occurred while attempting to extract the " +
+              "errorcode from the error.",
+          );
         }
-        // Process request.
-        const req: HttpRequestConfig = {
-          method: apiSettings.getHttpMethod(),
-          url,
-          headers: FIREBASE_AUTH_HEADERS,
-          data: requestData,
-          timeout: FIREBASE_AUTH_TIMEOUT,
-        };
-        return this.httpClient.send(req);
-      })
-      .then((response) => {
-        // Validate response.
-        const responseValidator = apiSettings.getResponseValidator();
-        responseValidator(response.data);
-        // Return entire response.
-        return response.data;
-      })
-      .catch((err) => {
-        if (err instanceof RequestResponseError) {
-          const error = err.response.data;
-          const errorCode = AbstractAuthRequestHandler.getErrorCode(error);
-          if (!errorCode) {
-            throw new FirebaseAuthError(
-              AuthClientErrorCode.INTERNAL_ERROR,
-              "Error returned from server: " +
-                error +
-                ". Additionally, an " +
-                "internal error occurred while attempting to extract the " +
-                "errorcode from the error.",
-            );
-          }
-          throw FirebaseAuthError.fromServerError(errorCode, /* message */ undefined, error);
-        }
-        throw err;
-      });
+        throw FirebaseAuthError.fromServerError(errorCode, /* message */ undefined, error);
+      }
+      throw err;
+    }
   }
 
   /**
@@ -2334,35 +2274,32 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    * Get the current project's config
    * @returns A promise that resolves with the project config information.
    */
-  public getProjectConfig(): Promise<ProjectConfigServerResponse> {
-    return this.invokeRequestHandler(this.authResourceUrlBuilder, GET_PROJECT_CONFIG, {}, {}).then(
-      (response: any) => {
-        return response as ProjectConfigServerResponse;
-      },
+  public async getProjectConfig(): Promise<ProjectConfigServerResponse> {
+    const response = await this.invokeRequestHandler(
+      this.authResourceUrlBuilder,
+      GET_PROJECT_CONFIG,
+      {},
+      {},
     );
+    return response as ProjectConfigServerResponse;
   }
 
   /**
    * Update the current project's config.
    * @returns A promise that resolves with the project config information.
    */
-  public updateProjectConfig(
+  public async updateProjectConfig(
     options: UpdateProjectConfigRequest,
   ): Promise<ProjectConfigServerResponse> {
-    try {
-      const request = ProjectConfig.buildServerRequest(options);
-      const updateMask = utils.generateUpdateMask(request);
-      return this.invokeRequestHandler(
-        this.authResourceUrlBuilder,
-        UPDATE_PROJECT_CONFIG,
-        request,
-        { updateMask: updateMask.join(",") },
-      ).then((response: any) => {
-        return response as ProjectConfigServerResponse;
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
+    const request = ProjectConfig.buildServerRequest(options);
+    const updateMask = utils.generateUpdateMask(request);
+    const response = await this.invokeRequestHandler(
+      this.authResourceUrlBuilder,
+      UPDATE_PROJECT_CONFIG,
+      request,
+      { updateMask: updateMask.join(",") },
+    );
+    return response as ProjectConfigServerResponse;
   }
 
   /**
@@ -2371,18 +2308,17 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    * @param tenantId - The tenant identifier of the tenant to lookup.
    * @returns A promise that resolves with the tenant information.
    */
-  public getTenant(tenantId: string): Promise<TenantServerResponse> {
+  public async getTenant(tenantId: string): Promise<TenantServerResponse> {
     if (!validator.isNonEmptyString(tenantId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID);
     }
-    return this.invokeRequestHandler(
+    const response = await this.invokeRequestHandler(
       this.authResourceUrlBuilder,
       GET_TENANT,
       {},
       { tenantId },
-    ).then((response: any) => {
-      return response as TenantServerResponse;
-    });
+    );
+    return response as TenantServerResponse;
   }
 
   /**
@@ -2398,7 +2334,7 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    *     tenants and the next page token if available. For the last page, an empty list of tenants
    *     and no page token are returned.
    */
-  public listTenants(
+  public async listTenants(
     maxResults: number = MAX_LIST_TENANT_PAGE_SIZE,
     pageToken?: string,
   ): Promise<{ tenants: TenantServerResponse[]; nextPageToken?: string }> {
@@ -2410,15 +2346,16 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
     if (typeof request.pageToken === "undefined") {
       delete request.pageToken;
     }
-    return this.invokeRequestHandler(this.authResourceUrlBuilder, LIST_TENANTS, request).then(
-      (response: any) => {
-        if (!response.tenants) {
-          response.tenants = [];
-          delete response.nextPageToken;
-        }
-        return response as { tenants: TenantServerResponse[]; nextPageToken?: string };
-      },
+    const response: any = await this.invokeRequestHandler(
+      this.authResourceUrlBuilder,
+      LIST_TENANTS,
+      request,
     );
+    if (!response.tenants) {
+      response.tenants = [];
+      delete response.nextPageToken;
+    }
+    return response as { tenants: TenantServerResponse[]; nextPageToken?: string };
   }
 
   /**
@@ -2427,14 +2364,12 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    * @param tenantId - The identifier of the tenant to delete.
    * @returns A promise that resolves when the tenant is deleted.
    */
-  public deleteTenant(tenantId: string): Promise<void> {
+  public async deleteTenant(tenantId: string): Promise<void> {
     if (!validator.isNonEmptyString(tenantId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID);
     }
-    return this.invokeRequestHandler(this.authResourceUrlBuilder, DELETE_TENANT, undefined, {
+    await this.invokeRequestHandler(this.authResourceUrlBuilder, DELETE_TENANT, undefined, {
       tenantId,
-    }).then(() => {
-      // Return nothing.
     });
   }
 
@@ -2444,18 +2379,14 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    * @param tenantOptions - The properties to set on the new tenant to be created.
    * @returns A promise that resolves with the newly created tenant object.
    */
-  public createTenant(tenantOptions: CreateTenantRequest): Promise<TenantServerResponse> {
-    try {
-      // Construct backend request.
-      const request = Tenant.buildServerRequest(tenantOptions, true);
-      return this.invokeRequestHandler(this.authResourceUrlBuilder, CREATE_TENANT, request).then(
-        (response: any) => {
-          return response as TenantServerResponse;
-        },
-      );
-    } catch (e) {
-      return Promise.reject(e);
-    }
+  public async createTenant(tenantOptions: CreateTenantRequest): Promise<TenantServerResponse> {
+    const request = Tenant.buildServerRequest(tenantOptions, true);
+    const response = await this.invokeRequestHandler(
+      this.authResourceUrlBuilder,
+      CREATE_TENANT,
+      request,
+    );
+    return response as TenantServerResponse;
   }
 
   /**
@@ -2465,28 +2396,28 @@ export class AuthRequestHandler extends AbstractAuthRequestHandler {
    * @param tenantOptions - The properties to update on the existing tenant.
    * @returns A promise that resolves with the modified tenant object.
    */
-  public updateTenant(
+  public async updateTenant(
     tenantId: string,
     tenantOptions: UpdateTenantRequest,
   ): Promise<TenantServerResponse> {
     if (!validator.isNonEmptyString(tenantId)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_TENANT_ID);
     }
-    try {
-      // Construct backend request.
-      const request = Tenant.buildServerRequest(tenantOptions, false);
-      // Do not traverse deep into testPhoneNumbers. The entire content should be replaced
-      // and not just specific phone numbers.
-      const updateMask = utils.generateUpdateMask(request, ["testPhoneNumbers"]);
-      return this.invokeRequestHandler(this.authResourceUrlBuilder, UPDATE_TENANT, request, {
+    // Construct backend request.
+    const request = Tenant.buildServerRequest(tenantOptions, false);
+    // Do not traverse deep into testPhoneNumbers. The entire content should be replaced
+    // and not just specific phone numbers.
+    const updateMask = utils.generateUpdateMask(request, ["testPhoneNumbers"]);
+    const response = await this.invokeRequestHandler(
+      this.authResourceUrlBuilder,
+      UPDATE_TENANT,
+      request,
+      {
         tenantId,
         updateMask: updateMask.join(","),
-      }).then((response: any) => {
-        return response as TenantServerResponse;
-      });
-    } catch (e) {
-      return Promise.reject(e);
-    }
+      },
+    );
+    return response as TenantServerResponse;
   }
 }
 
@@ -2541,7 +2472,7 @@ export class TenantAwareAuthRequestHandler extends AbstractAuthRequestHandler {
    *     with the result of the import. This includes the number of successful imports, the number
    *     of failed uploads and their corresponding errors.
    */
-  public uploadAccount(
+  public async uploadAccount(
     users: UserImportRecord[],
     options?: UserImportOptions,
   ): Promise<UserImportResult> {
@@ -2554,7 +2485,7 @@ export class TenantAwareAuthRequestHandler extends AbstractAuthRequestHandler {
         );
       }
     });
-    return super.uploadAccount(users, options);
+    return await super.uploadAccount(users, options);
   }
 }
 

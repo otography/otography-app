@@ -48,78 +48,76 @@ export class FirebaseAppInternals {
     this.isRefreshing = false;
   }
 
-  public getToken(forceRefresh = false): Promise<FirebaseAccessToken> {
+  public async getToken(forceRefresh = false): Promise<FirebaseAccessToken> {
     if (forceRefresh || this.shouldRefresh()) {
       this.promiseToCachedToken_ = this.refreshToken();
     }
-    return this.promiseToCachedToken_!;
+    return await this.promiseToCachedToken_!;
   }
 
   public getCachedToken(): FirebaseAccessToken | null {
     return this.cachedToken_ || null;
   }
 
-  private refreshToken(): Promise<FirebaseAccessToken> {
+  private async refreshToken(): Promise<FirebaseAccessToken> {
     this.isRefreshing = true;
-    return Promise.resolve(this.credential_.getAccessToken())
-      .then((result) => {
-        // Since the developer can provide the credential implementation, we want to weakly verify
-        // the return type until the type is properly exported.
-        if (
-          !validator.isNonNullObject(result) ||
-          typeof result.expires_in !== "number" ||
-          typeof result.access_token !== "string"
-        ) {
-          throw new FirebaseAppError(
-            AppErrorCodes.INVALID_CREDENTIAL,
-            `Invalid access token generated: "${JSON.stringify(result)}". Valid access ` +
-              'tokens must be an object with the "expires_in" (number) and "access_token" ' +
-              "(string) properties.",
-          );
-        }
+    try {
+      const result = await this.credential_.getAccessToken();
+      // Since the developer can provide the credential implementation, we want to weakly verify
+      // the return type until the type is properly exported.
+      if (
+        !validator.isNonNullObject(result) ||
+        typeof result.expires_in !== "number" ||
+        typeof result.access_token !== "string"
+      ) {
+        throw new FirebaseAppError(
+          AppErrorCodes.INVALID_CREDENTIAL,
+          `Invalid access token generated: "${JSON.stringify(result)}". Valid access ` +
+            'tokens must be an object with the "expires_in" (number) and "access_token" ' +
+            "(string) properties.",
+        );
+      }
 
-        const token = {
-          accessToken: result.access_token,
-          expirationTime: Date.now() + result.expires_in * 1000,
-        };
-        if (
-          !this.cachedToken_ ||
-          this.cachedToken_.accessToken !== token.accessToken ||
-          this.cachedToken_.expirationTime !== token.expirationTime
-        ) {
-          // Update the cache before firing listeners. Listeners may directly query the
-          // cached token state.
-          this.cachedToken_ = token;
-          this.tokenListeners_.forEach((listener) => {
-            listener(token.accessToken);
-          });
-        }
+      const token = {
+        accessToken: result.access_token,
+        expirationTime: Date.now() + result.expires_in * 1000,
+      };
+      if (
+        !this.cachedToken_ ||
+        this.cachedToken_.accessToken !== token.accessToken ||
+        this.cachedToken_.expirationTime !== token.expirationTime
+      ) {
+        // Update the cache before firing listeners. Listeners may directly query the
+        // cached token state.
+        this.cachedToken_ = token;
+        this.tokenListeners_.forEach((listener) => {
+          listener(token.accessToken);
+        });
+      }
 
-        return token;
-      })
-      .catch((error) => {
-        let errorMessage = typeof error === "string" ? error : error.message;
+      return token;
+    } catch (error) {
+      let errorMessage = typeof error === "string" ? error : (error as Error).message;
 
-        errorMessage =
-          "Credential implementation provided to initializeApp() via the " +
-          '"credential" property failed to fetch a valid Google OAuth2 access token with the ' +
-          `following error: "${errorMessage}".`;
+      errorMessage =
+        "Credential implementation provided to initializeApp() via the " +
+        '"credential" property failed to fetch a valid Google OAuth2 access token with the ' +
+        `following error: "${errorMessage}".`;
 
-        if (errorMessage.indexOf("invalid_grant") !== -1) {
-          errorMessage +=
-            " There are two likely causes: (1) your server time is not properly " +
-            "synced or (2) your certificate key file has been revoked. To solve (1), re-sync the " +
-            "time on your server. To solve (2), make sure the key ID for your key file is still " +
-            "present at https://console.firebase.google.com/iam-admin/serviceaccounts/project. If " +
-            "not, generate a new key file at " +
-            "https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk.";
-        }
+      if (errorMessage.indexOf("invalid_grant") !== -1) {
+        errorMessage +=
+          " There are two likely causes: (1) your server time is not properly " +
+          "synced or (2) your certificate key file has been revoked. To solve (1), re-sync the " +
+          "time on your server. To solve (2), make sure the key ID for your key file is still " +
+          "present at https://console.firebase.google.com/iam-admin/serviceaccounts/project. If " +
+          "not, generate a new key file at " +
+          "https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk.";
+      }
 
-        throw new FirebaseAppError(AppErrorCodes.INVALID_CREDENTIAL, errorMessage);
-      })
-      .finally(() => {
-        this.isRefreshing = false;
-      });
+      throw new FirebaseAppError(AppErrorCodes.INVALID_CREDENTIAL, errorMessage);
+    } finally {
+      this.isRefreshing = false;
+    }
   }
 
   private shouldRefresh(): boolean {
@@ -262,7 +260,7 @@ export class FirebaseApp implements App {
    *
    * @returns An empty Promise fulfilled once the FirebaseApp instance is deleted.
    */
-  public delete(): Promise<void> {
+  public async delete(): Promise<void> {
     this.checkDestroyed_();
 
     // Also remove the instance from the AppStore. This is needed to support the existing
@@ -270,7 +268,7 @@ export class FirebaseApp implements App {
     // become the only way to tear down an App.
     this.appStore?.removeApp(this.name);
 
-    return Promise.all(
+    await Promise.all(
       Object.keys(this.services_).map((serviceName) => {
         const service = this.services_[serviceName];
         if (isStateful(service)) {
@@ -278,10 +276,9 @@ export class FirebaseApp implements App {
         }
         return Promise.resolve();
       }),
-    ).then(() => {
-      this.services_ = {};
-      this.isDeleted_ = true;
-    });
+    );
+    this.services_ = {};
+    this.isDeleted_ = true;
   }
 
   // eslint-disable-next-line @typescript-eslint/naming-convention

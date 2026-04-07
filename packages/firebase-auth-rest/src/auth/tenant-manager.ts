@@ -87,51 +87,49 @@ export class TenantAwareAuth extends BaseAuth {
   /**
    * {@inheritdoc BaseAuth.verifyIdToken}
    */
-  public verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
-    return super.verifyIdToken(idToken, checkRevoked).then((decodedClaims) => {
-      // Validate tenant ID.
-      if (decodedClaims.firebase.tenant !== this.tenantId) {
-        throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
-      }
-      return decodedClaims;
-    });
+  public async verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
+    const decodedClaims = await super.verifyIdToken(idToken, checkRevoked);
+    // Validate tenant ID.
+    if (decodedClaims.firebase.tenant !== this.tenantId) {
+      throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
+    }
+    return decodedClaims;
   }
 
   /**
    * {@inheritdoc BaseAuth.createSessionCookie}
    */
-  public createSessionCookie(
+  public async createSessionCookie(
     idToken: string,
     sessionCookieOptions: SessionCookieOptions,
   ): Promise<string> {
     // Validate arguments before processing.
     if (!validator.isNonEmptyString(idToken)) {
-      return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_ID_TOKEN));
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_ID_TOKEN);
     }
     if (
       !validator.isNonNullObject(sessionCookieOptions) ||
       !validator.isNumber(sessionCookieOptions.expiresIn)
     ) {
-      return Promise.reject(
-        new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION),
-      );
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION);
     }
     // This will verify the ID token and then match the tenant ID before creating the session cookie.
-    return this.verifyIdToken(idToken).then(() => {
-      return super.createSessionCookie(idToken, sessionCookieOptions);
-    });
+    await this.verifyIdToken(idToken);
+    return super.createSessionCookie(idToken, sessionCookieOptions);
   }
 
   /**
    * {@inheritdoc BaseAuth.verifySessionCookie}
    */
-  public verifySessionCookie(sessionCookie: string, checkRevoked = false): Promise<DecodedIdToken> {
-    return super.verifySessionCookie(sessionCookie, checkRevoked).then((decodedClaims) => {
-      if (decodedClaims.firebase.tenant !== this.tenantId) {
-        throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
-      }
-      return decodedClaims;
-    });
+  public async verifySessionCookie(
+    sessionCookie: string,
+    checkRevoked = false,
+  ): Promise<DecodedIdToken> {
+    const decodedClaims = await super.verifySessionCookie(sessionCookie, checkRevoked);
+    if (decodedClaims.firebase.tenant !== this.tenantId) {
+      throw new FirebaseAuthError(AuthClientErrorCode.MISMATCHING_TENANT_ID);
+    }
+    return decodedClaims;
   }
 }
 
@@ -187,10 +185,9 @@ export class TenantManager {
    *
    * @returns A promise fulfilled with the tenant configuration to the provided `tenantId`.
    */
-  public getTenant(tenantId: string): Promise<Tenant> {
-    return this.authRequestHandler.getTenant(tenantId).then((response: TenantServerResponse) => {
-      return new Tenant(response);
-    });
+  public async getTenant(tenantId: string): Promise<Tenant> {
+    const response: TenantServerResponse = await this.authRequestHandler.getTenant(tenantId);
+    return new Tenant(response);
   }
 
   /**
@@ -206,27 +203,25 @@ export class TenantManager {
    * @returns A promise that resolves with
    *   a batch of downloaded tenants and the next page token.
    */
-  public listTenants(maxResults?: number, pageToken?: string): Promise<ListTenantsResult> {
-    return this.authRequestHandler
-      .listTenants(maxResults, pageToken)
-      .then((response: { tenants: TenantServerResponse[]; nextPageToken?: string }) => {
-        // List of tenants to return.
-        const tenants: Tenant[] = [];
-        // Convert each user response to a Tenant.
-        response.tenants.forEach((tenantResponse: TenantServerResponse) => {
-          tenants.push(new Tenant(tenantResponse));
-        });
-        // Return list of tenants and the next page token if available.
-        const result = {
-          tenants,
-          pageToken: response.nextPageToken,
-        };
-        // Delete result.pageToken if undefined.
-        if (typeof result.pageToken === "undefined") {
-          delete result.pageToken;
-        }
-        return result;
-      });
+  public async listTenants(maxResults?: number, pageToken?: string): Promise<ListTenantsResult> {
+    const response: { tenants: TenantServerResponse[]; nextPageToken?: string } =
+      await this.authRequestHandler.listTenants(maxResults, pageToken);
+    // List of tenants to return.
+    const tenants: Tenant[] = [];
+    // Convert each user response to a Tenant.
+    response.tenants.forEach((tenantResponse: TenantServerResponse) => {
+      tenants.push(new Tenant(tenantResponse));
+    });
+    // Return list of tenants and the next page token if available.
+    const result = {
+      tenants,
+      pageToken: response.nextPageToken,
+    };
+    // Delete result.pageToken if undefined.
+    if (typeof result.pageToken === "undefined") {
+      delete result.pageToken;
+    }
+    return result;
   }
 
   /**
@@ -236,8 +231,8 @@ export class TenantManager {
    *
    * @returns An empty promise fulfilled once the tenant has been deleted.
    */
-  public deleteTenant(tenantId: string): Promise<void> {
-    return this.authRequestHandler.deleteTenant(tenantId);
+  public async deleteTenant(tenantId: string): Promise<void> {
+    await this.authRequestHandler.deleteTenant(tenantId);
   }
 
   /**
@@ -250,12 +245,10 @@ export class TenantManager {
    * @returns A promise fulfilled with the tenant configuration corresponding to the newly
    *   created tenant.
    */
-  public createTenant(tenantOptions: CreateTenantRequest): Promise<Tenant> {
-    return this.authRequestHandler
-      .createTenant(tenantOptions)
-      .then((response: TenantServerResponse) => {
-        return new Tenant(response);
-      });
+  public async createTenant(tenantOptions: CreateTenantRequest): Promise<Tenant> {
+    const response: TenantServerResponse =
+      await this.authRequestHandler.createTenant(tenantOptions);
+    return new Tenant(response);
   }
 
   /**
@@ -266,11 +259,11 @@ export class TenantManager {
    *
    * @returns A promise fulfilled with the update tenant data.
    */
-  public updateTenant(tenantId: string, tenantOptions: UpdateTenantRequest): Promise<Tenant> {
-    return this.authRequestHandler
-      .updateTenant(tenantId, tenantOptions)
-      .then((response: TenantServerResponse) => {
-        return new Tenant(response);
-      });
+  public async updateTenant(tenantId: string, tenantOptions: UpdateTenantRequest): Promise<Tenant> {
+    const response: TenantServerResponse = await this.authRequestHandler.updateTenant(
+      tenantId,
+      tenantOptions,
+    );
+    return new Tenant(response);
   }
 }
