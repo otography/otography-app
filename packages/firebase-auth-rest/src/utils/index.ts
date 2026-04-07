@@ -82,9 +82,9 @@ function getExplicitProjectId(app: App): string | null {
  *
  * @returns A project ID string or null.
  */
-export function findProjectId(app: App): Promise<string | null> {
+export async function findProjectId(app: App): Promise<string | null> {
   const projectId = getExplicitProjectId(app);
-  return Promise.resolve(projectId || null);
+  return projectId || null;
 }
 
 /**

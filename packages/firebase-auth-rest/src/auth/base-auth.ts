@@ -191,8 +191,8 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with a custom token for the
    *   provided `uid` and payload.
    */
-  public createCustomToken(uid: string, developerClaims?: object): Promise<string> {
-    return this.tokenGenerator.createCustomToken(uid, developerClaims);
+  public async createCustomToken(uid: string, developerClaims?: object): Promise<string> {
+    return await this.tokenGenerator.createCustomToken(uid, developerClaims);
   }
 
   /**
@@ -219,20 +219,20 @@ export abstract class BaseAuth {
    *   token's decoded claims if the ID token is valid; otherwise, a rejected
    *   promise.
    */
-  public verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
+  public async verifyIdToken(idToken: string, checkRevoked = false): Promise<DecodedIdToken> {
     const isEmulator = useEmulator();
-    return this.idTokenVerifier
-      .verifyJWT(idToken, isEmulator)
-      .then((decodedIdToken: DecodedIdToken) => {
-        // Whether to check if the token was revoked.
-        if (checkRevoked || isEmulator) {
-          return this.verifyDecodedJWTNotRevokedOrDisabled(
-            decodedIdToken,
-            AuthClientErrorCode.ID_TOKEN_REVOKED,
-          );
-        }
-        return decodedIdToken;
-      });
+    const decodedIdToken: DecodedIdToken = await this.idTokenVerifier.verifyJWT(
+      idToken,
+      isEmulator,
+    );
+    // Whether to check if the token was revoked.
+    if (checkRevoked || isEmulator) {
+      return await this.verifyDecodedJWTNotRevokedOrDisabled(
+        decodedIdToken,
+        AuthClientErrorCode.ID_TOKEN_REVOKED,
+      );
+    }
+    return decodedIdToken;
   }
 
   /**
@@ -246,11 +246,10 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the user
    *   data corresponding to the provided `uid`.
    */
-  public getUser(uid: string): Promise<UserRecord> {
-    return this.authRequestHandler.getAccountInfoByUid(uid).then((response: any) => {
-      // Returns the user record populated with server response.
-      return new UserRecord(response.users[0]);
-    });
+  public async getUser(uid: string): Promise<UserRecord> {
+    const response: any = await this.authRequestHandler.getAccountInfoByUid(uid);
+    // Returns the user record populated with server response.
+    return new UserRecord(response.users[0]);
   }
 
   /**
@@ -265,11 +264,10 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the user
    *   data corresponding to the provided email.
    */
-  public getUserByEmail(email: string): Promise<UserRecord> {
-    return this.authRequestHandler.getAccountInfoByEmail(email).then((response: any) => {
-      // Returns the user record populated with server response.
-      return new UserRecord(response.users[0]);
-    });
+  public async getUserByEmail(email: string): Promise<UserRecord> {
+    const response: any = await this.authRequestHandler.getAccountInfoByEmail(email);
+    // Returns the user record populated with server response.
+    return new UserRecord(response.users[0]);
   }
 
   /**
@@ -285,13 +283,10 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the user
    *   data corresponding to the provided phone number.
    */
-  public getUserByPhoneNumber(phoneNumber: string): Promise<UserRecord> {
-    return this.authRequestHandler
-      .getAccountInfoByPhoneNumber(phoneNumber)
-      .then((response: any) => {
-        // Returns the user record populated with server response.
-        return new UserRecord(response.users[0]);
-      });
+  public async getUserByPhoneNumber(phoneNumber: string): Promise<UserRecord> {
+    const response: any = await this.authRequestHandler.getAccountInfoByPhoneNumber(phoneNumber);
+    // Returns the user record populated with server response.
+    return new UserRecord(response.users[0]);
   }
 
   /**
@@ -307,22 +302,22 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the user data corresponding to the
    *   given provider id.
    */
-  public getUserByProviderUid(providerId: string, uid: string): Promise<UserRecord> {
+  public async getUserByProviderUid(providerId: string, uid: string): Promise<UserRecord> {
     // Although we don't really advertise it, we want to also handle
     // non-federated idps with this call. So if we detect one of them, we'll
     // reroute this request appropriately.
     if (providerId === "phone") {
-      return this.getUserByPhoneNumber(uid);
+      return await this.getUserByPhoneNumber(uid);
     } else if (providerId === "email") {
-      return this.getUserByEmail(uid);
+      return await this.getUserByEmail(uid);
     }
 
-    return this.authRequestHandler
-      .getAccountInfoByFederatedUid(providerId, uid)
-      .then((response: any) => {
-        // Returns the user record populated with server response.
-        return new UserRecord(response.users[0]);
-      });
+    const response: any = await this.authRequestHandler.getAccountInfoByFederatedUid(
+      providerId,
+      uid,
+    );
+    // Returns the user record populated with server response.
+    return new UserRecord(response.users[0]);
   }
 
   /**
@@ -340,47 +335,44 @@ export abstract class BaseAuth {
    * @throws FirebaseAuthError If any of the identifiers are invalid or if more than 100
    *     identifiers are specified.
    */
-  public getUsers(identifiers: UserIdentifier[]): Promise<GetUsersResult> {
+  public async getUsers(identifiers: UserIdentifier[]): Promise<GetUsersResult> {
     if (!validator.isArray(identifiers)) {
       throw new FirebaseAuthError(
         AuthClientErrorCode.INVALID_ARGUMENT,
         "`identifiers` parameter must be an array",
       );
     }
-    return this.authRequestHandler
-      .getAccountInfoByIdentifiers(identifiers)
-      .then((response: any) => {
-        /**
-         * Checks if the specified identifier is within the list of
-         * UserRecords.
-         */
-        const isUserFound = (id: UserIdentifier, userRecords: UserRecord[]): boolean => {
-          return !!userRecords.find((userRecord) => {
-            if (isUidIdentifier(id)) {
-              return id.uid === userRecord.uid;
-            } else if (isEmailIdentifier(id)) {
-              return id.email === userRecord.email;
-            } else if (isPhoneIdentifier(id)) {
-              return id.phoneNumber === userRecord.phoneNumber;
-            } else if (isProviderIdentifier(id)) {
-              const matchingUserInfo = userRecord.providerData.find((userInfo) => {
-                return id.providerId === userInfo.providerId;
-              });
-              return !!matchingUserInfo && id.providerUid === matchingUserInfo.uid;
-            } else {
-              throw new FirebaseAuthError(
-                AuthClientErrorCode.INTERNAL_ERROR,
-                "Unhandled identifier type",
-              );
-            }
+    const response: any = await this.authRequestHandler.getAccountInfoByIdentifiers(identifiers);
+    /**
+     * Checks if the specified identifier is within the list of
+     * UserRecords.
+     */
+    const isUserFound = (id: UserIdentifier, userRecords: UserRecord[]): boolean => {
+      return !!userRecords.find((userRecord) => {
+        if (isUidIdentifier(id)) {
+          return id.uid === userRecord.uid;
+        } else if (isEmailIdentifier(id)) {
+          return id.email === userRecord.email;
+        } else if (isPhoneIdentifier(id)) {
+          return id.phoneNumber === userRecord.phoneNumber;
+        } else if (isProviderIdentifier(id)) {
+          const matchingUserInfo = userRecord.providerData.find((userInfo) => {
+            return id.providerId === userInfo.providerId;
           });
-        };
-
-        const users = response.users ? response.users.map((user: any) => new UserRecord(user)) : [];
-        const notFound = identifiers.filter((id) => !isUserFound(id, users));
-
-        return { users, notFound };
+          return !!matchingUserInfo && id.providerUid === matchingUserInfo.uid;
+        } else {
+          throw new FirebaseAuthError(
+            AuthClientErrorCode.INTERNAL_ERROR,
+            "Unhandled identifier type",
+          );
+        }
       });
+    };
+
+    const users = response.users ? response.users.map((user: any) => new UserRecord(user)) : [];
+    const notFound = identifiers.filter((id) => !isUserFound(id, users));
+
+    return { users, notFound };
   }
 
   /**
@@ -398,25 +390,24 @@ export abstract class BaseAuth {
    * @returns A promise that resolves with
    *   the current batch of downloaded users and the next page token.
    */
-  public listUsers(maxResults?: number, pageToken?: string): Promise<ListUsersResult> {
-    return this.authRequestHandler.downloadAccount(maxResults, pageToken).then((response: any) => {
-      // List of users to return.
-      const users: UserRecord[] = [];
-      // Convert each user response to a UserRecord.
-      response.users.forEach((userResponse: any) => {
-        users.push(new UserRecord(userResponse));
-      });
-      // Return list of user records and the next page token if available.
-      const result = {
-        users,
-        pageToken: response.nextPageToken,
-      };
-      // Delete result.pageToken if undefined.
-      if (typeof result.pageToken === "undefined") {
-        delete result.pageToken;
-      }
-      return result;
+  public async listUsers(maxResults?: number, pageToken?: string): Promise<ListUsersResult> {
+    const response: any = await this.authRequestHandler.downloadAccount(maxResults, pageToken);
+    // List of users to return.
+    const users: UserRecord[] = [];
+    // Convert each user response to a UserRecord.
+    response.users.forEach((userResponse: any) => {
+      users.push(new UserRecord(userResponse));
     });
+    // Return list of user records and the next page token if available.
+    const result = {
+      users,
+      pageToken: response.nextPageToken,
+    };
+    // Delete result.pageToken if undefined.
+    if (typeof result.pageToken === "undefined") {
+      delete result.pageToken;
+    }
+    return result;
   }
 
   /**
@@ -431,23 +422,22 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the user
    *   data corresponding to the newly created user.
    */
-  public createUser(properties: CreateRequest): Promise<UserRecord> {
-    return this.authRequestHandler
-      .createNewAccount(properties)
-      .then((uid) => {
-        // Return the corresponding user record.
-        return this.getUser(uid);
-      })
-      .catch((error) => {
-        if (error.code === "auth/user-not-found") {
-          // Something must have happened after creating the user and then retrieving it.
-          throw new FirebaseAuthError(
-            AuthClientErrorCode.INTERNAL_ERROR,
-            "Unable to create the user record provided.",
-          );
-        }
-        throw error;
-      });
+  public async createUser(properties: CreateRequest): Promise<UserRecord> {
+    let uid: string;
+    try {
+      uid = await this.authRequestHandler.createNewAccount(properties);
+    } catch (error: any) {
+      if (error.code === "auth/user-not-found") {
+        // Something must have happened after creating the user and then retrieving it.
+        throw new FirebaseAuthError(
+          AuthClientErrorCode.INTERNAL_ERROR,
+          "Unable to create the user record provided.",
+        );
+      }
+      throw error;
+    }
+    // Return the corresponding user record.
+    return await this.getUser(uid);
   }
 
   /**
@@ -461,10 +451,9 @@ export abstract class BaseAuth {
    * @returns An empty promise fulfilled once the user has been
    *   deleted.
    */
-  public deleteUser(uid: string): Promise<void> {
-    return this.authRequestHandler.deleteAccount(uid).then(() => {
-      // Return nothing on success.
-    });
+  public async deleteUser(uid: string): Promise<void> {
+    await this.authRequestHandler.deleteAccount(uid);
+    // Return nothing on success.
   }
 
   /**
@@ -489,54 +478,54 @@ export abstract class BaseAuth {
    *     deletions, as well as the array of errors that corresponds to the
    *     failed deletions.
    */
-  public deleteUsers(uids: string[]): Promise<DeleteUsersResult> {
+  public async deleteUsers(uids: string[]): Promise<DeleteUsersResult> {
     if (!validator.isArray(uids)) {
       throw new FirebaseAuthError(
         AuthClientErrorCode.INVALID_ARGUMENT,
         "`uids` parameter must be an array",
       );
     }
-    return this.authRequestHandler
-      .deleteAccounts(uids, /*force=*/ true)
-      .then((batchDeleteAccountsResponse) => {
-        const result: DeleteUsersResult = {
-          failureCount: 0,
-          successCount: uids.length,
-          errors: [],
-        };
+    const batchDeleteAccountsResponse = await this.authRequestHandler.deleteAccounts(
+      uids,
+      /*force=*/ true,
+    );
+    const result: DeleteUsersResult = {
+      failureCount: 0,
+      successCount: uids.length,
+      errors: [],
+    };
 
-        if (!validator.isNonEmptyArray(batchDeleteAccountsResponse.errors)) {
-          return result;
-        }
+    if (!validator.isNonEmptyArray(batchDeleteAccountsResponse.errors)) {
+      return result;
+    }
 
-        result.failureCount = batchDeleteAccountsResponse.errors.length;
-        result.successCount = uids.length - batchDeleteAccountsResponse.errors.length;
-        result.errors = batchDeleteAccountsResponse.errors.map((batchDeleteErrorInfo) => {
-          if (batchDeleteErrorInfo.index === undefined) {
-            throw new FirebaseAuthError(
-              AuthClientErrorCode.INTERNAL_ERROR,
-              "Corrupt BatchDeleteAccountsResponse detected",
-            );
-          }
+    result.failureCount = batchDeleteAccountsResponse.errors.length;
+    result.successCount = uids.length - batchDeleteAccountsResponse.errors.length;
+    result.errors = batchDeleteAccountsResponse.errors.map((batchDeleteErrorInfo) => {
+      if (batchDeleteErrorInfo.index === undefined) {
+        throw new FirebaseAuthError(
+          AuthClientErrorCode.INTERNAL_ERROR,
+          "Corrupt BatchDeleteAccountsResponse detected",
+        );
+      }
 
-          const errMsgToError = (msg?: string): FirebaseAuthError => {
-            // We unconditionally set force=true, so the 'NOT_DISABLED' error
-            // should not be possible.
-            const code =
-              msg && msg.startsWith("NOT_DISABLED")
-                ? AuthClientErrorCode.USER_NOT_DISABLED
-                : AuthClientErrorCode.INTERNAL_ERROR;
-            return new FirebaseAuthError(code, batchDeleteErrorInfo.message);
-          };
+      const errMsgToError = (msg?: string): FirebaseAuthError => {
+        // We unconditionally set force=true, so the 'NOT_DISABLED' error
+        // should not be possible.
+        const code =
+          msg && msg.startsWith("NOT_DISABLED")
+            ? AuthClientErrorCode.USER_NOT_DISABLED
+            : AuthClientErrorCode.INTERNAL_ERROR;
+        return new FirebaseAuthError(code, batchDeleteErrorInfo.message);
+      };
 
-          return {
-            index: batchDeleteErrorInfo.index,
-            error: errMsgToError(batchDeleteErrorInfo.message),
-          };
-        });
+      return {
+        index: batchDeleteErrorInfo.index,
+        error: errMsgToError(batchDeleteErrorInfo.message),
+      };
+    });
 
-        return result;
-      });
+    return result;
   }
 
   /**
@@ -552,7 +541,7 @@ export abstract class BaseAuth {
    * @returns A promise fulfilled with the
    *   updated user data.
    */
-  public updateUser(uid: string, properties: UpdateRequest): Promise<UserRecord> {
+  public async updateUser(uid: string, properties: UpdateRequest): Promise<UserRecord> {
     // Although we don't really advertise it, we want to also handle linking of
     // non-federated idps with this call. So if we detect one of them, we'll
     // adjust the properties parameter appropriately. This *does* imply that a
@@ -600,10 +589,9 @@ export abstract class BaseAuth {
       }
     }
 
-    return this.authRequestHandler.updateExistingAccount(uid, properties).then((existingUid) => {
-      // Return the corresponding user record.
-      return this.getUser(existingUid);
-    });
+    const existingUid = await this.authRequestHandler.updateExistingAccount(uid, properties);
+    // Return the corresponding user record.
+    return await this.getUser(existingUid);
   }
 
   /**
@@ -629,10 +617,9 @@ export abstract class BaseAuth {
    * @returns A promise that resolves when the operation completes
    *   successfully.
    */
-  public setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void> {
-    return this.authRequestHandler.setCustomUserClaims(uid, customUserClaims).then(() => {
-      // Return nothing on success.
-    });
+  public async setCustomUserClaims(uid: string, customUserClaims: object | null): Promise<void> {
+    await this.authRequestHandler.setCustomUserClaims(uid, customUserClaims);
+    // Return nothing on success.
   }
 
   /**
@@ -654,10 +641,9 @@ export abstract class BaseAuth {
    * @returns An empty promise fulfilled once the user's refresh
    *   tokens have been revoked.
    */
-  public revokeRefreshTokens(uid: string): Promise<void> {
-    return this.authRequestHandler.revokeRefreshTokens(uid).then(() => {
-      // Return nothing on success.
-    });
+  public async revokeRefreshTokens(uid: string): Promise<void> {
+    await this.authRequestHandler.revokeRefreshTokens(uid);
+    // Return nothing on success.
   }
 
   /**
@@ -677,11 +663,11 @@ export abstract class BaseAuth {
    *   number of successful imports, the number of failed imports and their
    *   corresponding errors.
    */
-  public importUsers(
+  public async importUsers(
     users: UserImportRecord[],
     options?: UserImportOptions,
   ): Promise<UserImportResult> {
-    return this.authRequestHandler.uploadAccount(users, options);
+    return await this.authRequestHandler.uploadAccount(users, options);
   }
 
   /**
@@ -701,7 +687,7 @@ export abstract class BaseAuth {
    * @returns A promise that resolves on success with the
    *   created session cookie.
    */
-  public createSessionCookie(
+  public async createSessionCookie(
     idToken: string,
     sessionCookieOptions: SessionCookieOptions,
   ): Promise<string> {
@@ -710,11 +696,12 @@ export abstract class BaseAuth {
       !validator.isNonNullObject(sessionCookieOptions) ||
       !validator.isNumber(sessionCookieOptions.expiresIn)
     ) {
-      return Promise.reject(
-        new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION),
-      );
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_SESSION_COOKIE_DURATION);
     }
-    return this.authRequestHandler.createSessionCookie(idToken, sessionCookieOptions.expiresIn);
+    return await this.authRequestHandler.createSessionCookie(
+      idToken,
+      sessionCookieOptions.expiresIn,
+    );
   }
 
   /**
@@ -742,20 +729,23 @@ export abstract class BaseAuth {
    *   session cookie's decoded claims if the session cookie is valid; otherwise,
    *   a rejected promise.
    */
-  public verifySessionCookie(sessionCookie: string, checkRevoked = false): Promise<DecodedIdToken> {
+  public async verifySessionCookie(
+    sessionCookie: string,
+    checkRevoked = false,
+  ): Promise<DecodedIdToken> {
     const isEmulator = useEmulator();
-    return this.sessionCookieVerifier
-      .verifyJWT(sessionCookie, isEmulator)
-      .then((decodedIdToken: DecodedIdToken) => {
-        // Whether to check if the token was revoked.
-        if (checkRevoked || isEmulator) {
-          return this.verifyDecodedJWTNotRevokedOrDisabled(
-            decodedIdToken,
-            AuthClientErrorCode.SESSION_COOKIE_REVOKED,
-          );
-        }
-        return decodedIdToken;
-      });
+    const decodedIdToken: DecodedIdToken = await this.sessionCookieVerifier.verifyJWT(
+      sessionCookie,
+      isEmulator,
+    );
+    // Whether to check if the token was revoked.
+    if (checkRevoked || isEmulator) {
+      return await this.verifyDecodedJWTNotRevokedOrDisabled(
+        decodedIdToken,
+        AuthClientErrorCode.SESSION_COOKIE_REVOKED,
+      );
+    }
+    return decodedIdToken;
   }
 
   /**
@@ -807,11 +797,15 @@ export abstract class BaseAuth {
    *     are configured in the same Firebase Auth project.
    * @returns A promise that resolves with the generated link.
    */
-  public generatePasswordResetLink(
+  public async generatePasswordResetLink(
     email: string,
     actionCodeSettings?: ActionCodeSettings,
   ): Promise<string> {
-    return this.authRequestHandler.getEmailActionLink("PASSWORD_RESET", email, actionCodeSettings);
+    return await this.authRequestHandler.getEmailActionLink(
+      "PASSWORD_RESET",
+      email,
+      actionCodeSettings,
+    );
   }
 
   /**
@@ -862,11 +856,15 @@ export abstract class BaseAuth {
    *     are configured in the same Firebase Auth project.
    * @returns A promise that resolves with the generated link.
    */
-  public generateEmailVerificationLink(
+  public async generateEmailVerificationLink(
     email: string,
     actionCodeSettings?: ActionCodeSettings,
   ): Promise<string> {
-    return this.authRequestHandler.getEmailActionLink("VERIFY_EMAIL", email, actionCodeSettings);
+    return await this.authRequestHandler.getEmailActionLink(
+      "VERIFY_EMAIL",
+      email,
+      actionCodeSettings,
+    );
   }
 
   /**
@@ -893,12 +891,12 @@ export abstract class BaseAuth {
    *     are configured in the same Firebase Auth project.
    * @returns A promise that resolves with the generated link.
    */
-  public generateVerifyAndChangeEmailLink(
+  public async generateVerifyAndChangeEmailLink(
     email: string,
     newEmail: string,
     actionCodeSettings?: ActionCodeSettings,
   ): Promise<string> {
-    return this.authRequestHandler.getEmailActionLink(
+    return await this.authRequestHandler.getEmailActionLink(
       "VERIFY_AND_CHANGE_EMAIL",
       email,
       actionCodeSettings,
@@ -954,11 +952,15 @@ export abstract class BaseAuth {
    *     are configured in the same Firebase Auth project.
    * @returns A promise that resolves with the generated link.
    */
-  public generateSignInWithEmailLink(
+  public async generateSignInWithEmailLink(
     email: string,
     actionCodeSettings: ActionCodeSettings,
   ): Promise<string> {
-    return this.authRequestHandler.getEmailActionLink("EMAIL_SIGNIN", email, actionCodeSettings);
+    return await this.authRequestHandler.getEmailActionLink(
+      "EMAIL_SIGNIN",
+      email,
+      actionCodeSettings,
+    );
   }
 
   /**
@@ -973,7 +975,7 @@ export abstract class BaseAuth {
    * @returns A promise that resolves with the list of provider configs meeting the
    *   filter requirements.
    */
-  public listProviderConfigs(
+  public async listProviderConfigs(
     options: AuthProviderConfigFilter,
   ): Promise<ListProviderConfigResults> {
     const processResponse = (
@@ -991,37 +993,35 @@ export abstract class BaseAuth {
       return result;
     };
     if (options && options.type === "oidc") {
-      return this.authRequestHandler
-        .listOAuthIdpConfigs(options.maxResults, options.pageToken)
-        .then((response: any) => {
-          // List of provider configurations to return.
-          const providerConfigs: OIDCConfig[] = [];
-          // Convert each provider config response to a OIDCConfig.
-          response.oauthIdpConfigs.forEach((configResponse: any) => {
-            providerConfigs.push(new OIDCConfig(configResponse));
-          });
-          // Return list of provider configuration and the next page token if available.
-          return processResponse(response, providerConfigs);
-        });
+      const response: any = await this.authRequestHandler.listOAuthIdpConfigs(
+        options.maxResults,
+        options.pageToken,
+      );
+      // List of provider configurations to return.
+      const providerConfigs: OIDCConfig[] = [];
+      // Convert each provider config response to a OIDCConfig.
+      response.oauthIdpConfigs.forEach((configResponse: any) => {
+        providerConfigs.push(new OIDCConfig(configResponse));
+      });
+      // Return list of provider configuration and the next page token if available.
+      return processResponse(response, providerConfigs);
     } else if (options && options.type === "saml") {
-      return this.authRequestHandler
-        .listInboundSamlConfigs(options.maxResults, options.pageToken)
-        .then((response: any) => {
-          // List of provider configurations to return.
-          const providerConfigs: SAMLConfig[] = [];
-          // Convert each provider config response to a SAMLConfig.
-          response.inboundSamlConfigs.forEach((configResponse: any) => {
-            providerConfigs.push(new SAMLConfig(configResponse));
-          });
-          // Return list of provider configuration and the next page token if available.
-          return processResponse(response, providerConfigs);
-        });
+      const response: any = await this.authRequestHandler.listInboundSamlConfigs(
+        options.maxResults,
+        options.pageToken,
+      );
+      // List of provider configurations to return.
+      const providerConfigs: SAMLConfig[] = [];
+      // Convert each provider config response to a SAMLConfig.
+      response.inboundSamlConfigs.forEach((configResponse: any) => {
+        providerConfigs.push(new SAMLConfig(configResponse));
+      });
+      // Return list of provider configuration and the next page token if available.
+      return processResponse(response, providerConfigs);
     }
-    return Promise.reject(
-      new FirebaseAuthError(
-        AuthClientErrorCode.INVALID_ARGUMENT,
-        '"AuthProviderConfigFilter.type" must be either "saml" or "oidc"',
-      ),
+    throw new FirebaseAuthError(
+      AuthClientErrorCode.INVALID_ARGUMENT,
+      '"AuthProviderConfigFilter.type" must be either "saml" or "oidc"',
     );
   }
 
@@ -1040,21 +1040,17 @@ export abstract class BaseAuth {
    * @returns A promise that resolves
    *     with the configuration corresponding to the provided ID.
    */
-  public getProviderConfig(providerId: string): Promise<AuthProviderConfig> {
+  public async getProviderConfig(providerId: string): Promise<AuthProviderConfig> {
     if (OIDCConfig.isProviderId(providerId)) {
-      return this.authRequestHandler
-        .getOAuthIdpConfig(providerId)
-        .then((response: OIDCConfigServerResponse) => {
-          return new OIDCConfig(response);
-        });
+      const response: OIDCConfigServerResponse =
+        await this.authRequestHandler.getOAuthIdpConfig(providerId);
+      return new OIDCConfig(response);
     } else if (SAMLConfig.isProviderId(providerId)) {
-      return this.authRequestHandler
-        .getInboundSamlConfig(providerId)
-        .then((response: SAMLConfigServerResponse) => {
-          return new SAMLConfig(response);
-        });
+      const response: SAMLConfigServerResponse =
+        await this.authRequestHandler.getInboundSamlConfig(providerId);
+      return new SAMLConfig(response);
     }
-    return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+    throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
   }
 
   /**
@@ -1070,13 +1066,14 @@ export abstract class BaseAuth {
    *     config to delete.
    * @returns A promise that resolves on completion.
    */
-  public deleteProviderConfig(providerId: string): Promise<void> {
+  public async deleteProviderConfig(providerId: string): Promise<void> {
     if (OIDCConfig.isProviderId(providerId)) {
-      return this.authRequestHandler.deleteOAuthIdpConfig(providerId);
+      await this.authRequestHandler.deleteOAuthIdpConfig(providerId);
     } else if (SAMLConfig.isProviderId(providerId)) {
-      return this.authRequestHandler.deleteInboundSamlConfig(providerId);
+      await this.authRequestHandler.deleteInboundSamlConfig(providerId);
+    } else {
+      throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
     }
-    return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
   }
 
   /**
@@ -1094,32 +1091,30 @@ export abstract class BaseAuth {
    * @param updatedConfig - The updated configuration.
    * @returns A promise that resolves with the updated provider configuration.
    */
-  public updateProviderConfig(
+  public async updateProviderConfig(
     providerId: string,
     updatedConfig: UpdateAuthProviderRequest,
   ): Promise<AuthProviderConfig> {
     if (!validator.isNonNullObject(updatedConfig)) {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_CONFIG,
-          'Request is missing "UpdateAuthProviderRequest" configuration.',
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_CONFIG,
+        'Request is missing "UpdateAuthProviderRequest" configuration.',
       );
     }
     if (OIDCConfig.isProviderId(providerId)) {
-      return this.authRequestHandler
-        .updateOAuthIdpConfig(providerId, updatedConfig)
-        .then((response) => {
-          return new OIDCConfig(response);
-        });
+      const response = await this.authRequestHandler.updateOAuthIdpConfig(
+        providerId,
+        updatedConfig,
+      );
+      return new OIDCConfig(response);
     } else if (SAMLConfig.isProviderId(providerId)) {
-      return this.authRequestHandler
-        .updateInboundSamlConfig(providerId, updatedConfig)
-        .then((response) => {
-          return new SAMLConfig(response);
-        });
+      const response = await this.authRequestHandler.updateInboundSamlConfig(
+        providerId,
+        updatedConfig,
+      );
+      return new SAMLConfig(response);
     }
-    return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+    throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
   }
 
   /**
@@ -1133,43 +1128,37 @@ export abstract class BaseAuth {
    * @param config - The provider configuration to create.
    * @returns A promise that resolves with the created provider configuration.
    */
-  public createProviderConfig(config: AuthProviderConfig): Promise<AuthProviderConfig> {
+  public async createProviderConfig(config: AuthProviderConfig): Promise<AuthProviderConfig> {
     if (!validator.isNonNullObject(config)) {
-      return Promise.reject(
-        new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_CONFIG,
-          'Request is missing "AuthProviderConfig" configuration.',
-        ),
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_CONFIG,
+        'Request is missing "AuthProviderConfig" configuration.',
       );
     }
     if (OIDCConfig.isProviderId(config.providerId)) {
-      return this.authRequestHandler
-        .createOAuthIdpConfig(config as OIDCAuthProviderConfig)
-        .then((response) => {
-          return new OIDCConfig(response);
-        });
+      const response = await this.authRequestHandler.createOAuthIdpConfig(
+        config as OIDCAuthProviderConfig,
+      );
+      return new OIDCConfig(response);
     } else if (SAMLConfig.isProviderId(config.providerId)) {
-      return this.authRequestHandler
-        .createInboundSamlConfig(config as SAMLAuthProviderConfig)
-        .then((response) => {
-          return new SAMLConfig(response);
-        });
+      const response = await this.authRequestHandler.createInboundSamlConfig(
+        config as SAMLAuthProviderConfig,
+      );
+      return new SAMLConfig(response);
     }
-    return Promise.reject(new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID));
+    throw new FirebaseAuthError(AuthClientErrorCode.INVALID_PROVIDER_ID);
   }
 
   /** @alpha */
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  public _verifyAuthBlockingToken(
+  public async _verifyAuthBlockingToken(
     token: string,
     audience?: string,
   ): Promise<DecodedAuthBlockingToken> {
     const isEmulator = useEmulator();
-    return this.authBlockingTokenVerifier
-      ._verifyAuthBlockingToken(token, isEmulator, audience)
-      .then((decodedAuthBlockingToken: DecodedAuthBlockingToken) => {
-        return decodedAuthBlockingToken;
-      });
+    const decodedAuthBlockingToken: DecodedAuthBlockingToken =
+      await this.authBlockingTokenVerifier._verifyAuthBlockingToken(token, isEmulator, audience);
+    return decodedAuthBlockingToken;
   }
 
   /**
@@ -1182,31 +1171,30 @@ export abstract class BaseAuth {
    *     detection.
    * @returns A promise that will be fulfilled after a successful verification.
    */
-  private verifyDecodedJWTNotRevokedOrDisabled(
+  private async verifyDecodedJWTNotRevokedOrDisabled(
     decodedIdToken: DecodedIdToken,
     revocationErrorInfo: ErrorInfo,
   ): Promise<DecodedIdToken> {
     // Get tokens valid after time for the corresponding user.
-    return this.getUser(decodedIdToken.sub).then((user: UserRecord) => {
-      if (user.disabled) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.USER_DISABLED,
-          "The user record is disabled.",
-        );
+    const user: UserRecord = await this.getUser(decodedIdToken.sub);
+    if (user.disabled) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.USER_DISABLED,
+        "The user record is disabled.",
+      );
+    }
+    // If no tokens valid after time available, token is not revoked.
+    if (user.tokensValidAfterTime) {
+      // Get the ID token authentication time and convert to milliseconds UTC.
+      const authTimeUtc = decodedIdToken.auth_time * 1000;
+      // Get user tokens valid after time in milliseconds UTC.
+      const validSinceUtc = new Date(user.tokensValidAfterTime).getTime();
+      // Check if authentication time is older than valid since time.
+      if (authTimeUtc < validSinceUtc) {
+        throw new FirebaseAuthError(revocationErrorInfo);
       }
-      // If no tokens valid after time available, token is not revoked.
-      if (user.tokensValidAfterTime) {
-        // Get the ID token authentication time and convert to milliseconds UTC.
-        const authTimeUtc = decodedIdToken.auth_time * 1000;
-        // Get user tokens valid after time in milliseconds UTC.
-        const validSinceUtc = new Date(user.tokensValidAfterTime).getTime();
-        // Check if authentication time is older than valid since time.
-        if (authTimeUtc < validSinceUtc) {
-          throw new FirebaseAuthError(revocationErrorInfo);
-        }
-      }
-      // All checks above passed. Return the decoded token.
-      return decodedIdToken;
-    });
+    }
+    // All checks above passed. Return the decoded token.
+    return decodedIdToken;
   }
 }

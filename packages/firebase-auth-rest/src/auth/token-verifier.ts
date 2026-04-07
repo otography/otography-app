@@ -401,7 +401,7 @@ export class FirebaseTokenVerifier {
    * @param isEmulator - Whether to accept Auth Emulator tokens.
    * @returns A promise fulfilled with the decoded claims of the Firebase Auth ID token.
    */
-  public verifyJWT(jwtToken: string, isEmulator = false): Promise<DecodedIdToken> {
+  public async verifyJWT(jwtToken: string, isEmulator = false): Promise<DecodedIdToken> {
     if (!validator.isString(jwtToken)) {
       throw new FirebaseAuthError(
         AuthClientErrorCode.INVALID_ARGUMENT,
@@ -409,20 +409,16 @@ export class FirebaseTokenVerifier {
       );
     }
 
-    return this.ensureProjectId()
-      .then((projectId) => {
-        return this.decodeAndVerify(jwtToken, projectId, isEmulator);
-      })
-      .then((decoded) => {
-        const decodedIdToken = decoded.payload as DecodedIdToken;
-        decodedIdToken.uid = decodedIdToken.sub;
-        return decodedIdToken;
-      });
+    const projectId = await this.ensureProjectId();
+    const decoded = await this.decodeAndVerify(jwtToken, projectId, isEmulator);
+    const decodedIdToken = decoded.payload as DecodedIdToken;
+    decodedIdToken.uid = decodedIdToken.sub;
+    return decodedIdToken;
   }
 
   /** @alpha */
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  public _verifyAuthBlockingToken(
+  public async _verifyAuthBlockingToken(
     jwtToken: string,
     isEmulator: boolean,
     audience: string | undefined,
@@ -434,48 +430,43 @@ export class FirebaseTokenVerifier {
       );
     }
 
-    return this.ensureProjectId()
-      .then((projectId) => {
-        if (typeof audience === "undefined") {
-          audience = `${projectId}.cloudfunctions.net/`;
-        }
-        return this.decodeAndVerify(jwtToken, projectId, isEmulator, audience);
-      })
-      .then((decoded) => {
-        const decodedAuthBlockingToken = decoded.payload as DecodedAuthBlockingToken;
-        decodedAuthBlockingToken.uid = decodedAuthBlockingToken.sub;
-        return decodedAuthBlockingToken;
-      });
+    const projectId = await this.ensureProjectId();
+    if (typeof audience === "undefined") {
+      audience = `${projectId}.cloudfunctions.net/`;
+    }
+    const decoded = await this.decodeAndVerify(jwtToken, projectId, isEmulator, audience);
+    const decodedAuthBlockingToken = decoded.payload as DecodedAuthBlockingToken;
+    decodedAuthBlockingToken.uid = decodedAuthBlockingToken.sub;
+    return decodedAuthBlockingToken;
   }
 
-  private ensureProjectId(): Promise<string> {
-    return util.findProjectId(this.app).then((projectId) => {
-      if (!validator.isNonEmptyString(projectId)) {
-        throw new FirebaseAuthError(
-          AuthClientErrorCode.INVALID_CREDENTIAL,
-          "Must initialize app with a cert credential or set your Firebase project ID as the " +
-            `GOOGLE_CLOUD_PROJECT environment variable to call ${this.tokenInfo.verifyApiName}.`,
-        );
-      }
-      return Promise.resolve(projectId);
-    });
+  private async ensureProjectId(): Promise<string> {
+    const projectId = await util.findProjectId(this.app);
+    if (!validator.isNonEmptyString(projectId)) {
+      throw new FirebaseAuthError(
+        AuthClientErrorCode.INVALID_CREDENTIAL,
+        "Must initialize app with a cert credential or set your Firebase project ID as the " +
+          `GOOGLE_CLOUD_PROJECT environment variable to call ${this.tokenInfo.verifyApiName}.`,
+      );
+    }
+    return projectId;
   }
 
-  private decodeAndVerify(
+  private async decodeAndVerify(
     token: string,
     projectId: string,
     isEmulator: boolean,
     audience?: string,
   ): Promise<DecodedToken> {
-    return this.safeDecode(token).then((decodedToken) => {
-      this.verifyContent(decodedToken, projectId, isEmulator, audience);
-      return this.verifySignature(token, isEmulator).then(() => decodedToken);
-    });
+    const decodedToken = await this.safeDecode(token);
+    this.verifyContent(decodedToken, projectId, isEmulator, audience);
+    await this.verifySignature(token, isEmulator);
+    return decodedToken;
   }
 
-  private safeDecode(jwtToken: string): Promise<DecodedToken> {
+  private async safeDecode(jwtToken: string): Promise<DecodedToken> {
     try {
-      return Promise.resolve(decodeJwt(jwtToken));
+      return decodeJwt(jwtToken);
     } catch (err: unknown) {
       const jwtErr = err as JwtError;
       if (jwtErr.code === JwtErrorCode.INVALID_ARGUMENT) {
@@ -597,11 +588,13 @@ export class FirebaseTokenVerifier {
     }
   }
 
-  private verifySignature(jwtToken: string, isEmulator: boolean): Promise<void> {
+  private async verifySignature(jwtToken: string, isEmulator: boolean): Promise<void> {
     const verifier = isEmulator ? EMULATOR_VERIFIER : this.signatureVerifier;
-    return verifier.verify(jwtToken).catch((error) => {
-      throw this.mapJwtErrorToAuthError(error);
-    });
+    try {
+      await verifier.verify(jwtToken);
+    } catch (error) {
+      throw this.mapJwtErrorToAuthError(error as JwtError);
+    }
   }
 
   /**

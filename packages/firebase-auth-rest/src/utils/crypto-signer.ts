@@ -72,17 +72,17 @@ class ServiceAccountSigner implements CryptoSigner {
   /**
    * @inheritDoc
    */
-  public sign(buffer: Buffer): Promise<Buffer> {
+  public async sign(buffer: Buffer): Promise<Buffer> {
     const sign = crypto.createSign("RSA-SHA256");
     sign.update(buffer);
-    return Promise.resolve(sign.sign(this.credential.privateKey));
+    return sign.sign(this.credential.privateKey);
   }
 
   /**
    * @inheritDoc
    */
-  public getAccountId(): Promise<string> {
-    return Promise.resolve(this.credential.clientEmail);
+  public async getAccountId(): Promise<string> {
+    return this.credential.clientEmail;
   }
 }
 

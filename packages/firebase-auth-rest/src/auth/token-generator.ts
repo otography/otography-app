@@ -81,15 +81,15 @@ export class EmulatedSigner implements CryptoSigner {
    * @inheritDoc
    */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public sign(buffer: Buffer): Promise<Buffer> {
-    return Promise.resolve(Buffer.from(""));
+  public async sign(buffer: Buffer): Promise<Buffer> {
+    return Buffer.from("");
   }
 
   /**
    * @inheritDoc
    */
-  public getAccountId(): Promise<string> {
-    return Promise.resolve("firebase-auth-emulator@example.com");
+  public async getAccountId(): Promise<string> {
+    return "firebase-auth-emulator@example.com";
   }
 }
 
@@ -134,7 +134,10 @@ export class FirebaseTokenGenerator {
    * @returns A Promise fulfilled with a Firebase Auth Custom token signed with a
    *     service account key and containing the provided payload.
    */
-  public createCustomToken(uid: string, developerClaims?: { [key: string]: any }): Promise<string> {
+  public async createCustomToken(
+    uid: string,
+    developerClaims?: { [key: string]: any },
+  ): Promise<string> {
     let errorMessage: string | undefined;
     if (!validator.isNonEmptyString(uid)) {
       errorMessage = "`uid` argument must be a non-empty string uid.";
@@ -164,39 +167,34 @@ export class FirebaseTokenGenerator {
         }
       }
     }
-    return this.signer
-      .getAccountId()
-      .then((account) => {
-        const header: JWTHeader = {
-          alg: this.signer.algorithm,
-          typ: "JWT",
-        };
-        const iat = Math.floor(Date.now() / 1000);
-        const body: JWTBody = {
-          aud: FIREBASE_AUDIENCE,
-          iat,
-          exp: iat + ONE_HOUR_IN_SECONDS,
-          iss: account,
-          sub: account,
-          uid,
-        };
-        if (this.tenantId) {
-          body.tenant_id = this.tenantId;
-        }
-        if (Object.keys(claims).length > 0) {
-          body.claims = claims;
-        }
-        const token = `${this.encodeSegment(header)}.${this.encodeSegment(body)}`;
-        const signPromise = this.signer.sign(Buffer.from(token));
+    try {
+      const account = await this.signer.getAccountId();
+      const header: JWTHeader = {
+        alg: this.signer.algorithm,
+        typ: "JWT",
+      };
+      const iat = Math.floor(Date.now() / 1000);
+      const body: JWTBody = {
+        aud: FIREBASE_AUDIENCE,
+        iat,
+        exp: iat + ONE_HOUR_IN_SECONDS,
+        iss: account,
+        sub: account,
+        uid,
+      };
+      if (this.tenantId) {
+        body.tenant_id = this.tenantId;
+      }
+      if (Object.keys(claims).length > 0) {
+        body.claims = claims;
+      }
+      const token = `${this.encodeSegment(header)}.${this.encodeSegment(body)}`;
+      const signature = await this.signer.sign(Buffer.from(token));
 
-        return Promise.all([token, signPromise]);
-      })
-      .then(([token, signature]) => {
-        return `${token}.${this.encodeSegment(signature)}`;
-      })
-      .catch((err) => {
-        throw handleCryptoSignerError(err);
-      });
+      return `${token}.${this.encodeSegment(signature)}`;
+    } catch (err) {
+      throw handleCryptoSignerError(err as Error);
+    }
   }
 
   private encodeSegment(segment: object | Buffer): string {
