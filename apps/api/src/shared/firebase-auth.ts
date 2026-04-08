@@ -1,6 +1,9 @@
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { env } from "cloudflare:workers";
 import { cert, initializeApp } from "@repo/firebase-auth-rest/app";
 import { getAuth } from "@repo/firebase-auth-rest/auth";
+import { AuthError } from "@repo/errors/server";
+import { SESSION_COOKIE_MAX_AGE_MS } from "./session";
 
 const firebaseAuth = getAuth(
   initializeApp({
@@ -13,4 +16,30 @@ const firebaseAuth = getAuth(
   }),
 );
 
-export { firebaseAuth };
+const createSessionCookie = (idToken: string) =>
+  firebaseAuth
+    .createSessionCookie(idToken, { expiresIn: SESSION_COOKIE_MAX_AGE_MS })
+    .catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
+
+const verifyIdToken = (idToken: string) =>
+  firebaseAuth.verifyIdToken(idToken).catch(
+    (e) =>
+      new AuthError({
+        message: "Failed to verify ID token.",
+        code: "token-verification-failed",
+        statusCode: 401,
+        cause: e,
+      }),
+  );
+
+const verifySessionCookie = (cookie: string) =>
+  firebaseAuth
+    .verifySessionCookie(cookie, true)
+    .catch((e) => AuthError.fromFirebase(e, "Session verification failed."));
+
+const revokeRefreshTokens = (uid: string) =>
+  firebaseAuth
+    .revokeRefreshTokens(uid)
+    .catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
+
+export { createSessionCookie, verifyIdToken, verifySessionCookie, revokeRefreshTokens };

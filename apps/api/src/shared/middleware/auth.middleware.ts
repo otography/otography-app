@@ -1,12 +1,6 @@
 import type { Context, MiddlewareHandler } from "hono";
-import { firebaseAuth } from "../firebase-auth";
-import { AuthError } from "@repo/errors/server";
+import { verifySessionCookie } from "../firebase-auth";
 import { clearSessionCookie, getSessionCookie } from "../session";
-
-const verifySessionCookie = (cookie: string) =>
-  firebaseAuth
-    .verifySessionCookie(cookie, true)
-    .catch((e) => AuthError.fromFirebase(e, "Session verification failed."));
 
 export const getAuthSession = (c: Context) => {
   return c.get("authSession");
