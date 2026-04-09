@@ -5,6 +5,7 @@ export type AuthMode = "sign-in" | "sign-up";
 export interface AuthState {
   email: string;
   password: string;
+  username: string;
   error: string | null;
   pendingMode: AuthMode | null;
 }
