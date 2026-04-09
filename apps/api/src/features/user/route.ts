@@ -26,7 +26,7 @@ const user = new Hono<{ Bindings: Bindings }>()
     }
     const result = await getProfile(session);
     if (result instanceof Error) return handleUserError(result, c);
-    return c.json({ message: "You are logged in!", ...result });
+    return c.json({ message: "You are logged in!", profile: result.profile }, 200);
   })
 
   // 初回プロフィール設定（username, name）
@@ -47,7 +47,7 @@ const user = new Hono<{ Bindings: Bindings }>()
       const values = c.req.valid("json");
       const result = await setupProfile(session, values);
       if (result instanceof Error) return handleUserError(result, c);
-      return c.json({ message: "Profile updated.", ...result });
+      return c.json({ message: "Profile updated.", profile: result.profile }, 200);
     },
   )
 
@@ -69,7 +69,7 @@ const user = new Hono<{ Bindings: Bindings }>()
       const values = c.req.valid("json");
       const result = await updateProfile(session, values);
       if (result instanceof Error) return handleUserError(result, c);
-      return c.json({ message: "Profile updated.", ...result });
+      return c.json({ message: "Profile updated.", profile: result.profile }, 200);
     },
   )
 
@@ -81,7 +81,7 @@ const user = new Hono<{ Bindings: Bindings }>()
     }
     const result = await deleteAccount(session);
     if (result instanceof Error) return handleUserError(result, c);
-    return c.json({ message: "Account deleted." });
+    return c.json({ message: "Account deleted." }, 200);
   })
 
   // 公開プロフィール取得
@@ -89,7 +89,7 @@ const user = new Hono<{ Bindings: Bindings }>()
     const { username } = c.req.param();
     const result = await getPublicProfile(username);
     if (result instanceof Error) return handleUserError(result, c);
-    return c.json(result);
+    return c.json(result, 200);
   });
 
 export { user };

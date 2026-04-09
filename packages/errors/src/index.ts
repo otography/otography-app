@@ -1,4 +1,5 @@
 export { AuthRestError } from "./auth-rest-error";
+export type { ErrorStatusCode } from "./http-status";
 export {
   UnauthenticatedError,
   NoProfileError,
