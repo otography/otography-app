@@ -34,6 +34,13 @@ describe("guardAuthenticatedRoutes", () => {
 
       expect(result.status).toBe(200);
     });
+
+    it("returns NextResponse.next() for /signup", () => {
+      const request = createRequest("/signup");
+      const result = guardAuthenticatedRoutes(request);
+
+      expect(result.status).toBe(200);
+    });
   });
 
   describe("authenticated requests (with session cookie)", () => {

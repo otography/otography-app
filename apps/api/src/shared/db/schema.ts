@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm";
+import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
+import { type } from "arktype";
 import {
   boolean,
   check,
@@ -22,7 +24,8 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
-    username: varchar("username", { length: 50 }).notNull(),
+    username: varchar("username", { length: 50 }).notNull().unique(),
+    name: varchar("name", { length: 100 }),
     bio: text("bio"),
     birthplace: varchar("birthplace", { length: 100 }),
     birthyear: integer("birthyear"),
@@ -40,7 +43,7 @@ export const users = pgTable(
       "users_birthplace_check",
       sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
     ),
-    index("idx_users_username").on(table.username),
+    check("users_username_min_length", sql`length(btrim(${table.username})) >= 1`),
     pgPolicy("users_select_all", {
       for: "select",
       to: "public",
@@ -278,3 +281,31 @@ export const postLikes = pgTable(
     index("idx_post_likes_post_id").on(table.postId),
   ],
 );
+
+// users テーブルの arktype スキーマ
+// insert 用: firebaseId, username は必須、name はオプショナル
+export const insertUserSchema = createInsertSchema(users);
+
+// update 用: すべてオプショナル（id, firebaseId, createdAt, updatedAt, deletedAt は自動管理のため除外）
+export const updateUserSchema = createUpdateSchema(users).omit(
+  "id",
+  "firebaseId",
+  "createdAt",
+  "updatedAt",
+  "deletedAt",
+);
+
+// 初回プロフィール設定用（username は trim + 3文字以上、name は必須）
+export const setupProfileSchema = type.merge(updateUserSchema.pick("username", "name").required(), {
+  username: type.pipe(type("string.trim"), type("string >= 1")),
+  name: type("string.trim").to("string >= 1").or(type("null")),
+});
+
+// insertUserSchema の型（values 引数に使用）
+export type InsertUserValues = typeof insertUserSchema.infer;
+
+// updateUserSchema の型（values 引数に使用）
+export type UpdateUserValues = typeof updateUserSchema.infer;
+
+// setupProfileSchema の型（values 引数に使用）
+export type SetupProfileValues = typeof setupProfileSchema.infer;

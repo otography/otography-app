@@ -6,7 +6,8 @@ export default async function AccountPage() {
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/login");
+    // ミドルウェアが認証を保証しているため、null は DB レコード不在
+    redirect("/setup-profile");
   }
 
   return (
@@ -33,11 +34,12 @@ export default async function AccountPage() {
       >
         <h1 style={{ margin: 0 }}>Account</h1>
         <p style={{ margin: 0, lineHeight: 1.5 }}>
-          Welcome, {user.profile.displayName ?? user.profile.email ?? user.userId}
+          Welcome, {user.profile.name ?? user.profile.username}
         </p>
         {user.profile.email ? (
           <p style={{ margin: 0, lineHeight: 1.5 }}>{user.profile.email}</p>
         ) : null}
+        <p style={{ margin: 0, lineHeight: 1.5 }}>@{user.profile.username}</p>
         <SignOutButton />
       </section>
     </main>

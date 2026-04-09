@@ -15,6 +15,7 @@ function getInitialAuthState(): AuthState {
   return {
     email: "",
     password: "",
+    username: "",
     error: null,
     pendingMode: null,
   };
@@ -49,8 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
+        // サインアップ成功後、プロフィール設定ページへ
         if (mode === "sign-up") {
-          await api.user.$get();
+          router.push("/setup-profile");
+          return;
         }
 
         router.push("/account");
