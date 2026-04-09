@@ -15,7 +15,6 @@ function getInitialAuthState(): AuthState {
   return {
     email: "",
     password: "",
-    username: "",
     error: null,
     pendingMode: null,
   };

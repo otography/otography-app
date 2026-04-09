@@ -43,6 +43,7 @@
       "name": "web",
       "version": "0.1.0",
       "dependencies": {
+        "@repo/errors": "workspace:*",
         "@t3-oss/env-nextjs": "^0.13.10",
         "api": "workspace:*",
         "arktype": "^2.2.0",
