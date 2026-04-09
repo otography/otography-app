@@ -87,28 +87,6 @@ function AuthPasswordField() {
   );
 }
 
-function AuthUsernameField() {
-  const {
-    state,
-    actions: { update },
-  } = useAuthContext();
-
-  return (
-    <label style={{ display: "grid", gap: "0.5rem" }}>
-      <span>Username</span>
-      <input
-        type="text"
-        value={state.username}
-        onChange={(event) => update((s) => ({ ...s, username: event.target.value }))}
-        required
-        minLength={3}
-        maxLength={50}
-        style={{ padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
-      />
-    </label>
-  );
-}
-
 function AuthError() {
   const { meta } = useAuthContext();
 
@@ -159,7 +137,6 @@ export const Auth = {
   SignInFrame: AuthSignInFrame,
   SignUpFrame: AuthSignUpFrame,
   EmailField: AuthEmailField,
-  UsernameField: AuthUsernameField,
   PasswordField: AuthPasswordField,
   Error: AuthError,
   SubmitButton: AuthSubmitButton,

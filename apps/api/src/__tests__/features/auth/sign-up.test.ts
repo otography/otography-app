@@ -70,6 +70,35 @@ describe("POST /api/auth/sign-up", () => {
   });
 
   describe("upstream dependency failure", () => {
+    it("returns 500 when app user registration fails", async () => {
+      vi.mocked(signUpWithPassword).mockResolvedValue({
+        idToken: "test-id-token",
+        localId: "user123",
+        expiresIn: "3600",
+        refreshToken: "test-refresh",
+      });
+      mockVerifyIdToken.mockResolvedValue({
+        sub: "user123",
+        email: "test@example.com",
+      });
+      mockDbWithTransaction({
+        insert: vi.fn(() => ({
+          values: vi.fn(() => ({
+            onConflictDoNothing: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
+        })),
+        execute: vi.fn().mockResolvedValue([]),
+      });
+
+      const res = await testRequest("/api/auth/sign-up", {
+        method: "POST",
+        body: { email: "test@example.com", password: "password123" },
+      });
+
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ message: "Failed to create user record." });
+    });
+
     it("returns 502 when createSessionCookie fails", async () => {
       vi.mocked(signUpWithPassword).mockResolvedValue({
         idToken: "test-id-token",

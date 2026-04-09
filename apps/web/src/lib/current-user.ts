@@ -6,16 +6,13 @@ const currentUserResponseSchema = type({
   message: "string",
   profile: {
     createdAt: "string",
+    displayName: "string | null",
     email: "string | null",
-    name: "string | null",
+    id: "string",
     photoUrl: "string | null",
     updatedAt: "string",
-    username: "string",
-    bio: "string | null",
-    birthplace: "string | null",
-    birthyear: "number | null",
-    gender: "string | null",
   },
+  userId: "string",
 });
 
 export const getCurrentUser = async () => {
@@ -27,7 +24,7 @@ export const getCurrentUser = async () => {
     cache: "no-store",
   });
 
-  if (response.status === 401 || response.status === 404) {
+  if (response.status === 401) {
     return null;
   }
 

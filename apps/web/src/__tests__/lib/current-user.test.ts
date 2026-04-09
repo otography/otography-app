@@ -20,17 +20,14 @@ import { getCurrentUser } from "../../lib/current-user";
 
 const validResponse = {
   message: "You are logged in!",
+  userId: "user123",
   profile: {
+    id: "user123",
     email: "test@example.com",
-    name: "Test User",
+    displayName: "Test User",
     photoUrl: null,
     createdAt: "2025-01-01T00:00:00.000Z",
     updatedAt: "2025-01-01T00:00:00.000Z",
-    username: "testuser",
-    bio: null,
-    birthplace: null,
-    birthyear: null,
-    gender: null,
   },
 };
 
@@ -94,15 +91,6 @@ describe("getCurrentUser", () => {
     it("returns null when response status is 401", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(401));
-
-      const result = await getCurrentUser();
-
-      expect(result).toBeNull();
-    });
-
-    it("returns null when response status is 404", async () => {
-      mockCookies.mockResolvedValue({ toString: () => "" });
-      mockFetch.mockResolvedValue(createFetchResponse(404));
 
       const result = await getCurrentUser();
 

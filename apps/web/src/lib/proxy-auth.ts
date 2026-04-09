@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup"];
+const PUBLIC_PATHS = ["/login"];
 const SESSION_COOKIE_NAME = "otography_session";
 
 export function guardAuthenticatedRoutes(request: NextRequest) {

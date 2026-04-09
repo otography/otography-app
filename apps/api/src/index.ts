@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { auth } from "./features/auth";
-import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
 
@@ -12,7 +11,7 @@ const app = new Hono<{ Bindings: Bindings }>()
     const middleware = cors({
       origin: c.env.APP_FRONTEND_URL,
       allowHeaders: ["Content-Type"],
-      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "OPTIONS"],
       credentials: true,
     });
 
@@ -24,7 +23,6 @@ const app = new Hono<{ Bindings: Bindings }>()
     return c.json({ message: "Internal server error." }, 500);
   })
   .route("/", auth)
-  .route("/", user)
   .get("/", (c) => c.text("Hello Hono!"));
 
 export default app;
