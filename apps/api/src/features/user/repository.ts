@@ -1,13 +1,14 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { eq, sql } from "drizzle-orm";
 import { users, type SetupProfileValues, type UpdateUserValues } from "../../shared/db/schema";
-import { createDb } from "../../shared/db";
 import { withRls } from "../../shared/db/rls";
+import { createDb } from "../../shared/db";
 
-// firebaseId でユーザーを取得
-export const selectUserByFirebaseId = async (firebaseId: string) => {
-  const db = createDb();
-  return db.select().from(users).where(eq(users.firebaseId, firebaseId)).limit(1);
+// firebaseId でユーザーを取得（RLS 適用）
+export const selectUserByFirebaseId = async (claims: DecodedIdToken) => {
+  return withRls(claims, async (tx) =>
+    tx.select().from(users).where(eq(users.firebaseId, claims.sub)).limit(1),
+  );
 };
 
 // username でユーザーを取得（公開プロフィール用）

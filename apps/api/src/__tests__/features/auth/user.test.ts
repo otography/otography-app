@@ -49,14 +49,15 @@ describe("GET /api/user", () => {
       picture: "https://example.com/photo.jpg",
     });
     mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
               {
                 id: "uuid-user",
                 firebaseId: "user123",
                 username: "test",
+                name: null,
                 bio: null,
                 birthplace: null,
                 birthyear: null,
@@ -79,11 +80,9 @@ describe("GET /api/user", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.message).toBe("You are logged in!");
-    expect(body.userId).toBe("user123");
     expect(body.profile).toMatchObject({
-      id: "user123",
+      username: "test",
       email: "test@example.com",
-      displayName: "Test User",
       photoUrl: "https://example.com/photo.jpg",
     });
   });
@@ -94,10 +93,10 @@ describe("GET /api/user", () => {
       email: "test@example.com",
     });
     mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(new Error("DB error")),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),
       })),

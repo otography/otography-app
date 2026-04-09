@@ -9,26 +9,19 @@ import {
   softDeleteUser,
 } from "./repository";
 
-// セッション検証の共通処理
-const validateSession = (session: DecodedIdToken) => {
-  const userId = session.sub;
-  if (!userId) {
-    return new AuthError({
-      message: "The current session is invalid.",
-      code: "invalid-session",
-      statusCode: 401,
-      clearCookie: true,
-    });
-  }
-  return userId;
-};
-
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
-  const userId = validateSession(session);
-  if (userId instanceof Error) return userId;
+  const result = await selectUserByFirebaseId(session);
+  if (result instanceof Error) {
+    return new AuthError({
+      message: "Failed to fetch user profile.",
+      code: "db-error",
+      statusCode: 500,
+      cause: result,
+    });
+  }
 
-  const [user] = await selectUserByFirebaseId(userId);
+  const [user] = result;
   if (!user) {
     return new AuthError({
       message: "User record not found.",
@@ -55,9 +48,6 @@ export const getProfile = async (session: DecodedIdToken) => {
 
 // 初回プロフィール設定（username, name）— DB レコードを新規作成
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const userId = validateSession(session);
-  if (userId instanceof Error) return userId;
-
   const result = await insertUserProfile(session, values);
   if (result instanceof Error) {
     return new AuthError({
@@ -87,9 +77,6 @@ export const setupProfile = async (session: DecodedIdToken, values: SetupProfile
 
 // プロフィール詳細を更新（bio, birthplace, birthyear, gender, name）
 export const updateProfile = async (session: DecodedIdToken, values: UpdateUserValues) => {
-  const userId = validateSession(session);
-  if (userId instanceof Error) return userId;
-
   const result = await updateUserDetails(session, values);
   if (result instanceof Error) {
     return new AuthError({
@@ -123,9 +110,6 @@ export const updateProfile = async (session: DecodedIdToken, values: UpdateUserV
 
 // アカウントを論理削除
 export const deleteAccount = async (session: DecodedIdToken) => {
-  const userId = validateSession(session);
-  if (userId instanceof Error) return userId;
-
   const result = await softDeleteUser(session);
   if (result instanceof Error) {
     return new AuthError({
