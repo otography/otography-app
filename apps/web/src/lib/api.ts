@@ -1,11 +1,8 @@
 import { hc } from "hono/client";
 import type { AppType } from "api";
-import { env } from "@/env";
 
-const client = hc<AppType>(env.NEXT_PUBLIC_API_URL, {
-  init: {
-    credentials: "include",
-  },
-});
+// Next.js リライト経由（同オリジン）で API を呼び出す。
+// クロスオリジン直接アクセスだと Set-Cookie ヘッダーがブラウザに反映されない。
+const client = hc<AppType>("");
 
 export const api = client.api;

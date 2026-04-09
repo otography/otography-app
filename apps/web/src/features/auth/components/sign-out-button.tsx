@@ -71,7 +71,13 @@ function SignOutButtonInner() {
       type="button"
       onClick={() => void signOut()}
       disabled={state.isPending}
-      style={{ padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
+      style={{
+        padding: "0.75rem 1rem",
+        borderRadius: "0.5rem",
+        border: "none",
+        backgroundColor: "#b00020",
+        color: "#ffffff",
+      }}
     >
       {state.isPending ? "Signing out..." : "Sign out"}
     </button>

@@ -1,10 +1,10 @@
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { ErrorStatusCode } from "./http-status";
 import { FirebaseAuthError } from "@repo/firebase-auth-rest/auth";
 import * as errore from "errore";
 
 const AUTH_ERROR_CONFIG: Record<
   string,
-  { message?: string; statusCode?: ContentfulStatusCode; clearCookie?: boolean }
+  { message?: string; statusCode?: ErrorStatusCode; clearCookie?: boolean }
 > = {
   "auth/internal-error": { message: "Authentication service unavailable.", statusCode: 503 },
   "auth/invalid-session-cookie-duration": { message: "Invalid session.", statusCode: 500 },
@@ -21,13 +21,13 @@ class AuthError extends errore.createTaggedError({
   message: "$message",
 }) {
   readonly code: string;
-  statusCode: ContentfulStatusCode = 401;
+  statusCode: ErrorStatusCode = 401;
   readonly clearCookie: boolean = false;
 
   constructor(args: {
     message: string;
     code: string;
-    statusCode?: ContentfulStatusCode;
+    statusCode?: ErrorStatusCode;
     clearCookie?: boolean;
     cause?: unknown;
   }) {
@@ -40,7 +40,7 @@ class AuthError extends errore.createTaggedError({
   static fromFirebase(
     error: unknown,
     fallbackMessage: string,
-    fallbackStatus: ContentfulStatusCode = 401,
+    fallbackStatus: ErrorStatusCode = 401,
   ): AuthError {
     if (error instanceof FirebaseAuthError) {
       const config = AUTH_ERROR_CONFIG[error.code];

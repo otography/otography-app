@@ -90,7 +90,7 @@ Compound component pattern with React Context and `use()` (React 19 API). Prefer
 
 ## Code Style
 
-- **Formatter:** oxfmt — 100 char width, tabs (width 2), semicolons, double quotes, trailing commas
+- **Formatter:** oxfmt — 100 char width, spaces (width 2), semicolons, double quotes, trailing commas
 - **Linter:** oxlint (replaces ESLint) — type-aware linting available via `--type-aware` flag
 - **Git hooks:** Lefthook runs oxfmt and oxlint --fix on staged files at pre-commit
 - Source code comments are in Japanese
