@@ -40,8 +40,8 @@ db-push:
 db-studio:
     cd apps/api && bun run db:studio
 
-# 両方立ち上げ
-dev:
+# マイグレーションを生成・適用してから両方立ち上げ
+dev: db-generate db-migrate
     bun run dev
 
 # APIのみ
