@@ -2,7 +2,8 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/current-user";
 
 export default async function Home() {
-  const user = await getCurrentUser();
+  const result = await getCurrentUser();
+  const isAuthenticated = !(result instanceof Error);
 
   return (
     <main
@@ -28,7 +29,7 @@ export default async function Home() {
       >
         <h1 style={{ margin: 0 }}>Otography</h1>
         <p style={{ margin: 0, lineHeight: 1.5 }}>Welcome to Otography App</p>
-        {user ? (
+        {isAuthenticated ? (
           <Link
             href="/account"
             style={{

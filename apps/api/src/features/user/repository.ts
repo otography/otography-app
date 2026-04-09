@@ -33,7 +33,7 @@ export const insertUserProfile = async (claims: DecodedIdToken, values: SetupPro
       .values({ firebaseId: claims.sub, ...values })
       .onConflictDoUpdate({
         target: users.firebaseId,
-        set: { ...values, updatedAt: sql`now()` },
+        set: { ...values, deletedAt: null, updatedAt: sql`now()` },
       })
       .returning(),
   );
