@@ -1,13 +1,21 @@
 import { redirect } from "next/navigation";
+import { UnauthenticatedError, NoProfileError } from "@repo/errors";
 import { getCurrentUser } from "@/lib/current-user";
 import { SignOutButton } from "@/features/auth";
 
 export default async function AccountPage() {
-  const user = await getCurrentUser();
+  const result = await getCurrentUser();
 
-  if (!user) {
-    // ミドルウェアが認証を保証しているため、null は DB レコード不在
+  if (result instanceof UnauthenticatedError) {
+    redirect("/login");
+  }
+
+  if (result instanceof NoProfileError) {
     redirect("/setup-profile");
+  }
+
+  if (result instanceof Error) {
+    throw result;
   }
 
   return (
@@ -34,12 +42,12 @@ export default async function AccountPage() {
       >
         <h1 style={{ margin: 0 }}>Account</h1>
         <p style={{ margin: 0, lineHeight: 1.5 }}>
-          Welcome, {user.profile.name ?? user.profile.username}
+          Welcome, {result.profile.name ?? result.profile.username}
         </p>
-        {user.profile.email ? (
-          <p style={{ margin: 0, lineHeight: 1.5 }}>{user.profile.email}</p>
+        {result.profile.email ? (
+          <p style={{ margin: 0, lineHeight: 1.5 }}>{result.profile.email}</p>
         ) : null}
-        <p style={{ margin: 0, lineHeight: 1.5 }}>@{user.profile.username}</p>
+        <p style={{ margin: 0, lineHeight: 1.5 }}>@{result.profile.username}</p>
         <SignOutButton />
       </section>
     </main>

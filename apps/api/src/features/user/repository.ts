@@ -1,20 +1,28 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { users, type SetupProfileValues, type UpdateUserValues } from "../../shared/db/schema";
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
 
-// firebaseId でユーザーを取得（RLS 適用）
+// firebaseId でユーザーを取得（論理削除済みは除外、RLS 適用）
 export const selectUserByFirebaseId = async (claims: DecodedIdToken) => {
   return withRls(claims, async (tx) =>
-    tx.select().from(users).where(eq(users.firebaseId, claims.sub)).limit(1),
+    tx
+      .select()
+      .from(users)
+      .where(and(eq(users.firebaseId, claims.sub), isNull(users.deletedAt)))
+      .limit(1),
   );
 };
 
-// username でユーザーを取得（公開プロフィール用）
+// username でユーザーを取得（論理削除済みは除外、公開プロフィール用）
 export const selectUserByUsername = async (username: string) => {
   const db = createDb();
-  return db.select().from(users).where(eq(users.username, username)).limit(1);
+  return db
+    .select()
+    .from(users)
+    .where(and(eq(users.username, username), isNull(users.deletedAt)))
+    .limit(1);
 };
 
 // ユーザーを新規作成（username, name）
@@ -23,6 +31,10 @@ export const insertUserProfile = async (claims: DecodedIdToken, values: SetupPro
     tx
       .insert(users)
       .values({ firebaseId: claims.sub, ...values })
+      .onConflictDoUpdate({
+        target: users.firebaseId,
+        set: { ...values, updatedAt: sql`now()` },
+      })
       .returning(),
   );
 };

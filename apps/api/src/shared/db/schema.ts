@@ -295,10 +295,10 @@ export const updateUserSchema = createUpdateSchema(users).omit(
   "deletedAt",
 );
 
-// 初回プロフィール設定用（username は trim + 3文字以上、name は必須）
+// 初回プロフィール設定用（username, name ともに trim + 1文字以上必須）
 export const setupProfileSchema = type.merge(updateUserSchema.pick("username", "name").required(), {
   username: type.pipe(type("string.trim"), type("string >= 1")),
-  name: type("string.trim").to("string >= 1").or(type("null")),
+  name: type.pipe(type("string.trim"), type("string >= 1")),
 });
 
 // insertUserSchema の型（values 引数に使用）

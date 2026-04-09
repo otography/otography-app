@@ -1,6 +1,14 @@
 // @vitest-environment node
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  UnauthenticatedError,
+  NoProfileError,
+  FetchCurrentUserError,
+  UnexpectedStatusError,
+  JsonParseError,
+  SchemaValidationError,
+} from "@repo/errors";
 
 const { mockCookies } = vi.hoisted(() => ({
   mockCookies: vi.fn(),
@@ -91,47 +99,80 @@ describe("getCurrentUser", () => {
   });
 
   describe("unauthenticated", () => {
-    it("returns null when response status is 401", async () => {
+    it("returns UnauthenticatedError when response status is 401", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(401));
 
       const result = await getCurrentUser();
 
-      expect(result).toBeNull();
+      expect(result).toBeInstanceOf(UnauthenticatedError);
     });
 
-    it("returns null when response status is 404", async () => {
+    it("returns NoProfileError when response status is 404", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(404));
 
       const result = await getCurrentUser();
 
-      expect(result).toBeNull();
+      expect(result).toBeInstanceOf(NoProfileError);
     });
   });
 
-  describe("server errors", () => {
-    it("throws when response is 500", async () => {
+  describe("network errors", () => {
+    it("returns FetchCurrentUserError when fetch rejects", async () => {
+      mockCookies.mockResolvedValue({ toString: () => "" });
+      mockFetch.mockRejectedValue(new Error("Network error"));
+
+      const result = await getCurrentUser();
+
+      expect(result).toBeInstanceOf(FetchCurrentUserError);
+    });
+  });
+
+  describe("unexpected status codes", () => {
+    it("returns UnexpectedStatusError when response is 500", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(500));
 
-      await expect(getCurrentUser()).rejects.toThrow("Failed to fetch the current user.");
+      const result = await getCurrentUser();
+
+      expect(result).toBeInstanceOf(UnexpectedStatusError);
     });
 
-    it("throws when response is any non-401 error status", async () => {
+    it("returns UnexpectedStatusError for any non-401/404 error status", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(502));
 
-      await expect(getCurrentUser()).rejects.toThrow("Failed to fetch the current user.");
+      const result = await getCurrentUser();
+
+      expect(result).toBeInstanceOf(UnexpectedStatusError);
+    });
+  });
+
+  describe("json parse errors", () => {
+    it("returns JsonParseError when response body is not valid JSON", async () => {
+      mockCookies.mockResolvedValue({ toString: () => "" });
+      const response = {
+        status: 200,
+        ok: true,
+        json: () => Promise.reject(new Error("Invalid JSON")),
+      } as unknown as Response;
+      mockFetch.mockResolvedValue(response);
+
+      const result = await getCurrentUser();
+
+      expect(result).toBeInstanceOf(JsonParseError);
     });
   });
 
   describe("validation errors", () => {
-    it("throws when response body does not match schema", async () => {
+    it("returns SchemaValidationError when response body does not match schema", async () => {
       mockCookies.mockResolvedValue({ toString: () => "" });
       mockFetch.mockResolvedValue(createFetchResponse(200, { invalid: "data" }));
 
-      await expect(getCurrentUser()).rejects.toThrow("Failed to parse the current user response.");
+      const result = await getCurrentUser();
+
+      expect(result).toBeInstanceOf(SchemaValidationError);
     });
   });
 });

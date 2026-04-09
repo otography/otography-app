@@ -163,21 +163,23 @@ describe("PATCH /api/user/profile", () => {
     mockDbWithTransaction({
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([
-            {
-              id: "uuid-user",
-              firebaseId: "user123",
-              username: "newuser",
-              name: "New User",
-              bio: null,
-              birthplace: null,
-              birthyear: null,
-              gender: null,
-              createdAt: new Date("2026-01-01T00:00:00.000Z"),
-              updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-              deletedAt: null,
-            },
-          ]),
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: "newuser",
+                name: "New User",
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
         })),
       })),
       execute: vi.fn().mockResolvedValue([]),
@@ -204,7 +206,9 @@ describe("PATCH /api/user/profile", () => {
     mockDbWithTransaction({
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
-          returning: vi.fn().mockRejectedValue(new Error("DB error")),
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
         })),
       })),
       execute: vi.fn().mockResolvedValue([]),

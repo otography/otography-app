@@ -1,5 +1,13 @@
 import { type } from "arktype";
 import { cookies } from "next/headers";
+import {
+  NoProfileError,
+  UnauthenticatedError,
+  FetchCurrentUserError,
+  UnexpectedStatusError,
+  JsonParseError,
+  SchemaValidationError,
+} from "@repo/errors";
 import { env } from "@/env";
 
 const currentUserResponseSchema = type({
@@ -25,20 +33,21 @@ export const getCurrentUser = async () => {
       cookie: cookieStore.toString(),
     },
     cache: "no-store",
-  });
+  }).catch((e) => new FetchCurrentUserError({ cause: e }));
+  if (response instanceof Error) return response;
 
-  if (response.status === 401 || response.status === 404) {
-    return null;
-  }
+  if (response.status === 401) return new UnauthenticatedError();
+  if (response.status === 404) return new NoProfileError();
+  if (!response.ok) return new UnexpectedStatusError({ status: response.status });
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch the current user.");
-  }
+  const body = await (response.json() as Promise<unknown>).catch(
+    (e) => new JsonParseError({ cause: e }),
+  );
+  if (body instanceof Error) return body;
 
-  const currentUser = currentUserResponseSchema(await response.json());
-
+  const currentUser = currentUserResponseSchema(body);
   if (currentUser instanceof type.errors) {
-    throw new Error("Failed to parse the current user response.");
+    return new SchemaValidationError({ summary: currentUser.summary });
   }
 
   return currentUser;
