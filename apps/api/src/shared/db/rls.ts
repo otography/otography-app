@@ -17,17 +17,15 @@ export async function withRls<T>(
   const db = createDb();
   const result = await db
     .transaction(async (tx) => {
-      const setClaimsResult = await tx
+      await tx
         .execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
-        .catch((e) => new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e }));
-      if (setClaimsResult instanceof Error) return setClaimsResult;
+        .catch((e) => {
+          throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
+        });
 
-      const setRoleResult = await tx
-        .execute(sql.raw("set local role authenticated"))
-        .catch(
-          (e) => new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e }),
-        );
-      if (setRoleResult instanceof Error) return setRoleResult;
+      await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
+        throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
+      });
 
       return await fn(tx);
     })
