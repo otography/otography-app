@@ -5,7 +5,7 @@ import { type DatabaseTransaction } from "../../shared/db";
 import { withRls } from "../../shared/db/rls";
 
 // firebaseId でユーザーを登録（重複時は無視）
-export const insertUser = async (
+const insertUser = async (
   tx: DatabaseTransaction,
   values: { firebaseId: string; username: string },
 ) => {
@@ -15,7 +15,7 @@ export const insertUser = async (
 };
 
 // RLS 付きでユーザーを登録（重複時は無視）
-const insertUserWithRls = async (
+export const insertUserWithRls = async (
   claims: DecodedIdToken,
   values: { firebaseId: string; username: string },
 ) => {
