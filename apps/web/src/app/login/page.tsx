@@ -1,13 +1,22 @@
 import { redirect } from "next/navigation";
+import { NoProfileError, UnauthenticatedError } from "@repo/errors";
 import { getCurrentUser } from "@/lib/current-user";
 import { SignInForm } from "@/features/auth";
 
 export default async function LoginPage() {
   const result = await getCurrentUser();
 
-  // 有効なユーザーデータが取得できればリダイレクト（Error インスタンスは truthy なので instanceof で判定）
   if (!(result instanceof Error)) {
     redirect("/");
+  }
+  if (result instanceof NoProfileError) {
+    redirect("/setup-profile");
+  }
+  if (result instanceof UnauthenticatedError) {
+    // 未認証 — ログインフォームを表示
+  } else {
+    // 予期せぬエラー（FetchCurrentUserError, UnexpectedStatusError, JsonParseError）
+    throw result;
   }
 
   return (
