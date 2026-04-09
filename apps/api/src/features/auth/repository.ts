@@ -15,7 +15,7 @@ export const insertUser = async (
 };
 
 // RLS 付きでユーザーを登録（重複時は無視）
-export const insertUserWithRls = async (
+const insertUserWithRls = async (
   claims: DecodedIdToken,
   values: { firebaseId: string; username: string },
 ) => {
@@ -23,7 +23,7 @@ export const insertUserWithRls = async (
 };
 
 // firebaseId でユーザーを upsert（重複時は updatedAt を更新して返す）
-export const upsertUser = async (
+const upsertUser = async (
   tx: DatabaseTransaction,
   values: { firebaseId: string; username: string },
 ) => {
