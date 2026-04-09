@@ -3,9 +3,10 @@ import { getCurrentUser } from "@/lib/current-user";
 import { SignInForm } from "@/features/auth";
 
 export default async function LoginPage() {
-  const currentUser = await getCurrentUser();
+  const result = await getCurrentUser();
 
-  if (currentUser) {
+  // 有効なユーザーデータが取得できればリダイレクト（Error インスタンスは truthy なので instanceof で判定）
+  if (!(result instanceof Error)) {
     redirect("/");
   }
 
