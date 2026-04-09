@@ -79,26 +79,25 @@ const requestFirebaseAuth = async (
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }).catch((e) => {
-    throw createAuthRestError(undefined, 503, e);
-  });
+  }).catch((e) => createAuthRestError(undefined, 503, e));
+  if (response instanceof Error) return response;
 
   const payload = await (response.json() as Promise<unknown>).catch(() => null);
 
   if (!response.ok) {
     const parsedError = firebaseErrorResponseSchema(payload);
     const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
-    throw createAuthRestError(code);
+    return createAuthRestError(code);
   }
 
   if (!payload) {
-    throw createAuthRestError(undefined, 502);
+    return createAuthRestError(undefined, 502);
   }
 
   const parsedPayload = firebaseEmailPasswordAuthResponseSchema(payload);
 
   if (parsedPayload instanceof type.errors) {
-    throw createAuthRestError(undefined, 502);
+    return createAuthRestError(undefined, 502);
   }
 
   return parsedPayload;

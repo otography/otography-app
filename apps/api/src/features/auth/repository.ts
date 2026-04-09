@@ -1,9 +1,11 @@
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { users } from "../../shared/db/schema";
 import { type DatabaseTransaction } from "../../shared/db";
+import { withRls } from "../../shared/db/rls";
 
 // firebaseId でユーザーを登録（重複時は無視）
-export const insertUser = async (
+const insertUser = async (
   tx: DatabaseTransaction,
   values: { firebaseId: string; username: string },
 ) => {
@@ -12,8 +14,16 @@ export const insertUser = async (
   });
 };
 
+// RLS 付きでユーザーを登録（重複時は無視）
+export const insertUserWithRls = async (
+  claims: DecodedIdToken,
+  values: { firebaseId: string; username: string },
+) => {
+  return withRls(claims, async (tx) => insertUser(tx, values));
+};
+
 // firebaseId でユーザーを upsert（重複時は updatedAt を更新して返す）
-export const upsertUser = async (
+const upsertUser = async (
   tx: DatabaseTransaction,
   values: { firebaseId: string; username: string },
 ) => {
@@ -27,4 +37,12 @@ export const upsertUser = async (
       },
     })
     .returning();
+};
+
+// RLS 付きでユーザーを upsert（重複時は updatedAt を更新して返す）
+export const upsertUserWithRls = async (
+  claims: DecodedIdToken,
+  values: { firebaseId: string; username: string },
+) => {
+  return withRls(claims, async (tx) => upsertUser(tx, values));
 };
