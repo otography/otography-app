@@ -1,20 +1,9 @@
 import Link from "next/link";
-import { NoProfileError, UnauthenticatedError } from "@repo/errors";
-import { getCurrentUser } from "@/lib/current-user";
+import { NoProfileError } from "@repo/errors";
+import { getCurrentUser } from "@/features/auth";
 
 export default async function Home() {
   const result = await getCurrentUser();
-
-  let authState: "authenticated" | "noProfile" | "unauthenticated" = "unauthenticated";
-  if (!(result instanceof Error)) {
-    authState = "authenticated";
-  } else if (result instanceof NoProfileError) {
-    authState = "noProfile";
-  } else if (result instanceof UnauthenticatedError) {
-    authState = "unauthenticated";
-  } else {
-    throw result;
-  }
 
   return (
     <main
@@ -40,7 +29,7 @@ export default async function Home() {
       >
         <h1 style={{ margin: 0 }}>Otography</h1>
         <p style={{ margin: 0, lineHeight: 1.5 }}>Welcome to Otography App</p>
-        {authState === "authenticated" ? (
+        {!(result instanceof Error) ? (
           <Link
             href="/account"
             style={{
@@ -54,7 +43,7 @@ export default async function Home() {
           >
             Account
           </Link>
-        ) : authState === "noProfile" ? (
+        ) : result instanceof NoProfileError ? (
           <Link
             href="/setup-profile"
             style={{

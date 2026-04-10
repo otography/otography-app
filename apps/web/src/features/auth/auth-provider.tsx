@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { api } from "@/features/lib/api";
 import {
   type AuthActions,
   type AuthContextValue,

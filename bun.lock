@@ -11,7 +11,6 @@
         "oxfmt": "^0.41.0",
         "oxlint": "^1.57.0",
         "oxlint-tsgolint": "^0.17.4",
-        "server-only": "^0.0.1",
         "turbo": "^2.8.21",
         "typescript": "^6.0.2",
         "vitest": "^4.1.2",
@@ -52,6 +51,7 @@
         "next": "16.1.5",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
+        "server-only": "^0.0.1",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",

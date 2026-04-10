@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 
 const mockSignOutPost = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/features/lib/api", () => ({
   api: {
     auth: { "sign-out": { $post: mockSignOutPost } },
     user: { $get: vi.fn() },

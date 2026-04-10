@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
 const mockSignInPost = vi.hoisted(() => vi.fn());
 const mockSignUpPost = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/features/lib/api", () => ({
   api: {
     auth: {
       "sign-in": { $post: mockSignInPost },
