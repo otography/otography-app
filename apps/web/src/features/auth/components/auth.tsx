@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode, use } from "react";
+import { Field, Form } from "@formisch/react";
 import { AuthContext } from "../auth-context";
 import { AuthProvider } from "../auth-provider";
 
@@ -13,77 +14,90 @@ function useAuthContext() {
 }
 
 function AuthSignInFrame({ children }: { children: ReactNode }) {
-  const { actions } = useAuthContext();
+  const { state, actions } = useAuthContext();
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void actions.signIn();
-      }}
-      style={{ display: "grid", gap: "1rem" }}
-    >
+    <Form of={state.form} onSubmit={actions.signIn} style={{ display: "grid", gap: "1rem" }}>
       {children}
-    </form>
+    </Form>
   );
 }
 
 function AuthSignUpFrame({ children }: { children: ReactNode }) {
-  const { actions } = useAuthContext();
+  const { state, actions } = useAuthContext();
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void actions.signUp();
-      }}
-      style={{ display: "grid", gap: "1rem" }}
-    >
+    <Form of={state.form} onSubmit={actions.signUp} style={{ display: "grid", gap: "1rem" }}>
       {children}
-    </form>
+    </Form>
   );
 }
 
 function AuthEmailField() {
-  const {
-    state,
-    actions: { update },
-  } = useAuthContext();
+  const { state } = useAuthContext();
 
   return (
-    <label style={{ display: "grid", gap: "0.5rem" }}>
-      <span>Email</span>
-      <input
-        autoComplete="email"
-        type="email"
-        value={state.email}
-        onChange={(event) => update((s) => ({ ...s, email: event.target.value }))}
-        required
-        style={{ padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
-      />
-    </label>
+    <Field of={state.form} path={["email"]}>
+      {(field) => (
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          <label>
+            <span>Email</span>
+            <input
+              {...field.props}
+              value={field.input}
+              type="email"
+              autoComplete="email"
+              aria-invalid={field.errors ? true : undefined}
+              aria-describedby={field.errors ? "email-error" : undefined}
+              style={{
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #d6d6d6",
+              }}
+            />
+          </label>
+          {field.errors && (
+            <p id="email-error" style={{ margin: 0, color: "#b00020" }}>
+              {field.errors[0]}
+            </p>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }
 
 function AuthPasswordField() {
-  const {
-    state,
-    actions: { update },
-  } = useAuthContext();
+  const { state } = useAuthContext();
 
   return (
-    <label style={{ display: "grid", gap: "0.5rem" }}>
-      <span>Password</span>
-      <input
-        autoComplete="current-password"
-        type="password"
-        value={state.password}
-        onChange={(event) => update((s) => ({ ...s, password: event.target.value }))}
-        required
-        minLength={6}
-        style={{ padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
-      />
-    </label>
+    <Field of={state.form} path={["password"]}>
+      {(field) => (
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          <label>
+            <span>Password</span>
+            <input
+              {...field.props}
+              value={field.input}
+              type="password"
+              autoComplete="current-password"
+              aria-invalid={field.errors ? true : undefined}
+              aria-describedby={field.errors ? "password-error" : undefined}
+              style={{
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #d6d6d6",
+              }}
+            />
+          </label>
+          {field.errors && (
+            <p id="password-error" style={{ margin: 0, color: "#b00020" }}>
+              {field.errors[0]}
+            </p>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }
 
@@ -110,16 +124,12 @@ function AuthSubmitButton() {
 }
 
 function AuthCreateAccountButton() {
-  const {
-    state,
-    actions: { signUp },
-  } = useAuthContext();
+  const { state } = useAuthContext();
 
   return (
     <button
-      type="button"
+      type="submit"
       disabled={state.pendingMode !== null}
-      onClick={() => void signUp()}
       style={{
         padding: "0.75rem 1rem",
         borderRadius: "0.5rem",

@@ -14,6 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@formisch/react": "^0.4.4",
     "@repo/errors": "workspace:*",
     "@t3-oss/env-nextjs": "^0.13.10",
     "api": "workspace:*",
@@ -22,7 +23,8 @@
     "next": "16.1.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "server-only": "^0.0.1"
+    "server-only": "^0.0.1",
+    "valibot": "^1.3.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

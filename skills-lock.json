@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "13d00a28907cdf17faf9b2a98a4da9fbf8edf0c722c13351b8a576a480b02582"
     },
+    "formisch": {
+      "source": "open-circle/agent-skills",
+      "sourceType": "github",
+      "computedHash": "3920325909e35e888d752fd756c31e9b26b2fc66ba0bdb456f67ad8101d87485"
+    },
     "migrate-oxlint": {
       "source": "oxc-project/oxc",
       "sourceType": "github",
