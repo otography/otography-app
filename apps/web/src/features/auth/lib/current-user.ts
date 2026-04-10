@@ -5,7 +5,7 @@ import {
   UnexpectedStatusError,
   JsonParseError,
 } from "@repo/errors";
-import { getServerApi } from "@/lib/server-api";
+import { getServerApi } from "@/features/lib/server-api";
 
 export const getCurrentUser = async () => {
   const api = await getServerApi();

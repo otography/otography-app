@@ -14,11 +14,11 @@ const { mockGetServerApi, mockUserGet } = vi.hoisted(() => ({
   mockUserGet: vi.fn(),
 }));
 
-vi.mock("@/lib/server-api", () => ({
+vi.mock("@/features/lib/server-api", () => ({
   getServerApi: mockGetServerApi,
 }));
 
-import { getCurrentUser } from "../../lib/current-user";
+import { getCurrentUser } from "./current-user";
 
 const validResponse = {
   message: "You are logged in!",

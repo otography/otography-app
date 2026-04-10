@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
 }));
 
-vi.mock("@/lib/api", () => ({
+vi.mock("@/features/lib/api", () => ({
   api: {
     user: {
       profile: {
