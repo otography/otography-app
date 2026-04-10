@@ -44,7 +44,6 @@ function AuthEmailField() {
             <span>Email</span>
             <input
               {...field.props}
-              value={field.input}
               type="email"
               autoComplete="email"
               aria-invalid={field.errors ? true : undefined}
@@ -78,7 +77,6 @@ function AuthPasswordField() {
             <span>Password</span>
             <input
               {...field.props}
-              value={field.input}
               type="password"
               autoComplete="current-password"
               aria-invalid={field.errors ? true : undefined}
