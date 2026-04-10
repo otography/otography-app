@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE_NAME = "otography_session";
-const PUBLIC_PATHS = ["/login", "/signup", "/setup-profile"];
+const PUBLIC_PATHS = ["/login", "/signup"];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

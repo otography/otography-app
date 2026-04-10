@@ -1,3 +1,4 @@
+import { cache } from "react";
 import {
   NoProfileError,
   UnauthenticatedError,
@@ -7,7 +8,7 @@ import {
 } from "@repo/errors";
 import { getServerApi } from "@/features/lib/server-api";
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = cache(async () => {
   const api = await getServerApi();
 
   const response = await api.user.$get().catch((e) => new FetchCurrentUserError({ cause: e }));
@@ -21,4 +22,4 @@ export const getCurrentUser = async () => {
   if (body instanceof Error) return body;
 
   return body;
-};
+});
