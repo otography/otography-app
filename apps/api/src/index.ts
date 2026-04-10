@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { auth } from "./features/auth";
 import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
@@ -18,6 +19,7 @@ const app = new Hono<{ Bindings: Bindings }>()
 
     return middleware(c, next);
   })
+  .use("*", secureHeaders())
   .use("*", authSessionMiddleware())
   .onError((err, c) => {
     console.error("Unhandled error:", err);
