@@ -2,50 +2,40 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
+import { useForm } from "@formisch/react";
 import { api } from "@/features/lib/api";
 import {
   type AuthActions,
   type AuthContextValue,
   type AuthMeta,
+  type AuthPendingMode,
   type AuthState,
   AuthContext,
 } from "./auth-context";
-
-function getInitialAuthState(): AuthState {
-  return {
-    email: "",
-    password: "",
-    error: null,
-    pendingMode: null,
-  };
-}
+import { AuthSchema } from "./schema";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [state, setState] = useState<AuthState>(getInitialAuthState);
+  const [error, setError] = useState<string | null>(null);
+  const [pendingMode, setPendingMode] = useState<AuthPendingMode | null>(null);
+
+  const form = useForm({ schema: AuthSchema });
 
   const submit = useCallback(
-    async (mode: "sign-in" | "sign-up") => {
-      setState((prev) => ({ ...prev, pendingMode: mode, error: null }));
+    async (mode: AuthPendingMode, output: { email: string; password: string }) => {
+      setPendingMode(mode);
+      setError(null);
 
       try {
         const response =
           mode === "sign-in"
-            ? await api.auth["sign-in"].$post({
-                json: { email: state.email, password: state.password },
-              })
-            : await api.auth["sign-up"].$post({
-                json: { email: state.email, password: state.password },
-              });
+            ? await api.auth["sign-in"].$post({ json: output })
+            : await api.auth["sign-up"].$post({ json: output });
 
         if (!response.ok) {
           const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-          setState((prev) => ({
-            ...prev,
-            error: payload?.message ?? "Authentication failed.",
-            pendingMode: null,
-          }));
+          setError(payload?.message ?? "Authentication failed.");
           return;
         }
 
@@ -58,35 +48,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push("/account");
         router.refresh();
       } catch {
-        setState((prev) => ({
-          ...prev,
-          error: "Unable to reach the authentication API.",
-          pendingMode: null,
-        }));
+        setError("Unable to reach the authentication API.");
       } finally {
-        setState((prev) => ({ ...prev, pendingMode: null }));
+        setPendingMode(null);
       }
     },
-    [router, state.email, state.password],
+    [router],
   );
 
-  const actions: AuthActions = useMemo(
-    () => ({
-      update: setState,
-      signIn: () => submit("sign-in"),
-      signUp: () => submit("sign-up"),
-    }),
+  const signIn = useCallback(
+    (output: { email: string; password: string }) => submit("sign-in", output),
     [submit],
   );
 
-  const meta: AuthMeta = useMemo(
-    () => ({
-      displayedError: state.error ?? searchParams.get("error"),
-    }),
-    [state.error, searchParams],
+  const signUp = useCallback(
+    (output: { email: string; password: string }) => submit("sign-up", output),
+    [submit],
   );
 
-  const value: AuthContextValue = useMemo(() => ({ state, actions, meta }), [state, actions, meta]);
+  const displayedError = error ?? searchParams.get("error");
+
+  const value: AuthContextValue = useMemo(
+    () => ({
+      state: { form, error, pendingMode } satisfies AuthState,
+      actions: { signIn, signUp } satisfies AuthActions,
+      meta: { displayedError } satisfies AuthMeta,
+    }),
+    [form, error, pendingMode, signIn, signUp, displayedError],
+  );
 
   return <AuthContext value={value}>{children}</AuthContext>;
 }

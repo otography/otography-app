@@ -1,18 +1,18 @@
 import { createContext } from "react";
+import type { FormStore } from "@formisch/react";
+import { AuthSchema } from "./schema";
 
-export type AuthMode = "sign-in" | "sign-up";
+export type AuthPendingMode = "sign-in" | "sign-up";
 
 export interface AuthState {
-  email: string;
-  password: string;
+  form: FormStore<typeof AuthSchema>;
   error: string | null;
-  pendingMode: AuthMode | null;
+  pendingMode: AuthPendingMode | null;
 }
 
 export interface AuthActions {
-  update: (updater: (state: AuthState) => AuthState) => void;
-  signIn: () => Promise<void>;
-  signUp: () => Promise<void>;
+  signIn: (output: { email: string; password: string }) => Promise<void>;
+  signUp: (output: { email: string; password: string }) => Promise<void>;
 }
 
 export interface AuthMeta {

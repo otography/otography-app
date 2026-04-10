@@ -165,15 +165,10 @@ describe("SetupProfileForm", () => {
     });
   });
 
-  describe("pending state", () => {
-    it("disables submit button while request is in flight", async () => {
+  describe("submission lifecycle", () => {
+    it("calls API exactly once per submission", async () => {
       const user = userEvent.setup();
-      let resolvePatch!: (value: unknown) => void;
-      mockPatch.mockReturnValue(
-        new Promise((resolve) => {
-          resolvePatch = resolve;
-        }),
-      );
+      mockPatch.mockResolvedValue(createPatchResponse(200, { message: "Profile updated." }));
 
       render(<SetupProfileForm />);
 
@@ -181,14 +176,38 @@ describe("SetupProfileForm", () => {
       await user.type(screen.getByLabelText("Name"), "Test");
       await user.click(screen.getByRole("button", { name: "Set up profile" }));
 
-      const button = screen.getByRole("button", { name: "Setting up..." });
-      expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/account");
+      });
 
-      resolvePatch(createPatchResponse(200, { message: "Profile updated." }));
+      expect(mockPatch).toHaveBeenCalledTimes(1);
+    });
+
+    it("allows retry after error", async () => {
+      const user = userEvent.setup();
+      mockPatch
+        .mockResolvedValueOnce(createPatchResponse(400, { message: "Username taken." }))
+        .mockResolvedValueOnce(createPatchResponse(200, { message: "Profile updated." }));
+
+      render(<SetupProfileForm />);
+
+      await user.type(screen.getByLabelText("Username"), "taken");
+      await user.type(screen.getByLabelText("Name"), "Test");
+      await user.click(screen.getByRole("button", { name: "Set up profile" }));
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: "Set up profile" })).not.toBeDisabled();
+        expect(screen.getByText("Username taken.")).toBeInTheDocument();
       });
+
+      await user.clear(screen.getByLabelText("Username"));
+      await user.type(screen.getByLabelText("Username"), "available");
+      await user.click(screen.getByRole("button", { name: "Set up profile" }));
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith("/account");
+      });
+
+      expect(mockPatch).toHaveBeenCalledTimes(2);
     });
   });
 });

@@ -2,18 +2,30 @@
 
 import { createContext, type ReactNode, useCallback, use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Field, Form, useForm } from "@formisch/react";
+import type { FormStore } from "@formisch/react";
 import { api } from "@/features/lib/api";
+import * as v from "valibot";
+
+const SetupProfileSchema = v.object({
+  username: v.pipe(
+    v.string("Please enter a username."),
+    v.nonEmpty("Please enter a username."),
+    v.maxLength(50, "Username must be 50 characters or fewer."),
+  ),
+  name: v.pipe(
+    v.string("Please enter your name."),
+    v.nonEmpty("Please enter your name."),
+    v.maxLength(100, "Name must be 100 characters or fewer."),
+  ),
+});
 
 interface SetupProfileState {
-  username: string;
-  name: string;
-  error: string | null;
-  isPending: boolean;
+  form: FormStore<typeof SetupProfileSchema>;
 }
 
 interface SetupProfileActions {
-  update: (updater: (state: SetupProfileState) => SetupProfileState) => void;
-  submit: () => Promise<void>;
+  submit: (output: { username: string; name: string }) => Promise<void>;
 }
 
 interface SetupProfileMeta {
@@ -30,49 +42,40 @@ const SetupProfileContext = createContext<SetupProfileContextValue | null>(null)
 
 function SetupProfileProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<SetupProfileState>({
-    username: "",
-    name: "",
-    error: null,
-    isPending: false,
-  });
+  const [error, setError] = useState<string | null>(null);
 
-  const submit = useCallback(async () => {
-    setState((prev) => ({ ...prev, isPending: true, error: null }));
+  const form = useForm({ schema: SetupProfileSchema });
 
-    try {
-      const response = await api.user.profile.$patch({
-        json: { username: state.username, name: state.name },
-      });
+  const onSubmit = useCallback(
+    async (output: { username: string; name: string }) => {
+      setError(null);
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        setState((prev) => ({
-          ...prev,
-          error: payload?.message ?? "Failed to set up profile.",
-          isPending: false,
-        }));
-        return;
+      try {
+        const response = await api.user.profile.$patch({ json: output });
+
+        if (!response.ok) {
+          const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+          setError(payload?.message ?? "Failed to set up profile.");
+          return;
+        }
+
+        router.push("/account");
+        router.refresh();
+      } catch {
+        setError("Unable to reach the server.");
       }
+    },
+    [router],
+  );
 
-      router.push("/account");
-      router.refresh();
-    } catch {
-      setState((prev) => ({
-        ...prev,
-        error: "Unable to reach the server.",
-        isPending: false,
-      }));
-    } finally {
-      setState((prev) => ({ ...prev, isPending: false }));
-    }
-  }, [router, state.username, state.name]);
-
-  const actions = useMemo(() => ({ update: setState, submit }), [submit]);
-
-  const meta = useMemo(() => ({ displayedError: state.error }), [state.error]);
-
-  const value = useMemo(() => ({ state, actions, meta }), [state, actions, meta]);
+  const value = useMemo(
+    () => ({
+      state: { form },
+      actions: { submit: onSubmit },
+      meta: { displayedError: error },
+    }),
+    [form, onSubmit, error],
+  );
 
   return <SetupProfileContext value={value}>{children}</SetupProfileContext>;
 }
@@ -86,63 +89,78 @@ function useSetupProfileContext() {
 }
 
 function SetupProfileFrame({ children }: { children: ReactNode }) {
-  const {
-    actions: { submit },
-  } = useSetupProfileContext();
+  const { state, actions } = useSetupProfileContext();
 
   return (
-    <form
-      onSubmit={(event) => {
-        event.preventDefault();
-        void submit();
-      }}
-      style={{ display: "grid", gap: "1rem" }}
-    >
+    <Form of={state.form} onSubmit={actions.submit} style={{ display: "grid", gap: "1rem" }}>
       {children}
-    </form>
+    </Form>
   );
 }
 
 function SetupProfileUsernameField() {
-  const {
-    state,
-    actions: { update },
-  } = useSetupProfileContext();
+  const { state } = useSetupProfileContext();
 
   return (
-    <label style={{ display: "grid", gap: "0.5rem" }}>
-      <span>Username</span>
-      <input
-        type="text"
-        value={state.username}
-        onChange={(event) => update((s) => ({ ...s, username: event.target.value }))}
-        required
-        minLength={1}
-        maxLength={50}
-        style={{ padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
-      />
-    </label>
+    <Field of={state.form} path={["username"]}>
+      {(field) => (
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          <label>
+            <span>Username</span>
+            <input
+              {...field.props}
+              value={field.input}
+              type="text"
+              aria-invalid={field.errors ? true : undefined}
+              aria-describedby={field.errors ? "username-error" : undefined}
+              style={{
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #d6d6d6",
+              }}
+            />
+          </label>
+          {field.errors && (
+            <p id="username-error" style={{ margin: 0, color: "#b00020" }}>
+              {field.errors[0]}
+            </p>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }
 
 function SetupProfileNameField() {
-  const {
-    state,
-    actions: { update },
-  } = useSetupProfileContext();
+  const { state } = useSetupProfileContext();
 
   return (
-    <label style={{ display: "grid", gap: "0.5rem" }}>
-      <span>Name</span>
-      <input
-        type="text"
-        value={state.name}
-        onChange={(event) => update((s) => ({ ...s, name: event.target.value }))}
-        required
-        maxLength={100}
-        style={{ padding: "0.75rem", borderRadius: "0.5rem", border: "1px solid #d6d6d6" }}
-      />
-    </label>
+    <Field of={state.form} path={["name"]}>
+      {(field) => (
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          <label>
+            <span>Name</span>
+            <input
+              {...field.props}
+              value={field.input}
+              type="text"
+              aria-invalid={field.errors ? true : undefined}
+              aria-describedby={field.errors ? "name-error" : undefined}
+              style={{
+                padding: "0.75rem",
+                borderRadius: "0.5rem",
+                border: "1px solid #d6d6d6",
+              }}
+            />
+          </label>
+          {field.errors && (
+            <p id="name-error" style={{ margin: 0, color: "#b00020" }}>
+              {field.errors[0]}
+            </p>
+          )}
+        </div>
+      )}
+    </Field>
   );
 }
 
@@ -160,10 +178,10 @@ function SetupProfileSubmitButton() {
   return (
     <button
       type="submit"
-      disabled={state.isPending}
+      disabled={state.form.isSubmitting}
       style={{ padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "none" }}
     >
-      {state.isPending ? "Setting up..." : "Set up profile"}
+      {state.form.isSubmitting ? "Setting up..." : "Set up profile"}
     </button>
   );
 }
