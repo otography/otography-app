@@ -115,10 +115,10 @@ function AuthSubmitButton() {
   return (
     <button
       type="submit"
-      disabled={state.pendingMode !== null}
+      disabled={state.isPending}
       style={{ padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "none" }}
     >
-      {state.pendingMode === "sign-in" ? "Signing in..." : "Sign in"}
+      {state.isPending ? "Signing in..." : "Sign in"}
     </button>
   );
 }
@@ -129,7 +129,7 @@ function AuthCreateAccountButton() {
   return (
     <button
       type="submit"
-      disabled={state.pendingMode !== null}
+      disabled={state.isPending}
       style={{
         padding: "0.75rem 1rem",
         borderRadius: "0.5rem",
@@ -137,7 +137,7 @@ function AuthCreateAccountButton() {
         backgroundColor: "#ffffff",
       }}
     >
-      {state.pendingMode === "sign-up" ? "Creating..." : "Create account"}
+      {state.isPending ? "Creating..." : "Create account"}
     </button>
   );
 }

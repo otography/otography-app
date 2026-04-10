@@ -27,22 +27,24 @@ function SignOutProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setState({ error: null, isPending: true });
 
-    try {
-      const response = await api.auth["sign-out"].$post();
+    const response = await api.auth["sign-out"]
+      .$post()
+      .catch(() => new Error("Unable to reach the authentication API."));
 
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        setState({ error: payload?.message ?? "Failed to sign out.", isPending: false });
-        return;
-      }
-
-      router.push("/login");
-      router.refresh();
-    } catch {
-      setState({ error: "Unable to reach the authentication API.", isPending: false });
-    } finally {
-      setState((prev) => ({ ...prev, isPending: false }));
+    if (response instanceof Error) {
+      setState({ error: response.message, isPending: false });
+      return;
     }
+
+    if (!response.ok) {
+      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+      setState({ error: payload?.message ?? "Failed to sign out.", isPending: false });
+      return;
+    }
+
+    router.push("/login");
+    router.refresh();
+    setState({ error: null, isPending: false });
   }, [router]);
 
   const actions = useMemo(() => ({ signOut }), [signOut]);
