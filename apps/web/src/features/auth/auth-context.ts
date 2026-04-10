@@ -2,12 +2,10 @@ import { createContext } from "react";
 import type { FormStore } from "@formisch/react";
 import { AuthSchema } from "./schema";
 
-export type AuthPendingMode = "sign-in" | "sign-up";
-
 export interface AuthState {
   form: FormStore<typeof AuthSchema>;
   error: string | null;
-  pendingMode: AuthPendingMode | null;
+  isPending: boolean;
 }
 
 export interface AuthActions {

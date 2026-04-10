@@ -8,7 +8,6 @@ import {
   type AuthActions,
   type AuthContextValue,
   type AuthMeta,
-  type AuthPendingMode,
   type AuthState,
   AuthContext,
 } from "./auth-context";
@@ -18,63 +17,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
-  const [pendingMode, setPendingMode] = useState<AuthPendingMode | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   const form = useForm({ schema: AuthSchema });
 
-  const submit = useCallback(
-    async (mode: AuthPendingMode, output: { email: string; password: string }) => {
-      setPendingMode(mode);
+  const signIn = useCallback(
+    async (output: { email: string; password: string }) => {
+      setIsPending(true);
       setError(null);
 
-      try {
-        const response =
-          mode === "sign-in"
-            ? await api.auth["sign-in"].$post({ json: output })
-            : await api.auth["sign-up"].$post({ json: output });
+      const response = await api.auth["sign-in"]
+        .$post({ json: output })
+        .catch(() => new Error("Unable to reach the authentication API."));
 
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-          setError(payload?.message ?? "Authentication failed.");
-          return;
-        }
-
-        // サインアップ成功後、プロフィール設定ページへ
-        if (mode === "sign-up") {
-          router.push("/setup-profile");
-          return;
-        }
-
-        router.push("/account");
-        router.refresh();
-      } catch {
-        setError("Unable to reach the authentication API.");
-      } finally {
-        setPendingMode(null);
+      if (response instanceof Error) {
+        setError(response.message);
+        setIsPending(false);
+        return;
       }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        setError(payload?.message ?? "Authentication failed.");
+        setIsPending(false);
+        return;
+      }
+
+      router.push("/account");
+      router.refresh();
+      setIsPending(false);
     },
     [router],
   );
 
-  const signIn = useCallback(
-    (output: { email: string; password: string }) => submit("sign-in", output),
-    [submit],
-  );
-
   const signUp = useCallback(
-    (output: { email: string; password: string }) => submit("sign-up", output),
-    [submit],
+    async (output: { email: string; password: string }) => {
+      setIsPending(true);
+      setError(null);
+
+      const response = await api.auth["sign-up"]
+        .$post({ json: output })
+        .catch(() => new Error("Unable to reach the authentication API."));
+
+      if (response instanceof Error) {
+        setError(response.message);
+        setIsPending(false);
+        return;
+      }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        setError(payload?.message ?? "Authentication failed.");
+        setIsPending(false);
+        return;
+      }
+
+      // サインアップ成功後、プロフィール設定ページへ
+      router.push("/setup-profile");
+      setIsPending(false);
+    },
+    [router],
   );
 
   const displayedError = error ?? searchParams.get("error");
 
   const value: AuthContextValue = useMemo(
     () => ({
-      state: { form, error, pendingMode } satisfies AuthState,
+      state: { form, error, isPending } satisfies AuthState,
       actions: { signIn, signUp } satisfies AuthActions,
       meta: { displayedError } satisfies AuthMeta,
     }),
-    [form, error, pendingMode, signIn, signUp, displayedError],
+    [form, error, isPending, signIn, signUp, displayedError],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

@@ -50,20 +50,23 @@ function SetupProfileProvider({ children }: { children: ReactNode }) {
     async (output: { username: string; name: string }) => {
       setError(null);
 
-      try {
-        const response = await api.user.profile.$patch({ json: output });
+      const response = await api.user.profile
+        .$patch({ json: output })
+        .catch(() => new Error("Unable to reach the server."));
 
-        if (!response.ok) {
-          const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-          setError(payload?.message ?? "Failed to set up profile.");
-          return;
-        }
-
-        router.push("/account");
-        router.refresh();
-      } catch {
-        setError("Unable to reach the server.");
+      if (response instanceof Error) {
+        setError(response.message);
+        return;
       }
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
+        setError(payload?.message ?? "Failed to set up profile.");
+        return;
+      }
+
+      router.push("/account");
+      router.refresh();
     },
     [router],
   );
