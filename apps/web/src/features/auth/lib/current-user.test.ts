@@ -14,6 +14,13 @@ const { mockGetServerApi, mockUserGet } = vi.hoisted(() => ({
   mockUserGet: vi.fn(),
 }));
 
+// React.cache() はリクエストスコープでメモ化するが、Vitest の node 環境には
+// スコープ境界がないためテスト間でキャッシュが残る。パススルーにして回避する。
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return { ...actual, cache: <T extends (...args: unknown[]) => unknown>(fn: T) => fn };
+});
+
 vi.mock("@/features/lib/server-api", () => ({
   getServerApi: mockGetServerApi,
 }));
