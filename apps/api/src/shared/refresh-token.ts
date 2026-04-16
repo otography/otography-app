@@ -19,7 +19,7 @@ const createRefreshTokenCookieOptions = (c: Context) => {
   };
 };
 
-const HEX_REGEX = /^[0-9a-f]+$/;
+const HEX_REGEX = /^[0-9a-fA-F]+$/;
 
 // AES-256鍵用: 64文字(32byte)固定
 const parseKeyHex = (hex: string): ArrayBuffer => {

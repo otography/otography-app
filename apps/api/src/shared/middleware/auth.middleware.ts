@@ -120,6 +120,11 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
         return;
       }
 
+      // リフレッシュも失敗した場合、リフレッシュのエラーを優先して返す
+      if (refreshedClaims instanceof Error) {
+        return c.json({ message: refreshedClaims.message }, refreshedClaims.statusCode);
+      }
+
       return c.json({ message: claims.message }, claims.statusCode);
     }
 
