@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { AuthRestError } from "@repo/errors";
 import { SESSION_COOKIE_MAX_AGE_MS } from "./session-cookie";
 
 const REFRESH_TOKEN_COOKIE_NAME = "otography_refresh_token";
@@ -104,8 +105,19 @@ export const getRefreshTokenCookie = async (c: Context): Promise<string | null> 
   }
 };
 
-export const setRefreshTokenCookie = async (c: Context, refreshToken: string) => {
-  const encrypted = await encrypt(refreshToken, c.env.AUTH_ENCRYPTION_KEY);
+export const setRefreshTokenCookie = async (
+  c: Context,
+  refreshToken: string,
+): Promise<AuthRestError | void> => {
+  const encrypted = await encrypt(refreshToken, c.env.AUTH_ENCRYPTION_KEY).catch(
+    (e) =>
+      new AuthRestError({
+        message: "Failed to set refresh token cookie.",
+        statusCode: 500,
+        cause: e,
+      }),
+  );
+  if (encrypted instanceof Error) return encrypted;
   setCookie(c, REFRESH_TOKEN_COOKIE_NAME, encrypted, createRefreshTokenCookieOptions(c));
 };
 

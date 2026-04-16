@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import type { AuthError } from "@repo/errors/server";
-import type { AuthRestError } from "@repo/errors";
+import { AuthRestError } from "@repo/errors";
 import { verifySessionCookie, createSessionCookie } from "../firebase/firebase-admin";
 import { exchangeRefreshToken } from "../firebase/firebase-token-exchange";
 import { clearSessionCookie, setSessionCookie } from "./session-cookie";
@@ -32,7 +32,8 @@ export const refreshSession = async (
   if (claims instanceof Error) return claims;
 
   setSessionCookie(c, sessionCookie);
-  await setRefreshTokenCookie(c, exchangeResult.refresh_token);
+  const setRefreshResult = await setRefreshTokenCookie(c, exchangeResult.refresh_token);
+  if (setRefreshResult instanceof Error) return setRefreshResult;
 
   return claims;
 };

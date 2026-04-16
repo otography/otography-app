@@ -16,10 +16,10 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
     const claims = await verifySessionCookie(sessionCookie);
 
     if (claims instanceof Error) {
-      if (claims.clearCookie) clearSessionCookie(c);
-
       const refreshedClaims = await refreshSession(c);
-      handleRefreshResult(c, refreshedClaims);
+      if (!handleRefreshResult(c, refreshedClaims) && claims.clearCookie) {
+        clearSessionCookie(c);
+      }
 
       await next();
       return;
@@ -62,8 +62,6 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
     const claims = await verifySessionCookie(sessionCookie);
 
     if (claims instanceof Error) {
-      if (claims.clearCookie) clearSessionCookie(c);
-
       const refreshedClaims = await refreshSession(c);
       if (handleRefreshResult(c, refreshedClaims)) {
         await next();
@@ -74,6 +72,8 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
       if (refreshedClaims instanceof Error) {
         return c.json({ message: refreshedClaims.message }, refreshedClaims.statusCode);
       }
+
+      if (claims.clearCookie) clearSessionCookie(c);
 
       return c.json({ message: claims.message }, claims.statusCode);
     }
