@@ -1,4 +1,4 @@
-import { SignInForm } from "@/features/auth";
+import { GoogleSignInButton, SignInForm } from "@/features/auth";
 
 export default function LoginPage() {
   return (
@@ -26,6 +26,9 @@ export default function LoginPage() {
           to the database directly.
         </p>
         <SignInForm />
+        <div style={{ marginTop: "1rem" }}>
+          <GoogleSignInButton />
+        </div>
       </section>
     </main>
   );

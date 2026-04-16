@@ -13,6 +13,21 @@ import {
 } from "./auth-context";
 import { AuthSchema } from "./schema";
 
+// OAuth エラーコード → 日本語メッセージのマッピング
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+  account_exists:
+    "このメールアドレスは既に別の方法で登録されています。元の方法でログインしてください。",
+  invalid_state: "認証状態が無効です。もう一度お試しください。",
+  expired_state: "ログインセッションが期限切れです。もう一度お試しください。",
+  oauth_failed: "Googleログインに失敗しました。もう一度お試しください。",
+  firebase_auth_failed: "認証に失敗しました。もう一度お試しください。",
+};
+
+// OAuth エラーコードをユーザーフレンドリーなメッセージに変換
+function resolveOAuthError(code: string): string {
+  return OAUTH_ERROR_MESSAGES[code] ?? code;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -79,7 +94,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [router],
   );
 
-  const displayedError = error ?? searchParams.get("error");
+  // URL の ?error= パラメータをOAuthエラーマッピングで解決
+  const urlErrorCode = searchParams.get("error");
+  const resolvedUrlError = urlErrorCode ? resolveOAuthError(urlErrorCode) : null;
+  const displayedError = error ?? resolvedUrlError;
 
   const value: AuthContextValue = useMemo(
     () => ({
