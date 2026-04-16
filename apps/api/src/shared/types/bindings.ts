@@ -1,5 +1,6 @@
 export type Bindings = {
   AUTH_COOKIE_DOMAIN: string | undefined;
+  AUTH_ENCRYPTION_KEY: string;
   APP_FRONTEND_URL: string;
   DATABASE_URL: string;
   FIREBASE_API_KEY: string;

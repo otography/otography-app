@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockCreateSessionCookie, mockVerifyIdToken } from "../../setup";
+import { mockCreateSessionCookie, mockSetRefreshTokenCookie, mockVerifyIdToken } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
+vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
   signUpWithPassword: vi.fn(),
 }));
@@ -11,7 +11,7 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
-import { signUpWithPassword } from "../../../shared/firebase-rest";
+import { signUpWithPassword } from "../../../shared/firebase/firebase-rest";
 import { createDb } from "../../../shared/db";
 
 // withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
@@ -93,7 +93,7 @@ describe("POST /api/auth/sign-up", () => {
   });
 
   describe("success", () => {
-    it("returns 201 with session cookie", async () => {
+    it("returns 201 with session cookie and refresh token cookie", async () => {
       vi.mocked(signUpWithPassword).mockResolvedValue({
         idToken: "test-id-token",
         localId: "user123",
@@ -115,6 +115,7 @@ describe("POST /api/auth/sign-up", () => {
       expect(res.status).toBe(201);
       expect(await res.json()).toEqual({ message: "Account created successfully." });
       expect(res.getCookie("otography_session")).toBe("test-session-cookie");
+      expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(expect.anything(), "test-refresh");
     });
   });
 

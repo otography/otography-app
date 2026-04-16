@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { mockVerifySessionCookie } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
+vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
   signUpWithPassword: vi.fn(),
 }));

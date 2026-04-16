@@ -1,16 +1,12 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-
   // drizzle.config.ts loads env vars at top level, disable plugin
   "drizzle": false,
-
   // Root workspace — no source files at root level
   "entry": [],
   "project": [],
-
   // Exclude non-source directories
-  "ignore": [".agents/**", ".claude/**"],
-
+  "ignore": [".agents/**", ".claude/**", ".factory/**"],
   "workspaces": {
     "packages/typescript-config": {
       "entry": [],

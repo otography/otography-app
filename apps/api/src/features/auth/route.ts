@@ -3,10 +3,11 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
-import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
-import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase-auth";
+import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
+import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
 import { csrfProtection, getAuthSession } from "../../shared/middleware";
-import { setSessionCookie, clearSessionCookie } from "../../shared/session";
+import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
+import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import type { Bindings } from "../../shared/types/bindings";
 
 const credentialsBodySchema = type({
@@ -26,7 +27,10 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
 });
 
 const handleAuthError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
-  if (error.clearCookie) clearSessionCookie(c);
+  if (error.clearCookie) {
+    clearSessionCookie(c);
+    clearRefreshTokenCookie(c);
+  }
   return c.json({ message: error.message }, error.statusCode);
 };
 
@@ -48,6 +52,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
     const sessionCookie = await createSessionCookie(result.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     setSessionCookie(c, sessionCookie);
+    await setRefreshTokenCookie(c, result.refreshToken);
     return c.json({ message: "Signed in successfully." }, 200);
   })
   .post("/api/auth/sign-up", csrfProtection(), credentialsValidator, async (c) => {
@@ -67,6 +72,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
     const sessionCookie = await createSessionCookie(signUpResult.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     setSessionCookie(c, sessionCookie);
+    await setRefreshTokenCookie(c, signUpResult.refreshToken);
     return c.json({ message: "Account created successfully." }, 201);
   })
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {
@@ -75,6 +81,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
 
     if (!userId) {
       clearSessionCookie(c);
+      clearRefreshTokenCookie(c);
       return c.body(null, 204);
     }
 
@@ -82,12 +89,14 @@ const auth = new Hono<{ Bindings: Bindings }>()
     if (revokeResult instanceof Error) {
       if (revokeResult.clearCookie) {
         clearSessionCookie(c);
+        clearRefreshTokenCookie(c);
         return c.body(null, 204);
       }
       return handleAuthError(revokeResult, c);
     }
 
     clearSessionCookie(c);
+    clearRefreshTokenCookie(c);
     return c.body(null, 204);
   });
 

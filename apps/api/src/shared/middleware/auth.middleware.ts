@@ -1,10 +1,7 @@
-import type { Context, MiddlewareHandler } from "hono";
-import { verifySessionCookie } from "../firebase-auth";
-import { clearSessionCookie, getSessionCookie } from "../session";
-
-export const getAuthSession = (c: Context) => {
-  return c.get("authSession");
-};
+import type { MiddlewareHandler } from "hono";
+import { verifySessionCookie } from "../firebase/firebase-admin";
+import { clearSessionCookie, getSessionCookie } from "../auth/session-cookie";
+import { handleRefreshResult, refreshSession } from "../auth/session-refresh";
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
@@ -19,7 +16,11 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
     const claims = await verifySessionCookie(sessionCookie);
 
     if (claims instanceof Error) {
-      if (claims.clearCookie) clearSessionCookie(c);
+      const refreshedClaims = await refreshSession(c);
+      if (!handleRefreshResult(c, refreshedClaims) && claims.clearCookie) {
+        clearSessionCookie(c);
+      }
+
       await next();
       return;
     }
@@ -47,13 +48,33 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
     const sessionCookie = getSessionCookie(c);
 
     if (!sessionCookie) {
+      // ブラウザが期限切れセッションcookieを削除した場合でも、
+      // refresh token cookieがあれば自動リフレッシュを試行する
+      const refreshedClaims = await refreshSession(c);
+      if (handleRefreshResult(c, refreshedClaims)) {
+        await next();
+        return;
+      }
+
       return c.json({ message: "You are not logged in." }, 401);
     }
 
     const claims = await verifySessionCookie(sessionCookie);
 
     if (claims instanceof Error) {
+      const refreshedClaims = await refreshSession(c);
+      if (handleRefreshResult(c, refreshedClaims)) {
+        await next();
+        return;
+      }
+
+      // リフレッシュも失敗した場合、リフレッシュのエラーを優先して返す
+      if (refreshedClaims instanceof Error) {
+        return c.json({ message: refreshedClaims.message }, refreshedClaims.statusCode);
+      }
+
       if (claims.clearCookie) clearSessionCookie(c);
+
       return c.json({ message: claims.message }, claims.statusCode);
     }
 
