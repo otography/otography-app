@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { cert, initializeApp } from "@repo/firebase-auth-rest/app";
 import { getAuth } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
-import { SESSION_COOKIE_MAX_AGE_MS } from "./session";
+import { SESSION_COOKIE_MAX_AGE_MS } from "../auth/session-cookie";
 
 const firebaseAuth = getAuth(
   initializeApp({

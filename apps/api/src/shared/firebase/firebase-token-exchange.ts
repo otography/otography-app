@@ -51,7 +51,7 @@ export const exchangeRefreshToken = async (firebaseApiKey: string, refreshToken:
   }).catch((e) => createTokenExchangeError(undefined, 503, e));
   if (response instanceof Error) return response;
 
-  const payload = await (response.json() as Promise<unknown>).catch(() => null);
+  const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
     const parsedError = firebaseTokenExchangeErrorSchema(payload);

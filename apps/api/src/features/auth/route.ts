@@ -3,11 +3,11 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
-import { signInWithPassword, signUpWithPassword } from "../../shared/firebase-rest";
-import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase-auth";
+import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
+import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
 import { csrfProtection, getAuthSession } from "../../shared/middleware";
-import { setSessionCookie, clearSessionCookie } from "../../shared/session";
-import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/refresh-token";
+import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
+import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import type { Bindings } from "../../shared/types/bindings";
 
 const credentialsBodySchema = type({

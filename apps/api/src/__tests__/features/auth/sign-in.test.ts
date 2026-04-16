@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { mockCreateSessionCookie, mockSetRefreshTokenCookie } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
+vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
   signUpWithPassword: vi.fn(),
 }));
@@ -11,7 +11,7 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(() => ({ transaction: vi.fn() })),
 }));
 
-import { signInWithPassword } from "../../../shared/firebase-rest";
+import { signInWithPassword } from "../../../shared/firebase/firebase-rest";
 
 describe("POST /api/auth/sign-in", () => {
   beforeEach(() => {

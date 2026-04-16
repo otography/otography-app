@@ -37,11 +37,11 @@ const mockGetRefreshTokenCookie = vi.fn().mockResolvedValue(null);
 const mockSetRefreshTokenCookie = vi.fn().mockResolvedValue(undefined);
 const mockClearRefreshTokenCookie = vi.fn();
 
-vi.mock("../shared/firebase-token-exchange", () => ({
+vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,
 }));
 
-vi.mock("../shared/refresh-token", () => ({
+vi.mock("../shared/auth/refresh-token", () => ({
   getRefreshTokenCookie: mockGetRefreshTokenCookie,
   setRefreshTokenCookie: mockSetRefreshTokenCookie,
   clearRefreshTokenCookie: mockClearRefreshTokenCookie,

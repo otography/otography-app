@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
-import { SESSION_COOKIE_MAX_AGE_MS } from "./session";
+import { SESSION_COOKIE_MAX_AGE_MS } from "./session-cookie";
 
 const REFRESH_TOKEN_COOKIE_NAME = "otography_refresh_token";
 

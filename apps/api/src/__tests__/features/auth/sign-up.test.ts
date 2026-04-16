@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { mockCreateSessionCookie, mockSetRefreshTokenCookie, mockVerifyIdToken } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
+vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
   signUpWithPassword: vi.fn(),
 }));
@@ -11,7 +11,7 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
-import { signUpWithPassword } from "../../../shared/firebase-rest";
+import { signUpWithPassword } from "../../../shared/firebase/firebase-rest";
 import { createDb } from "../../../shared/db";
 
 // withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
