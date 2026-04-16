@@ -68,7 +68,8 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
 
-      handleRefreshResult(c, await refreshSession(c));
+      const refreshedClaims = await refreshSession(c);
+      handleRefreshResult(c, refreshedClaims);
 
       await next();
       return;
@@ -97,6 +98,14 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
     const sessionCookie = getSessionCookie(c);
 
     if (!sessionCookie) {
+      // ブラウザが期限切れセッションcookieを削除した場合でも、
+      // refresh token cookieがあれば自動リフレッシュを試行する
+      const refreshedClaims = await refreshSession(c);
+      if (handleRefreshResult(c, refreshedClaims)) {
+        await next();
+        return;
+      }
+
       return c.json({ message: "You are not logged in." }, 401);
     }
 
@@ -105,7 +114,8 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
 
-      if (handleRefreshResult(c, await refreshSession(c))) {
+      const refreshedClaims = await refreshSession(c);
+      if (handleRefreshResult(c, refreshedClaims)) {
         await next();
         return;
       }

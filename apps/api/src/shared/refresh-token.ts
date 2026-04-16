@@ -4,8 +4,9 @@ import { SESSION_COOKIE_MAX_AGE_MS } from "./session";
 
 const REFRESH_TOKEN_COOKIE_NAME = "otography_refresh_token";
 
-// refresh token cookieはセッションcookieと同じ寿命にする
-const REFRESH_TOKEN_COOKIE_MAX_AGE_S = SESSION_COOKIE_MAX_AGE_MS / 1000;
+// refresh token cookieはセッションcookieより長く保持し、
+// セッション失効後も自動リフレッシュできるようにする
+const REFRESH_TOKEN_COOKIE_MAX_AGE_S = (SESSION_COOKIE_MAX_AGE_MS / 1000) * 2;
 
 const createRefreshTokenCookieOptions = (c: Context) => {
   return {
@@ -20,7 +21,8 @@ const createRefreshTokenCookieOptions = (c: Context) => {
 
 const HEX_REGEX = /^[0-9a-f]+$/;
 
-const hexToBytes = (hex: string): ArrayBuffer => {
+// AES-256鍵用: 64文字(32byte)固定
+const parseKeyHex = (hex: string): ArrayBuffer => {
   if (hex.length !== 64 || !HEX_REGEX.test(hex)) {
     throw new Error(
       "AUTH_ENCRYPTION_KEY must be a 64-character hex string (32 bytes for AES-256).",
@@ -30,7 +32,16 @@ const hexToBytes = (hex: string): ArrayBuffer => {
   for (let i = 0; i < 64; i += 2) {
     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
-  return bytes.buffer as ArrayBuffer;
+  return bytes.buffer;
+};
+
+// 暗号文用: 可変長hex
+const hexToBytes = (hex: string): Uint8Array => {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+  }
+  return bytes;
 };
 
 const bytesToHex = (bytes: Uint8Array): string => {
@@ -40,7 +51,7 @@ const bytesToHex = (bytes: Uint8Array): string => {
 };
 
 const encrypt = async (plaintext: string, keyHex: string): Promise<string> => {
-  const keyBytes = hexToBytes(keyHex);
+  const keyBytes = parseKeyHex(keyHex);
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, [
     "encrypt",
   ]);
@@ -49,12 +60,11 @@ const encrypt = async (plaintext: string, keyHex: string): Promise<string> => {
   const encoded = new TextEncoder().encode(plaintext);
 
   const ciphertext = await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: iv.buffer as ArrayBuffer },
+    { name: "AES-GCM", iv: iv.buffer },
     key,
-    encoded.buffer as ArrayBuffer,
+    encoded.buffer,
   );
 
-  // iv(12bytes) + ciphertext を結合して hex エンコード
   const combined = new Uint8Array(iv.length + ciphertext.byteLength);
   combined.set(iv, 0);
   combined.set(new Uint8Array(ciphertext), iv.length);
@@ -63,19 +73,19 @@ const encrypt = async (plaintext: string, keyHex: string): Promise<string> => {
 };
 
 const decrypt = async (encryptedHex: string, keyHex: string): Promise<string> => {
-  const keyBytes = hexToBytes(keyHex);
+  const keyBytes = parseKeyHex(keyHex);
   const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, [
     "decrypt",
   ]);
 
-  const combined = new Uint8Array(hexToBytes(encryptedHex));
+  const combined = hexToBytes(encryptedHex);
   const iv = combined.slice(0, 12);
   const ciphertext = combined.slice(12);
 
   const decrypted = await crypto.subtle.decrypt(
-    { name: "AES-GCM", iv: iv.buffer as ArrayBuffer },
+    { name: "AES-GCM", iv: iv.buffer },
     key,
-    ciphertext.buffer as ArrayBuffer,
+    ciphertext.buffer,
   );
 
   return new TextDecoder().decode(decrypted);
