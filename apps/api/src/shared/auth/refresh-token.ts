@@ -36,6 +36,22 @@ const parseKeyHex = (hex: string): ArrayBuffer => {
   return bytes.buffer;
 };
 
+// プロセス単位でCryptoKeyをキャッシュし、毎回のparseKeyHex + importKeyを回避する
+const cryptoKeyCache = new Map<string, CryptoKey>();
+
+const getCryptoKey = async (keyHex: string): Promise<CryptoKey> => {
+  const cached = cryptoKeyCache.get(keyHex);
+  if (cached) return cached;
+
+  const keyBytes = parseKeyHex(keyHex);
+  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, [
+    "encrypt",
+    "decrypt",
+  ]);
+  cryptoKeyCache.set(keyHex, key);
+  return key;
+};
+
 // 暗号文用: 可変長hex
 const hexToBytes = (hex: string): Uint8Array => {
   const bytes = new Uint8Array(hex.length / 2);
@@ -52,10 +68,7 @@ const bytesToHex = (bytes: Uint8Array): string => {
 };
 
 const encrypt = async (plaintext: string, keyHex: string): Promise<string> => {
-  const keyBytes = parseKeyHex(keyHex);
-  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, [
-    "encrypt",
-  ]);
+  const key = await getCryptoKey(keyHex);
 
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const encoded = new TextEncoder().encode(plaintext);
@@ -74,10 +87,7 @@ const encrypt = async (plaintext: string, keyHex: string): Promise<string> => {
 };
 
 const decrypt = async (encryptedHex: string, keyHex: string): Promise<string> => {
-  const keyBytes = parseKeyHex(keyHex);
-  const key = await crypto.subtle.importKey("raw", keyBytes, { name: "AES-GCM" }, false, [
-    "decrypt",
-  ]);
+  const key = await getCryptoKey(keyHex);
 
   const combined = hexToBytes(encryptedHex);
   const iv = combined.slice(0, 12);
