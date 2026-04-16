@@ -1,11 +1,11 @@
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { SESSION_COOKIE_MAX_AGE_MS } from "./session";
 
 const REFRESH_TOKEN_COOKIE_NAME = "otography_refresh_token";
 
 // refresh token cookieはセッションcookieと同じ寿命にする
-// （refresh token自体はFirebase側で長期間有効だが、Cookie寿命はセッションと同期）
-const REFRESH_TOKEN_COOKIE_MAX_AGE_S = 60 * 60 * 24 * 5;
+const REFRESH_TOKEN_COOKIE_MAX_AGE_S = SESSION_COOKIE_MAX_AGE_MS / 1000;
 
 const createRefreshTokenCookieOptions = (c: Context) => {
   return {
@@ -18,9 +18,16 @@ const createRefreshTokenCookieOptions = (c: Context) => {
   };
 };
 
+const HEX_REGEX = /^[0-9a-f]+$/;
+
 const hexToBytes = (hex: string): ArrayBuffer => {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
+  if (hex.length !== 64 || !HEX_REGEX.test(hex)) {
+    throw new Error(
+      "AUTH_ENCRYPTION_KEY must be a 64-character hex string (32 bytes for AES-256).",
+    );
+  }
+  const bytes = new Uint8Array(32);
+  for (let i = 0; i < 64; i += 2) {
     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
   }
   return bytes.buffer as ArrayBuffer;
@@ -82,6 +89,7 @@ export const getRefreshTokenCookie = async (c: Context): Promise<string | null> 
     return await decrypt(encrypted, c.env.AUTH_ENCRYPTION_KEY);
   } catch {
     // 復号に失敗した場合はCookieが改ざんされているかキーが変更された
+    clearRefreshTokenCookie(c);
     return null;
   }
 };

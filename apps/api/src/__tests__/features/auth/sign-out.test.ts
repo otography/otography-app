@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockRevokeRefreshTokens, mockVerifySessionCookie } from "../../setup";
+import {
+  mockClearRefreshTokenCookie,
+  mockRevokeRefreshTokens,
+  mockVerifySessionCookie,
+} from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 vi.mock("../../../shared/firebase-rest", () => ({
@@ -24,6 +28,7 @@ describe("POST /api/auth/sign-out", () => {
 
     expect(res.status).toBe(204);
     expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
+    expect(mockClearRefreshTokenCookie).toHaveBeenCalled();
   });
 
   it("returns 204 and clears both cookies when session is valid", async () => {
@@ -41,6 +46,7 @@ describe("POST /api/auth/sign-out", () => {
     // セッションcookieが削除されている（値が空 or Deleteマーカー）
     const sessionCookie = res.getCookie("otography_session");
     expect(sessionCookie === undefined || sessionCookie === "").toBe(true);
+    expect(mockClearRefreshTokenCookie).toHaveBeenCalled();
   });
 
   it("returns 502 when revokeRefreshTokens fails without clearCookie", async () => {

@@ -15,36 +15,42 @@ export const getAuthSession = (c: Context) => {
 
 // セッションクッキーの検証に失敗した場合、refresh tokenを使って
 // 新しいセッションクッキーを自動的に発行する。
-// 成功すればclaimsを返し、失敗すればErrorを返す。
-const refreshSession = async (c: Context): Promise<DecodedIdToken | null> => {
+// null: refresh token cookieなし（期待される不在）
+// Error: リフレッシュ失敗
+// DecodedIdToken: リフレッシュ成功
+const refreshSession = async (c: Context): Promise<DecodedIdToken | Error | null> => {
   const refreshToken = await getRefreshTokenCookie(c);
   if (!refreshToken) return null;
 
   const exchangeResult = await exchangeRefreshToken(c.env.FIREBASE_API_KEY, refreshToken);
-  if (exchangeResult instanceof Error) {
-    // refresh tokenも無効 → セッション完全に失効
-    clearSessionCookie(c);
-    clearRefreshTokenCookie(c);
-    return null;
-  }
+  if (exchangeResult instanceof Error) return exchangeResult;
 
   const sessionCookie = await createSessionCookie(exchangeResult.id_token);
-  if (sessionCookie instanceof Error) {
-    clearSessionCookie(c);
-    clearRefreshTokenCookie(c);
-    return null;
-  }
+  if (sessionCookie instanceof Error) return sessionCookie;
+
+  const claims = await verifySessionCookie(sessionCookie);
+  if (claims instanceof Error) return claims;
 
   setSessionCookie(c, sessionCookie);
   await setRefreshTokenCookie(c, exchangeResult.refresh_token);
 
-  // 新しいセッションクッキーを検証してclaimsを取得
-  const claims = await verifySessionCookie(sessionCookie);
-  if (claims instanceof Error) {
-    return null;
-  }
-
   return claims;
+};
+
+const handleRefreshResult = (
+  c: Context,
+  refreshedClaims: DecodedIdToken | Error | null,
+): refreshedClaims is DecodedIdToken => {
+  if (refreshedClaims instanceof Error) {
+    clearSessionCookie(c);
+    clearRefreshTokenCookie(c);
+    console.warn("Session refresh failed:", refreshedClaims.message);
+    return false;
+  }
+  if (!refreshedClaims) return false;
+  if (typeof refreshedClaims.sub !== "string") return false;
+  c.set("authSession", refreshedClaims);
+  return true;
 };
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
@@ -62,14 +68,7 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
 
-      // セッション期限切れ時に自動リフレッシュを試行
-      const refreshedClaims = await refreshSession(c);
-      if (refreshedClaims) {
-        const userId = typeof refreshedClaims?.sub === "string" ? refreshedClaims.sub : null;
-        if (userId) {
-          c.set("authSession", refreshedClaims);
-        }
-      }
+      handleRefreshResult(c, await refreshSession(c));
 
       await next();
       return;
@@ -106,10 +105,7 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
 
-      // セッション期限切れ時に自動リフレッシュを試行
-      const refreshedClaims = await refreshSession(c);
-      if (refreshedClaims) {
-        c.set("authSession", refreshedClaims);
+      if (handleRefreshResult(c, await refreshSession(c))) {
         await next();
         return;
       }
