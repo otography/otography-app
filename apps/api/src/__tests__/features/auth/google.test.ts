@@ -1,0 +1,325 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { mockCreateSessionCookie, mockSetRefreshTokenCookie } from "../../setup";
+import { testRequest } from "../../helpers/test-client";
+
+// --- モック関数（vi.hoistedで定義し、モックとテストの両方で参照可能にする） ---
+const mockGenerateOAuthState = vi.hoisted(() => vi.fn());
+const mockVerifyOAuthState = vi.hoisted(() => vi.fn());
+const mockExchangeGoogleCode = vi.hoisted(() => vi.fn());
+const mockSignInWithGoogleIdp = vi.hoisted(() => vi.fn());
+
+// --- モック定義 ---
+vi.mock("../../../shared/auth/oauth-state", () => ({
+  generateOAuthState: mockGenerateOAuthState,
+  verifyOAuthState: mockVerifyOAuthState,
+}));
+
+vi.mock("../../../shared/firebase/firebase-google", () => ({
+  exchangeGoogleCode: mockExchangeGoogleCode,
+  signInWithGoogleIdp: mockSignInWithGoogleIdp,
+}));
+
+vi.mock("../../../shared/db", () => ({
+  createDb: vi.fn(() => ({ transaction: vi.fn() })),
+}));
+
+// --- テスト定数 ---
+const VALID_STATE = "valid-state-jwt-token";
+const VALID_CODE = "valid-google-auth-code";
+const GOOGLE_ID_TOKEN = "google-id-token-123";
+const FIREBASE_ID_TOKEN = "firebase-id-token-abc";
+const FIREBASE_REFRESH_TOKEN = "firebase-refresh-token-def";
+const SESSION_COOKIE = "test-session-cookie";
+
+describe("GET /api/auth/google", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("Google OAuth URLへ302リダイレクトする", async () => {
+    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+
+    const res = await testRequest("/api/auth/google");
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location");
+    expect(location).toBeTruthy();
+
+    const url = new URL(location!);
+    expect(url.origin).toBe("https://accounts.google.com");
+    expect(url.pathname).toBe("/o/oauth2/v2/auth");
+  });
+
+  it("正しいクエリパラメータを含む", async () => {
+    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+
+    const res = await testRequest("/api/auth/google");
+    const location = res.headers.get("Location")!;
+    const url = new URL(location);
+
+    // テスト環境のenv値が使用される
+    expect(url.searchParams.get("client_id")).toBeTruthy();
+    expect(url.searchParams.get("redirect_uri")).toContain("/api/auth/google/callback");
+    expect(url.searchParams.get("scope")).toBe("openid email profile");
+    expect(url.searchParams.get("state")).toBe(VALID_STATE);
+    expect(url.searchParams.get("response_type")).toBe("code");
+    expect(url.searchParams.get("access_type")).toBe("offline");
+    expect(url.searchParams.get("prompt")).toBe("consent");
+  });
+
+  it("redirectクエリパラメータをgenerateOAuthStateに渡す", async () => {
+    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+
+    await testRequest("/api/auth/google?redirect=/custom-path");
+
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), "/custom-path");
+  });
+
+  it("redirectクエリパラメータなしの場合、generateOAuthStateにredirectを渡さない", async () => {
+    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+
+    await testRequest("/api/auth/google");
+
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined);
+  });
+
+  it("state生成失敗時に/login?error=oauth_failedへリダイレクトする", async () => {
+    const { OAuthStateError } = await import("@repo/errors");
+    mockGenerateOAuthState.mockResolvedValue(
+      new OAuthStateError({ message: "Failed to generate state." }),
+    );
+
+    const res = await testRequest("/api/auth/google");
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=oauth_failed");
+  });
+});
+
+describe("GET /api/auth/google/callback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: "test-nonce",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "/account",
+    });
+    mockExchangeGoogleCode.mockResolvedValue({
+      id_token: GOOGLE_ID_TOKEN,
+      access_token: "google-access-token",
+    });
+    mockSignInWithGoogleIdp.mockResolvedValue({
+      idToken: FIREBASE_ID_TOKEN,
+      refreshToken: FIREBASE_REFRESH_TOKEN,
+      localId: "user-uid-123",
+      isNewUser: false,
+      email: "test@example.com",
+      displayName: "Test User",
+      photoUrl: "",
+      needConfirmation: false,
+    });
+    mockCreateSessionCookie.mockResolvedValue(SESSION_COOKIE);
+    mockSetRefreshTokenCookie.mockResolvedValue(undefined);
+  });
+
+  // --- 成功ケース ---
+
+  it("既存ユーザーを/accountへリダイレクトし、セッションCookieを設定する", async () => {
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/account");
+
+    // セッションCookieとリフレッシュトークンCookieが設定される
+    expect(res.getCookie("otography_session")).toBe(SESSION_COOKIE);
+    expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_REFRESH_TOKEN,
+    );
+  });
+
+  it("新規ユーザーを/setup-profileへリダイレクトする", async () => {
+    mockSignInWithGoogleIdp.mockResolvedValue({
+      idToken: FIREBASE_ID_TOKEN,
+      refreshToken: FIREBASE_REFRESH_TOKEN,
+      localId: "new-user-uid",
+      isNewUser: true,
+      email: "new@example.com",
+      displayName: "New User",
+      photoUrl: "",
+      needConfirmation: false,
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/setup-profile");
+  });
+
+  it("state内のredirectが優先される", async () => {
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: "test-nonce",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "/custom-redirect",
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/custom-redirect");
+  });
+
+  it("新規ユーザーの場合、state内のredirectより/setup-profileを優先する", async () => {
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: "test-nonce",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "/custom-redirect",
+    });
+    mockSignInWithGoogleIdp.mockResolvedValue({
+      idToken: FIREBASE_ID_TOKEN,
+      refreshToken: FIREBASE_REFRESH_TOKEN,
+      localId: "new-user-uid",
+      isNewUser: true,
+      email: "new@example.com",
+      needConfirmation: false,
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    // 新規ユーザーは常に/setup-profileへ
+    expect(location).toContain("/setup-profile");
+  });
+
+  // --- エラーケース ---
+
+  it("不正なstateの場合、/login?error=invalid_stateへリダイレクトする", async () => {
+    const { OAuthStateError } = await import("@repo/errors");
+    mockVerifyOAuthState.mockResolvedValue(
+      new OAuthStateError({ message: "Invalid state token." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=tampered-state`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=invalid_state");
+
+    // セッションCookieは設定されない
+    expect(res.getCookie("otography_session")).toBeUndefined();
+  });
+
+  it("期限切れstateの場合、/login?error=expired_stateへリダイレクトする", async () => {
+    const { OAuthStateError } = await import("@repo/errors");
+    mockVerifyOAuthState.mockResolvedValue(
+      new OAuthStateError({ message: "Expired state token." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=expired-state`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=expired_state");
+  });
+
+  it("Google トークン交換失敗時、/login?error=oauth_failedへリダイレクトする", async () => {
+    const { GoogleTokenExchangeError } = await import("@repo/errors");
+    mockExchangeGoogleCode.mockResolvedValue(
+      new GoogleTokenExchangeError({ message: "Token exchange failed." }),
+    );
+
+    const res = await testRequest(`/api/auth/google/callback?code=bad-code&state=${VALID_STATE}`);
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=oauth_failed");
+
+    // セッションCookieは設定されない
+    expect(res.getCookie("otography_session")).toBeUndefined();
+    expect(mockCreateSessionCookie).not.toHaveBeenCalled();
+  });
+
+  it("Firebase認証失敗時、/login?error=firebase_auth_failedへリダイレクトする", async () => {
+    const { FirebaseIdpSigninError } = await import("@repo/errors");
+    mockSignInWithGoogleIdp.mockResolvedValue(
+      new FirebaseIdpSigninError({ message: "Firebase auth failed." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=firebase_auth_failed");
+  });
+
+  it("needConfirmation時、/login?error=account_existsへリダイレクトする", async () => {
+    const { AccountConflictError } = await import("@repo/errors");
+    mockSignInWithGoogleIdp.mockResolvedValue(
+      new AccountConflictError({ message: "Account already exists." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=account_exists");
+  });
+
+  it("セッションCookie作成失敗時、/login?error=session_failedへリダイレクトする", async () => {
+    const { AuthError } = await import("@repo/errors/server");
+    mockCreateSessionCookie.mockResolvedValue(
+      new AuthError({
+        message: "Session creation failed.",
+        code: "session-failed",
+        statusCode: 502,
+      }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=session_failed");
+  });
+
+  it("リフレッシュトークンCookie設定失敗時、/login?error=session_failedへリダイレクトする", async () => {
+    const { AuthRestError } = await import("@repo/errors");
+    mockSetRefreshTokenCookie.mockResolvedValue(
+      new AuthRestError({ message: "Failed to set refresh token.", statusCode: 500 }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=session_failed");
+  });
+});
