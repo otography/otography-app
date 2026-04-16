@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockCreateSessionCookie } from "../../setup";
+import { mockCreateSessionCookie, mockSetRefreshTokenCookie } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 vi.mock("../../../shared/firebase-rest", () => ({
@@ -73,7 +73,7 @@ describe("POST /api/auth/sign-in", () => {
   });
 
   describe("success", () => {
-    it("returns 200 with session cookie", async () => {
+    it("returns 200 with session cookie and refresh token cookie", async () => {
       vi.mocked(signInWithPassword).mockResolvedValue({
         idToken: "test-id-token",
         localId: "user123",
@@ -90,6 +90,7 @@ describe("POST /api/auth/sign-in", () => {
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ message: "Signed in successfully." });
       expect(res.getCookie("otography_session")).toBe("test-session-cookie");
+      expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(expect.anything(), "test-refresh");
     });
   });
 

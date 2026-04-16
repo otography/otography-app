@@ -1,9 +1,50 @@
 import type { Context, MiddlewareHandler } from "hono";
-import { verifySessionCookie } from "../firebase-auth";
-import { clearSessionCookie, getSessionCookie } from "../session";
+import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
+import { verifySessionCookie, createSessionCookie } from "../firebase-auth";
+import { exchangeRefreshToken } from "../firebase-token-exchange";
+import { clearSessionCookie, getSessionCookie, setSessionCookie } from "../session";
+import {
+  clearRefreshTokenCookie,
+  getRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from "../refresh-token";
 
 export const getAuthSession = (c: Context) => {
   return c.get("authSession");
+};
+
+// セッションクッキーの検証に失敗した場合、refresh tokenを使って
+// 新しいセッションクッキーを自動的に発行する。
+// 成功すればclaimsを返し、失敗すればErrorを返す。
+const refreshSession = async (c: Context): Promise<DecodedIdToken | null> => {
+  const refreshToken = await getRefreshTokenCookie(c);
+  if (!refreshToken) return null;
+
+  const exchangeResult = await exchangeRefreshToken(c.env.FIREBASE_API_KEY, refreshToken);
+  if (exchangeResult instanceof Error) {
+    // refresh tokenも無効 → セッション完全に失効
+    clearSessionCookie(c);
+    clearRefreshTokenCookie(c);
+    return null;
+  }
+
+  const sessionCookie = await createSessionCookie(exchangeResult.id_token);
+  if (sessionCookie instanceof Error) {
+    clearSessionCookie(c);
+    clearRefreshTokenCookie(c);
+    return null;
+  }
+
+  setSessionCookie(c, sessionCookie);
+  await setRefreshTokenCookie(c, exchangeResult.refresh_token);
+
+  // 新しいセッションクッキーを検証してclaimsを取得
+  const claims = await verifySessionCookie(sessionCookie);
+  if (claims instanceof Error) {
+    return null;
+  }
+
+  return claims;
 };
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
@@ -20,6 +61,16 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
 
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
+
+      // セッション期限切れ時に自動リフレッシュを試行
+      const refreshedClaims = await refreshSession(c);
+      if (refreshedClaims) {
+        const userId = typeof refreshedClaims?.sub === "string" ? refreshedClaims.sub : null;
+        if (userId) {
+          c.set("authSession", refreshedClaims);
+        }
+      }
+
       await next();
       return;
     }
@@ -54,6 +105,15 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
 
     if (claims instanceof Error) {
       if (claims.clearCookie) clearSessionCookie(c);
+
+      // セッション期限切れ時に自動リフレッシュを試行
+      const refreshedClaims = await refreshSession(c);
+      if (refreshedClaims) {
+        c.set("authSession", refreshedClaims);
+        await next();
+        return;
+      }
+
       return c.json({ message: claims.message }, claims.statusCode);
     }
 

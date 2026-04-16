@@ -9,3 +9,7 @@ FIREBASE_PRIVATE_KEY=
 DATABASE_URL=
 
 AUTH_OAUTH_STATE_SECRET=
+
+# AES-256-GCM暗号化キー（64文字のhex文字列）。refresh token cookieの暗号化に使用。
+# 生成例: openssl rand -hex 32
+AUTH_ENCRYPTION_KEY=

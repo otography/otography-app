@@ -16,7 +16,7 @@ describe("POST /api/auth/sign-out", () => {
     vi.clearAllMocks();
   });
 
-  it("returns 204 when no session cookie is present", async () => {
+  it("returns 204 and clears both cookies when no session cookie is present", async () => {
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
@@ -26,18 +26,21 @@ describe("POST /api/auth/sign-out", () => {
     expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
   });
 
-  it("returns 204 and clears session cookie when session is valid", async () => {
+  it("returns 204 and clears both cookies when session is valid", async () => {
     mockVerifySessionCookie.mockResolvedValue({ sub: "user123", email: "test@example.com" });
     mockRevokeRefreshTokens.mockResolvedValue(undefined);
 
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "valid-session", otography_refresh_token: "encrypted-rt" },
     });
 
     expect(res.status).toBe(204);
     expect(mockRevokeRefreshTokens).toHaveBeenCalledWith("user123");
+    // セッションcookieが削除されている（値が空 or Deleteマーカー）
+    const sessionCookie = res.getCookie("otography_session");
+    expect(sessionCookie === undefined || sessionCookie === "").toBe(true);
   });
 
   it("returns 502 when revokeRefreshTokens fails without clearCookie", async () => {

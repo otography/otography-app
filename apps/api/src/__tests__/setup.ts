@@ -31,9 +31,29 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
   },
 }));
 
+const mockExchangeRefreshToken = vi.fn();
+
+const mockGetRefreshTokenCookie = vi.fn().mockResolvedValue(null);
+const mockSetRefreshTokenCookie = vi.fn().mockResolvedValue(undefined);
+const mockClearRefreshTokenCookie = vi.fn();
+
+vi.mock("../shared/firebase-token-exchange", () => ({
+  exchangeRefreshToken: mockExchangeRefreshToken,
+}));
+
+vi.mock("../shared/refresh-token", () => ({
+  getRefreshTokenCookie: mockGetRefreshTokenCookie,
+  setRefreshTokenCookie: mockSetRefreshTokenCookie,
+  clearRefreshTokenCookie: mockClearRefreshTokenCookie,
+}));
+
 export {
+  mockClearRefreshTokenCookie,
   mockCreateSessionCookie,
+  mockExchangeRefreshToken,
+  mockGetRefreshTokenCookie,
   mockRevokeRefreshTokens,
+  mockSetRefreshTokenCookie,
   mockVerifyIdToken,
   mockVerifySessionCookie,
 };

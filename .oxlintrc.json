@@ -1,4 +1,4 @@
 {
   "plugins": ["eslint", "typescript", "unicorn", "oxc"],
-  "ignorePatterns": [".agents/", ".claude/"]
+  "ignorePatterns": [".agents/", ".claude/", ".factory/"]
 }

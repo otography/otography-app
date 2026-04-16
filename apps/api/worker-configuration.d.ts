@@ -14,6 +14,7 @@ declare namespace Cloudflare {
     FIREBASE_PRIVATE_KEY: string;
     FIREBASE_CLIENT_EMAIL: string;
     AUTH_OAUTH_STATE_SECRET: string;
+    AUTH_ENCRYPTION_KEY: string;
   }
 }
 interface Env extends Cloudflare.Env {}
@@ -32,6 +33,7 @@ declare namespace NodeJS {
       | "FIREBASE_PRIVATE_KEY"
       | "FIREBASE_CLIENT_EMAIL"
       | "AUTH_OAUTH_STATE_SECRET"
+      | "AUTH_ENCRYPTION_KEY"
     >
   > {}
 }
