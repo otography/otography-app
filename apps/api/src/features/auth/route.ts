@@ -9,7 +9,7 @@ import { csrfProtection, getAuthSession } from "../../shared/middleware";
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import type { Bindings } from "../../shared/types/bindings";
-import { googleAuth } from "./google";
+import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
 
 const credentialsBodySchema = type({
   email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
@@ -100,6 +100,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
     clearRefreshTokenCookie(c);
     return c.body(null, 204);
   })
-  .route("/", googleAuth);
+  .get("/api/auth/google", googleOAuthRedirect)
+  .get("/api/auth/google/callback", googleOAuthCallback);
 
 export { auth };

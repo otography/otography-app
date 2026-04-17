@@ -143,7 +143,7 @@ describe("GET /api/auth/google/callback", () => {
     );
   });
 
-  it("新規ユーザーを/setup-profileへリダイレクトする", async () => {
+  it("新規ユーザーでもstate.redirectにリダイレクトする（setup-profile遷移はフロントエンド担当）", async () => {
     mockSignInWithGoogleIdp.mockResolvedValue({
       idToken: FIREBASE_ID_TOKEN,
       refreshToken: FIREBASE_REFRESH_TOKEN,
@@ -161,7 +161,16 @@ describe("GET /api/auth/google/callback", () => {
 
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
-    expect(location).toContain("/setup-profile");
+    // APIはstate.redirect（デフォルト/account）にリダイレクト
+    // 新規ユーザーの/setup-profile遷移はフロントエンドのrequireAuth()が担当
+    expect(location).toContain("/account");
+
+    // セッションCookieとリフレッシュトークンCookieが設定される
+    expect(res.getCookie("otography_session")).toBe(SESSION_COOKIE);
+    expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(
+      expect.anything(),
+      FIREBASE_REFRESH_TOKEN,
+    );
   });
 
   it("state内のredirectが優先される", async () => {
@@ -181,7 +190,7 @@ describe("GET /api/auth/google/callback", () => {
     expect(location).toContain("/custom-redirect");
   });
 
-  it("新規ユーザーの場合、state内のredirectより/setup-profileを優先する", async () => {
+  it("新規ユーザーでもstate内のredirectを尊重する（setup-profile遷移はフロントエンド担当）", async () => {
     mockVerifyOAuthState.mockResolvedValue({
       nonce: "test-nonce",
       iat: Math.floor(Date.now() / 1000),
@@ -203,8 +212,8 @@ describe("GET /api/auth/google/callback", () => {
 
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
-    // 新規ユーザーは常に/setup-profileへ
-    expect(location).toContain("/setup-profile");
+    // APIはstate.redirectを尊重（setup-profile判定はフロントエンド担当）
+    expect(location).toContain("/custom-redirect");
   });
 
   // --- エラーケース ---

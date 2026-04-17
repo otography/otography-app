@@ -10,4 +10,5 @@ export type Bindings = {
   FIREBASE_PROJECT_ID: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
+  GOOGLE_OAUTH_REDIRECT_URI: string;
 };

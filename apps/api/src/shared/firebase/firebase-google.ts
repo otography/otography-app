@@ -16,7 +16,7 @@ const googleTokenResponseSchema = type({
   id_token: "string",
   access_token: "string",
   "token_type?": "string",
-  "expires_in?": "string",
+  "expires_in?": "number",
   "refresh_token?": "string",
   "scope?": "string",
 });
@@ -64,8 +64,8 @@ export const exchangeGoogleCode = async ({
 }) => {
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
       client_id: clientId,
       client_secret: clientSecret,
       code,
@@ -75,9 +75,18 @@ export const exchangeGoogleCode = async ({
   }).catch(
     (e) => new GoogleTokenExchangeError({ message: "Google token exchange failed.", cause: e }),
   );
-  if (response instanceof Error) return response;
+  if (response instanceof Error) {
+    return response;
+  }
 
-  const payload = await (response.json() as Promise<unknown>).catch(() => null);
+  const responseText = await response.text().catch(() => "");
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(responseText);
+  } catch {
+    payload = null;
+  }
 
   if (!response.ok) {
     const parsedError = googleErrorResponseSchema(payload);
@@ -122,16 +131,26 @@ export const signInWithGoogleIdp = async ({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       postBody: `id_token=${googleIdToken}&providerId=google.com`,
-      requestUri: "http://localhost",
+      requestUri: "http://localhost:3000",
       returnSecureToken: true,
       returnIdpCredential: true,
     }),
   }).catch(
     (e) => new FirebaseIdpSigninError({ message: "Firebase IdP sign-in failed.", cause: e }),
   );
-  if (response instanceof Error) return response;
+  if (response instanceof Error) {
+    return response;
+  }
 
-  const payload = await (response.json() as Promise<unknown>).catch(() => null);
+  // レスポンスの生ステータスとbodyのログ
+  const responseText = await response.text().catch(() => "");
+
+  let payload: unknown;
+  try {
+    payload = JSON.parse(responseText);
+  } catch {
+    payload = null;
+  }
 
   if (!response.ok) {
     const parsedError = firebaseErrorResponseSchema(payload);

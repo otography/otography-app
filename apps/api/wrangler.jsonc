@@ -9,5 +9,6 @@
     "AUTH_COOKIE_DOMAIN": "localhost",
     "FIREBASE_API_KEY": "AIzaSyDqxumBWwkyWSIm3LOkrxBF5JQpqVMElb0",
     "FIREBASE_PROJECT_ID": "otography-676f1",
+    "GOOGLE_OAUTH_REDIRECT_URI": "http://localhost:3000/api/auth/google/callback",
   },
 }

@@ -24,7 +24,7 @@ describe("exchangeGoogleCode", () => {
           id_token: "google-id-token-123",
           access_token: "google-access-token-456",
           token_type: "Bearer",
-          expires_in: "3599",
+          expires_in: 3599,
           refresh_token: "google-refresh-token",
           scope: "openid email profile",
         }),
@@ -58,17 +58,15 @@ describe("exchangeGoogleCode", () => {
     expect(url.toString()).toBe("https://oauth2.googleapis.com/token");
     // リクエストメソッドとヘッダー
     expect(options.method).toBe("POST");
-    expect(options.headers).toMatchObject({ "Content-Type": "application/json" });
+    expect(options.headers).toMatchObject({ "Content-Type": "application/x-www-form-urlencoded" });
 
-    // リクエストボディの検証
-    const body = JSON.parse(options.body as string);
-    expect(body).toMatchObject({
-      client_id: validParams.clientId,
-      client_secret: validParams.clientSecret,
-      code: validParams.code,
-      redirect_uri: validParams.redirectUri,
-      grant_type: "authorization_code",
-    });
+    // リクエストボディの検証（URLSearchParams形式）
+    const body = new URLSearchParams(options.body as string);
+    expect(body.get("client_id")).toBe(validParams.clientId);
+    expect(body.get("client_secret")).toBe(validParams.clientSecret);
+    expect(body.get("code")).toBe(validParams.code);
+    expect(body.get("redirect_uri")).toBe(validParams.redirectUri);
+    expect(body.get("grant_type")).toBe("authorization_code");
   });
 
   it("Googleがエラーを返した場合にGoogleTokenExchangeErrorを返す", async () => {
@@ -207,7 +205,7 @@ describe("signInWithGoogleIdp", () => {
     const body = JSON.parse(options.body as string);
     // postBodyはURLエンコード形式の文字列
     expect(body.postBody).toBe(`id_token=${googleIdToken}&providerId=google.com`);
-    expect(body.requestUri).toBe("http://localhost");
+    expect(body.requestUri).toBe("http://localhost:3000");
     expect(body.returnSecureToken).toBe(true);
     expect(body.returnIdpCredential).toBe(true);
   });

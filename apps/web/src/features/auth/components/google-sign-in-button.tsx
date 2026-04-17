@@ -1,14 +1,14 @@
 "use client";
 
-import Link from "next/link";
-
 // Google OAuth ログインボタン
 // プレーンなリンク要素で /api/auth/google へ遷移する
+// Next.js Link ではなくプレーンな <a> を使う（OAuth リダイレクトを正しく処理するため）
 // Firebase SDK や Google SDK は使用しない
 
 export function GoogleSignInButton() {
   return (
-    <Link
+    // oxlint-disable-next-line no-html-link-for-pages -- OAuth リダイレクトのためプレーンな <a> が必要（Next.js Link は fetch で CORS エラーになる）
+    <a
       href="/api/auth/google"
       style={{
         display: "flex",
@@ -46,6 +46,6 @@ export function GoogleSignInButton() {
         />
       </svg>
       Sign in with Google
-    </Link>
+    </a>
   );
 }
