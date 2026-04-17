@@ -50,15 +50,18 @@ Browser → GET /api/auth/google
        → API calls Firebase signInWithIdp with Google ID token
        → Firebase returns {idToken, refreshToken, isNewUser, needConfirmation, ...}
        → API creates session cookie + refresh token cookie (same as password flow)
-       → 302 redirect: /setup-profile (new user) or /account (existing user)
+       → 302 redirect to state.redirect (フロントエンドのrequireAuth()が新規ユーザーを/setup-profileに遷移)
 ```
 
 ### Error Handling in OAuth Flow
 
-- Invalid/expired state → redirect to /login?error=invalid_state
+- Expired state → redirect to /login?error=expired_state
+- Invalid state → redirect to /login?error=invalid_state
+- Google cancels/consent fails → redirect to /login?error=oauth_failed
 - Google token exchange failure → redirect to /login?error=oauth_failed
 - Firebase signInWithIdp failure → redirect to /login?error=firebase_auth_failed
 - needConfirmation (email conflict) → redirect to /login?error=account_exists
+- Session cookie creation failure → redirect to /login?error=session_failed
 
 ## Key Invariants
 

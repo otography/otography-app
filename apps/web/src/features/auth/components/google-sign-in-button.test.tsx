@@ -16,13 +16,6 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => mockUseSearchParams(),
 }));
 
-// next/link をシンプルな <a> タグとしてモック
-vi.mock("next/link", () => ({
-  default: ({ href, ...props }: { href: string; [key: string]: unknown }) => {
-    return require("react").createElement("a", { href, ...props });
-  },
-}));
-
 const mockSignInPost = vi.hoisted(() => vi.fn());
 const mockSignUpPost = vi.hoisted(() => vi.fn());
 

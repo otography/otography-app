@@ -2,8 +2,8 @@ import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
 
 // CI環境（.dev.varsなし）でもテストが実行できるよう、
-// wrangler.jsoncにないenv変数のデフォルト値を定義する
-const testEnv = {
+// wrangler.jsoncにないenv変数（secrets）のダミー値を定義する
+const testSecrets = {
   FIREBASE_CLIENT_EMAIL: "test@example.iam.gserviceaccount.com",
   FIREBASE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----\n",
   DATABASE_URL: "postgresql://test:test@localhost:5432/test",
@@ -17,7 +17,7 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
-      setupBindings: () => testEnv,
+      setupBindings: () => testSecrets,
     }),
   ],
   test: {

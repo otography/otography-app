@@ -168,18 +168,20 @@ export const signInWithGoogleIdp = async ({
     });
   }
 
+  // needConfirmation=trueの場合、同一メールアドレスが別プロバイダーで既に登録済み
+  // idToken/refreshTokenが含まれない場合があるため、スキーマ検証の前に判定する
+  const payloadObj = payload;
+  if (payloadObj.needConfirmation === true) {
+    return new AccountConflictError({
+      message:
+        "An account with this email already exists. Please sign in with your original method.",
+    });
+  }
+
   const parsedPayload = firebaseIdpResponseSchema(payload);
   if (parsedPayload instanceof type.errors) {
     return new FirebaseIdpSigninError({
       message: "Invalid response format from Firebase signInWithIdp.",
-    });
-  }
-
-  // needConfirmation=trueの場合、同一メールアドレスが別プロバイダーで既に登録済み
-  if (parsedPayload.needConfirmation) {
-    return new AccountConflictError({
-      message:
-        "An account with this email already exists. Please sign in with your original method.",
     });
   }
 
