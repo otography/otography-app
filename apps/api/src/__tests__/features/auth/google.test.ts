@@ -238,8 +238,10 @@ describe("GET /api/auth/google/callback", () => {
 
   it("期限切れstateの場合、/login?error=expired_stateへリダイレクトする", async () => {
     const { OAuthStateError } = await import("@repo/errors");
+    const jwtExpiredError = new Error("JWT expired");
+    jwtExpiredError.name = "JWTExpired";
     mockVerifyOAuthState.mockResolvedValue(
-      new OAuthStateError({ message: "Expired state token." }),
+      new OAuthStateError({ message: "Expired state token.", cause: jwtExpiredError }),
     );
 
     const res = await testRequest(
@@ -330,5 +332,51 @@ describe("GET /api/auth/google/callback", () => {
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
     expect(location).toContain("/login?error=session_failed");
+  });
+
+  it("Google側でエラー（キャンセル等）がある場合、/login?error=oauth_failedへリダイレクトする", async () => {
+    const res = await testRequest(
+      `/api/auth/google/callback?error=access_denied&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=oauth_failed");
+  });
+
+  it("state.redirectが絶対URLの場合、/accountへフォールバックする（オープンリダイレクト防止）", async () => {
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: "test-nonce",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "https://evil.com",
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/account");
+    expect(location).not.toContain("evil.com");
+  });
+
+  it("state.redirectが // プロトコル相対URLの場合、/accountへフォールバックする", async () => {
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: "test-nonce",
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "//evil.com",
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/account");
+    expect(location).not.toContain("evil.com");
   });
 });

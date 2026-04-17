@@ -93,6 +93,10 @@ describe("GoogleSignInButton", () => {
       code: "firebase_auth_failed",
       message: "認証に失敗しました。もう一度お試しください。",
     },
+    {
+      code: "session_failed",
+      message: "セッションの確立に失敗しました。もう一度お試しください。",
+    },
   ])(
     "URLパラメータ ?error=$code の場合、適切なエラーメッセージが表示される",
     ({ code, message }) => {
@@ -117,18 +121,20 @@ describe("GoogleSignInButton", () => {
       </Auth.Provider>,
     );
 
-    expect(screen.getByText("unknown_error")).toBeInTheDocument();
+    expect(
+      screen.getByText("ログイン処理でエラーが発生しました。もう一度お試しください。"),
+    ).toBeInTheDocument();
   });
 
   it("エラーパラメータがない場合、エラーメッセージは表示されない", () => {
     mockUseSearchParams.mockReturnValue(new URLSearchParams());
 
-    render(
+    const { container } = render(
       <Auth.Provider>
         <Auth.Error />
       </Auth.Provider>,
     );
 
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(container).toBeEmptyDOMElement();
   });
 });

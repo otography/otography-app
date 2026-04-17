@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebase/firebase-google";
 
 // fetchをモック — Google・Firebaseへの外部API呼び出しを境界でモック
@@ -101,6 +101,7 @@ describe("exchangeGoogleCode", () => {
 describe("signInWithGoogleIdp", () => {
   const firebaseApiKey = "test-firebase-api-key";
   const googleIdToken = "google-id-token-123";
+  const requestUri = "http://localhost:3000";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -123,7 +124,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).not.toBeInstanceOf(Error);
     expect(result).toMatchObject({
@@ -155,7 +156,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).not.toBeInstanceOf(Error);
     expect(result).toMatchObject({ isNewUser: true });
@@ -175,7 +176,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).toBeInstanceOf(Error);
     // AccountConflictErrorの_tag確認
@@ -199,7 +200,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     const [, options] = mockFetch.mock.calls[0]!;
     const body = JSON.parse(options.body as string);
@@ -220,7 +221,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {
@@ -238,7 +239,7 @@ describe("signInWithGoogleIdp", () => {
       ),
     );
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {
@@ -249,7 +250,7 @@ describe("signInWithGoogleIdp", () => {
   it("ネットワークエラー時にFirebaseIdpSigninErrorを返す", async () => {
     mockFetch.mockRejectedValueOnce(new Error("Network failure"));
 
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken });
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {

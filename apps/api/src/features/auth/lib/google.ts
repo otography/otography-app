@@ -20,10 +20,18 @@ const GOOGLE_SCOPES = "openid email profile";
 
 /**
  * state JWTの検証エラーから適切なエラーコードを判定する。
- * メッセージに"expired"が含まれる場合は期限切れ、それ以外は不正なstateとする。
+ * ラップされた元エラー（cause）の型・nameを確認し、
+ * 期限切れと明確に判定できる場合のみ expired_state を返す。
  */
+const isExpiredError = (value: unknown): boolean => {
+  if (!(value instanceof Error)) return false;
+  return (
+    value.name === "JWTExpired" || (value as Error & { code?: string }).code === "ERR_JWT_EXPIRED"
+  );
+};
+
 const getStateErrorCode = (error: OAuthStateError): string => {
-  if (error.message.toLowerCase().includes("expired")) {
+  if (isExpiredError(error.cause) || isExpiredError(error)) {
     return "expired_state";
   }
   return "invalid_state";
@@ -76,6 +84,12 @@ export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) =>
 export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) => {
   const code = c.req.query("code");
   const stateParam = c.req.query("state");
+  const googleError = c.req.query("error");
+
+  // Google側でキャンセルや同意失敗があった場合
+  if (googleError) {
+    return c.redirect(buildErrorRedirect(c.env, "oauth_failed"), 302);
+  }
 
   // state パラメータの検証
   if (!stateParam || !code) {
@@ -105,6 +119,7 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   const firebaseResult = await signInWithGoogleIdp({
     firebaseApiKey: c.env.FIREBASE_API_KEY,
     googleIdToken: googleTokens.id_token,
+    requestUri: c.env.APP_FRONTEND_URL,
   });
   if (firebaseResult instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult)), 302);
@@ -125,7 +140,9 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   // セッションCookieを設定
   setSessionCookie(c, sessionCookie);
 
-  // リダイレクト先はstateに保持されたフロントエンドURLを使用
-  // 新規ユーザーの/setup-profile遷移はフロントエンドのrequireAuth()が担当
-  return c.redirect(new URL(statePayload.redirect, c.env.APP_FRONTEND_URL).toString(), 302);
+  // リダイレクト先はstateに保持されたパスを使用（オープンリダイレクト防止で相対パスのみ許可）
+  const redirectPath = statePayload.redirect;
+  const safeRedirect =
+    redirectPath?.startsWith("/") && !redirectPath.startsWith("//") ? redirectPath : "/account";
+  return c.redirect(new URL(safeRedirect, c.env.APP_FRONTEND_URL).toString(), 302);
 };

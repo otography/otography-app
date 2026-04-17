@@ -21,11 +21,14 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   expired_state: "ログインセッションが期限切れです。もう一度お試しください。",
   oauth_failed: "Googleログインに失敗しました。もう一度お試しください。",
   firebase_auth_failed: "認証に失敗しました。もう一度お試しください。",
+  session_failed: "セッションの確立に失敗しました。もう一度お試しください。",
 };
 
 // OAuth エラーコードをユーザーフレンドリーなメッセージに変換
 function resolveOAuthError(code: string): string {
-  return OAUTH_ERROR_MESSAGES[code] ?? code;
+  return (
+    OAUTH_ERROR_MESSAGES[code] ?? "ログイン処理でエラーが発生しました。もう一度お試しください。"
+  );
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

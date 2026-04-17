@@ -93,7 +93,7 @@ export const exchangeGoogleCode = async ({
     const errorDesc =
       parsedError instanceof type.errors
         ? "Google token exchange failed."
-        : `${parsedError.error}: ${parsedError.error_description}`;
+        : parsedError.error_description || parsedError.error || "Google token exchange failed.";
     return new GoogleTokenExchangeError({ message: errorDesc });
   }
 
@@ -119,9 +119,11 @@ export const exchangeGoogleCode = async ({
 export const signInWithGoogleIdp = async ({
   firebaseApiKey,
   googleIdToken,
+  requestUri,
 }: {
   firebaseApiKey: string;
   googleIdToken: string;
+  requestUri: string;
 }) => {
   const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/accounts:signInWithIdp`);
   url.searchParams.set("key", firebaseApiKey);
@@ -131,7 +133,7 @@ export const signInWithGoogleIdp = async ({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       postBody: `id_token=${googleIdToken}&providerId=google.com`,
-      requestUri: "http://localhost:3000",
+      requestUri,
       returnSecureToken: true,
       returnIdpCredential: true,
     }),
@@ -142,7 +144,7 @@ export const signInWithGoogleIdp = async ({
     return response;
   }
 
-  // レスポンスの生ステータスとbodyのログ
+  // レスポンス本文を取得して後続のパースとエラー判定に利用
   const responseText = await response.text().catch(() => "");
 
   let payload: unknown;
