@@ -71,6 +71,7 @@ describe("POST /api/auth/sign-up", () => {
 
   describe("upstream dependency failure", () => {
     it("returns 502 when createSessionCookie fails", async () => {
+      const { AuthError } = await import("@repo/errors/server");
       vi.mocked(signUpWithPassword).mockResolvedValue({
         idToken: "test-id-token",
         localId: "user123",
@@ -81,7 +82,13 @@ describe("POST /api/auth/sign-up", () => {
         sub: "user123",
         email: "test@example.com",
       });
-      mockCreateSessionCookie.mockRejectedValue(new Error("Firebase error"));
+      mockCreateSessionCookie.mockResolvedValue(
+        new AuthError({
+          message: "Session creation failed.",
+          code: "session-failed",
+          statusCode: 502,
+        }),
+      );
 
       const res = await testRequest("/api/auth/sign-up", {
         method: "POST",

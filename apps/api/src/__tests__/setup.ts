@@ -31,6 +31,15 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
   },
 }));
 
+// firebase-admin.ts はトップレベルで env.FIREBASE_PRIVATE_KEY にアクセスするため、
+// モジュール評価前に cloudflare:workers の env が未定義の場合がある。
+// ここで firebase-admin 自体をモックし、安全なダミー関数をエクスポートする。
+vi.mock("../shared/firebase/firebase-admin", () => ({
+  createSessionCookie: mockCreateSessionCookie,
+  verifySessionCookie: mockVerifySessionCookie,
+  revokeRefreshTokens: mockRevokeRefreshTokens,
+}));
+
 const mockExchangeRefreshToken = vi.fn();
 
 const mockGetRefreshTokenCookie = vi.fn().mockResolvedValue(null);

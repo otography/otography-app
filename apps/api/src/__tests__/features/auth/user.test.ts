@@ -45,7 +45,10 @@ describe("GET /api/user", () => {
   });
 
   it("returns 401 when session cookie is invalid", async () => {
-    mockVerifySessionCookie.mockRejectedValue(new Error("Invalid session"));
+    const { AuthError } = await import("@repo/errors/server");
+    mockVerifySessionCookie.mockResolvedValue(
+      new AuthError({ message: "Invalid session.", code: "auth/invalid-session", statusCode: 401 }),
+    );
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "invalid-session" },

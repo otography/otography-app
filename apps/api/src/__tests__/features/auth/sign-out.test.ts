@@ -50,8 +50,11 @@ describe("POST /api/auth/sign-out", () => {
   });
 
   it("returns 502 when revokeRefreshTokens fails without clearCookie", async () => {
+    const { AuthError } = await import("@repo/errors/server");
     mockVerifySessionCookie.mockResolvedValue({ sub: "user123", email: "test@example.com" });
-    mockRevokeRefreshTokens.mockRejectedValue(new Error("Firebase error"));
+    mockRevokeRefreshTokens.mockResolvedValue(
+      new AuthError({ message: "Failed to sign you out.", code: "revoke-failed", statusCode: 502 }),
+    );
 
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
