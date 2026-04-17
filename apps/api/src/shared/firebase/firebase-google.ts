@@ -1,4 +1,5 @@
 import { type } from "arktype";
+import * as errore from "errore";
 import {
   AccountConflictError,
   FirebaseIdpSigninError,
@@ -27,16 +28,23 @@ const googleErrorResponseSchema = type({
   "error_description?": "string",
 });
 
+// Firebase signInWithIdp アカウント重複チェック用スキーマ
+// needConfirmation=trueの場合、idToken/refreshTokenが含まれないことがあるため
+// スキーマ検証の前に判定する
+const firebaseIdpConflictSchema = type({
+  needConfirmation: "boolean",
+});
+
 // Firebase signInWithIdp レスポンスのスキーマ
 const firebaseIdpResponseSchema = type({
   idToken: "string",
   refreshToken: "string",
   localId: "string",
-  "isNewUser?": "boolean",
+  expiresIn: "string",
   "email?": "string",
   "displayName?": "string",
   "photoUrl?": "string",
-  "needConfirmation?": "boolean",
+  needConfirmation: "boolean",
 });
 
 // Firebase エラーレスポンスのスキーマ
@@ -81,12 +89,10 @@ export const exchangeGoogleCode = async ({
 
   const responseText = await response.text().catch(() => "");
 
-  let payload: unknown;
-  try {
-    payload = JSON.parse(responseText);
-  } catch {
-    payload = null;
-  }
+  const payload = errore.try({
+    try: () => JSON.parse(responseText),
+    catch: () => null,
+  });
 
   if (!response.ok) {
     const parsedError = googleErrorResponseSchema(payload);
@@ -147,12 +153,10 @@ export const signInWithGoogleIdp = async ({
   // レスポンス本文を取得して後続のパースとエラー判定に利用
   const responseText = await response.text().catch(() => "");
 
-  let payload: unknown;
-  try {
-    payload = JSON.parse(responseText);
-  } catch {
-    payload = null;
-  }
+  const payload = errore.try({
+    try: () => JSON.parse(responseText),
+    catch: () => null,
+  });
 
   if (!response.ok) {
     const parsedError = firebaseErrorResponseSchema(payload);
@@ -169,9 +173,8 @@ export const signInWithGoogleIdp = async ({
   }
 
   // needConfirmation=trueの場合、同一メールアドレスが別プロバイダーで既に登録済み
-  // idToken/refreshTokenが含まれない場合があるため、スキーマ検証の前に判定する
-  const payloadObj = payload;
-  if (payloadObj.needConfirmation === true) {
+  const conflictCheck = firebaseIdpConflictSchema(payload);
+  if (!(conflictCheck instanceof type.errors) && conflictCheck.needConfirmation === true) {
     return new AccountConflictError({
       message:
         "An account with this email already exists. Please sign in with your original method.",

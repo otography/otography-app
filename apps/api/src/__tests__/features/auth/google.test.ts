@@ -114,7 +114,6 @@ describe("GET /api/auth/google/callback", () => {
       idToken: FIREBASE_ID_TOKEN,
       refreshToken: FIREBASE_REFRESH_TOKEN,
       localId: "user-uid-123",
-      isNewUser: false,
       email: "test@example.com",
       displayName: "Test User",
       photoUrl: "",
@@ -148,7 +147,6 @@ describe("GET /api/auth/google/callback", () => {
       idToken: FIREBASE_ID_TOKEN,
       refreshToken: FIREBASE_REFRESH_TOKEN,
       localId: "new-user-uid",
-      isNewUser: true,
       email: "new@example.com",
       displayName: "New User",
       photoUrl: "",
@@ -201,7 +199,6 @@ describe("GET /api/auth/google/callback", () => {
       idToken: FIREBASE_ID_TOKEN,
       refreshToken: FIREBASE_REFRESH_TOKEN,
       localId: "new-user-uid",
-      isNewUser: true,
       email: "new@example.com",
       needConfirmation: false,
     });

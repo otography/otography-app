@@ -24,6 +24,7 @@
         "@repo/firebase-auth-rest": "workspace:*",
         "arktype": "^2.2.0",
         "drizzle-orm": "^1.0.0-beta.22",
+        "errore": "^0.14.1",
         "hono": "^4.12.14",
         "jose": "^6.2.2",
         "postgres": "^3.4.8",

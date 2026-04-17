@@ -114,7 +114,6 @@ describe("signInWithGoogleIdp", () => {
           idToken: "firebase-id-token-abc",
           refreshToken: "firebase-refresh-token-def",
           localId: "user-uid-123",
-          isNewUser: false,
           email: "test@example.com",
           displayName: "Test User",
           photoUrl: "https://lh3.googleusercontent.com/photo",
@@ -131,35 +130,11 @@ describe("signInWithGoogleIdp", () => {
       idToken: "firebase-id-token-abc",
       refreshToken: "firebase-refresh-token-def",
       localId: "user-uid-123",
-      isNewUser: false,
       email: "test@example.com",
       displayName: "Test User",
       photoUrl: "https://lh3.googleusercontent.com/photo",
       needConfirmation: false,
     });
-  });
-
-  it("新規ユーザーの場合にisNewUser=trueを返す", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          idToken: "firebase-id-token-new",
-          refreshToken: "firebase-refresh-token-new",
-          localId: "new-user-uid",
-          isNewUser: true,
-          email: "newuser@example.com",
-          displayName: "New User",
-          photoUrl: "",
-          needConfirmation: false,
-        }),
-        { status: 200, headers: { "Content-Type": "application/json" } },
-      ),
-    );
-
-    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
-
-    expect(result).not.toBeInstanceOf(Error);
-    expect(result).toMatchObject({ isNewUser: true });
   });
 
   it("needConfirmation=trueの場合にAccountConflictErrorを返す", async () => {
@@ -192,7 +167,6 @@ describe("signInWithGoogleIdp", () => {
           idToken: "t",
           refreshToken: "r",
           localId: "uid",
-          isNewUser: false,
           email: "e@e.com",
           needConfirmation: false,
         }),
