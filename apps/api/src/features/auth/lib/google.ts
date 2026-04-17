@@ -1,11 +1,16 @@
 import type { Context } from "hono";
+import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import {
   AccountConflictError,
   FirebaseIdpSigninError,
   GoogleTokenExchangeError,
   OAuthStateError,
 } from "@repo/errors";
-import { generateOAuthState, verifyOAuthState } from "../../../shared/auth/oauth-state";
+import {
+  generateOAuthState,
+  verifyOAuthState,
+  OAUTH_NONCE_COOKIE_NAME,
+} from "../../../shared/auth/oauth-state";
 import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebase/firebase-google";
 import { createSessionCookie } from "../../../shared/firebase/firebase-admin";
 import { setSessionCookie } from "../../../shared/auth/session-cookie";
@@ -61,10 +66,20 @@ export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) =>
   const redirectParam = c.req.query("redirect");
 
   // OAuth state JWTを生成（CSRF対策 + リダイレクト先保持）
-  const state = await generateOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, redirectParam);
-  if (state instanceof Error) {
+  const stateResult = await generateOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, redirectParam);
+  if (stateResult instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, "oauth_failed"), 302);
   }
+
+  // CSRF対策: nonce をcookieにバインド（Login CSRF防止）
+  // SameSite=Lax により、Googleからのリダイレクト（GET）ではcookieが送信される
+  setCookie(c, OAUTH_NONCE_COOKIE_NAME, stateResult.nonce, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: 300, // 5分（state JWTのTTLと同じ）
+  });
 
   // Google OAuth URLを構築（redirect_uriは環境変数から取得）
   const callbackUrl = c.env.GOOGLE_OAUTH_REDIRECT_URI;
@@ -72,7 +87,7 @@ export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) =>
   googleAuthUrl.searchParams.set("client_id", c.env.GOOGLE_CLIENT_ID);
   googleAuthUrl.searchParams.set("redirect_uri", callbackUrl);
   googleAuthUrl.searchParams.set("scope", GOOGLE_SCOPES);
-  googleAuthUrl.searchParams.set("state", state);
+  googleAuthUrl.searchParams.set("state", stateResult.token);
   googleAuthUrl.searchParams.set("response_type", "code");
   googleAuthUrl.searchParams.set("access_type", "offline");
   googleAuthUrl.searchParams.set("prompt", "consent");
@@ -101,6 +116,17 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   if (statePayload instanceof Error) {
     const errorCode = getStateErrorCode(statePayload);
     return c.redirect(buildErrorRedirect(c.env, errorCode), 302);
+  }
+
+  // Login CSRF対策: cookieのnonceとstate JWTのnonceを照合
+  const cookieNonce = getCookie(c, OAUTH_NONCE_COOKIE_NAME);
+  if (!cookieNonce || cookieNonce !== statePayload.nonce) {
+    // nonce不一致 — cookieを削除してエラーリダイレクト
+    deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {
+      path: "/",
+      secure: true,
+    });
+    return c.redirect(buildErrorRedirect(c.env, "invalid_state"), 302);
   }
 
   // Google認可コードをトークンと交換（redirect_uriは環境変数から取得）
@@ -139,6 +165,12 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
 
   // セッションCookieを設定
   setSessionCookie(c, sessionCookie);
+
+  // 使用済みのnonce cookieを削除
+  deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {
+    path: "/",
+    secure: true,
+  });
 
   // リダイレクト先はstateに保持されたパスを使用（オープンリダイレクト防止で相対パスのみ許可）
   const redirectPath = statePayload.redirect;

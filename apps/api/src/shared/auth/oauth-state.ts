@@ -12,23 +12,32 @@ export type OAuthStatePayload = {
   redirect: string;
 };
 
+/** OAuth state用のnonceを保持するcookie名 */
+export const OAUTH_NONCE_COOKIE_NAME = "__Host-otography_oauth_nonce";
+
+export type GeneratedOAuthState = {
+  nonce: string;
+  token: string;
+};
+
 /**
  * OAuth state用の署名済みJWTを生成する。
  * CSRF対策として機能し、リダイレクト先URLを保持する。
  *
  * @param secret - HMAC-SHA256署名用のシークレット（AUTH_OAUTH_STATE_SECRET）
  * @param redirect - 認証完了後のリダイレクト先（デフォルト: /account）
- * @returns 署名済みJWT文字列、または Error
+ * @returns nonceと署名済みJWT文字列、または Error
  */
 export const generateOAuthState = async (
   secret: string,
   redirect?: string,
-): Promise<OAuthStateError | string> => {
+): Promise<OAuthStateError | GeneratedOAuthState> => {
   const secretKey = new TextEncoder().encode(secret);
   const now = Math.floor(Date.now() / 1000);
+  const nonce = crypto.randomUUID();
 
   const jwt = await new jose.SignJWT({
-    nonce: crypto.randomUUID(),
+    nonce,
     redirect: redirect ?? "/account",
   })
     .setProtectedHeader({ alg: STATE_JWT_ALG })
@@ -39,7 +48,9 @@ export const generateOAuthState = async (
       (e) => new OAuthStateError({ message: "Failed to generate OAuth state JWT.", cause: e }),
     );
 
-  return jwt;
+  if (jwt instanceof Error) return jwt;
+
+  return { nonce, token: jwt };
 };
 
 /**
@@ -63,10 +74,16 @@ export const verifyOAuthState = async (
 
   if (result instanceof Error) return result;
 
-  return {
-    nonce: result.payload.nonce as string,
-    iat: result.payload.iat as number,
-    exp: result.payload.exp as number,
-    redirect: result.payload.redirect as string,
-  };
+  // ペイロードの実行時検証 — 署名が有効でもクレーム欠落・型不一致を防ぐ
+  const { nonce, iat, exp, redirect } = result.payload;
+  if (
+    typeof nonce !== "string" ||
+    typeof iat !== "number" ||
+    typeof exp !== "number" ||
+    typeof redirect !== "string"
+  ) {
+    return new OAuthStateError({ message: "OAuth state token contains invalid claims." });
+  }
+
+  return { nonce, iat, exp, redirect };
 };

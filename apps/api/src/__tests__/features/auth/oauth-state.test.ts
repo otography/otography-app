@@ -8,10 +8,15 @@ import {
 const TEST_SECRET = "test-oauth-state-secret-at-least-32-chars";
 
 // テスト内でgenerateOAuthStateの結果を安全に文字列として取得するヘルパー
-// generateOAuthStateは失敗しない前提だが、戻り型が OAuthStateError | string のため型ガードが必要
+// generateOAuthStateは失敗しない前提だが、戻り型が OAuthStateError | GeneratedOAuthState のため型ガードが必要
+const generateState = async (secret: string, redirect?: string) => {
+  const result = await generateOAuthState(secret, redirect);
+  if (result instanceof Error) throw result;
+  return result;
+};
+
 const generateToken = async (secret: string, redirect?: string): Promise<string> => {
-  const token = await generateOAuthState(secret, redirect);
-  if (token instanceof Error) throw token;
+  const { token } = await generateState(secret, redirect);
   return token;
 };
 
@@ -42,14 +47,9 @@ describe("generateOAuthState", () => {
   });
 
   it("nonceがランダムUUIDとして含まれる", async () => {
-    const token = await generateToken(TEST_SECRET);
-    const payload = await verifyOAuthState(TEST_SECRET, token);
-
-    expect(payload).not.toBeInstanceOf(Error);
+    const { nonce } = await generateState(TEST_SECRET);
     // UUID形式（8-4-4-4-12）の検証
-    expect((payload as OAuthStatePayload).nonce).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
-    );
+    expect(nonce).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   });
 
   it("iatとexpクレームを含み、exp - iat === 300（5分）である", async () => {
@@ -123,5 +123,39 @@ describe("verifyOAuthState", () => {
     const result = await verifyOAuthState(TEST_SECRET, "not-a-valid-jwt");
 
     expect(result).toBeInstanceOf(Error);
+  });
+
+  it("クレーム欠落のトークンに対してErrorを返す", async () => {
+    // nonceが欠落したJWTを直接生成
+    const { SignJWT } = await import("jose");
+    const secretKey = new TextEncoder().encode(TEST_SECRET);
+    const malformedJwt = await new SignJWT({ redirect: "/account" })
+      .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt(Math.floor(Date.now() / 1000))
+      .setExpirationTime(Math.floor(Date.now() / 1000) + 300)
+      .sign(secretKey);
+
+    const result = await verifyOAuthState(TEST_SECRET, malformedJwt);
+
+    expect(result).toBeInstanceOf(Error);
+  });
+});
+
+describe("generateOAuthState 戻り値の構造", () => {
+  it("{ nonce, token } のオブジェクトを返す", async () => {
+    const result = await generateState(TEST_SECRET);
+
+    expect(result).toHaveProperty("nonce");
+    expect(result).toHaveProperty("token");
+    expect(typeof result.nonce).toBe("string");
+    expect(typeof result.token).toBe("string");
+  });
+
+  it("token内のnonceと戻り値のnonceが一致する", async () => {
+    const { nonce, token } = await generateState(TEST_SECRET);
+    const payload = await verifyOAuthState(TEST_SECRET, token);
+
+    expect(payload).not.toBeInstanceOf(Error);
+    expect((payload as OAuthStatePayload).nonce).toBe(nonce);
   });
 });

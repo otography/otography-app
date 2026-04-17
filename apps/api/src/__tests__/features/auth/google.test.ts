@@ -9,10 +9,14 @@ const mockExchangeGoogleCode = vi.hoisted(() => vi.fn());
 const mockSignInWithGoogleIdp = vi.hoisted(() => vi.fn());
 
 // --- モック定義 ---
-vi.mock("../../../shared/auth/oauth-state", () => ({
-  generateOAuthState: mockGenerateOAuthState,
-  verifyOAuthState: mockVerifyOAuthState,
-}));
+vi.mock("../../../shared/auth/oauth-state", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../shared/auth/oauth-state")>();
+  return {
+    ...actual,
+    generateOAuthState: mockGenerateOAuthState,
+    verifyOAuthState: mockVerifyOAuthState,
+  };
+});
 
 vi.mock("../../../shared/firebase/firebase-google", () => ({
   exchangeGoogleCode: mockExchangeGoogleCode,
@@ -25,6 +29,7 @@ vi.mock("../../../shared/db", () => ({
 
 // --- テスト定数 ---
 const VALID_STATE = "valid-state-jwt-token";
+const VALID_NONCE = "test-nonce-uuid";
 const VALID_CODE = "valid-google-auth-code";
 const GOOGLE_ID_TOKEN = "google-id-token-123";
 const FIREBASE_ID_TOKEN = "firebase-id-token-abc";
@@ -37,7 +42,7 @@ describe("GET /api/auth/google", () => {
   });
 
   it("Google OAuth URLへ302リダイレクトする", async () => {
-    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
 
     const res = await testRequest("/api/auth/google");
 
@@ -48,10 +53,13 @@ describe("GET /api/auth/google", () => {
     const url = new URL(location!);
     expect(url.origin).toBe("https://accounts.google.com");
     expect(url.pathname).toBe("/o/oauth2/v2/auth");
+
+    // nonce cookieがセットされることを確認
+    expect(res.getCookie("__Host-otography_oauth_nonce")).toBe(VALID_NONCE);
   });
 
   it("正しいクエリパラメータを含む", async () => {
-    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
 
     const res = await testRequest("/api/auth/google");
     const location = res.headers.get("Location")!;
@@ -68,7 +76,7 @@ describe("GET /api/auth/google", () => {
   });
 
   it("redirectクエリパラメータをgenerateOAuthStateに渡す", async () => {
-    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
 
     await testRequest("/api/auth/google?redirect=/custom-path");
 
@@ -76,7 +84,7 @@ describe("GET /api/auth/google", () => {
   });
 
   it("redirectクエリパラメータなしの場合、generateOAuthStateにredirectを渡さない", async () => {
-    mockGenerateOAuthState.mockResolvedValue(VALID_STATE);
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
 
     await testRequest("/api/auth/google");
 
@@ -101,7 +109,7 @@ describe("GET /api/auth/google/callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockVerifyOAuthState.mockResolvedValue({
-      nonce: "test-nonce",
+      nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 300,
       redirect: "/account",
@@ -128,6 +136,7 @@ describe("GET /api/auth/google/callback", () => {
   it("既存ユーザーを/accountへリダイレクトし、セッションCookieを設定する", async () => {
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -155,6 +164,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -173,7 +183,7 @@ describe("GET /api/auth/google/callback", () => {
 
   it("state内のredirectが優先される", async () => {
     mockVerifyOAuthState.mockResolvedValue({
-      nonce: "test-nonce",
+      nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 300,
       redirect: "/custom-redirect",
@@ -181,6 +191,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -190,7 +201,7 @@ describe("GET /api/auth/google/callback", () => {
 
   it("新規ユーザーでもstate内のredirectを尊重する（setup-profile遷移はフロントエンド担当）", async () => {
     mockVerifyOAuthState.mockResolvedValue({
-      nonce: "test-nonce",
+      nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 300,
       redirect: "/custom-redirect",
@@ -205,6 +216,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -256,7 +268,9 @@ describe("GET /api/auth/google/callback", () => {
       new GoogleTokenExchangeError({ message: "Token exchange failed." }),
     );
 
-    const res = await testRequest(`/api/auth/google/callback?code=bad-code&state=${VALID_STATE}`);
+    const res = await testRequest(`/api/auth/google/callback?code=bad-code&state=${VALID_STATE}`, {
+      cookie: { "__Host-otography_oauth_nonce": VALID_NONCE },
+    });
 
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
@@ -275,6 +289,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -290,6 +305,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -309,6 +325,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -324,6 +341,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -343,7 +361,7 @@ describe("GET /api/auth/google/callback", () => {
 
   it("state.redirectが絶対URLの場合、/accountへフォールバックする（オープンリダイレクト防止）", async () => {
     mockVerifyOAuthState.mockResolvedValue({
-      nonce: "test-nonce",
+      nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 300,
       redirect: "https://evil.com",
@@ -351,6 +369,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -361,7 +380,7 @@ describe("GET /api/auth/google/callback", () => {
 
   it("state.redirectが // プロトコル相対URLの場合、/accountへフォールバックする", async () => {
     mockVerifyOAuthState.mockResolvedValue({
-      nonce: "test-nonce",
+      nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
       exp: Math.floor(Date.now() / 1000) + 300,
       redirect: "//evil.com",
@@ -369,11 +388,48 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
     expect(location).toContain("/account");
     expect(location).not.toContain("evil.com");
+  });
+
+  it("nonce cookieがない場合、/login?error=invalid_stateへリダイレクトする（Login CSRF防止）", async () => {
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      // nonce cookieを送信しない
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=invalid_state");
+    expect(res.getCookie("otography_session")).toBeUndefined();
+  });
+
+  it("nonce cookieがstate JWTのnonceと一致しない場合、/login?error=invalid_stateへリダイレクトする（Login CSRF防止）", async () => {
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": "different-nonce-value" } },
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=invalid_state");
+    expect(res.getCookie("otography_session")).toBeUndefined();
+  });
+
+  it("成功時にnonce cookieが削除される", async () => {
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+    );
+
+    expect(res.status).toBe(302);
+    // nonce cookie が maxAge=0 でクリアされる
+    const nonceCookie = res.getCookie("__Host-otography_oauth_nonce");
+    expect(nonceCookie).toBe("");
   });
 });
