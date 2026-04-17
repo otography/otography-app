@@ -15,7 +15,7 @@ export type OAuthStatePayload = {
 /** OAuth state用のnonceを保持するcookie名 */
 export const OAUTH_NONCE_COOKIE_NAME = "__Host-otography_oauth_nonce";
 
-export type GeneratedOAuthState = {
+type GeneratedOAuthState = {
   nonce: string;
   token: string;
 };
