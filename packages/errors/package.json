@@ -13,7 +13,7 @@
   "dependencies": {
     "@repo/firebase-auth-rest": "workspace:*",
     "errore": "^0.14.1",
-    "hono": "^4.12.9"
+    "hono": "^4.12.14"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

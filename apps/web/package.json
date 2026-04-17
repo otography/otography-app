@@ -19,7 +19,7 @@
     "@t3-oss/env-nextjs": "^0.13.10",
     "api": "workspace:*",
     "arktype": "^2.2.0",
-    "hono": "^4.12.9",
+    "hono": "^4.12.14",
     "next": "16.1.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

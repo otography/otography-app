@@ -49,7 +49,7 @@
         "@t3-oss/env-nextjs": "^0.13.10",
         "api": "workspace:*",
         "arktype": "^2.2.0",
-        "hono": "^4.12.9",
+        "hono": "^4.12.14",
         "next": "16.1.5",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
@@ -78,7 +78,7 @@
       "dependencies": {
         "@repo/firebase-auth-rest": "workspace:*",
         "errore": "^0.14.1",
-        "hono": "^4.12.9",
+        "hono": "^4.12.14",
       },
       "devDependencies": {
         "@repo/typescript-config": "workspace:*",
@@ -1453,8 +1453,6 @@
     "vite/postcss": ["postcss@8.5.8", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-OW/rX8O/jXnm82Ey1k44pObPtdblfiuWnrd8X7GJ7emImCOstunGbXUpp7HdBrFQX6rJzn3sPT397Wp5aCwCHg=="],
 
     "web/@types/node": ["@types/node@22.19.15", "", { "dependencies": { "undici-types": "~6.21.0" } }, "sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg=="],
-
-    "web/hono": ["hono@4.12.9", "", {}, "sha512-wy3T8Zm2bsEvxKZM5w21VdHDDcwVS1yUFFY6i8UobSsKfFceT7TOwhbhfKsDyx7tYQlmRM5FLpIuYvNFyjctiA=="],
 
     "web/typescript": ["typescript@5.9.2", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-CWBzXQrc/qOkhidw1OzBTQuYRbfyxDXJMVJ1XNwUHGROVmuaeiEm3OslpZ1RV96d7SKKjZKrSJu3+t/xlw3R9A=="],
 
