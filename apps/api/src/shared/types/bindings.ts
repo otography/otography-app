@@ -1,4 +1,7 @@
+import type { Ai } from "@cloudflare/workers-types";
+
 export type Bindings = {
+  AI: Ai;
   AUTH_COOKIE_DOMAIN: string | undefined;
   AUTH_ENCRYPTION_KEY: string;
   AUTH_OAUTH_STATE_SECRET: string;

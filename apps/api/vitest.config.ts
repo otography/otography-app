@@ -16,6 +16,10 @@ const testSecrets = {
 export default defineConfig({
   plugins: [
     cloudflareTest({
+      // Workers AI バインディングはリモートリソースにアクセスするため、
+      // CI/ローカルテストでは認証不要のモックを使用する。
+      // リモートプロキシセッションをスキップする設定。
+      remoteBindings: false,
       wrangler: { configPath: "./wrangler.jsonc" },
       miniflare: {
         bindings: testSecrets,
