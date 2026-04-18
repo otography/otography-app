@@ -1,0 +1,2 @@
+-- postsテーブルのRLSを有効化
+ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;

@@ -271,6 +271,32 @@ export const posts = pgTable(
     index("posts_embedding_cosine_idx")
       .using("hnsw", table.embedding.op("vector_cosine_ops"))
       .where(sql`${table.deletedAt} IS NULL AND ${table.embedding} IS NOT NULL`),
+    // RLSポリシー: usersテーブル経由でFirebase UID → DB UUID変換
+    // 誰でも未削除の投稿を読み取り可能
+    pgPolicy("posts_select_all", {
+      for: "select",
+      to: "public",
+      using: sql`${table.deletedAt} IS NULL`,
+    }),
+    // 認証済みユーザーは自分の投稿のみ作成可能
+    pgPolicy("posts_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.userId} IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())`,
+    }),
+    // 認証済みユーザーは自分の投稿のみ更新可能
+    pgPolicy("posts_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${table.userId} IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())`,
+      withCheck: sql`${table.userId} IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())`,
+    }),
+    // 認証済みユーザーは自分の投稿のみ削除可能
+    pgPolicy("posts_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${table.userId} IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())`,
+    }),
   ],
 );
 

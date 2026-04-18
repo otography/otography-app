@@ -62,7 +62,7 @@ export const updatePostEmbedding = async (
   return withRls(claims, async (tx) =>
     tx
       .update(posts)
-      .set({ embedding })
+      .set({ embedding, updatedAt: sql`now()` })
       .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
       .returning(),
   );
