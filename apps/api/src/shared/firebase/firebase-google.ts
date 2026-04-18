@@ -70,8 +70,6 @@ export const exchangeGoogleCode = async ({
   code: string;
   redirectUri: string;
 }) => {
-  console.log("[exchangeGoogleCode] 開始:", { redirectUri, codePrefix: code.slice(0, 8) + "..." });
-
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -86,7 +84,6 @@ export const exchangeGoogleCode = async ({
     (e) => new GoogleTokenExchangeError({ message: "Google token exchange failed.", cause: e }),
   );
   if (response instanceof Error) {
-    console.error("[exchangeGoogleCode] fetch失敗:", response.message);
     return response;
   }
 
@@ -103,9 +100,6 @@ export const exchangeGoogleCode = async ({
       parsedError instanceof type.errors
         ? "Google token exchange failed."
         : parsedError.error_description || parsedError.error || "Google token exchange failed.";
-    console.error("[exchangeGoogleCode] HTTPエラー:", response.status, errorDesc, {
-      responseText: responseText.slice(0, 500),
-    });
     return new GoogleTokenExchangeError({ message: errorDesc });
   }
 
@@ -140,11 +134,6 @@ export const signInWithGoogleIdp = async ({
   const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/accounts:signInWithIdp`);
   url.searchParams.set("key", firebaseApiKey);
 
-  console.log("[signInWithGoogleIdp] 開始:", {
-    requestUri,
-    idTokenPrefix: googleIdToken.slice(0, 20) + "...",
-  });
-
   const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -158,7 +147,6 @@ export const signInWithGoogleIdp = async ({
     (e) => new FirebaseIdpSigninError({ message: "Firebase IdP sign-in failed.", cause: e }),
   );
   if (response instanceof Error) {
-    console.error("[signInWithGoogleIdp] fetch失敗:", response.message);
     return response;
   }
 
@@ -173,9 +161,6 @@ export const signInWithGoogleIdp = async ({
   if (!response.ok) {
     const parsedError = firebaseErrorResponseSchema(payload);
     const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
-    console.error("[signInWithGoogleIdp] HTTPエラー:", response.status, code ?? "unknown", {
-      responseText: responseText.slice(0, 500),
-    });
     return new FirebaseIdpSigninError({
       message: code ?? "Firebase IdP sign-in failed.",
     });
@@ -186,8 +171,6 @@ export const signInWithGoogleIdp = async ({
       message: "Empty response from Firebase signInWithIdp.",
     });
   }
-
-  console.log("[signInWithGoogleIdp] レスポンス:", JSON.stringify(payload).slice(0, 1000));
 
   // needConfirmation=trueの場合、同一メールアドレスが別プロバイダーで既に登録済み
   const conflictCheck = firebaseIdpConflictSchema(payload);
@@ -200,7 +183,6 @@ export const signInWithGoogleIdp = async ({
 
   const parsedPayload = firebaseIdpResponseSchema(payload);
   if (parsedPayload instanceof type.errors) {
-    console.error("[signInWithGoogleIdp] スキーマ検証失敗:", parsedPayload.summary);
     return new FirebaseIdpSigninError({
       message: "Invalid response format from Firebase signInWithIdp.",
     });

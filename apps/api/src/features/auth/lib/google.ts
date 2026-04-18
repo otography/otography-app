@@ -116,17 +116,9 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   const stateParam = c.req.query("state");
   const googleError = c.req.query("error");
 
-  console.log("[google/callback] 開始", {
-    hasCode: !!code,
-    hasState: !!stateParam,
-    googleError: googleError ?? null,
-    url: c.req.url,
-  });
-
   // Google側でキャンセルや同意失敗があった場合
   // stateがあれば検証してfromを取り出し、エラー時のリダイレクト先に使用する
   if (googleError) {
-    console.warn("[google/callback] Google側エラー:", googleError);
     let errorPage: string | undefined;
     if (stateParam) {
       const statePayload = await verifyOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, stateParam);
@@ -139,10 +131,6 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
 
   // state パラメータの検証
   if (!stateParam || !code) {
-    console.warn("[google/callback] state/code 欠落:", {
-      hasState: !!stateParam,
-      hasCode: !!code,
-    });
     return c.redirect(buildErrorRedirect(c.env, "invalid_state"), 302);
   }
 
@@ -150,7 +138,6 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   const statePayload = await verifyOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, stateParam);
   if (statePayload instanceof Error) {
     const errorCode = getStateErrorCode(statePayload);
-    console.error("[google/callback] state検証失敗:", errorCode, statePayload.message);
     return c.redirect(buildErrorRedirect(c.env, errorCode), 302);
   }
 
@@ -160,19 +147,8 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   // Login CSRF対策: cookieのnonceとstate JWTのnonceを照合
   const cookieNonce = getCookie(c, OAUTH_NONCE_COOKIE_NAME);
   const isSecure = new URL(c.req.url).protocol === "https:";
-  console.log("[google/callback] nonce照合:", {
-    hasCookieNonce: !!cookieNonce,
-    stateNonce: statePayload.nonce,
-    match: cookieNonce === statePayload.nonce,
-  });
   if (!cookieNonce || cookieNonce !== statePayload.nonce) {
     // nonce不一致 — cookieを削除してエラーリダイレクト
-    console.warn(
-      "[google/callback] nonce不一致 — cookie:",
-      cookieNonce ?? "(なし)",
-      "state:",
-      statePayload.nonce,
-    );
     deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {
       path: "/",
       secure: isSecure,
@@ -182,7 +158,6 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
 
   // Google認可コードをトークンと交換（redirect_uriは環境変数から取得）
   const callbackUrl = c.env.GOOGLE_OAUTH_REDIRECT_URI;
-  console.log("[google/callback] トークン交換開始:", { callbackUrl });
   const googleTokens = await exchangeGoogleCode({
     clientId: c.env.GOOGLE_CLIENT_ID,
     clientSecret: c.env.GOOGLE_CLIENT_SECRET,
@@ -190,52 +165,28 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
     redirectUri: callbackUrl,
   });
   if (googleTokens instanceof Error) {
-    console.error("[google/callback] トークン交換失敗:", googleTokens.message, googleTokens);
     return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(googleTokens), errorPage), 302);
   }
-  console.log("[google/callback] トークン交換成功 — id_token取得済み");
 
   // Firebase signInWithIdpでGoogle IDトークンを認証
-  console.log("[google/callback] Firebase IdP認証開始:", {
-    requestUri: c.env.APP_FRONTEND_URL,
-  });
   const firebaseResult = await signInWithGoogleIdp({
     firebaseApiKey: c.env.FIREBASE_API_KEY,
     googleIdToken: googleTokens.id_token,
     requestUri: c.env.APP_FRONTEND_URL,
   });
   if (firebaseResult instanceof Error) {
-    console.error(
-      "[google/callback] Firebase IdP認証失敗:",
-      firebaseResult.message,
-      firebaseResult,
-    );
     return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult), errorPage), 302);
   }
-  console.log("[google/callback] Firebase IdP認証成功:", {
-    localId: firebaseResult.localId,
-    email: firebaseResult.email ?? "(なし)",
-  });
 
   // セッションCookieを作成
   const sessionCookie = await createSessionCookie(firebaseResult.idToken);
   if (sessionCookie instanceof Error) {
-    console.error(
-      "[google/callback] セッションCookie作成失敗:",
-      sessionCookie.message,
-      sessionCookie,
-    );
     return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 
   // リフレッシュトークンCookieを設定
   const refreshResult = await setRefreshTokenCookie(c, firebaseResult.refreshToken);
   if (refreshResult instanceof Error) {
-    console.error(
-      "[google/callback] リフレッシュトークンCookie設定失敗:",
-      refreshResult.message,
-      refreshResult,
-    );
     return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 
@@ -247,8 +198,6 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
     path: "/",
     secure: isSecure,
   });
-
-  console.log("[google/callback] 完了 — リダイレクト先を決定");
 
   // リダイレクト先はstateに保持されたパスを使用（オープンリダイレクト防止で相対パスのみ許可）
   const redirectPath = statePayload.redirect;
