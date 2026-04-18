@@ -1,73 +1,73 @@
-# Architecture
+# Embedding Pipeline Architecture
 
-How the system works — components, relationships, data flows, invariants.
+How the text embedding pipeline works for music impression posts.
 
 ---
 
-## Monorepo Structure
+## Overview
+
+When a user creates a post (music impression), the system:
+
+1. Validates the post content via Arktype
+2. Saves the post to PostgreSQL
+3. Calls Workers AI (Qwen3-Embedding-0.6B) to generate a 1024-dimensional vector
+4. Updates the post row with the embedding vector
+5. If AI fails, post is saved with NULL embedding (graceful degradation)
+
+## Components
 
 ```
-apps/api     → Hono API server (Cloudflare Workers, port 3001)
-apps/web     → Next.js 16 App Router (port 3000)
-packages/firebase-auth-rest → Firebase Admin SDK (REST-based, Cloudflare-compatible)
-packages/errors              → Shared error classes (errore-based)
+apps/api/src/features/posts/
+├── index.ts         → Re-exports route
+├── route.ts         → Hono router (POST, GET, PATCH, DELETE)
+├── repository.ts    → Drizzle DB queries for posts
+├── usecase.ts       → Business logic (create, read, update, delete)
+└── lib/
+    └── embedding.ts → Workers AI embedding service
 ```
 
-## Auth Architecture
-
-### Session Flow (existing — email/password)
+## Data Flow: Post Creation with Embedding
 
 ```
-Browser → POST /api/auth/sign-in {email, password}
-       → API calls Firebase Identity Toolkit: signInWithPassword
-       → Firebase returns {idToken, refreshToken}
-       → API calls Firebase Admin: createSessionCookie(idToken)
-       → API sets otography_session cookie (HttpOnly, 5-day)
-       → API encrypts + sets otography_refresh_token cookie (HttpOnly, 10-day)
-       → Browser redirects to /account
+Client → POST /api/posts { content, songId }
+       → requireAuthMiddleware() — 認証チェック
+       → csrfProtection() — CSRFチェック
+       → Arktype validation — content (1-2000文字), songId (UUID)
+       → PostUsecase.create()
+         ├── PostRepository.create() — DB に投稿保存 (embedding = NULL)
+         ├── EmbeddingService.generate(content) — Workers AI 呼び出し
+         │   ├── 成功 → PostRepository.updateEmbedding(id, vector)
+         │   └── 失敗 → ログ出力 (embedding = NULL のまま)
+         └── 投稿データを返却
 ```
 
-### Session Refresh (existing)
+## Workers AI Integration
 
-When `otography_session` expires but `otography_refresh_token` exists:
+- **Binding**: `env.AI` (configured in `wrangler.jsonc`)
+- **Model**: `@cf/qwen/qwen3-embedding-0.6b`
+- **Dimensions**: 1024
+- **Input limit**: 4096 tokens (~8000 chars CJK)
+- **Pricing**: $0.012/M input tokens
+- **Output**: `{ data: [Float32Array[1024]] }`
 
-1. Middleware detects invalid session cookie
-2. Decrypts refresh token cookie (AES-256-GCM)
-3. Exchanges refresh token via Firebase Secure Token API
-4. Creates new session cookie from new idToken
-5. Sets both cookies and continues the request
+## Database Schema
 
-### Google OAuth Flow (NEW)
+```sql
+-- pgvector拡張 (Supabase非依存、標準PostgreSQL拡張)
+CREATE EXTENSION IF NOT EXISTS vector;
 
+-- posts テーブルに embedding 列追加
+ALTER TABLE posts ADD COLUMN IF NOT EXISTS embedding vector(1024);
+
+-- HNSW cosine インデックス (将来の類似検索用)
+CREATE INDEX IF NOT EXISTS posts_embedding_cosine_idx
+  ON posts USING hnsw (embedding vector_cosine_ops);
 ```
-Browser → GET /api/auth/google
-       → API generates state JWT (jose HS256, 5min expiry, includes redirect URL)
-       → 302 redirect to Google OAuth consent URL
-       → User consents on Google
-       → Google redirects to GET /api/auth/google/callback?code=...&state=...
-       → API verifies state JWT
-       → API exchanges code for Google tokens (oauth2.googleapis.com/token)
-       → API calls Firebase signInWithIdp with Google ID token
-       → Firebase returns {idToken, refreshToken, isNewUser, needConfirmation, ...}
-       → API creates session cookie + refresh token cookie (same as password flow)
-       → 302 redirect to state.redirect (フロントエンドのrequireAuth()が新規ユーザーを/setup-profileに遷移)
-```
-
-### Error Handling in OAuth Flow
-
-- Expired state → redirect to /login?error=expired_state
-- Invalid state → redirect to /login?error=invalid_state
-- Google cancels/consent fails → redirect to /login?error=oauth_failed
-- Google token exchange failure → redirect to /login?error=oauth_failed
-- Firebase signInWithIdp failure → redirect to /login?error=firebase_auth_failed
-- needConfirmation (email conflict) → redirect to /login?error=account_exists
-- Session cookie creation failure → redirect to /login?error=session_failed
 
 ## Key Invariants
 
-1. **No client-side auth SDKs** — Web never loads Firebase or Google client SDK
-2. **All credentials server-side** — Tokens, secrets, keys only exist in API
-3. **Session cookies for auth** — Same mechanism regardless of auth method
-4. **Errore pattern** — Functions return Error objects, never throw
-5. **CSRF via state JWT** — OAuth callback uses signed state parameter, not CSRF middleware
-6. **Encrypted refresh tokens** — AES-256-GCM encryption before storing in cookie
+1. **Embedding failure never blocks post creation** — graceful degradation
+2. **Embedding only generated on CREATE** — never on UPDATE
+3. **Empty/whitespace content → NULL embedding** — no AI call
+4. **pgvector is standard PostgreSQL** — no Supabase-specific APIs
+5. **Workers AI binding only** — no REST API calls
