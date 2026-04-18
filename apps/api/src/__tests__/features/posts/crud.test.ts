@@ -27,6 +27,16 @@ const mockDbWithSelect = (resolvedValue: unknown[]) => {
   } as never);
 };
 
+// トランザクション内の tx.select().from().where().limit() チェーン用モック
+const mockTxSelect = (result: unknown[]) =>
+  vi.fn(() => ({
+    from: vi.fn(() => ({
+      where: vi.fn(() => ({
+        limit: vi.fn().mockResolvedValue(result),
+      })),
+    })),
+  }));
+
 // テスト用UUID（すべて有効なUUID v4形式）
 const SONG_ID = "550e8400-e29b-41d4-a716-446655440001";
 const USER_ID = "550e8400-e29b-41d4-a716-446655440002";
@@ -44,16 +54,6 @@ const mockUser = {
   birthplace: null,
   birthyear: null,
   gender: null,
-  createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-  deletedAt: null,
-};
-
-const mockSong = {
-  id: SONG_ID,
-  title: "テスト曲",
-  length: 240,
-  isrcs: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
   deletedAt: null,
@@ -97,7 +97,9 @@ const otherUserSession = {
   email: "other@example.com",
 };
 
-// createDb() が select → select → transaction の順で呼ばれるテスト用モック
+// createDb() が select → transaction → transaction の順で呼ばれるテスト用モック
+// selectResults: 直接select呼び出しの結果（selectPostById など）
+// txMethods: トランザクション内で使用するメソッド（execute, select, insert, update など）
 const mockDbWithSelectAndTransaction = (
   selectResults: unknown[][],
   txMethods: Record<string, unknown>,
@@ -209,37 +211,11 @@ describe("POST /api/posts", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 404 when songId does not reference an existing song", async () => {
-    mockVerifySessionCookie.mockResolvedValue(validSession);
-    // selectUserIdByFirebaseId → ユーザーあり、selectSongById → 曲なし
-    mockDbWithSelectAndTransaction([[mockUser], []], {
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockPost]),
-        })),
-      })),
-      execute: vi.fn().mockResolvedValue([]),
-    });
-
-    const res = await testRequest("/api/posts", {
-      method: "POST",
-      cookie: { otography_session: "valid-session" },
-      body: { content: "テスト投稿", songId: NONEXISTENT_ID },
-    });
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Song not found." });
-  });
-
   it("returns 404 when user does not exist in DB", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
-    // selectUserIdByFirebaseId → ユーザーなし
-    mockDbWithSelectAndTransaction([[]], {
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockPost]),
-        })),
-      })),
+    // selectUserByFirebaseId (withRls transaction) → ユーザーなし
+    mockDbWithSelectAndTransaction([], {
+      select: mockTxSelect([]),
       execute: vi.fn().mockResolvedValue([]),
     });
 
@@ -256,8 +232,10 @@ describe("POST /api/posts", () => {
   it("returns 201 with created post on success", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    // selectUserIdByFirebaseId → ユーザーあり, selectSongById → 曲あり
-    mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+    // selectUserByFirebaseId (withRls transaction) → ユーザーあり
+    // insertPost (withRls transaction)
+    mockDbWithSelectAndTransaction([], {
+      select: mockTxSelect([mockUser]),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([mockPost]),
@@ -286,7 +264,8 @@ describe("POST /api/posts", () => {
   it("accepts content of exactly 200 characters", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+    mockDbWithSelectAndTransaction([], {
+      select: mockTxSelect([mockUser]),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([{ ...mockPost, content: "あ".repeat(200) }]),
@@ -307,7 +286,8 @@ describe("POST /api/posts", () => {
   it("accepts content of exactly 1 character", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+    mockDbWithSelectAndTransaction([], {
+      select: mockTxSelect([mockUser]),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([{ ...mockPost, content: "あ" }]),
@@ -328,7 +308,8 @@ describe("POST /api/posts", () => {
   it("returns 500 when DB insert fails", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+    mockDbWithSelectAndTransaction([], {
+      select: mockTxSelect([mockUser]),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockRejectedValue(new Error("DB error")),
@@ -432,9 +413,10 @@ describe("PATCH /api/posts/:id", () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
     // selectPostById (createDb().select()) → 投稿あり
-    // selectUserIdByFirebaseId (createDb().select()) → ユーザーあり、所有者一致
+    // selectUserByFirebaseId (withRls transaction) → ユーザーあり、所有者一致
     // updatePostContent (withRls transaction)
-    mockDbWithSelectAndTransaction([[mockPost], [mockUser]], {
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockUser]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -486,15 +468,9 @@ describe("PATCH /api/posts/:id", () => {
     mockVerifySessionCookie.mockResolvedValue(otherUserSession);
 
     // selectPostById → 投稿あり（USER_IDの投稿）
-    // selectUserIdByFirebaseId → OTHER_USER → 所有者不一致
-    mockDbWithSelectAndTransaction([[mockPost], [mockOtherUser]], {
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
+    // selectUserByFirebaseId (withRls transaction) → OTHER_USER → 所有者不一致
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockOtherUser]),
       execute: vi.fn().mockResolvedValue([]),
     });
 
@@ -511,7 +487,8 @@ describe("PATCH /api/posts/:id", () => {
   it("returns 500 when DB update fails", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    mockDbWithSelectAndTransaction([[mockPost], [mockUser]], {
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockUser]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -548,8 +525,9 @@ describe("DELETE /api/posts/:id", () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
     // selectPostById → 投稿あり
-    // selectUserIdByFirebaseId → ユーザーあり、所有者一致
-    mockDbWithSelectAndTransaction([[mockPost], [mockUser]], {
+    // selectUserByFirebaseId (withRls transaction) → ユーザーあり、所有者一致
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockUser]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -592,15 +570,9 @@ describe("DELETE /api/posts/:id", () => {
     mockVerifySessionCookie.mockResolvedValue(otherUserSession);
 
     // selectPostById → 投稿あり
-    // selectUserIdByFirebaseId → OTHER_USER → 所有者不一致
-    mockDbWithSelectAndTransaction([[mockPost], [mockOtherUser]], {
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
+    // selectUserByFirebaseId (withRls transaction) → OTHER_USER → 所有者不一致
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockOtherUser]),
       execute: vi.fn().mockResolvedValue([]),
     });
 
@@ -616,7 +588,8 @@ describe("DELETE /api/posts/:id", () => {
   it("returns 500 when DB delete fails", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
-    mockDbWithSelectAndTransaction([[mockPost], [mockUser]], {
+    mockDbWithSelectAndTransaction([[mockPost]], {
+      select: mockTxSelect([mockUser]),
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({

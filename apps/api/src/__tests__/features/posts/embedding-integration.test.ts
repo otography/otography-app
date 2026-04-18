@@ -33,6 +33,16 @@ const mockDbWithSelect = (resolvedValue: unknown[]) => {
   } as never);
 };
 
+// トランザクション内の tx.select().from().where().limit() チェーン用モック
+const mockTxSelect = (result: unknown[]) =>
+  vi.fn(() => ({
+    from: vi.fn(() => ({
+      where: vi.fn(() => ({
+        limit: vi.fn().mockResolvedValue(result),
+      })),
+    })),
+  }));
+
 // テスト用UUID（すべて有効なUUID v4形式）
 const SONG_ID = "550e8400-e29b-41d4-a716-446655440001";
 const USER_ID = "550e8400-e29b-41d4-a716-446655440002";
@@ -53,16 +63,6 @@ const mockUser = {
   birthplace: null,
   birthyear: null,
   gender: null,
-  createdAt: new Date("2026-01-01T00:00:00.000Z"),
-  updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-  deletedAt: null,
-};
-
-const mockSong = {
-  id: SONG_ID,
-  title: "テスト曲",
-  length: 240,
-  isrcs: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
   deletedAt: null,
@@ -106,7 +106,9 @@ const otherUserSession = {
   email: "other@example.com",
 };
 
-// createDb() が select → select → transaction × N の順で呼ばれるテスト用モック
+// createDb() が select → transaction → transaction の順で呼ばれるテスト用モック
+// selectResults: 直接select呼び出しの結果
+// txMethods: トランザクション内で使用するメソッド（execute, select, insert, update など）
 const mockDbWithSelectAndTransaction = (
   selectResults: unknown[][],
   txMethods: Record<string, unknown>,
@@ -132,7 +134,7 @@ const mockDbWithSelectAndTransaction = (
 };
 
 // Embedding生成成功時のDBモックをセットアップ
-// selectUserIdByFirebaseId → ユーザーあり, selectSongById → 曲あり
+// selectUserByFirebaseId (withRls transaction) → ユーザーあり
 // トランザクション1: insert → 投稿作成
 // トランザクション2: update → embedding更新
 const setupHappyPathMocks = (embedding: number[] | null) => {
@@ -141,7 +143,8 @@ const setupHappyPathMocks = (embedding: number[] | null) => {
   const mockInsertedPost = { ...mockPost, embedding: null };
   const mockUpdatedPost = embedding ? { ...mockPost, embedding } : mockPost;
 
-  mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+  mockDbWithSelectAndTransaction([], {
+    select: mockTxSelect([mockUser]),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
         returning: vi.fn().mockResolvedValue([mockInsertedPost]),
@@ -218,7 +221,8 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
         new EmbeddingError({ reason: "AI service unavailable" }),
       );
 
-      mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+      mockDbWithSelectAndTransaction([], {
+        select: mockTxSelect([mockUser]),
         insert: vi.fn(() => ({
           values: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([mockPost]),
@@ -262,7 +266,8 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       // 空内容の場合、generateEmbeddingはnullを返す
       vi.mocked(generateEmbedding).mockResolvedValue(null);
 
-      mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+      mockDbWithSelectAndTransaction([], {
+        select: mockTxSelect([mockUser]),
         insert: vi.fn(() => ({
           values: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([mockPost]),
@@ -286,27 +291,25 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       mockVerifySessionCookie.mockResolvedValue(validSession);
 
       // selectPostById → 投稿あり（embedding付き）
-      // selectUserIdByFirebaseId → ユーザーあり、所有者一致
-      mockDbWithSelectAndTransaction(
-        [[{ ...mockPost, embedding: createMockEmbedding() }], [mockUser]],
-        {
-          update: vi.fn(() => ({
-            set: vi.fn(() => ({
-              where: vi.fn(() => ({
-                returning: vi.fn().mockResolvedValue([
-                  {
-                    ...mockPost,
-                    content: "更新された内容",
-                    embedding: createMockEmbedding(),
-                    updatedAt: new Date("2026-01-16T00:00:00.000Z"),
-                  },
-                ]),
-              })),
+      // selectUserByFirebaseId (withRls transaction) → ユーザーあり、所有者一致
+      mockDbWithSelectAndTransaction([[{ ...mockPost, embedding: createMockEmbedding() }]], {
+        select: mockTxSelect([mockUser]),
+        update: vi.fn(() => ({
+          set: vi.fn(() => ({
+            where: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([
+                {
+                  ...mockPost,
+                  content: "更新された内容",
+                  embedding: createMockEmbedding(),
+                  updatedAt: new Date("2026-01-16T00:00:00.000Z"),
+                },
+              ]),
             })),
           })),
-          execute: vi.fn().mockResolvedValue([]),
-        },
-      );
+        })),
+        execute: vi.fn().mockResolvedValue([]),
+      });
 
       const res = await testRequest(`/api/posts/${POST_ID}`, {
         method: "PATCH",
@@ -345,7 +348,8 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       const mockEmbedding = createMockEmbedding();
       vi.mocked(generateEmbedding).mockResolvedValue(mockEmbedding);
 
-      mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
+      mockDbWithSelectAndTransaction([], {
+        select: mockTxSelect([mockUser]),
         insert: vi.fn(() => ({
           values: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([mockPost]),
@@ -388,7 +392,8 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       mockVerifySessionCookie.mockResolvedValue(validSession);
       vi.mocked(generateEmbedding).mockResolvedValue(mockEmbedding);
 
-      mockDbWithSelectAndTransaction([[{ ...mockPost, embedding: mockEmbedding }], [mockUser]], {
+      mockDbWithSelectAndTransaction([[{ ...mockPost, embedding: mockEmbedding }]], {
+        select: mockTxSelect([mockUser]),
         update: vi.fn(() => ({
           set: vi.fn(() => ({
             where: vi.fn(() => ({
@@ -420,8 +425,9 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       mockVerifySessionCookie.mockResolvedValue(validSession);
 
       mockDbWithSelectAndTransaction(
-        [[{ ...mockPost, content: "更新された内容", embedding: mockEmbedding }], [mockUser]],
+        [[{ ...mockPost, content: "更新された内容", embedding: mockEmbedding }]],
         {
+          select: mockTxSelect([mockUser]),
           update: vi.fn(() => ({
             set: vi.fn(() => ({
               where: vi.fn(() => ({
@@ -456,15 +462,9 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       mockVerifySessionCookie.mockResolvedValue(otherUserSession);
 
       // selectPostById → 投稿あり（USER_IDの投稿）
-      // selectUserIdByFirebaseId → OTHER_USER → 所有者不一致
-      mockDbWithSelectAndTransaction([[mockPost], [mockOtherUser]], {
-        update: vi.fn(() => ({
-          set: vi.fn(() => ({
-            where: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue([]),
-            })),
-          })),
-        })),
+      // selectUserByFirebaseId (withRls transaction) → OTHER_USER → 所有者不一致
+      mockDbWithSelectAndTransaction([[mockPost]], {
+        select: mockTxSelect([mockOtherUser]),
         execute: vi.fn().mockResolvedValue([]),
       });
 
@@ -482,15 +482,9 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       mockVerifySessionCookie.mockResolvedValue(otherUserSession);
 
       // selectPostById → 投稿あり
-      // selectUserIdByFirebaseId → OTHER_USER → 所有者不一致
-      mockDbWithSelectAndTransaction([[mockPost], [mockOtherUser]], {
-        update: vi.fn(() => ({
-          set: vi.fn(() => ({
-            where: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue([]),
-            })),
-          })),
-        })),
+      // selectUserByFirebaseId (withRls transaction) → OTHER_USER → 所有者不一致
+      mockDbWithSelectAndTransaction([[mockPost]], {
+        select: mockTxSelect([mockOtherUser]),
         execute: vi.fn().mockResolvedValue([]),
       });
 

@@ -4,12 +4,11 @@ import { generateEmbedding } from "./lib/embedding";
 import {
   insertPost,
   selectPostById,
-  selectSongById,
-  selectUserIdByFirebaseId,
   softDeletePost,
   updatePostContent,
   updatePostEmbedding,
 } from "./repository";
+import { selectUserByFirebaseId } from "../user/repository";
 
 // 投稿を作成（embedding生成付き）
 export const createPost = async (
@@ -17,8 +16,16 @@ export const createPost = async (
   values: { content: string; songId: string },
   ai: Ai,
 ) => {
-  // ユーザーのDB UUIDを取得
-  const userRows = await selectUserIdByFirebaseId(session.uid);
+  // ユーザーのDB UUIDを取得（user リポジトリ経由）
+  const userRows = await selectUserByFirebaseId(session);
+  if (userRows instanceof Error) {
+    return new AuthError({
+      message: "Failed to look up user.",
+      code: "db-error",
+      statusCode: 500,
+      cause: userRows,
+    });
+  }
   if (!userRows.length) {
     return new AuthError({
       message: "User not found.",
@@ -27,16 +34,6 @@ export const createPost = async (
     });
   }
   const userId = userRows[0]!.id;
-
-  // songIdの存在確認
-  const songRows = await selectSongById(values.songId);
-  if (!songRows.length) {
-    return new AuthError({
-      message: "Song not found.",
-      code: "song-not-found",
-      statusCode: 404,
-    });
-  }
 
   // 投稿を作成
   const result = await insertPost(session, { ...values, userId });
@@ -118,9 +115,17 @@ export const updatePost = async (session: DecodedIdToken, postId: string, conten
   }
 
   const post = rows[0]!;
-  // 所有者確認: post.userId はユーザーのDB UUID、session.uid は Firebase UID
-  // firebaseIdからDB UUIDを取得して比較
-  const userRows = await selectUserIdByFirebaseId(session.uid);
+  // 所有者確認: post.userId はユーザーのDB UUID
+  // selectUserByFirebaseId でユーザーを取得して比較
+  const userRows = await selectUserByFirebaseId(session);
+  if (userRows instanceof Error) {
+    return new AuthError({
+      message: "Failed to look up user.",
+      code: "db-error",
+      statusCode: 500,
+      cause: userRows,
+    });
+  }
   if (!userRows.length || userRows[0]!.id !== post.userId) {
     return new AuthError({
       message: "Post not found.",
@@ -173,7 +178,15 @@ export const deletePost = async (session: DecodedIdToken, postId: string) => {
   }
 
   const post = rows[0]!;
-  const userRows = await selectUserIdByFirebaseId(session.uid);
+  const userRows = await selectUserByFirebaseId(session);
+  if (userRows instanceof Error) {
+    return new AuthError({
+      message: "Failed to look up user.",
+      code: "db-error",
+      statusCode: 500,
+      cause: userRows,
+    });
+  }
   if (!userRows.length || userRows[0]!.id !== post.userId) {
     return new AuthError({
       message: "Post not found.",

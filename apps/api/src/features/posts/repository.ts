@@ -1,18 +1,8 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { and, eq, isNull, sql } from "drizzle-orm";
-import { posts, songs, users } from "../../shared/db/schema";
+import { posts } from "../../shared/db/schema";
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
-
-// Firebase UIDからユーザーのDB UUIDを取得
-export const selectUserIdByFirebaseId = async (firebaseId: string) => {
-  const db = createDb();
-  return db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
-    .limit(1);
-};
 
 // 投稿を新規作成（userIdは事前に取得済み）
 export const insertPost = async (
@@ -76,14 +66,4 @@ export const updatePostEmbedding = async (
       .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
       .returning(),
   );
-};
-
-// songIdの存在確認
-export const selectSongById = async (songId: string) => {
-  const db = createDb();
-  return db
-    .select()
-    .from(songs)
-    .where(and(eq(songs.id, songId), isNull(songs.deletedAt)))
-    .limit(1);
 };
