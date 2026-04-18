@@ -15,6 +15,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 
 const authenticatedRole = pgRole("authenticated");
@@ -252,6 +253,9 @@ export const posts = pgTable(
       .notNull()
       .references(() => songs.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
+    // 投稿テキストの埋め込みベクトル (Qwen3-Embedding-0.6B, 1024次元)
+    // pgvector拡張が必要。Workers AIが利用不能な場合はNULL
+    embedding: vector("embedding", { dimensions: 1024 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -262,6 +266,8 @@ export const posts = pgTable(
     index("idx_posts_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    // HNSW cosineインデックス (将来の類似投稿検索用)
+    index("posts_embedding_cosine_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
   ],
 );
 
