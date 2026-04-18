@@ -119,10 +119,17 @@ describe("Session refresh on protected route (GET /api/user)", () => {
 
   describe("invalid session cookie + refresh token present", () => {
     it("succeeds when refresh restores the session", async () => {
-      // 最初の呼び出し（authSessionMiddleware）はリジェクト、
+      // 最初の呼び出し（authSessionMiddleware）はAuthErrorを返す、
       // 2回目の呼び出し（refreshSession内）は成功させる
+      const { AuthError } = await import("@repo/errors/server");
       mockVerifySessionCookie
-        .mockRejectedValueOnce(new Error("Session expired"))
+        .mockResolvedValueOnce(
+          new AuthError({
+            message: "Session expired.",
+            code: "auth/session-cookie-expired",
+            statusCode: 401,
+          }),
+        )
         .mockResolvedValue({
           sub: "user123",
           email: "test@example.com",
@@ -149,8 +156,12 @@ describe("Session refresh on protected route (GET /api/user)", () => {
 
     it("returns refresh error when both session and refresh fail", async () => {
       const { AuthError } = await import("@repo/errors/server");
-      mockVerifySessionCookie.mockRejectedValue(
-        new AuthError({ message: "Session expired.", code: "auth/session-cookie-expired" }),
+      mockVerifySessionCookie.mockResolvedValue(
+        new AuthError({
+          message: "Session expired.",
+          code: "auth/session-cookie-expired",
+          statusCode: 401,
+        }),
       );
       mockGetRefreshTokenCookie.mockResolvedValue("expired-refresh-token");
       const { AuthRestError } = await import("@repo/errors");

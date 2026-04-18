@@ -1,4 +1,4 @@
-import { SignUpForm } from "@/features/auth";
+import { GoogleSignInButton, SignUpForm } from "@/features/auth";
 
 export default function SignUpPage() {
   return (
@@ -22,6 +22,9 @@ export default function SignUpPage() {
       >
         <h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Sign up</h1>
         <SignUpForm />
+        <div style={{ marginTop: "1rem" }}>
+          <GoogleSignInButton from="/signup" />
+        </div>
       </section>
     </main>
   );

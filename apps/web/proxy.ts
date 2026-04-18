@@ -2,12 +2,20 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE_NAME = "otography_session";
 const PUBLIC_PATHS = ["/login", "/signup"];
+// APIパスはすべてNext.jsリライトでAPIサーバーに転送されるため、
+// セッションチェックの対象外とする（OAuth コールバック等を含む）
+const API_PREFIX = "/api/";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // パブリックパスはスキップ
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
+  }
+
+  // APIパスはリライト先のAPIサーバーで処理されるためスキップ
+  if (pathname.startsWith(API_PREFIX)) {
     return NextResponse.next();
   }
 

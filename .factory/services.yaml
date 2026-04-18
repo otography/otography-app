@@ -1,0 +1,28 @@
+commands:
+  install: bun install
+  typecheck: bun run check-types
+  build: bun run build
+  test: bun run test
+  lint: bun run lint
+
+services:
+  api:
+    start: cd apps/api && bun run dev
+    stop: lsof -ti :3001 | xargs kill 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3001/ 2>/dev/null
+    port: 3001
+    depends_on: [postgres]
+
+  web:
+    start: cd apps/web && bun run dev
+    stop: lsof -ti :3000 | xargs kill 2>/dev/null || true
+    healthcheck: curl -sf http://localhost:3000 2>/dev/null
+    port: 3000
+    depends_on: [api]
+
+  postgres:
+    start: nix run .#db-start
+    stop: nix run .#db-stop
+    healthcheck: pg_isready -h localhost -p 54322
+    port: 54322
+    depends_on: []

@@ -8,5 +8,12 @@ export {
   JsonParseError,
   SchemaValidationError,
 } from "./current-user-errors";
-export { OAuthConfigError, OAuthStateError, OAuthExchangeError } from "./oauth-errors";
+export {
+  AccountConflictError,
+  FirebaseIdpSigninError,
+  GoogleTokenExchangeError,
+  OAuthConfigError,
+  OAuthExchangeError,
+  OAuthStateError,
+} from "./oauth-errors";
 export { RlsError } from "./rls-error";

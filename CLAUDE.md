@@ -97,4 +97,4 @@ Compound component pattern with React Context and `use()` (React 19 API). Prefer
 
 ## Environment
 
-Environment variables are managed with `@t3-oss/env-core` (API) and `@t3-oss/env-nextjs` (web) for type-safe access. Encrypted env files use dotenvx (`.env.x`). Drizzle has a separate `env.drizzle.ts` that only requires `DATABASE_URL`, so migration commands don't need all app env vars.
+The API uses Wrangler for environment variable management. Non-secret vars are defined in `wrangler.jsonc` (`vars` field); secrets are provided via `.dev.vars` in local development (read by `wrangler dev`) and via Cloudflare dashboard/secrets in production. Drizzle has a separate `env.drizzle.ts` that reads `DATABASE_URL` / `DATABASE_DIRECT_URL` from `process.env` (set inline in `db:*` npm scripts), so migration commands don't need all app env vars. The web app uses `@t3-oss/env-nextjs` for type-safe env access.

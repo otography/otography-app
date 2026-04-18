@@ -25,8 +25,10 @@
     "@repo/errors": "workspace:*",
     "@repo/firebase-auth-rest": "workspace:*",
     "arktype": "^2.2.0",
-    "drizzle-orm": "^1.0.0-beta.19",
-    "hono": "^4.12.9",
+    "drizzle-orm": "^1.0.0-beta.22",
+    "errore": "^0.14.1",
+    "hono": "^4.12.14",
+    "jose": "^6.2.2",
     "postgres": "^3.4.8"
   },
   "devDependencies": {
@@ -35,7 +37,7 @@
     "@types/bun": "latest",
     "@types/node": "^25.5.2",
     "@vitest/spy": "^4.1.2",
-    "drizzle-kit": "^1.0.0-beta.19",
+    "drizzle-kit": "^1.0.0-beta.22",
     "oxlint": "^1.56.0",
     "typescript": "5.9.2",
     "wrangler": "^4.80.0"
