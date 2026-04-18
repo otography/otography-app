@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { auth } from "./features/auth";
+import { posts } from "./features/posts";
 import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
@@ -27,6 +28,7 @@ const app = new Hono<{ Bindings: Bindings }>()
   })
   .route("/", auth)
   .route("/", user)
+  .route("/", posts)
   .get("/", (c) => c.text("Hello Hono!"));
 
 export default app;
