@@ -5,11 +5,17 @@
 // Next.js Link ではなくプレーンな <a> を使う（OAuth リダイレクトを正しく処理するため）
 // Firebase SDK や Google SDK は使用しない
 
-export function GoogleSignInButton() {
+type GoogleSignInButtonProps = {
+  /** OAuth エラー時のリダイレクト先（例: "/signup"）。未指定時は "/login" にフォールバック */
+  from?: string;
+};
+
+export function GoogleSignInButton({ from }: GoogleSignInButtonProps) {
+  const href = from ? `/api/auth/google?from=${encodeURIComponent(from)}` : "/api/auth/google";
   return (
     // oxlint-disable-next-line no-html-link-for-pages -- OAuth リダイレクトのためプレーンな <a> が必要（Next.js Link は fetch で CORS エラーになる）
     <a
-      href="/api/auth/google"
+      href={href}
       style={{
         display: "flex",
         alignItems: "center",

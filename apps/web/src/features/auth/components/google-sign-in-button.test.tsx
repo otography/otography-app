@@ -64,6 +64,21 @@ describe("GoogleSignInButton", () => {
     expect(link?.querySelector("script")).toBeNull();
   });
 
+  it("fromプロップが指定された場合、hrefに?from=パラメータが含まれる", () => {
+    render(<GoogleSignInButton from="/signup" />);
+
+    const link = screen.getByRole("link", { name: /Google/ });
+    expect(link).toHaveAttribute("href", "/api/auth/google?from=%2Fsignup");
+  });
+
+  it("fromプロップが未指定の場合、hrefに?from=パラメータは含まれない", () => {
+    render(<GoogleSignInButton />);
+
+    const link = screen.getByRole("link", { name: /Google/ });
+    expect(link).toHaveAttribute("href", "/api/auth/google");
+    expect(link.getAttribute("href")).not.toContain("from=");
+  });
+
   it.each([
     {
       code: "account_exists",

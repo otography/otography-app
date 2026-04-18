@@ -44,7 +44,7 @@ const getStateErrorCode = (error: OAuthStateError): string => {
 
 /**
  * 外部サービスのエラーから適切なエラーコードへのマッピング。
- * エラーのタグ（_tag）に基づいて一意に決定する。
+ * エラーの型（instanceof）に基づいて一意に決定する。
  */
 const getOAuthErrorCode = (error: Error): string => {
   if (error instanceof AccountConflictError) return "account_exists";
@@ -55,18 +55,29 @@ const getOAuthErrorCode = (error: Error): string => {
 
 /**
  * エラーリダイレクトURLを構築する。
- * フロントエンドのログインページにエラーコードを付与してリダイレクトする。
+ * OAuth エラー時のリダイレクト先は state 内の from フィールドで決定する。
+ * from が未指定の場合は /login にフォールバックする。
+ * オープンリダイレクト防止のため、from は相対パスのみ許可する。
  */
-const buildErrorRedirect = (env: Bindings, errorCode: string): string => {
-  return `${env.APP_FRONTEND_URL}/login?error=${errorCode}`;
+const buildErrorRedirect = (env: Bindings, errorCode: string, from?: string): string => {
+  const safeFrom = from?.startsWith("/") && !from.startsWith("//") ? from : "/login";
+  return `${env.APP_FRONTEND_URL}${safeFrom}?error=${errorCode}`;
 };
 
 /** Google OAuth 認可画面へリダイレクト */
 export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) => {
   const redirectParam = c.req.query("redirect");
+  const rawFromParam = c.req.query("from");
+  // オープンリダイレクト防止: from は相対パスのみ許可
+  const fromParam =
+    rawFromParam?.startsWith("/") && !rawFromParam.startsWith("//") ? rawFromParam : undefined;
 
   // OAuth state JWTを生成（CSRF対策 + リダイレクト先保持）
-  const stateResult = await generateOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, redirectParam);
+  const stateResult = await generateOAuthState(
+    c.env.AUTH_OAUTH_STATE_SECRET,
+    redirectParam,
+    fromParam,
+  );
   if (stateResult instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, "oauth_failed"), 302);
   }
@@ -118,6 +129,9 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
     return c.redirect(buildErrorRedirect(c.env, errorCode), 302);
   }
 
+  // state内のfromフィールド — OAuth エラー時のリダイレクト先
+  const errorPage = statePayload.from;
+
   // Login CSRF対策: cookieのnonceとstate JWTのnonceを照合
   const cookieNonce = getCookie(c, OAUTH_NONCE_COOKIE_NAME);
   if (!cookieNonce || cookieNonce !== statePayload.nonce) {
@@ -126,7 +140,7 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
       path: "/",
       secure: true,
     });
-    return c.redirect(buildErrorRedirect(c.env, "invalid_state"), 302);
+    return c.redirect(buildErrorRedirect(c.env, "invalid_state", errorPage), 302);
   }
 
   // Google認可コードをトークンと交換（redirect_uriは環境変数から取得）
@@ -138,7 +152,7 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
     redirectUri: callbackUrl,
   });
   if (googleTokens instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(googleTokens)), 302);
+    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(googleTokens), errorPage), 302);
   }
 
   // Firebase signInWithIdpでGoogle IDトークンを認証
@@ -148,19 +162,19 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
     requestUri: c.env.APP_FRONTEND_URL,
   });
   if (firebaseResult instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult)), 302);
+    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult), errorPage), 302);
   }
 
   // セッションCookieを作成
   const sessionCookie = await createSessionCookie(firebaseResult.idToken);
   if (sessionCookie instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed"), 302);
+    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 
   // リフレッシュトークンCookieを設定
   const refreshResult = await setRefreshTokenCookie(c, firebaseResult.refreshToken);
   if (refreshResult instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed"), 302);
+    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 
   // セッションCookieを設定

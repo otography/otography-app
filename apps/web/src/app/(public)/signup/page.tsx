@@ -23,7 +23,7 @@ export default function SignUpPage() {
         <h1 style={{ marginTop: 0, marginBottom: "0.75rem" }}>Sign up</h1>
         <SignUpForm />
         <div style={{ marginTop: "1rem" }}>
-          <GoogleSignInButton />
+          <GoogleSignInButton from="/signup" />
         </div>
       </section>
     </main>

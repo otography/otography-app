@@ -80,7 +80,11 @@ describe("GET /api/auth/google", () => {
 
     await testRequest("/api/auth/google?redirect=/custom-path");
 
-    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), "/custom-path");
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(
+      expect.any(String),
+      "/custom-path",
+      undefined,
+    );
   });
 
   it("redirectクエリパラメータなしの場合、generateOAuthStateにredirectを渡さない", async () => {
@@ -88,7 +92,7 @@ describe("GET /api/auth/google", () => {
 
     await testRequest("/api/auth/google");
 
-    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined);
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined, undefined);
   });
 
   it("state生成失敗時に/login?error=oauth_failedへリダイレクトする", async () => {
@@ -102,6 +106,30 @@ describe("GET /api/auth/google", () => {
     expect(res.status).toBe(302);
     const location = res.headers.get("Location")!;
     expect(location).toContain("/login?error=oauth_failed");
+  });
+
+  it("fromクエリパラメータをgenerateOAuthStateに渡す", async () => {
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
+
+    await testRequest("/api/auth/google?from=/signup");
+
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined, "/signup");
+  });
+
+  it("fromクエリパラメータが絶対URLの場合、undefinedとして扱う（オープンリダイレクト防止）", async () => {
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
+
+    await testRequest("/api/auth/google?from=https://evil.com");
+
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined, undefined);
+  });
+
+  it("fromクエリパラメータが//プロトコル相対URLの場合、undefinedとして扱う", async () => {
+    mockGenerateOAuthState.mockResolvedValue({ nonce: VALID_NONCE, token: VALID_STATE });
+
+    await testRequest("/api/auth/google?from=//evil.com");
+
+    expect(mockGenerateOAuthState).toHaveBeenCalledWith(expect.any(String), undefined, undefined);
   });
 });
 
@@ -431,5 +459,71 @@ describe("GET /api/auth/google/callback", () => {
     // nonce cookie が maxAge=0 でクリアされる
     const nonceCookie = res.getCookie("__Host-otography_oauth_nonce");
     expect(nonceCookie).toBe("");
+  });
+
+  // --- from パラメータ（エラー時のリダイレクト先）---
+
+  it("stateにfrom=/signupがある場合、Firebase認証失敗時に/signup?error=...へリダイレクトする", async () => {
+    const { FirebaseIdpSigninError } = await import("@repo/errors");
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: VALID_NONCE,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "/account",
+      from: "/signup",
+    });
+    mockSignInWithGoogleIdp.mockResolvedValue(
+      new FirebaseIdpSigninError({ message: "Firebase auth failed." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/signup?error=firebase_auth_failed");
+    expect(location).not.toContain("/login");
+  });
+
+  it("stateにfromがない場合、エラー時は/login?error=...へリダイレクトする（デフォルト）", async () => {
+    const { FirebaseIdpSigninError } = await import("@repo/errors");
+    mockSignInWithGoogleIdp.mockResolvedValue(
+      new FirebaseIdpSigninError({ message: "Firebase auth failed." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=firebase_auth_failed");
+  });
+
+  it("state.fromが絶対URLの場合、/loginにフォールバックする（オープンリダイレクト防止）", async () => {
+    const { FirebaseIdpSigninError } = await import("@repo/errors");
+    mockVerifyOAuthState.mockResolvedValue({
+      nonce: VALID_NONCE,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 300,
+      redirect: "/account",
+      from: "https://evil.com",
+    });
+    mockSignInWithGoogleIdp.mockResolvedValue(
+      new FirebaseIdpSigninError({ message: "Firebase auth failed." }),
+    );
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("/login?error=firebase_auth_failed");
+    expect(location).not.toContain("evil.com");
   });
 });
