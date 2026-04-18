@@ -61,7 +61,9 @@ const getOAuthErrorCode = (error: Error): string => {
  */
 const buildErrorRedirect = (env: Bindings, errorCode: string, from?: string): string => {
   const safeFrom = from?.startsWith("/") && !from.startsWith("//") ? from : "/login";
-  return `${env.APP_FRONTEND_URL}${safeFrom}?error=${errorCode}`;
+  const url = new URL(safeFrom, env.APP_FRONTEND_URL);
+  url.searchParams.set("error", errorCode);
+  return url.toString();
 };
 
 /** Google OAuth 認可画面へリダイレクト */
@@ -84,9 +86,11 @@ export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) =>
 
   // CSRF対策: nonce をcookieにバインド（Login CSRF防止）
   // SameSite=Lax により、Googleからのリダイレクト（GET）ではcookieが送信される
+  // secure はリクエストプロトコルから導出（localhost HTTPでも動作するように）
+  const isSecure = new URL(c.req.url).protocol === "https:";
   setCookie(c, OAUTH_NONCE_COOKIE_NAME, stateResult.nonce, {
     httpOnly: true,
-    secure: true,
+    secure: isSecure,
     sameSite: "Lax",
     path: "/",
     maxAge: 300, // 5分（state JWTのTTLと同じ）
@@ -113,8 +117,16 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   const googleError = c.req.query("error");
 
   // Google側でキャンセルや同意失敗があった場合
+  // stateがあれば検証してfromを取り出し、エラー時のリダイレクト先に使用する
   if (googleError) {
-    return c.redirect(buildErrorRedirect(c.env, "oauth_failed"), 302);
+    let errorPage: string | undefined;
+    if (stateParam) {
+      const statePayload = await verifyOAuthState(c.env.AUTH_OAUTH_STATE_SECRET, stateParam);
+      if (!(statePayload instanceof Error)) {
+        errorPage = statePayload.from;
+      }
+    }
+    return c.redirect(buildErrorRedirect(c.env, "oauth_failed", errorPage), 302);
   }
 
   // state パラメータの検証
@@ -134,11 +146,12 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
 
   // Login CSRF対策: cookieのnonceとstate JWTのnonceを照合
   const cookieNonce = getCookie(c, OAUTH_NONCE_COOKIE_NAME);
+  const isSecure = new URL(c.req.url).protocol === "https:";
   if (!cookieNonce || cookieNonce !== statePayload.nonce) {
     // nonce不一致 — cookieを削除してエラーリダイレクト
     deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {
       path: "/",
-      secure: true,
+      secure: isSecure,
     });
     return c.redirect(buildErrorRedirect(c.env, "invalid_state", errorPage), 302);
   }
@@ -183,7 +196,7 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   // 使用済みのnonce cookieを削除
   deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {
     path: "/",
-    secure: true,
+    secure: isSecure,
   });
 
   // リダイレクト先はstateに保持されたパスを使用（オープンリダイレクト防止で相対パスのみ許可）

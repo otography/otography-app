@@ -55,7 +55,7 @@ describe("GET /api/auth/google", () => {
     expect(url.pathname).toBe("/o/oauth2/v2/auth");
 
     // nonce cookieがセットされることを確認
-    expect(res.getCookie("__Host-otography_oauth_nonce")).toBe(VALID_NONCE);
+    expect(res.getCookie("otography_oauth_nonce")).toBe(VALID_NONCE);
   });
 
   it("正しいクエリパラメータを含む", async () => {
@@ -164,7 +164,7 @@ describe("GET /api/auth/google/callback", () => {
   it("既存ユーザーを/accountへリダイレクトし、セッションCookieを設定する", async () => {
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -192,7 +192,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -219,7 +219,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -244,7 +244,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -297,7 +297,7 @@ describe("GET /api/auth/google/callback", () => {
     );
 
     const res = await testRequest(`/api/auth/google/callback?code=bad-code&state=${VALID_STATE}`, {
-      cookie: { "__Host-otography_oauth_nonce": VALID_NONCE },
+      cookie: { otography_oauth_nonce: VALID_NONCE },
     });
 
     expect(res.status).toBe(302);
@@ -317,7 +317,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -333,7 +333,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -353,7 +353,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -369,7 +369,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -397,7 +397,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -416,7 +416,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -440,7 +440,7 @@ describe("GET /api/auth/google/callback", () => {
   it("nonce cookieがstate JWTのnonceと一致しない場合、/login?error=invalid_stateへリダイレクトする（Login CSRF防止）", async () => {
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": "different-nonce-value" } },
+      { cookie: { otography_oauth_nonce: "different-nonce-value" } },
     );
 
     expect(res.status).toBe(302);
@@ -452,12 +452,12 @@ describe("GET /api/auth/google/callback", () => {
   it("成功時にnonce cookieが削除される", async () => {
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
     // nonce cookie が maxAge=0 でクリアされる
-    const nonceCookie = res.getCookie("__Host-otography_oauth_nonce");
+    const nonceCookie = res.getCookie("otography_oauth_nonce");
     expect(nonceCookie).toBe("");
   });
 
@@ -478,7 +478,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -495,7 +495,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);
@@ -518,7 +518,7 @@ describe("GET /api/auth/google/callback", () => {
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
-      { cookie: { "__Host-otography_oauth_nonce": VALID_NONCE } },
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
     );
 
     expect(res.status).toBe(302);

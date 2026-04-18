@@ -12,10 +12,17 @@ Testing surface, required tools, and resource classification for validation.
 
 **Endpoints under test:**
 
-- `GET /api/auth/google` — OAuth redirect
-- `GET /api/auth/google/callback` — OAuth callback
+- `GET /api/auth/google` — OAuth redirect（`__Host-otography_oauth_nonce` cookie を設定）
+- `GET /api/auth/google/callback` — OAuth callback（state + nonce cookie の検証が必要）
 
-**Tool:** `curl` or `testRequest()` in vitest
+**Tool:** `testRequest()` in vitest（cookie 処理を内包）
+
+**重要:** callback エンドポイントは単体の `curl` ではテスト不可。以下の2ステップが必要：
+
+1. `GET /api/auth/google` にアクセスし、`state` パラメータと `__Host-otography_oauth_nonce` cookie を取得
+2. cookie を添えて `GET /api/auth/google/callback?code=...&state=...` にアクセス
+
+`testRequest()` ヘルパーは cookie 処理を内包しているため、ユニットテストでは直接利用可能。
 
 **Setup:** API server running on port 3001. No database needed for OAuth tests (Firebase handles user management). Env vars configured.
 

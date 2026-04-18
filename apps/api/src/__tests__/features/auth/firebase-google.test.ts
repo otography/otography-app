@@ -1,9 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebase/firebase-google";
 
 // fetchをモック — Google・Firebaseへの外部API呼び出しを境界でモック
 const mockFetch = vi.fn();
+const originalFetch = globalThis.fetch;
 vi.stubGlobal("fetch", mockFetch);
+
+// 他のテストファイルにモックがリークしないよう、全テスト終了後にオリジナルを復元
+afterAll(() => {
+  globalThis.fetch = originalFetch;
+});
 
 describe("exchangeGoogleCode", () => {
   const validParams = {

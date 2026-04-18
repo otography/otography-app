@@ -13,8 +13,8 @@ export type OAuthStatePayload = {
   from?: string;
 };
 
-/** OAuth state用のnonceを保持するcookie名 */
-export const OAUTH_NONCE_COOKIE_NAME = "__Host-otography_oauth_nonce";
+/** OAuth state用のnonceを保持するcookie名（__Host-プレフィックスなし、HTTP localhostでも動作） */
+export const OAUTH_NONCE_COOKIE_NAME = "otography_oauth_nonce";
 
 type GeneratedOAuthState = {
   nonce: string;

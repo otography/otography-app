@@ -38,3 +38,9 @@ Environment variables, external dependencies, and setup notes.
 ## jose Dependency
 
 `jose` is installed as a direct dependency in `apps/api/package.json` for OAuth state JWT signing.
+
+## Web App Environment Variables
+
+| Variable              | Status          | Description                                                                         |
+| --------------------- | --------------- | ----------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | **Needs value** | API URL for Hono RPC client and `/api/:path*` rewrite. Dev: `http://localhost:3001` |
