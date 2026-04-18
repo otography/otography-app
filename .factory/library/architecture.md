@@ -48,7 +48,7 @@ Client → POST /api/posts { content, songId }
 - **Dimensions**: 1024
 - **Input limit**: 4096 tokens (~8000 chars CJK)
 - **Pricing**: $0.012/M input tokens
-- **Output**: `{ data: [Float32Array[1024]] }`
+- **Output**: `{ data: [number[]] }` (1024-dimensional float array)
 
 ## Database Schema
 

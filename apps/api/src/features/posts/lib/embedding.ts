@@ -1,3 +1,4 @@
+import type { Ai } from "@cloudflare/workers-types";
 import * as errore from "errore";
 
 // Workers AI embedding生成時のエラー
@@ -37,12 +38,15 @@ export const generateEmbedding = async (
     .catch((e: unknown) => new EmbeddingError({ reason: "AI呼び出しに失敗しました", cause: e }));
   if (response instanceof EmbeddingError) return response;
 
-  // レスポンスの検証: data配列が存在し、最初の要素が配列であること
-  if (!response?.data?.[0] || !Array.isArray(response.data[0])) {
+  // レスポンスの検証: data配列が存在し、最初の要素が配列またはTypedArrayであること
+  // Workers AI は number[] または Float32Array を返す可能性がある
+  const rawData = response?.data?.[0];
+  if (!rawData || !(Array.isArray(rawData) || ArrayBuffer.isView(rawData))) {
     return new EmbeddingError({ reason: "AIからのレスポンス形式が不正です" });
   }
 
-  const embedding = response.data[0];
+  // Float32Array を number[] に正規化
+  const embedding = Array.from(rawData as ArrayLike<number>);
 
   // 次元数の検証
   if (embedding.length !== EMBEDDING_DIMENSIONS) {

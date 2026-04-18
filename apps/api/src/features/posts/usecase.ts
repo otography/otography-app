@@ -1,3 +1,4 @@
+import type { Ai } from "@cloudflare/workers-types";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
 import { generateEmbedding } from "./lib/embedding";
