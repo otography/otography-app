@@ -62,7 +62,8 @@ Web UI feature implementation in `apps/web/src/`. This includes:
    - Use `agent-browser` to:
      - Navigate to `/login` and verify Google sign-in button is visible
      - Navigate to `/signup` and verify Google sign-in button is visible
-     - Check button href attribute points to `/api/auth/google`
+     - Check login button href points to `/api/auth/google` (no `from` param)
+     - Check signup button href points to `/api/auth/google?from=%2Fsignup`
      - Navigate to `/login?error=account_exists` and verify error message
      - Navigate to `/login?error=oauth_failed` and verify error message
    - Take screenshots as evidence

@@ -21,8 +21,8 @@ services:
     depends_on: [api]
 
   postgres:
-    start: docker compose up -d postgres
-    stop: docker compose stop postgres
+    start: nix run .#db-start
+    stop: nix run .#db-stop
     healthcheck: pg_isready -h localhost -p 54322
     port: 54322
     depends_on: []
