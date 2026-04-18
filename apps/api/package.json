@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.14.1",
+    "@cloudflare/workers-types": "^4.20260418.1",
     "@repo/typescript-config": "workspace:*",
     "@types/bun": "latest",
     "@types/node": "^25.5.2",

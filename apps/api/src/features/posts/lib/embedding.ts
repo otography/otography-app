@@ -1,4 +1,3 @@
-import type { Ai } from "@cloudflare/workers-types";
 import * as errore from "errore";
 
 // Workers AI embedding生成時のエラー
@@ -35,7 +34,7 @@ export const generateEmbedding = async (
   // Workers AI で embedding を生成
   const response = await ai
     .run(MODEL_ID, { text: [input] })
-    .catch((e) => new EmbeddingError({ reason: "AI呼び出しに失敗しました", cause: e }));
+    .catch((e: unknown) => new EmbeddingError({ reason: "AI呼び出しに失敗しました", cause: e }));
   if (response instanceof EmbeddingError) return response;
 
   // レスポンスの検証: data配列が存在し、最初の要素が配列であること
@@ -53,7 +52,7 @@ export const generateEmbedding = async (
   }
 
   // 全ての値が有限数であることを検証
-  if (!embedding.every((v) => typeof v === "number" && Number.isFinite(v))) {
+  if (!embedding.every((v: number) => typeof v === "number" && Number.isFinite(v))) {
     return new EmbeddingError({ reason: "ベクトルに不正な値（NaN/Infinity）が含まれています" });
   }
 

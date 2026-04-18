@@ -8,16 +8,16 @@ import type { Bindings } from "../../shared/types/bindings";
 import { createPost, deletePost, getPost, updatePost } from "./usecase";
 
 // 投稿作成のバリデーションスキーマ
-// content: 1-2000文字、空白のみは拒否（trim後に1文字以上）
+// content: 1-200文字、空白のみは拒否（trim後に1文字以上）
 // songId: 有効なUUID形式
 const createPostSchema = type({
-  content: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 2000")),
+  content: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 200")),
   songId: "string.uuid",
 });
 
 // 投稿更新のバリデーションスキーマ
 const updatePostSchema = type({
-  content: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 2000")),
+  content: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 200")),
 });
 
 const handlePostError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {

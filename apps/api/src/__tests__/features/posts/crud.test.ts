@@ -173,13 +173,13 @@ describe("POST /api/posts", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 when content exceeds 2000 characters", async () => {
+  it("returns 400 when content exceeds 200 characters", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
     const res = await testRequest("/api/posts", {
       method: "POST",
       cookie: { otography_session: "valid-session" },
-      body: { content: "あ".repeat(2001), songId: SONG_ID },
+      body: { content: "あ".repeat(201), songId: SONG_ID },
     });
 
     expect(res.status).toBe(400);
@@ -283,13 +283,13 @@ describe("POST /api/posts", () => {
     });
   });
 
-  it("accepts content of exactly 2000 characters", async () => {
+  it("accepts content of exactly 200 characters", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
     mockDbWithSelectAndTransaction([[mockUser], [mockSong]], {
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([{ ...mockPost, content: "あ".repeat(2000) }]),
+          returning: vi.fn().mockResolvedValue([{ ...mockPost, content: "あ".repeat(200) }]),
         })),
       })),
       execute: vi.fn().mockResolvedValue([]),
@@ -298,7 +298,7 @@ describe("POST /api/posts", () => {
     const res = await testRequest("/api/posts", {
       method: "POST",
       cookie: { otography_session: "valid-session" },
-      body: { content: "あ".repeat(2000), songId: SONG_ID },
+      body: { content: "あ".repeat(200), songId: SONG_ID },
     });
 
     expect(res.status).toBe(201);
@@ -404,13 +404,13 @@ describe("PATCH /api/posts/:id", () => {
     expect(res.status).toBe(400);
   });
 
-  it("returns 400 when content exceeds 2000 characters", async () => {
+  it("returns 400 when content exceeds 200 characters", async () => {
     mockVerifySessionCookie.mockResolvedValue(validSession);
 
     const res = await testRequest(`/api/posts/${POST_ID}`, {
       method: "PATCH",
       cookie: { otography_session: "valid-session" },
-      body: { content: "あ".repeat(2001) },
+      body: { content: "あ".repeat(201) },
     });
 
     expect(res.status).toBe(400);
