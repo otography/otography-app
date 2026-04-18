@@ -1,5 +1,7 @@
+import type { Ai } from "@cloudflare/workers-types";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
+import { generateEmbedding } from "./lib/embedding";
 import {
   insertPost,
   selectPostById,
@@ -7,12 +9,14 @@ import {
   selectUserIdByFirebaseId,
   softDeletePost,
   updatePostContent,
+  updatePostEmbedding,
 } from "./repository";
 
-// 投稿を作成
+// 投稿を作成（embedding生成付き）
 export const createPost = async (
   session: DecodedIdToken,
   values: { content: string; songId: string },
+  ai: Ai,
 ) => {
   // ユーザーのDB UUIDを取得
   const userRows = await selectUserIdByFirebaseId(session.uid);
@@ -53,6 +57,17 @@ export const createPost = async (
       code: "db-error",
       statusCode: 500,
     });
+  }
+
+  // Embedding生成（ベストエフォート — 失敗しても投稿は返却）
+  const embedding = await generateEmbedding(values.content, ai);
+  if (embedding instanceof Error) {
+    console.warn("Embedding generation failed:", embedding.message);
+  } else if (embedding !== null) {
+    const updateResult = await updatePostEmbedding(session, post.id, embedding);
+    if (updateResult instanceof Error) {
+      console.warn("Failed to save embedding:", updateResult.message);
+    }
   }
 
   return {

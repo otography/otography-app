@@ -63,6 +63,21 @@ export const softDeletePost = async (claims: DecodedIdToken, postId: string) => 
   );
 };
 
+// 投稿のembeddingベクトルを更新（作成後のベストエフォート処理）
+export const updatePostEmbedding = async (
+  claims: DecodedIdToken,
+  postId: string,
+  embedding: number[],
+) => {
+  return withRls(claims, async (tx) =>
+    tx
+      .update(posts)
+      .set({ embedding })
+      .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
+      .returning(),
+  );
+};
+
 // songIdの存在確認
 export const selectSongById = async (songId: string) => {
   const db = createDb();

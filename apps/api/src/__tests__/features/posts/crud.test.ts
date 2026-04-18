@@ -7,6 +7,11 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
+// Embedding生成モック — 基本CRUDテストではembedding生成をスキップ
+vi.mock("../../../features/posts/lib/embedding", () => ({
+  generateEmbedding: vi.fn().mockResolvedValue(null),
+}));
+
 import { createDb } from "../../../shared/db";
 
 // createDb().select().from().where().limit() のチェーン用モック

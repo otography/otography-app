@@ -41,7 +41,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
         return c.json({ message: "You are not logged in." }, 401);
       }
       const values = c.req.valid("json");
-      const result = await createPost(session, values);
+      const result = await createPost(session, values, c.env.AI);
       if (result instanceof Error) return handlePostError(result, c);
       return c.json({ message: "Post created.", post: result.post }, 201);
     },
