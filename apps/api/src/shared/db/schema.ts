@@ -267,7 +267,10 @@ export const posts = pgTable(
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
     // HNSW cosineインデックス (将来の類似投稿検索用)
-    index("posts_embedding_cosine_idx").using("hnsw", table.embedding.op("vector_cosine_ops")),
+    // 部分インデックス: ソフトデリート済み・embedding NULLの行を除外
+    index("posts_embedding_cosine_idx")
+      .using("hnsw", table.embedding.op("vector_cosine_ops"))
+      .where(sql`${table.deletedAt} IS NULL AND ${table.embedding} IS NOT NULL`),
   ],
 );
 
