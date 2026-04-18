@@ -36,10 +36,8 @@ const posts = new Hono<{ Bindings: Bindings }>()
       }
     }),
     async (c) => {
-      const session = getAuthSession(c);
-      if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
-      }
+      // requireAuthMiddlewareが成功していればsessionは必ず存在する
+      const session = getAuthSession(c)!;
       const values = c.req.valid("json");
       const result = await createPost(session, values, c.env.AI);
       if (result instanceof Error) return handlePostError(result, c);

@@ -47,7 +47,7 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "posts",
       "entityType": "tables",
       "schema": "public"
@@ -701,6 +701,19 @@
       "table": "posts"
     },
     {
+      "type": "vector(1024)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "embedding",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
       "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
@@ -1294,6 +1307,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "embedding",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": "vector_cosine_ops"
+        }
+      ],
+      "isUnique": false,
+      "where": "\"embedding\" IS NOT NULL AND \"deleted_at\" IS NULL",
+      "with": "",
+      "method": "hnsw",
+      "concurrently": false,
+      "name": "posts_embedding_cosine_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "artist_id",
           "isExpression": false,
           "asc": true,
@@ -1760,6 +1794,50 @@
       "entityType": "policies",
       "schema": "public",
       "table": "users"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": ["public"],
+      "using": "\"deleted_at\" IS NULL",
+      "withCheck": null,
+      "name": "posts_select_all",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "INSERT",
+      "roles": ["authenticated"],
+      "using": null,
+      "withCheck": "\"user_id\" IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())",
+      "name": "posts_insert_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": ["authenticated"],
+      "using": "\"user_id\" IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())",
+      "withCheck": "\"user_id\" IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())",
+      "name": "posts_update_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "DELETE",
+      "roles": ["authenticated"],
+      "using": "\"user_id\" IN (SELECT id FROM users WHERE firebase_id = requesting_user_id())",
+      "withCheck": null,
+      "name": "posts_delete_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
     }
   ],
   "renames": []

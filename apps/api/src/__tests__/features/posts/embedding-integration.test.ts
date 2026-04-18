@@ -137,7 +137,10 @@ const mockDbWithSelectAndTransaction = (
 // selectUserByFirebaseId (withRls transaction) → ユーザーあり
 // トランザクション1: insert → 投稿作成
 // トランザクション2: update → embedding更新
-const setupHappyPathMocks = (embedding: number[] | null) => {
+const setupHappyPathMocks = (
+  embedding: number[] | null,
+  overrides?: { update?: ReturnType<typeof vi.fn> },
+) => {
   vi.mocked(generateEmbedding).mockResolvedValue(embedding);
 
   const mockInsertedPost = { ...mockPost, embedding: null };
@@ -150,13 +153,15 @@ const setupHappyPathMocks = (embedding: number[] | null) => {
         returning: vi.fn().mockResolvedValue([mockInsertedPost]),
       })),
     })),
-    update: vi.fn(() => ({
-      set: vi.fn(() => ({
-        where: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([mockUpdatedPost]),
+    update:
+      overrides?.update ??
+      vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([mockUpdatedPost]),
+          })),
         })),
       })),
-    })),
     execute: vi.fn().mockResolvedValue([]),
   });
 };
@@ -198,7 +203,14 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
     it("Embedding生成成功時、updatePostEmbeddingが呼ばれる", async () => {
       mockVerifySessionCookie.mockResolvedValue(validSession);
       const mockEmbedding = createMockEmbedding();
-      setupHappyPathMocks(mockEmbedding);
+      const mockUpdate = vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([{ ...mockPost, embedding: mockEmbedding }]),
+          })),
+        })),
+      }));
+      setupHappyPathMocks(mockEmbedding, { update: mockUpdate });
 
       const res = await testRequest("/api/posts", {
         method: "POST",
@@ -209,6 +221,8 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
       expect(res.status).toBe(201);
       // generateEmbeddingが呼ばれ、結果がnullでないことを確認
       expect(generateEmbedding).toHaveBeenCalledTimes(1);
+      // updatePostEmbeddingが呼ばれたことを確認（DB update が実行された）
+      expect(mockUpdate).toHaveBeenCalled();
     });
   });
 
@@ -254,8 +268,6 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
         "Embedding generation failed:",
         "AI service unavailable",
       );
-
-      warnSpy.mockRestore();
 
       warnSpy.mockRestore();
     });
