@@ -17,7 +17,9 @@ export default defineConfig({
   plugins: [
     cloudflareTest({
       wrangler: { configPath: "./wrangler.jsonc" },
-      setupBindings: () => testSecrets,
+      miniflare: {
+        vars: testSecrets,
+      },
     }),
   ],
   test: {
