@@ -32,7 +32,7 @@ apps/api/src/features/posts/
 Client → POST /api/posts { content, songId }
        → requireAuthMiddleware() — 認証チェック
        → csrfProtection() — CSRFチェック
-       → Arktype validation — content (1-2000文字), songId (UUID)
+       → Arktype validation — content (1-200文字), songId (UUID)
        → PostUsecase.create()
          ├── PostRepository.create() — DB に投稿保存 (embedding = NULL)
          ├── EmbeddingService.generate(content) — Workers AI 呼び出し

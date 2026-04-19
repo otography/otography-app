@@ -36,7 +36,7 @@ export const updatePostContent = async (
   return withRls(claims, async (tx) =>
     tx
       .update(posts)
-      .set({ content, updatedAt: sql`now()` })
+      .set({ content, embedding: null, updatedAt: sql`now()` })
       .where(and(eq(posts.id, postId), isNull(posts.deletedAt)))
       .returning(),
   );

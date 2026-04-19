@@ -298,12 +298,13 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
     });
   });
 
-  describe("更新パス: Embeddingは再生成されない", () => {
-    it("PATCH /api/posts/:id → generateEmbeddingは呼ばれない", async () => {
+  describe("更新パス: EmbeddingはNULLにリセットされる", () => {
+    it("PATCH /api/posts/:id → embeddingがNULLに設定される", async () => {
       mockVerifySessionCookie.mockResolvedValue(validSession);
 
       // selectPostById → 投稿あり（embedding付き）
       // selectUserByFirebaseId (withRls transaction) → ユーザーあり、所有者一致
+      // updatePostContent → embedding を NULL に設定
       mockDbWithSelectAndTransaction([[{ ...mockPost, embedding: createMockEmbedding() }]], {
         select: mockTxSelect([mockUser]),
         update: vi.fn(() => ({
@@ -313,7 +314,7 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
                 {
                   ...mockPost,
                   content: "更新された内容",
-                  embedding: createMockEmbedding(),
+                  embedding: null,
                   updatedAt: new Date("2026-01-16T00:00:00.000Z"),
                 },
               ]),
@@ -399,7 +400,7 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
         userId: USER_ID,
       });
 
-      // === 3. UPDATE (embeddingは変更されない) ===
+      // === 3. UPDATE (embeddingはNULLにリセットされる) ===
       vi.clearAllMocks();
       mockVerifySessionCookie.mockResolvedValue(validSession);
       vi.mocked(generateEmbedding).mockResolvedValue(mockEmbedding);
@@ -413,7 +414,7 @@ describe("Embedding統合: 投稿作成 + Embedding生成", () => {
                 {
                   ...mockPost,
                   content: "更新された内容",
-                  embedding: mockEmbedding, // embeddingは変更されない
+                  embedding: null, // embeddingはNULLにリセットされる
                   updatedAt: new Date("2026-01-16T00:00:00.000Z"),
                 },
               ]),
