@@ -53,16 +53,16 @@ const ARTIST_BIRTHPLACES = [
   "Okinawa",
 ] as const;
 
-export type ArtistType = (typeof ARTIST_TYPES)[number];
-export type ArtistBirthplace = (typeof ARTIST_BIRTHPLACES)[number];
-export type ArtistDbModel = InferSelectModel<typeof artists>;
+type ArtistType = (typeof ARTIST_TYPES)[number];
+type ArtistBirthplace = (typeof ARTIST_BIRTHPLACES)[number];
+type ArtistDbModel = InferSelectModel<typeof artists>;
 export type ArtistCreateDbModel = Pick<
   InferInsertModel<typeof artists>,
   "name" | "ipiCode" | "type" | "gender" | "birthplace" | "birthdate"
 >;
 export type ArtistUpdateDbModel = Partial<ArtistCreateDbModel>;
 
-export type Artist = {
+type Artist = {
   id: ArtistDbModel["id"];
   name: ArtistDbModel["name"];
   ipiCode: ArtistDbModel["ipiCode"];
@@ -74,7 +74,7 @@ export type Artist = {
   updatedAt: ArtistDbModel["updatedAt"];
 };
 
-export type ArtistCreateInput = {
+type ArtistCreateInput = {
   name: string;
   ipiCode?: string;
   type?: ArtistType;
@@ -83,7 +83,7 @@ export type ArtistCreateInput = {
   birthdate?: string;
 };
 
-export type ArtistUpdateInput = {
+type ArtistUpdateInput = {
   name?: string;
   ipiCode?: string;
   type?: ArtistType;
