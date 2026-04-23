@@ -1,23 +1,16 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { createDb } from "../../shared/db";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import {
-  toArtist,
-  toArtistCreateDbModel,
-  toArtistUpdateDbModel,
-  validateArtistCreateInput,
-  validateArtistUpdateInput,
-} from "./model";
-import {
-  createArtist,
-  findArtistById,
-  listArtists,
-  softDeleteArtistById,
-  updateArtistById,
-} from "./repository";
+  ArtistUsecaseError,
+  getArtist,
+  getArtists,
+  modifyArtist,
+  registerArtist,
+  removeArtist,
+} from "./usecase";
 
 const artistBodySchema = type({
   name: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
@@ -61,28 +54,21 @@ const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateBodySchem
 
 const artists = new Hono<{ Bindings: Bindings }>()
   .get("/api/artists", async (c) => {
-    const db = createDb();
-    const rows = await db.transaction((tx) => listArtists(tx)).catch(() => null);
-    if (rows === null) {
-      return c.json({ message: "Failed to fetch artists." }, 500);
+    const result = await getArtists();
+    if (result instanceof ArtistUsecaseError) {
+      return c.json({ message: result.message }, result.statusCode);
     }
-    return c.json({ artists: rows.map(toArtist) });
+    return c.json(result);
   })
   .get("/api/artists/:id", artistIdParamValidator, async (c) => {
-    const db = createDb();
     const { id } = c.req.valid("param");
 
-    const artist = await db
-      .transaction((tx) => findArtistById(tx, id))
-      .catch(() => new Error("failed"));
-    if (artist instanceof Error) {
-      return c.json({ message: "Failed to fetch artist." }, 500);
-    }
-    if (artist === null) {
-      return c.json({ message: "Artist not found." }, 404);
+    const result = await getArtist(id);
+    if (result instanceof ArtistUsecaseError) {
+      return c.json({ message: result.message }, result.statusCode);
     }
 
-    return c.json({ artist: toArtist(artist) });
+    return c.json(result);
   })
   .post(
     "/api/artists",
@@ -90,27 +76,13 @@ const artists = new Hono<{ Bindings: Bindings }>()
     requireAuthMiddleware(),
     artistBodyValidator,
     async (c) => {
-      const db = createDb();
       const payload = c.req.valid("json");
-      const validPayload = validateArtistCreateInput(payload);
-      if (validPayload instanceof Error) {
-        return c.json({ message: validPayload.message }, 400);
+      const result = await registerArtist(payload);
+      if (result instanceof ArtistUsecaseError) {
+        return c.json({ message: result.message }, result.statusCode);
       }
 
-      const rows = await db
-        .transaction((tx) => createArtist(tx, toArtistCreateDbModel(validPayload)))
-        .catch(() => null);
-
-      if (rows === null) {
-        return c.json({ message: "Failed to create artist." }, 500);
-      }
-
-      const [artist] = rows;
-      if (!artist) {
-        return c.json({ message: "Failed to create artist." }, 500);
-      }
-
-      return c.json({ artist: toArtist(artist) }, 201);
+      return c.json(result, 201);
     },
   )
   .patch(
@@ -120,27 +92,17 @@ const artists = new Hono<{ Bindings: Bindings }>()
     artistIdParamValidator,
     artistUpdateBodyValidator,
     async (c) => {
-      const db = createDb();
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
-      const validPayload = validateArtistUpdateInput(payload);
-      if (validPayload instanceof Error) {
-        return c.json({ message: validPayload.message }, 400);
+      const result = await modifyArtist({
+        id,
+        payload,
+      });
+      if (result instanceof ArtistUsecaseError) {
+        return c.json({ message: result.message }, result.statusCode);
       }
 
-      const updatedArtist = await db
-        .transaction((tx) =>
-          updateArtistById(tx, { id, values: toArtistUpdateDbModel(validPayload) }),
-        )
-        .catch(() => new Error("failed"));
-      if (updatedArtist instanceof Error) {
-        return c.json({ message: "Failed to update artist." }, 500);
-      }
-      if (updatedArtist === null) {
-        return c.json({ message: "Artist not found." }, 404);
-      }
-
-      return c.json({ artist: toArtist(updatedArtist) });
+      return c.json(result);
     },
   )
   .delete(
@@ -149,17 +111,11 @@ const artists = new Hono<{ Bindings: Bindings }>()
     requireAuthMiddleware(),
     artistIdParamValidator,
     async (c) => {
-      const db = createDb();
       const { id } = c.req.valid("param");
 
-      const deletedArtist = await db
-        .transaction((tx) => softDeleteArtistById(tx, id))
-        .catch(() => new Error("failed"));
-      if (deletedArtist instanceof Error) {
-        return c.json({ message: "Failed to delete artist." }, 500);
-      }
-      if (deletedArtist === null) {
-        return c.json({ message: "Artist not found." }, 404);
+      const result = await removeArtist(id);
+      if (result instanceof ArtistUsecaseError) {
+        return c.json({ message: result.message }, result.statusCode);
       }
 
       return c.body(null, 204);

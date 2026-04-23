@@ -1,11 +1,9 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { createDb } from "../../shared/db";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
-import { toSong } from "./model";
-import { createSong, findSongById, listSongs } from "./repository";
+import { getSong, getSongs, registerSong, SongUsecaseError } from "./usecase";
 
 const songBodySchema = type({
   title: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
@@ -31,44 +29,31 @@ const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (resul
 
 const songs = new Hono<{ Bindings: Bindings }>()
   .get("/api/songs", async (c) => {
-    const db = createDb();
-    const rows = await db.transaction((tx) => listSongs(tx)).catch(() => null);
-    if (rows === null) {
-      return c.json({ message: "Failed to fetch songs." }, 500);
+    const result = await getSongs();
+    if (result instanceof SongUsecaseError) {
+      return c.json({ message: result.message }, result.statusCode);
     }
-    return c.json({ songs: rows.map(toSong) });
+    return c.json(result);
   })
   .get("/api/songs/:id", songIdParamValidator, async (c) => {
-    const db = createDb();
     const { id } = c.req.valid("param");
 
-    const song = await db
-      .transaction((tx) => findSongById(tx, id))
-      .catch(() => new Error("failed"));
-    if (song instanceof Error) {
-      return c.json({ message: "Failed to fetch song." }, 500);
-    }
-    if (song === null) {
-      return c.json({ message: "Song not found." }, 404);
+    const result = await getSong(id);
+    if (result instanceof SongUsecaseError) {
+      return c.json({ message: result.message }, result.statusCode);
     }
 
-    return c.json({ song: toSong(song) });
+    return c.json(result);
   })
   .post("/api/songs", csrfProtection(), requireAuthMiddleware(), songBodyValidator, async (c) => {
-    const db = createDb();
     const payload = c.req.valid("json");
-    const rows = await db.transaction((tx) => createSong(tx, payload)).catch(() => null);
+    const result = await registerSong(payload);
 
-    if (rows === null) {
-      return c.json({ message: "Failed to create song." }, 500);
+    if (result instanceof SongUsecaseError) {
+      return c.json({ message: result.message }, result.statusCode);
     }
 
-    const [song] = rows;
-    if (!song) {
-      return c.json({ message: "Failed to create song." }, 500);
-    }
-
-    return c.json({ song: toSong(song) }, 201);
+    return c.json(result, 201);
   });
 
 export { songs };

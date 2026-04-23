@@ -1,9 +1,9 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
-import type { DatabaseTransaction } from "../../shared/db";
+import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { artists } from "../../shared/db/schema";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
-export const listArtists = async (tx: DatabaseTransaction) => {
+const listArtistsTx = async (tx: DatabaseTransaction) => {
   return tx
     .select()
     .from(artists)
@@ -11,11 +11,11 @@ export const listArtists = async (tx: DatabaseTransaction) => {
     .orderBy(desc(artists.createdAt));
 };
 
-export const createArtist = async (tx: DatabaseTransaction, values: ArtistCreateDbModel) => {
+const createArtistTx = async (tx: DatabaseTransaction, values: ArtistCreateDbModel) => {
   return tx.insert(artists).values(values).returning();
 };
 
-export const findArtistById = async (tx: DatabaseTransaction, id: string) => {
+const findArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
   const rows = await tx
     .select()
     .from(artists)
@@ -24,7 +24,7 @@ export const findArtistById = async (tx: DatabaseTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
-export const updateArtistById = async (
+const updateArtistByIdTx = async (
   tx: DatabaseTransaction,
   { id, values }: { id: string; values: ArtistUpdateDbModel },
 ) => {
@@ -40,7 +40,7 @@ export const updateArtistById = async (
   return rows[0] ?? null;
 };
 
-export const softDeleteArtistById = async (tx: DatabaseTransaction, id: string) => {
+const softDeleteArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
   const rows = await tx
     .update(artists)
     .set({
@@ -51,4 +51,37 @@ export const softDeleteArtistById = async (tx: DatabaseTransaction, id: string) 
     .returning({ id: artists.id });
 
   return rows[0] ?? null;
+};
+
+export const listArtists = async () => {
+  const db = createDb();
+  return db.transaction((tx) => listArtistsTx(tx)).catch(() => new Error("failed"));
+};
+
+export const createArtist = async (values: ArtistCreateDbModel) => {
+  const db = createDb();
+  return db.transaction((tx) => createArtistTx(tx, values)).catch(() => new Error("failed"));
+};
+
+export const findArtistById = async (id: string) => {
+  const db = createDb();
+  return db.transaction((tx) => findArtistByIdTx(tx, id)).catch(() => new Error("failed"));
+};
+
+export const updateArtistById = async ({
+  id,
+  values,
+}: {
+  id: string;
+  values: ArtistUpdateDbModel;
+}) => {
+  const db = createDb();
+  return db
+    .transaction((tx) => updateArtistByIdTx(tx, { id, values }))
+    .catch(() => new Error("failed"));
+};
+
+export const softDeleteArtistById = async (id: string) => {
+  const db = createDb();
+  return db.transaction((tx) => softDeleteArtistByIdTx(tx, id)).catch(() => new Error("failed"));
 };
