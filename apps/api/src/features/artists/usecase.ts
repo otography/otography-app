@@ -6,6 +6,7 @@ import {
   updateArtistById,
 } from "./repository";
 import { JAPAN_PREFECTURES } from "../../shared/db/schema";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
   type ArtistBirthplace,
   type ArtistCreatePayload,
@@ -19,9 +20,9 @@ import {
 } from "./model";
 
 export class ArtistUsecaseError extends Error {
-  statusCode: number;
+  statusCode: ContentfulStatusCode;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: ContentfulStatusCode) {
     super(message);
     this.name = "ArtistUsecaseError";
     this.statusCode = statusCode;
@@ -54,7 +55,7 @@ const isArtistType = (value: string): value is ArtistType => {
 };
 
 const isArtistBirthplace = (value: string): value is ArtistBirthplace => {
-  return JAPAN_PREFECTURES.includes(value as ArtistBirthplace);
+  return (JAPAN_PREFECTURES as readonly string[]).includes(value);
 };
 
 const isIsoDate = (value: string) => {

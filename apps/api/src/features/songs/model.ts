@@ -1,8 +1,8 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { songs } from "../../shared/db/schema";
 
-export type SongDbModel = InferSelectModel<typeof songs>;
-export type Song = Omit<SongDbModel, "createdAt" | "updatedAt" | "deletedAt">;
+type SongDbModel = InferSelectModel<typeof songs>;
+type Song = Omit<SongDbModel, "createdAt" | "updatedAt" | "deletedAt">;
 
 export type SongCreateDbModel = Omit<
   InferInsertModel<typeof songs>,

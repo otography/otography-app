@@ -4,8 +4,8 @@ import { artists } from "../../shared/db/schema";
 export const ARTIST_TYPES = ["person", "group"] as const;
 
 export type ArtistType = (typeof ARTIST_TYPES)[number];
-export type ArtistDbModel = InferSelectModel<typeof artists>;
-export type Artist = Omit<ArtistDbModel, "deletedAt">;
+type ArtistDbModel = InferSelectModel<typeof artists>;
+type Artist = Omit<ArtistDbModel, "deletedAt">;
 
 export type ArtistCreateDbModel = Omit<
   InferInsertModel<typeof artists>,

@@ -1,10 +1,11 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { type SongCreatePayload, toSong } from "./model";
 import { createSong, findSongById, listSongs } from "./repository";
 
 export class SongUsecaseError extends Error {
-  statusCode: number;
+  statusCode: ContentfulStatusCode;
 
-  constructor(message: string, statusCode: number) {
+  constructor(message: string, statusCode: ContentfulStatusCode) {
     super(message);
     this.name = "SongUsecaseError";
     this.statusCode = statusCode;
