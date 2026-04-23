@@ -15,24 +15,6 @@ export type ArtistUpdateDbModel = Partial<ArtistCreateDbModel>;
 
 export type ArtistBirthplace = NonNullable<ArtistCreateDbModel["birthplace"]>;
 
-type ArtistCreatePayloadBase = Omit<ArtistCreateDbModel, "type" | "birthplace" | "birthdate">;
-export type ArtistCreatePayload = ArtistCreatePayloadBase & {
-  type?: string;
-  birthplace?: string;
-  birthdate?: string;
-};
-
-type ArtistUpdatePayloadBase = Partial<
-  Omit<ArtistCreateDbModel, "type" | "birthplace" | "birthdate" | "ipiCode" | "gender">
->;
-export type ArtistUpdatePayload = ArtistUpdatePayloadBase & {
-  ipiCode?: string | null;
-  type?: string | null;
-  gender?: string | null;
-  birthplace?: string | null;
-  birthdate?: string | null;
-};
-
 type ArtistCreateInputBase = Omit<ArtistCreateDbModel, "type" | "birthplace" | "birthdate">;
 export type ArtistCreateInput = ArtistCreateInputBase & {
   type?: ArtistType;
@@ -48,6 +30,9 @@ export type ArtistUpdateInput = ArtistUpdateInputBase & {
   birthplace?: ArtistBirthplace | null;
   birthdate?: string | null;
 };
+
+export type ArtistCreatePayload = ArtistCreateInput;
+export type ArtistUpdatePayload = ArtistUpdateInput;
 
 export const toArtist = (model: ArtistDbModel): Artist => {
   const { deletedAt: _deletedAt, ...artist } = model;
