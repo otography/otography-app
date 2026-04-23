@@ -3,7 +3,7 @@ import { songs } from "../../shared/db/schema";
 
 type SongDbModel = InferSelectModel<typeof songs>;
 
-export type Song = {
+type Song = {
   id: SongDbModel["id"];
   title: SongDbModel["title"];
   length: SongDbModel["length"];
