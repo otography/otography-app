@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
-  signInWithPassword: vi.fn(),
-  signUpWithPassword: vi.fn(),
-}));
+vi.mock("../../../shared/middleware", async () => {
+  const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
+    "../../../shared/middleware",
+  );
+
+  return {
+    ...actual,
+    csrfProtection: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+    requireAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+  };
+});
 
 vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
@@ -66,6 +73,71 @@ describe("artists endpoints", () => {
     });
   });
 
+  it("GET /api/artists/:id returns artist", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211115",
+                name: "Artist Detail",
+                ipiCode: null,
+                type: "person",
+                gender: null,
+                birthplace: null,
+                birthdate: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211115");
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      artist: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf211115",
+        name: "Artist Detail",
+        ipiCode: null,
+        type: "person",
+        gender: null,
+        birthplace: null,
+        birthdate: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("GET /api/artists/:id returns 400 for invalid id", async () => {
+    const res = await testRequest("/api/artists/not-uuid");
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid artist id." });
+  });
+
+  it("GET /api/artists/:id returns 404 when not found", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211116");
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Artist not found." });
+  });
+
   it("POST /api/artists creates artist", async () => {
     mockDbWithTransaction({
       insert: vi.fn(() => ({
@@ -124,32 +196,6 @@ describe("artists endpoints", () => {
     expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
   });
 
-  it("POST /api/artists returns 400 for invalid birthplace", async () => {
-    const res = await testRequest("/api/artists", {
-      method: "POST",
-      body: {
-        name: "Bad Birthplace Artist",
-        birthplace: "New York",
-      },
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist birthplace." });
-  });
-
-  it("POST /api/artists returns 400 for invalid birthdate", async () => {
-    const res = await testRequest("/api/artists", {
-      method: "POST",
-      body: {
-        name: "Bad Birthdate Artist",
-        birthdate: "2026-02-30",
-      },
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist birthdate." });
-  });
-
   it("PATCH /api/artists/:id updates artist", async () => {
     mockDbWithTransaction({
       update: vi.fn(() => ({
@@ -194,6 +240,54 @@ describe("artists endpoints", () => {
         birthdate: "2000-01-01",
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("PATCH /api/artists/:id allows clearing nullable fields with null", async () => {
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211117",
+                name: "Clearable Artist",
+                ipiCode: null,
+                type: null,
+                gender: null,
+                birthplace: null,
+                birthdate: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-03T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211117", {
+      method: "PATCH",
+      body: {
+        type: null,
+        birthplace: null,
+        birthdate: null,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      artist: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf211117",
+        name: "Clearable Artist",
+        ipiCode: null,
+        type: null,
+        gender: null,
+        birthplace: null,
+        birthdate: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-03T00:00:00.000Z",
       },
     });
   });

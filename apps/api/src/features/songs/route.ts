@@ -2,12 +2,15 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { createDb } from "../../shared/db";
+import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
+import type { Bindings } from "../../shared/types/bindings";
+import { toSong } from "./model";
 import { createSong, findSongById, listSongs } from "./repository";
 
 const songBodySchema = type({
   title: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
   "length?": "number.integer >= 0",
-  "isrcs?": type.pipe(type("string.trim"), type("string <= 50")),
+  "isrcs?": type.pipe(type("string.trim"), type("string >= 1"), type("string <= 50")),
 });
 
 const songBodyValidator = arktypeValidator("json", songBodySchema, (result, c) => {
@@ -26,14 +29,14 @@ const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (resul
   }
 });
 
-const songs = new Hono()
+const songs = new Hono<{ Bindings: Bindings }>()
   .get("/api/songs", async (c) => {
     const db = createDb();
     const rows = await db.transaction((tx) => listSongs(tx)).catch(() => null);
     if (rows === null) {
       return c.json({ message: "Failed to fetch songs." }, 500);
     }
-    return c.json({ songs: rows });
+    return c.json({ songs: rows.map(toSong) });
   })
   .get("/api/songs/:id", songIdParamValidator, async (c) => {
     const db = createDb();
@@ -49,9 +52,9 @@ const songs = new Hono()
       return c.json({ message: "Song not found." }, 404);
     }
 
-    return c.json({ song });
+    return c.json({ song: toSong(song) });
   })
-  .post("/api/songs", songBodyValidator, async (c) => {
+  .post("/api/songs", csrfProtection(), requireAuthMiddleware(), songBodyValidator, async (c) => {
     const db = createDb();
     const payload = c.req.valid("json");
     const rows = await db.transaction((tx) => createSong(tx, payload)).catch(() => null);
@@ -65,7 +68,7 @@ const songs = new Hono()
       return c.json({ message: "Failed to create song." }, 500);
     }
 
-    return c.json({ song }, 201);
+    return c.json({ song: toSong(song) }, 201);
   });
 
 export { songs };

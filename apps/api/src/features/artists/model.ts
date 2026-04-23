@@ -1,60 +1,10 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { artists } from "../../shared/db/schema";
+import { artists, JAPAN_PREFECTURES } from "../../shared/db/schema";
 
 const ARTIST_TYPES = ["person", "group"] as const;
 
-const ARTIST_BIRTHPLACES = [
-  "Hokkaido",
-  "Aomori",
-  "Iwate",
-  "Miyagi",
-  "Akita",
-  "Yamagata",
-  "Fukushima",
-  "Ibaraki",
-  "Tochigi",
-  "Gunma",
-  "Saitama",
-  "Chiba",
-  "Tokyo",
-  "Kanagawa",
-  "Niigata",
-  "Toyama",
-  "Ishikawa",
-  "Fukui",
-  "Yamanashi",
-  "Nagano",
-  "Gifu",
-  "Shizuoka",
-  "Aichi",
-  "Mie",
-  "Shiga",
-  "Kyoto",
-  "Osaka",
-  "Hyogo",
-  "Nara",
-  "Wakayama",
-  "Tottori",
-  "Shimane",
-  "Okayama",
-  "Hiroshima",
-  "Yamaguchi",
-  "Tokushima",
-  "Kagawa",
-  "Ehime",
-  "Kochi",
-  "Fukuoka",
-  "Saga",
-  "Nagasaki",
-  "Kumamoto",
-  "Oita",
-  "Miyazaki",
-  "Kagoshima",
-  "Okinawa",
-] as const;
-
 type ArtistType = (typeof ARTIST_TYPES)[number];
-type ArtistBirthplace = (typeof ARTIST_BIRTHPLACES)[number];
+type ArtistBirthplace = (typeof JAPAN_PREFECTURES)[number];
 type ArtistDbModel = InferSelectModel<typeof artists>;
 export type ArtistCreateDbModel = Pick<
   InferInsertModel<typeof artists>,
@@ -85,11 +35,11 @@ type ArtistCreateInput = {
 
 type ArtistUpdateInput = {
   name?: string;
-  ipiCode?: string;
-  type?: ArtistType;
-  gender?: string;
-  birthplace?: ArtistBirthplace;
-  birthdate?: string;
+  ipiCode?: string | null;
+  type?: ArtistType | null;
+  gender?: string | null;
+  birthplace?: ArtistBirthplace | null;
+  birthdate?: string | null;
 };
 
 type ArtistCreatePayload = {
@@ -103,11 +53,11 @@ type ArtistCreatePayload = {
 
 type ArtistUpdatePayload = {
   name?: string;
-  ipiCode?: string;
-  type?: string;
-  gender?: string;
-  birthplace?: string;
-  birthdate?: string;
+  ipiCode?: string | null;
+  type?: string | null;
+  gender?: string | null;
+  birthplace?: string | null;
+  birthdate?: string | null;
 };
 
 const isArtistType = (value: string): value is ArtistType => {
@@ -115,7 +65,7 @@ const isArtistType = (value: string): value is ArtistType => {
 };
 
 const isArtistBirthplace = (value: string): value is ArtistBirthplace => {
-  return ARTIST_BIRTHPLACES.includes(value as ArtistBirthplace);
+  return JAPAN_PREFECTURES.includes(value as ArtistBirthplace);
 };
 
 const isIsoDate = (value: string) => {
@@ -157,6 +107,13 @@ export const validateArtistCreateInput = (input: ArtistCreatePayload) => {
   } satisfies ArtistCreateInput;
 };
 
+const normalizeOptionalString = (value: string | null | undefined) => {
+  if (value === undefined || value === null) {
+    return value;
+  }
+  return value.trim();
+};
+
 export const toArtist = (model: ArtistDbModel): Artist => {
   return {
     id: model.id,
@@ -183,36 +140,81 @@ export const toArtistCreateDbModel = (input: ArtistCreateInput): ArtistCreateDbM
 };
 
 export const validateArtistUpdateInput = (input: ArtistUpdatePayload) => {
+  const normalizedInput = {
+    name: normalizeOptionalString(input.name),
+    ipiCode: normalizeOptionalString(input.ipiCode),
+    type: input.type,
+    gender: normalizeOptionalString(input.gender),
+    birthplace: normalizeOptionalString(input.birthplace),
+    birthdate: normalizeOptionalString(input.birthdate),
+  };
+
   if (
-    input.name === undefined &&
-    input.ipiCode === undefined &&
-    input.type === undefined &&
-    input.gender === undefined &&
-    input.birthplace === undefined &&
-    input.birthdate === undefined
+    normalizedInput.name === undefined &&
+    normalizedInput.ipiCode === undefined &&
+    normalizedInput.type === undefined &&
+    normalizedInput.gender === undefined &&
+    normalizedInput.birthplace === undefined &&
+    normalizedInput.birthdate === undefined
   ) {
     return new Error("Please provide at least one field to update.");
   }
 
-  if (input.type !== undefined && !isArtistType(input.type)) {
+  if (
+    normalizedInput.name !== undefined &&
+    normalizedInput.name !== null &&
+    normalizedInput.name.length === 0
+  ) {
+    return new Error("Please provide a valid artist name.");
+  }
+
+  if (
+    normalizedInput.ipiCode !== undefined &&
+    normalizedInput.ipiCode !== null &&
+    normalizedInput.ipiCode.length > 20
+  ) {
+    return new Error("Please provide a valid artist ipi code.");
+  }
+
+  if (
+    normalizedInput.type !== undefined &&
+    normalizedInput.type !== null &&
+    !isArtistType(normalizedInput.type)
+  ) {
     return new Error("Please provide a valid artist type.");
   }
 
-  if (input.birthplace !== undefined && !isArtistBirthplace(input.birthplace)) {
+  if (
+    normalizedInput.gender !== undefined &&
+    normalizedInput.gender !== null &&
+    normalizedInput.gender.length > 20
+  ) {
+    return new Error("Please provide a valid artist gender.");
+  }
+
+  if (
+    normalizedInput.birthplace !== undefined &&
+    normalizedInput.birthplace !== null &&
+    !isArtistBirthplace(normalizedInput.birthplace)
+  ) {
     return new Error("Please provide a valid artist birthplace.");
   }
 
-  if (input.birthdate !== undefined && !isIsoDate(input.birthdate)) {
+  if (
+    normalizedInput.birthdate !== undefined &&
+    normalizedInput.birthdate !== null &&
+    !isIsoDate(normalizedInput.birthdate)
+  ) {
     return new Error("Please provide a valid artist birthdate.");
   }
 
   return {
-    name: input.name,
-    ipiCode: input.ipiCode,
-    type: input.type,
-    gender: input.gender,
-    birthplace: input.birthplace,
-    birthdate: input.birthdate,
+    name: normalizedInput.name ?? undefined,
+    ipiCode: normalizedInput.ipiCode,
+    type: normalizedInput.type as ArtistType | null | undefined,
+    gender: normalizedInput.gender,
+    birthplace: normalizedInput.birthplace as ArtistBirthplace | null | undefined,
+    birthdate: normalizedInput.birthdate,
   } satisfies ArtistUpdateInput;
 };
 

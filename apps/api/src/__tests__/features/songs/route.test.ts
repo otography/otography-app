@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
-vi.mock("../../../shared/firebase-rest", () => ({
-  signInWithPassword: vi.fn(),
-  signUpWithPassword: vi.fn(),
-}));
+vi.mock("../../../shared/middleware", async () => {
+  const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
+    "../../../shared/middleware",
+  );
+
+  return {
+    ...actual,
+    csrfProtection: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+    requireAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+  };
+});
 
 vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
@@ -33,6 +40,7 @@ describe("songs endpoints", () => {
                 id: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
                 title: "Sample Song",
                 length: 180,
+                isrcs: null,
               },
             ]),
           })),
@@ -49,9 +57,65 @@ describe("songs endpoints", () => {
           id: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
           title: "Sample Song",
           length: 180,
+          isrcs: null,
         },
       ],
     });
+  });
+
+  it("GET /api/songs/:id returns song", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222223",
+                title: "Detail Song",
+                length: 210,
+                isrcs: "JPABC240001",
+              },
+            ]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222223");
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      song: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222223",
+        title: "Detail Song",
+        length: 210,
+        isrcs: "JPABC240001",
+      },
+    });
+  });
+
+  it("GET /api/songs/:id returns 400 for invalid id", async () => {
+    const res = await testRequest("/api/songs/not-uuid");
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
+  });
+
+  it("GET /api/songs/:id returns 404 when not found", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222224");
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Song not found." });
   });
 
   it("POST /api/songs creates song", async () => {
@@ -63,6 +127,7 @@ describe("songs endpoints", () => {
               id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
               title: "New Song",
               length: 240,
+              isrcs: null,
             },
           ]),
         })),
@@ -83,6 +148,7 @@ describe("songs endpoints", () => {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
         title: "New Song",
         length: 240,
+        isrcs: null,
       },
     });
   });
@@ -93,6 +159,19 @@ describe("songs endpoints", () => {
       body: {
         title: "",
         length: -1,
+      },
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
+  });
+
+  it("POST /api/songs returns 400 when isrcs is empty after trim", async () => {
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: {
+        title: "Song with empty isrcs",
+        isrcs: "   ",
       },
     });
 

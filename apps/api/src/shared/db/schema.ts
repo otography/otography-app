@@ -18,6 +18,59 @@ import {
 } from "drizzle-orm/pg-core";
 
 const authenticatedRole = pgRole("authenticated");
+export const JAPAN_PREFECTURES = [
+  "Hokkaido",
+  "Aomori",
+  "Iwate",
+  "Miyagi",
+  "Akita",
+  "Yamagata",
+  "Fukushima",
+  "Ibaraki",
+  "Tochigi",
+  "Gunma",
+  "Saitama",
+  "Chiba",
+  "Tokyo",
+  "Kanagawa",
+  "Niigata",
+  "Toyama",
+  "Ishikawa",
+  "Fukui",
+  "Yamanashi",
+  "Nagano",
+  "Gifu",
+  "Shizuoka",
+  "Aichi",
+  "Mie",
+  "Shiga",
+  "Kyoto",
+  "Osaka",
+  "Hyogo",
+  "Nara",
+  "Wakayama",
+  "Tottori",
+  "Shimane",
+  "Okayama",
+  "Hiroshima",
+  "Yamaguchi",
+  "Tokushima",
+  "Kagawa",
+  "Ehime",
+  "Kochi",
+  "Fukuoka",
+  "Saga",
+  "Nagasaki",
+  "Kumamoto",
+  "Oita",
+  "Miyazaki",
+  "Kagoshima",
+  "Okinawa",
+] as const;
+
+const sqlStringList = (values: readonly string[]) => {
+  return sql.raw(values.map((value) => `'${value.replace(/'/g, "''")}'`).join(", "));
+};
 
 export const users = pgTable(
   "users",
@@ -41,7 +94,7 @@ export const users = pgTable(
     ),
     check(
       "users_birthplace_check",
-      sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
+      sql`${table.birthplace} IS NULL OR ${table.birthplace} IN (${sqlStringList(JAPAN_PREFECTURES)})`,
     ),
     check("users_username_min_length", sql`length(btrim(${table.username})) >= 1`),
     pgPolicy("users_select_all", {
@@ -81,7 +134,7 @@ export const artists = pgTable(
     check("artists_type_check", sql`${table.type} IS NULL OR ${table.type} IN ('person', 'group')`),
     check(
       "artists_birthplace_check",
-      sql`${table.birthplace} IS NULL OR ${table.birthplace} IN ('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa')`,
+      sql`${table.birthplace} IS NULL OR ${table.birthplace} IN (${sqlStringList(JAPAN_PREFECTURES)})`,
     ),
     index("idx_artists_name").on(table.name),
     index("idx_artists_type").on(table.type),
