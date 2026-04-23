@@ -1,20 +1,16 @@
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import { songs } from "../../shared/db/schema";
 
-type SongDbModel = InferSelectModel<typeof songs>;
+export type SongDbModel = InferSelectModel<typeof songs>;
+export type Song = Omit<SongDbModel, "createdAt" | "updatedAt" | "deletedAt">;
 
-type Song = {
-  id: SongDbModel["id"];
-  title: SongDbModel["title"];
-  length: SongDbModel["length"];
-  isrcs: SongDbModel["isrcs"];
-};
+export type SongCreateDbModel = Omit<
+  InferInsertModel<typeof songs>,
+  "id" | "createdAt" | "updatedAt" | "deletedAt"
+>;
+export type SongCreatePayload = SongCreateDbModel;
 
 export const toSong = (model: SongDbModel): Song => {
-  return {
-    id: model.id,
-    title: model.title,
-    length: model.length,
-    isrcs: model.isrcs,
-  };
+  const { createdAt: _createdAt, deletedAt: _deletedAt, updatedAt: _updatedAt, ...song } = model;
+  return song;
 };

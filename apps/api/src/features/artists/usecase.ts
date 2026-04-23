@@ -8,8 +8,10 @@ import {
 import { JAPAN_PREFECTURES } from "../../shared/db/schema";
 import {
   type ArtistBirthplace,
+  type ArtistCreatePayload,
   type ArtistCreateInput,
   type ArtistType,
+  type ArtistUpdatePayload,
   type ArtistUpdateInput,
   toArtist,
   toArtistCreateDbModel,
@@ -78,16 +80,7 @@ const normalizeOptionalString = (value: string | null | undefined) => {
   return value.trim();
 };
 
-type CreateArtistInput = {
-  name: string;
-  ipiCode?: string;
-  type?: "person" | "group";
-  gender?: string;
-  birthplace?: string;
-  birthdate?: string;
-};
-
-const validateArtistCreateInput = (input: CreateArtistInput): ArtistCreateInput | Error => {
+const validateArtistCreateInput = (input: ArtistCreatePayload): ArtistCreateInput | Error => {
   if (input.type !== undefined && !isArtistType(input.type)) {
     return new ArtistUsecaseError("Please provide a valid artist type.", 400);
   }
@@ -110,7 +103,7 @@ const validateArtistCreateInput = (input: CreateArtistInput): ArtistCreateInput 
   } satisfies ArtistCreateInput;
 };
 
-export const registerArtist = async (payload: CreateArtistInput) => {
+export const registerArtist = async (payload: ArtistCreatePayload) => {
   const validPayload = validateArtistCreateInput(payload);
   if (validPayload instanceof Error) {
     return validPayload;
@@ -131,14 +124,7 @@ export const registerArtist = async (payload: CreateArtistInput) => {
 
 type UpdateArtistInput = {
   id: string;
-  payload: {
-    name?: string;
-    ipiCode?: string | null;
-    type?: "person" | "group" | null;
-    gender?: string | null;
-    birthplace?: string | null;
-    birthdate?: string | null;
-  };
+  payload: ArtistUpdatePayload;
 };
 
 const validateArtistUpdateInput = (

@@ -1,4 +1,4 @@
-import { toSong } from "./model";
+import { type SongCreatePayload, toSong } from "./model";
 import { createSong, findSongById, listSongs } from "./repository";
 
 export class SongUsecaseError extends Error {
@@ -32,13 +32,7 @@ export const getSong = async (id: string) => {
   return { song: toSong(song) };
 };
 
-type CreateSongInput = {
-  title: string;
-  length?: number;
-  isrcs?: string;
-};
-
-export const registerSong = async (payload: CreateSongInput) => {
+export const registerSong = async (payload: SongCreatePayload) => {
   const rows = await createSong(payload);
   if (rows instanceof Error) {
     return new SongUsecaseError("Failed to create song.", 500);
