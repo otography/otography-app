@@ -1,3 +1,4 @@
+import { DbError } from "@repo/errors";
 import {
   createArtist,
   findArtistById,
@@ -5,35 +6,20 @@ import {
   softDeleteArtistById,
   updateArtistById,
 } from "./repository";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
-
-export class ArtistUsecaseError extends Error {
-  statusCode: ContentfulStatusCode;
-
-  constructor(message: string, statusCode: ContentfulStatusCode) {
-    super(message);
-    this.name = "ArtistUsecaseError";
-    this.statusCode = statusCode;
-  }
-}
 
 export const getArtists = async () => {
   const rows = await listArtists();
-  if (rows instanceof Error) {
-    return new ArtistUsecaseError("Failed to fetch artists.", 500);
-  }
+  if (rows instanceof Error) return rows;
 
   return { artists: rows };
 };
 
 export const getArtist = async (id: string) => {
   const artist = await findArtistById(id);
-  if (artist instanceof Error) {
-    return new ArtistUsecaseError("Failed to fetch artist.", 500);
-  }
+  if (artist instanceof Error) return artist;
   if (artist === null) {
-    return new ArtistUsecaseError("Artist not found.", 404);
+    return new DbError({ message: "Artist not found.", statusCode: 404 });
   }
 
   return { artist };
@@ -41,13 +27,11 @@ export const getArtist = async (id: string) => {
 
 export const registerArtist = async (payload: ArtistCreateDbModel) => {
   const rows = await createArtist(payload);
-  if (rows instanceof Error) {
-    return new ArtistUsecaseError("Failed to create artist.", 500);
-  }
+  if (rows instanceof Error) return rows;
 
   const [artist] = rows;
   if (!artist) {
-    return new ArtistUsecaseError("Failed to create artist.", 500);
+    return new DbError({ message: "Failed to create artist." });
   }
 
   return { artist };
@@ -63,11 +47,9 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
     id,
     values: payload,
   });
-  if (updatedArtist instanceof Error) {
-    return new ArtistUsecaseError("Failed to update artist.", 500);
-  }
+  if (updatedArtist instanceof Error) return updatedArtist;
   if (updatedArtist === null) {
-    return new ArtistUsecaseError("Artist not found.", 404);
+    return new DbError({ message: "Artist not found.", statusCode: 404 });
   }
 
   return { artist: updatedArtist };
@@ -75,11 +57,9 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
 
 export const removeArtist = async (id: string) => {
   const deletedArtist = await softDeleteArtistById(id);
-  if (deletedArtist instanceof Error) {
-    return new ArtistUsecaseError("Failed to delete artist.", 500);
-  }
+  if (deletedArtist instanceof Error) return deletedArtist;
   if (deletedArtist === null) {
-    return new ArtistUsecaseError("Artist not found.", 404);
+    return new DbError({ message: "Artist not found.", statusCode: 404 });
   }
 
   return { deleted: true };

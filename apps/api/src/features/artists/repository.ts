@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { DbError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { artists } from "../../shared/db/schema";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
@@ -69,21 +70,21 @@ export const listArtists = async () => {
   const db = createDb();
   return db
     .transaction((tx) => listArtistsTx(tx))
-    .catch((e) => new Error("Failed to fetch artists.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to fetch artists.", cause: e }));
 };
 
 export const createArtist = async (values: ArtistCreateDbModel) => {
   const db = createDb();
   return db
     .transaction((tx) => createArtistTx(tx, values))
-    .catch((e) => new Error("Failed to create artist.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to create artist.", cause: e }));
 };
 
 export const findArtistById = async (id: string) => {
   const db = createDb();
   return db
     .transaction((tx) => findArtistByIdTx(tx, id))
-    .catch((e) => new Error("Failed to fetch artist.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to fetch artist.", cause: e }));
 };
 
 export const updateArtistById = async ({
@@ -96,12 +97,12 @@ export const updateArtistById = async ({
   const db = createDb();
   return db
     .transaction((tx) => updateArtistByIdTx(tx, { id, values }))
-    .catch((e) => new Error("Failed to update artist.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to update artist.", cause: e }));
 };
 
 export const softDeleteArtistById = async (id: string) => {
   const db = createDb();
   return db
     .transaction((tx) => softDeleteArtistByIdTx(tx, id))
-    .catch((e) => new Error("Failed to delete artist.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to delete artist.", cause: e }));
 };

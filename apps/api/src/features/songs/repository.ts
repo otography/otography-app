@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
+import { DbError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
 import type { SongCreateDbModel } from "./model";
@@ -37,19 +38,19 @@ export const listSongs = async () => {
   const db = createDb();
   return db
     .transaction((tx) => listSongsTx(tx))
-    .catch((e) => new Error("Failed to fetch songs.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to fetch songs.", cause: e }));
 };
 
 export const createSong = async (values: SongCreateDbModel) => {
   const db = createDb();
   return db
     .transaction((tx) => createSongTx(tx, values))
-    .catch((e) => new Error("Failed to create song.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to create song.", cause: e }));
 };
 
 export const findSongById = async (id: string) => {
   const db = createDb();
   return db
     .transaction((tx) => findSongByIdTx(tx, id))
-    .catch((e) => new Error("Failed to fetch song.", { cause: e }));
+    .catch((e) => new DbError({ message: "Failed to fetch song.", cause: e }));
 };
