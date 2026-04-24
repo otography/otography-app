@@ -5,11 +5,11 @@ class DbError extends errore.createTaggedError({
   name: "DbError",
   message: "$message",
 }) {
-  readonly statusCode: ErrorStatusCode = 500;
+  readonly statusCode: ErrorStatusCode;
 
   constructor(args: { message: string; statusCode?: ErrorStatusCode; cause?: unknown }) {
     super(args);
-    if (args.statusCode !== undefined) this.statusCode = args.statusCode;
+    this.statusCode = args.statusCode ?? 500;
   }
 }
 

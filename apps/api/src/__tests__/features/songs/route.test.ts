@@ -42,6 +42,8 @@ describe("songs endpoints", () => {
                 title: "Sample Song",
                 length: 180,
                 isrcs: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
               },
             ]),
           })),
@@ -59,6 +61,8 @@ describe("songs endpoints", () => {
           title: "Sample Song",
           length: 180,
           isrcs: null,
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
     });
@@ -75,6 +79,8 @@ describe("songs endpoints", () => {
                 title: "Detail Song",
                 length: 210,
                 isrcs: "JPABC240001",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
               },
             ]),
           })),
@@ -91,6 +97,8 @@ describe("songs endpoints", () => {
         title: "Detail Song",
         length: 210,
         isrcs: "JPABC240001",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
       },
     });
   });
@@ -129,6 +137,8 @@ describe("songs endpoints", () => {
               title: "New Song",
               length: 240,
               isrcs: null,
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
             },
           ]),
         })),
@@ -150,6 +160,8 @@ describe("songs endpoints", () => {
         title: "New Song",
         length: 240,
         isrcs: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
       },
     });
   });
