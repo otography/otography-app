@@ -5,14 +5,18 @@ import type { Context } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
-import { getSong, getSongs, registerSong } from "./usecase";
-import { songInsertSchema } from "./model";
+import { songInsertSchema, songUpdateSchema } from "./model";
+import { getSong, getSongs, modifySong, registerSong } from "./usecase";
 
 const handleSongError = (error: DbError, c: Context<{ Bindings: Bindings }>) => {
   return c.json({ message: error.message }, error.statusCode);
 };
 
-const songBodyValidator = arktypeValidator("json", songInsertSchema, (result, c) => {
+const songBodySchema = songInsertSchema.merge({
+  "artistId?": "string.uuid",
+});
+
+const songBodyValidator = arktypeValidator("json", songBodySchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid song payload." }, 400);
   }
@@ -25,6 +29,16 @@ const songIdParamSchema = type({
 const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid song id." }, 400);
+  }
+});
+
+const songUpdateBodySchema = songUpdateSchema.merge({
+  "artistId?": "string.uuid | null",
+});
+
+const songUpdateBodyValidator = arktypeValidator("json", songUpdateBodySchema, (result, c) => {
+  if (!result.success) {
+    return c.json({ message: "Please provide a valid song payload." }, 400);
   }
 });
 
@@ -49,6 +63,24 @@ const songs = new Hono<{ Bindings: Bindings }>()
     if (result instanceof Error) return handleSongError(result, c);
 
     return c.json(result, 201);
-  });
+  })
+  .patch(
+    "/api/songs/:id",
+    csrfProtection(),
+    requireAuthMiddleware(),
+    songIdParamValidator,
+    songUpdateBodyValidator,
+    async (c) => {
+      const { id } = c.req.valid("param");
+      const payload = c.req.valid("json");
+      const result = await modifySong({
+        id,
+        payload,
+      });
+
+      if (result instanceof Error) return handleSongError(result, c);
+      return c.json(result);
+    },
+  );
 
 export { songs };

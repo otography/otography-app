@@ -1,7 +1,7 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
-import { songs } from "../../shared/db/schema";
+import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import type { SongCreateDbModel } from "./model";
+import { songArtists, songs } from "../../shared/db/schema";
+import type { SongCreateDbModel, SongUpdateDbModel } from "./model";
 
 const songColumns = {
   id: songs.id,
@@ -24,6 +24,27 @@ export const createSong = async (db: DatabaseOrTransaction, values: SongCreateDb
   return db.insert(songs).values(values).returning(songColumns);
 };
 
+export const createSongWithArtist = async (
+  db: DatabaseOrTransaction,
+  { values, artistId }: { values: SongCreateDbModel; artistId?: string },
+) => {
+  const rows = await createSong(db, values);
+  const [song] = rows;
+  if (!song) {
+    return null;
+  }
+
+  if (artistId !== undefined) {
+    await db.insert(songArtists).values({
+      songId: song.id,
+      artistId,
+      isGuest: false,
+    });
+  }
+
+  return song;
+};
+
 export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
   const rows = await db
     .select(songColumns)
@@ -31,4 +52,51 @@ export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
     .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
     .limit(1);
   return rows[0] ?? null;
+};
+
+export const updateSongById = async (
+  db: DatabaseOrTransaction,
+  {
+    id,
+    values,
+    artistId,
+  }: {
+    id: string;
+    values: SongUpdateDbModel;
+    artistId?: string | null;
+  },
+) => {
+  let song = null as Awaited<ReturnType<typeof findSongById>>;
+
+  if (Object.keys(values).length > 0) {
+    const rows = await db
+      .update(songs)
+      .set({
+        ...values,
+        updatedAt: sql`now()`,
+      })
+      .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
+      .returning(songColumns);
+    [song] = rows;
+  } else {
+    song = await findSongById(db, id);
+  }
+
+  if (!song) {
+    return null;
+  }
+
+  if (artistId !== undefined) {
+    await db.delete(songArtists).where(eq(songArtists.songId, id));
+
+    if (artistId !== null) {
+      await db.insert(songArtists).values({
+        songId: id,
+        artistId,
+        isGuest: false,
+      });
+    }
+  }
+
+  return song;
 };
