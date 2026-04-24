@@ -34,9 +34,9 @@ export const getArtist = async (id: string) => {
 
 export const registerArtist = async (payload: ArtistCreateDbModel) => {
   const db = createDb();
-  const rows = await db
-    .transaction((tx) => createArtist(tx, payload))
-    .catch((e) => new DbError({ message: "Failed to create artist.", cause: e }));
+  const rows = await createArtist(db, payload).catch(
+    (e) => new DbError({ message: "Failed to create artist.", cause: e }),
+  );
   if (rows instanceof Error) return rows;
 
   const [artist] = rows;
@@ -54,9 +54,9 @@ type UpdateArtistInput = {
 
 export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   const db = createDb();
-  const updatedArtist = await db
-    .transaction((tx) => updateArtistById(tx, { id, values: payload }))
-    .catch((e) => new DbError({ message: "Failed to update artist.", cause: e }));
+  const updatedArtist = await updateArtistById(db, { id, values: payload }).catch(
+    (e) => new DbError({ message: "Failed to update artist.", cause: e }),
+  );
   if (updatedArtist instanceof Error) return updatedArtist;
   if (updatedArtist === null) {
     return new DbError({ message: "Artist not found.", statusCode: 404 });
@@ -67,9 +67,9 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
 
 export const removeArtist = async (id: string) => {
   const db = createDb();
-  const deletedArtist = await db
-    .transaction((tx) => softDeleteArtistById(tx, id))
-    .catch((e) => new DbError({ message: "Failed to delete artist.", cause: e }));
+  const deletedArtist = await softDeleteArtistById(db, id).catch(
+    (e) => new DbError({ message: "Failed to delete artist.", cause: e }),
+  );
   if (deletedArtist instanceof Error) return deletedArtist;
   if (deletedArtist === null) {
     return new DbError({ message: "Artist not found.", statusCode: 404 });
