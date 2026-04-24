@@ -1,5 +1,5 @@
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { type SongCreatePayload, toSong } from "./model";
+import type { SongCreateDbModel } from "./model";
 import { createSong, findSongById, listSongs } from "./repository";
 
 export class SongUsecaseError extends Error {
@@ -18,7 +18,7 @@ export const getSongs = async () => {
     return new SongUsecaseError("Failed to fetch songs.", 500);
   }
 
-  return { songs: rows.map(toSong) };
+  return { songs: rows };
 };
 
 export const getSong = async (id: string) => {
@@ -30,10 +30,10 @@ export const getSong = async (id: string) => {
     return new SongUsecaseError("Song not found.", 404);
   }
 
-  return { song: toSong(song) };
+  return { song };
 };
 
-export const registerSong = async (payload: SongCreatePayload) => {
+export const registerSong = async (payload: SongCreateDbModel) => {
   const rows = await createSong(payload);
   if (rows instanceof Error) {
     return new SongUsecaseError("Failed to create song.", 500);
@@ -44,5 +44,5 @@ export const registerSong = async (payload: SongCreatePayload) => {
     return new SongUsecaseError("Failed to create song.", 500);
   }
 
-  return { song: toSong(song) };
+  return { song };
 };

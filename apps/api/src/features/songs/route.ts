@@ -1,21 +1,12 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
-import { createInsertSchema } from "drizzle-orm/arktype";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
-import { songs as songsTable } from "../../shared/db/schema";
 import type { Bindings } from "../../shared/types/bindings";
 import { getSong, getSongs, registerSong, SongUsecaseError } from "./usecase";
+import { songInsertSchema } from "./model";
 
-const songBodySchema = createInsertSchema(songsTable)
-  .omit("id", "createdAt", "updatedAt", "deletedAt")
-  .merge({
-    title: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
-    "length?": "number.integer >= 0",
-    "isrcs?": type.pipe(type("string.trim"), type("string >= 1"), type("string <= 50")),
-  });
-
-const songBodyValidator = arktypeValidator("json", songBodySchema, (result, c) => {
+const songBodyValidator = arktypeValidator("json", songInsertSchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid song payload." }, 400);
   }

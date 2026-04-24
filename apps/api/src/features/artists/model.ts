@@ -1,62 +1,23 @@
-import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
+import { type } from "arktype";
 import { artists } from "../../shared/db/schema";
 
-export const ARTIST_TYPES = ["person", "group"] as const;
+// drizzle-orm/arktype から insert/update スキーマを生成
+// pgEnum の type/birthplace は自動的にユニオン型になる
+// コールバックで元スキーマを拡張（nullable/optional性を保持）
+export const artistInsertSchema = createInsertSchema(artists, {
+  name: (s) => type.pipe(s, type("1 <= string <= 255")),
+  ipiCode: (s) => type.pipe(s, type("string <= 20")),
+  gender: (s) => type.pipe(s, type("string <= 20")),
+  birthdate: (s) => type.pipe(s, type("string.date.iso")),
+}).pick("name", "ipiCode", "type", "gender", "birthplace", "birthdate");
 
-export type ArtistType = (typeof ARTIST_TYPES)[number];
-type ArtistDbModel = InferSelectModel<typeof artists>;
-type Artist = Omit<ArtistDbModel, "deletedAt">;
+export const artistUpdateSchema = createUpdateSchema(artists, {
+  name: (s) => type.pipe(s, type("1 <= string <= 255")),
+  ipiCode: (s) => type.pipe(s, type("string <= 20")),
+  gender: (s) => type.pipe(s, type("string <= 20")),
+  birthdate: (s) => type.pipe(s, type("string.date.iso")),
+}).pick("name", "ipiCode", "type", "gender", "birthplace", "birthdate");
 
-export type ArtistCreateDbModel = Omit<
-  InferInsertModel<typeof artists>,
-  "id" | "createdAt" | "updatedAt" | "deletedAt"
->;
-export type ArtistUpdateDbModel = Partial<ArtistCreateDbModel>;
-
-export type ArtistBirthplace = NonNullable<ArtistCreateDbModel["birthplace"]>;
-
-type ArtistCreateInputBase = Omit<ArtistCreateDbModel, "type" | "birthplace" | "birthdate">;
-export type ArtistCreateInput = ArtistCreateInputBase & {
-  type?: ArtistType;
-  birthplace?: ArtistBirthplace;
-  birthdate?: string;
-};
-
-type ArtistUpdateInputBase = Partial<
-  Omit<ArtistCreateDbModel, "type" | "birthplace" | "birthdate">
->;
-export type ArtistUpdateInput = ArtistUpdateInputBase & {
-  type?: ArtistType | null;
-  birthplace?: ArtistBirthplace | null;
-  birthdate?: string | null;
-};
-
-export type ArtistCreatePayload = ArtistCreateInput;
-export type ArtistUpdatePayload = ArtistUpdateInput;
-
-export const toArtist = (model: ArtistDbModel): Artist => {
-  const { deletedAt: _deletedAt, ...artist } = model;
-  return artist;
-};
-
-export const toArtistCreateDbModel = (input: ArtistCreateInput): ArtistCreateDbModel => {
-  return {
-    name: input.name,
-    ipiCode: input.ipiCode,
-    type: input.type,
-    gender: input.gender,
-    birthplace: input.birthplace,
-    birthdate: input.birthdate,
-  };
-};
-
-export const toArtistUpdateDbModel = (input: ArtistUpdateInput): ArtistUpdateDbModel => {
-  return {
-    name: input.name,
-    ipiCode: input.ipiCode,
-    type: input.type,
-    gender: input.gender,
-    birthplace: input.birthplace,
-    birthdate: input.birthdate,
-  };
-};
+export type ArtistCreateDbModel = typeof artistInsertSchema.infer;
+export type ArtistUpdateDbModel = typeof artistUpdateSchema.infer;

@@ -6,13 +6,7 @@ import {
   updateArtistById,
 } from "./repository";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
-import {
-  type ArtistCreatePayload,
-  type ArtistUpdatePayload,
-  toArtist,
-  toArtistCreateDbModel,
-  toArtistUpdateDbModel,
-} from "./model";
+import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
 export class ArtistUsecaseError extends Error {
   statusCode: ContentfulStatusCode;
@@ -30,7 +24,7 @@ export const getArtists = async () => {
     return new ArtistUsecaseError("Failed to fetch artists.", 500);
   }
 
-  return { artists: rows.map(toArtist) };
+  return { artists: rows };
 };
 
 export const getArtist = async (id: string) => {
@@ -42,11 +36,11 @@ export const getArtist = async (id: string) => {
     return new ArtistUsecaseError("Artist not found.", 404);
   }
 
-  return { artist: toArtist(artist) };
+  return { artist };
 };
 
-export const registerArtist = async (payload: ArtistCreatePayload) => {
-  const rows = await createArtist(toArtistCreateDbModel(payload));
+export const registerArtist = async (payload: ArtistCreateDbModel) => {
+  const rows = await createArtist(payload);
   if (rows instanceof Error) {
     return new ArtistUsecaseError("Failed to create artist.", 500);
   }
@@ -56,18 +50,18 @@ export const registerArtist = async (payload: ArtistCreatePayload) => {
     return new ArtistUsecaseError("Failed to create artist.", 500);
   }
 
-  return { artist: toArtist(artist) };
+  return { artist };
 };
 
 type UpdateArtistInput = {
   id: string;
-  payload: ArtistUpdatePayload;
+  payload: ArtistUpdateDbModel;
 };
 
 export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   const updatedArtist = await updateArtistById({
     id,
-    values: toArtistUpdateDbModel(payload),
+    values: payload,
   });
   if (updatedArtist instanceof Error) {
     return new ArtistUsecaseError("Failed to update artist.", 500);
@@ -76,7 +70,7 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
     return new ArtistUsecaseError("Artist not found.", 404);
   }
 
-  return { artist: toArtist(updatedArtist) };
+  return { artist: updatedArtist };
 };
 
 export const removeArtist = async (id: string) => {

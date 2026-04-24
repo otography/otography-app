@@ -3,21 +3,33 @@ import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { artists } from "../../shared/db/schema";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
+const artistColumns = {
+  id: artists.id,
+  name: artists.name,
+  ipiCode: artists.ipiCode,
+  type: artists.type,
+  gender: artists.gender,
+  birthplace: artists.birthplace,
+  birthdate: artists.birthdate,
+  createdAt: artists.createdAt,
+  updatedAt: artists.updatedAt,
+} as const;
+
 const listArtistsTx = async (tx: DatabaseTransaction) => {
   return tx
-    .select()
+    .select(artistColumns)
     .from(artists)
     .where(isNull(artists.deletedAt))
     .orderBy(desc(artists.createdAt));
 };
 
 const createArtistTx = async (tx: DatabaseTransaction, values: ArtistCreateDbModel) => {
-  return tx.insert(artists).values(values).returning();
+  return tx.insert(artists).values(values).returning(artistColumns);
 };
 
 const findArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
   const rows = await tx
-    .select()
+    .select(artistColumns)
     .from(artists)
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
     .limit(1);
@@ -35,7 +47,7 @@ const updateArtistByIdTx = async (
       updatedAt: sql`now()`,
     })
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
-    .returning();
+    .returning(artistColumns);
 
   return rows[0] ?? null;
 };

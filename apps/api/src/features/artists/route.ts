@@ -1,9 +1,7 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
-import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
-import { artists as artistsTable } from "../../shared/db/schema";
 import type { Bindings } from "../../shared/types/bindings";
 import {
   ArtistUsecaseError,
@@ -13,19 +11,9 @@ import {
   registerArtist,
   removeArtist,
 } from "./usecase";
+import { artistInsertSchema, artistUpdateSchema } from "./model";
 
-const artistBodySchema = createInsertSchema(artistsTable)
-  .omit("id", "createdAt", "updatedAt", "deletedAt")
-  .merge({
-    name: type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
-    "ipiCode?": type.pipe(type("string.trim"), type("string <= 20")),
-    "type?": "'person' | 'group'",
-    "gender?": type.pipe(type("string.trim"), type("string <= 20")),
-    "birthplace?": type.pipe(type("string.trim"), type("string <= 100")),
-    "birthdate?": "string",
-  });
-
-const artistBodyValidator = arktypeValidator("json", artistBodySchema, (result, c) => {
+const artistBodyValidator = arktypeValidator("json", artistInsertSchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid artist payload." }, 400);
   }
@@ -41,18 +29,7 @@ const artistIdParamValidator = arktypeValidator("param", artistIdParamSchema, (r
   }
 });
 
-const artistUpdateBodySchema = createUpdateSchema(artistsTable)
-  .omit("id", "createdAt", "updatedAt", "deletedAt")
-  .merge({
-    "name?": type.pipe(type("string.trim"), type("string >= 1"), type("string <= 255")),
-    "ipiCode?": "string | null",
-    "type?": "'person' | 'group' | null",
-    "gender?": "string | null",
-    "birthplace?": "string | null",
-    "birthdate?": "string | null",
-  });
-
-const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateBodySchema, (result, c) => {
+const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid artist payload." }, 400);
   }

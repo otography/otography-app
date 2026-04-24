@@ -3,17 +3,30 @@ import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
 import type { SongCreateDbModel } from "./model";
 
+const songColumns = {
+  id: songs.id,
+  title: songs.title,
+  length: songs.length,
+  isrcs: songs.isrcs,
+  createdAt: songs.createdAt,
+  updatedAt: songs.updatedAt,
+} as const;
+
 const listSongsTx = async (tx: DatabaseTransaction) => {
-  return tx.select().from(songs).where(isNull(songs.deletedAt)).orderBy(desc(songs.createdAt));
+  return tx
+    .select(songColumns)
+    .from(songs)
+    .where(isNull(songs.deletedAt))
+    .orderBy(desc(songs.createdAt));
 };
 
 const createSongTx = async (tx: DatabaseTransaction, values: SongCreateDbModel) => {
-  return tx.insert(songs).values(values).returning();
+  return tx.insert(songs).values(values).returning(songColumns);
 };
 
 const findSongByIdTx = async (tx: DatabaseTransaction, id: string) => {
   const rows = await tx
-    .select()
+    .select(songColumns)
     .from(songs)
     .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
     .limit(1);
