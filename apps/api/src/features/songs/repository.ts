@@ -20,7 +20,7 @@ export const listSongs = async (db: DatabaseOrTransaction) => {
     .orderBy(desc(songs.createdAt));
 };
 
-export const createSong = async (db: DatabaseOrTransaction, values: SongCreateDbModel) => {
+const createSong = async (db: DatabaseOrTransaction, values: SongCreateDbModel) => {
   return db.insert(songs).values(values).returning(songColumns);
 };
 
@@ -66,21 +66,15 @@ export const updateSongById = async (
     artistId?: string | null;
   },
 ) => {
-  let song = null as Awaited<ReturnType<typeof findSongById>>;
-
-  if (Object.keys(values).length > 0) {
-    const rows = await db
-      .update(songs)
-      .set({
-        ...values,
-        updatedAt: sql`now()`,
-      })
-      .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
-      .returning(songColumns);
-    [song] = rows;
-  } else {
-    song = await findSongById(db, id);
-  }
+  const rows = await db
+    .update(songs)
+    .set({
+      ...values,
+      updatedAt: sql`now()`,
+    })
+    .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
+    .returning(songColumns);
+  const song = rows[0] ?? null;
 
   if (!song) {
     return null;
