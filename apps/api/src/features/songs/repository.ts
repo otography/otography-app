@@ -1,7 +1,6 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { DbError } from "@repo/errors";
-import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
+import type { DatabaseOrTransaction } from "../../shared/db";
 import type { SongCreateDbModel } from "./model";
 
 const songColumns = {
@@ -13,44 +12,23 @@ const songColumns = {
   updatedAt: songs.updatedAt,
 } as const;
 
-const listSongsTx = async (tx: DatabaseTransaction) => {
-  return tx
+export const listSongs = async (db: DatabaseOrTransaction) => {
+  return db
     .select(songColumns)
     .from(songs)
     .where(isNull(songs.deletedAt))
     .orderBy(desc(songs.createdAt));
 };
 
-const createSongTx = async (tx: DatabaseTransaction, values: SongCreateDbModel) => {
-  return tx.insert(songs).values(values).returning(songColumns);
+export const createSong = async (db: DatabaseOrTransaction, values: SongCreateDbModel) => {
+  return db.insert(songs).values(values).returning(songColumns);
 };
 
-const findSongByIdTx = async (tx: DatabaseTransaction, id: string) => {
-  const rows = await tx
+export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
+  const rows = await db
     .select(songColumns)
     .from(songs)
     .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
     .limit(1);
   return rows[0] ?? null;
-};
-
-export const listSongs = async () => {
-  const db = createDb();
-  return db
-    .transaction((tx) => listSongsTx(tx))
-    .catch((e) => new DbError({ message: "Failed to fetch songs.", cause: e }));
-};
-
-export const createSong = async (values: SongCreateDbModel) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => createSongTx(tx, values))
-    .catch((e) => new DbError({ message: "Failed to create song.", cause: e }));
-};
-
-export const findSongById = async (id: string) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => findSongByIdTx(tx, id))
-    .catch((e) => new DbError({ message: "Failed to fetch song.", cause: e }));
 };

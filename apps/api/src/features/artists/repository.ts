@@ -1,7 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
-import { DbError } from "@repo/errors";
-import { createDb, type DatabaseTransaction } from "../../shared/db";
 import { artists } from "../../shared/db/schema";
+import type { DatabaseOrTransaction } from "../../shared/db";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
 const artistColumns = {
@@ -16,20 +15,20 @@ const artistColumns = {
   updatedAt: artists.updatedAt,
 } as const;
 
-const listArtistsTx = async (tx: DatabaseTransaction) => {
-  return tx
+export const listArtists = async (db: DatabaseOrTransaction) => {
+  return db
     .select(artistColumns)
     .from(artists)
     .where(isNull(artists.deletedAt))
     .orderBy(desc(artists.createdAt));
 };
 
-const createArtistTx = async (tx: DatabaseTransaction, values: ArtistCreateDbModel) => {
-  return tx.insert(artists).values(values).returning(artistColumns);
+export const createArtist = async (db: DatabaseOrTransaction, values: ArtistCreateDbModel) => {
+  return db.insert(artists).values(values).returning(artistColumns);
 };
 
-const findArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
-  const rows = await tx
+export const findArtistById = async (db: DatabaseOrTransaction, id: string) => {
+  const rows = await db
     .select(artistColumns)
     .from(artists)
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
@@ -37,11 +36,11 @@ const findArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
-const updateArtistByIdTx = async (
-  tx: DatabaseTransaction,
+export const updateArtistById = async (
+  db: DatabaseOrTransaction,
   { id, values }: { id: string; values: ArtistUpdateDbModel },
 ) => {
-  const rows = await tx
+  const rows = await db
     .update(artists)
     .set({
       ...values,
@@ -53,8 +52,8 @@ const updateArtistByIdTx = async (
   return rows[0] ?? null;
 };
 
-const softDeleteArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
-  const rows = await tx
+export const softDeleteArtistById = async (db: DatabaseOrTransaction, id: string) => {
+  const rows = await db
     .update(artists)
     .set({
       deletedAt: sql`now()`,
@@ -64,45 +63,4 @@ const softDeleteArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
     .returning({ id: artists.id });
 
   return rows[0] ?? null;
-};
-
-export const listArtists = async () => {
-  const db = createDb();
-  return db
-    .transaction((tx) => listArtistsTx(tx))
-    .catch((e) => new DbError({ message: "Failed to fetch artists.", cause: e }));
-};
-
-export const createArtist = async (values: ArtistCreateDbModel) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => createArtistTx(tx, values))
-    .catch((e) => new DbError({ message: "Failed to create artist.", cause: e }));
-};
-
-export const findArtistById = async (id: string) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => findArtistByIdTx(tx, id))
-    .catch((e) => new DbError({ message: "Failed to fetch artist.", cause: e }));
-};
-
-export const updateArtistById = async ({
-  id,
-  values,
-}: {
-  id: string;
-  values: ArtistUpdateDbModel;
-}) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => updateArtistByIdTx(tx, { id, values }))
-    .catch((e) => new DbError({ message: "Failed to update artist.", cause: e }));
-};
-
-export const softDeleteArtistById = async (id: string) => {
-  const db = createDb();
-  return db
-    .transaction((tx) => softDeleteArtistByIdTx(tx, id))
-    .catch((e) => new DbError({ message: "Failed to delete artist.", cause: e }));
 };
