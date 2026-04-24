@@ -70,6 +70,9 @@ const artists = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
+      if (Object.keys(payload).length === 0) {
+        return c.json({ message: "Please provide at least one field to update." }, 400);
+      }
       const result = await modifyArtist({
         id,
         payload,
