@@ -67,17 +67,23 @@ const softDeleteArtistByIdTx = async (tx: DatabaseTransaction, id: string) => {
 
 export const listArtists = async () => {
   const db = createDb();
-  return db.transaction((tx) => listArtistsTx(tx)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => listArtistsTx(tx))
+    .catch((e) => new Error("Failed to fetch artists.", { cause: e }));
 };
 
 export const createArtist = async (values: ArtistCreateDbModel) => {
   const db = createDb();
-  return db.transaction((tx) => createArtistTx(tx, values)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => createArtistTx(tx, values))
+    .catch((e) => new Error("Failed to create artist.", { cause: e }));
 };
 
 export const findArtistById = async (id: string) => {
   const db = createDb();
-  return db.transaction((tx) => findArtistByIdTx(tx, id)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => findArtistByIdTx(tx, id))
+    .catch((e) => new Error("Failed to fetch artist.", { cause: e }));
 };
 
 export const updateArtistById = async ({
@@ -90,10 +96,12 @@ export const updateArtistById = async ({
   const db = createDb();
   return db
     .transaction((tx) => updateArtistByIdTx(tx, { id, values }))
-    .catch(() => new Error("failed"));
+    .catch((e) => new Error("Failed to update artist.", { cause: e }));
 };
 
 export const softDeleteArtistById = async (id: string) => {
   const db = createDb();
-  return db.transaction((tx) => softDeleteArtistByIdTx(tx, id)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => softDeleteArtistByIdTx(tx, id))
+    .catch((e) => new Error("Failed to delete artist.", { cause: e }));
 };

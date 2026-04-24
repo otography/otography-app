@@ -69,9 +69,11 @@ export const JAPAN_PREFECTURES = [
   "Okinawa",
 ] as const;
 
-const sqlStringList = (values: readonly string[]) => {
-  return sql.raw(values.map((value) => `'${value.replace(/'/g, "''")}'`).join(", "));
-};
+// アーティスト種別
+export const artistTypeEnum = pgEnum("type", ["person", "group"]);
+
+// 都道府県（users.birthplace と artists.birthplace で使用）
+export const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
 
 export const users = pgTable(
   "users",
@@ -81,7 +83,7 @@ export const users = pgTable(
     username: varchar("username", { length: 50 }).notNull().unique(),
     name: varchar("name", { length: 100 }),
     bio: text("bio"),
-    birthplace: varchar("birthplace", { length: 100 }),
+    birthplace: prefectureEnum("birthplace"),
     birthyear: integer("birthyear"),
     gender: varchar("gender", { length: 20 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -92,10 +94,6 @@ export const users = pgTable(
     check(
       "users_birthyear_check",
       sql`${table.birthyear} >= 1900 AND ${table.birthyear} <= EXTRACT(YEAR FROM CURRENT_DATE)`,
-    ),
-    check(
-      "users_birthplace_check",
-      sql`${table.birthplace} IS NULL OR ${table.birthplace} IN (${sqlStringList(JAPAN_PREFECTURES)})`,
     ),
     check("users_username_min_length", sql`length(btrim(${table.username})) >= 1`),
     pgPolicy("users_select_all", {
@@ -116,60 +114,6 @@ export const users = pgTable(
     }),
   ],
 );
-
-// アーティスト種別
-export const artistTypeEnum = pgEnum("type", ["person", "group"]);
-
-// 都道府県
-export const prefectureEnum = pgEnum("prefecture", [
-  "Hokkaido",
-  "Aomori",
-  "Iwate",
-  "Miyagi",
-  "Akita",
-  "Yamagata",
-  "Fukushima",
-  "Ibaraki",
-  "Tochigi",
-  "Gunma",
-  "Saitama",
-  "Chiba",
-  "Tokyo",
-  "Kanagawa",
-  "Niigata",
-  "Toyama",
-  "Ishikawa",
-  "Fukui",
-  "Yamanashi",
-  "Nagano",
-  "Gifu",
-  "Shizuoka",
-  "Aichi",
-  "Mie",
-  "Shiga",
-  "Kyoto",
-  "Osaka",
-  "Hyogo",
-  "Nara",
-  "Wakayama",
-  "Tottori",
-  "Shimane",
-  "Okayama",
-  "Hiroshima",
-  "Yamaguchi",
-  "Tokushima",
-  "Kagawa",
-  "Ehime",
-  "Kochi",
-  "Fukuoka",
-  "Saga",
-  "Nagasaki",
-  "Kumamoto",
-  "Oita",
-  "Miyazaki",
-  "Kagoshima",
-  "Okinawa",
-]);
 
 export const artists = pgTable(
   "artists",

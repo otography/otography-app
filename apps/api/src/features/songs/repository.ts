@@ -35,15 +35,21 @@ const findSongByIdTx = async (tx: DatabaseTransaction, id: string) => {
 
 export const listSongs = async () => {
   const db = createDb();
-  return db.transaction((tx) => listSongsTx(tx)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => listSongsTx(tx))
+    .catch((e) => new Error("Failed to fetch songs.", { cause: e }));
 };
 
 export const createSong = async (values: SongCreateDbModel) => {
   const db = createDb();
-  return db.transaction((tx) => createSongTx(tx, values)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => createSongTx(tx, values))
+    .catch((e) => new Error("Failed to create song.", { cause: e }));
 };
 
 export const findSongById = async (id: string) => {
   const db = createDb();
-  return db.transaction((tx) => findSongByIdTx(tx, id)).catch(() => new Error("failed"));
+  return db
+    .transaction((tx) => findSongByIdTx(tx, id))
+    .catch((e) => new Error("Failed to fetch song.", { cause: e }));
 };
