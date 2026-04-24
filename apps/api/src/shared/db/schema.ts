@@ -70,7 +70,7 @@ export const JAPAN_PREFECTURES = [
 ] as const;
 
 // アーティスト種別
-export const artistTypeEnum = pgEnum("type", ["person", "group"]);
+export const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
 
 // 都道府県（users.birthplace と artists.birthplace で使用）
 export const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
