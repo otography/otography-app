@@ -5,9 +5,9 @@ import { createSong, findSongById, listSongs } from "./repository";
 
 export const getSongs = async () => {
   const db = createDb();
-  const rows = await db
-    .transaction((tx) => listSongs(tx))
-    .catch((e) => new DbError({ message: "Failed to fetch songs.", cause: e }));
+  const rows = await listSongs(db).catch(
+    (e) => new DbError({ message: "Failed to fetch songs.", cause: e }),
+  );
   if (rows instanceof Error) return rows;
 
   return { songs: rows };
@@ -15,9 +15,9 @@ export const getSongs = async () => {
 
 export const getSong = async (id: string) => {
   const db = createDb();
-  const song = await db
-    .transaction((tx) => findSongById(tx, id))
-    .catch((e) => new DbError({ message: "Failed to fetch song.", cause: e }));
+  const song = await findSongById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch song.", cause: e }),
+  );
   if (song instanceof Error) return song;
   if (song === null) {
     return new DbError({ message: "Song not found.", statusCode: 404 });

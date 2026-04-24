@@ -21,6 +21,7 @@ import { createDb } from "../../../shared/db";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    ...txMethods,
     transaction: vi.fn(async (fn) => fn(txMethods)),
   } as never);
 };

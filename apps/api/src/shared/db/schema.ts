@@ -129,7 +129,13 @@ export const artists = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
-  (table) => [index("idx_artists_name").on(table.name), index("idx_artists_type").on(table.type)],
+  (table) => [
+    index("idx_artists_name").on(table.name),
+    index("idx_artists_type").on(table.type),
+    index("idx_artists_not_deleted")
+      .on(table.id)
+      .where(sql`${table.deletedAt} IS NULL`),
+  ],
 );
 
 export const favoriteArtists = pgTable(

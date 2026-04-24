@@ -11,9 +11,9 @@ import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
 export const getArtists = async () => {
   const db = createDb();
-  const rows = await db
-    .transaction((tx) => listArtists(tx))
-    .catch((e) => new DbError({ message: "Failed to fetch artists.", cause: e }));
+  const rows = await listArtists(db).catch(
+    (e) => new DbError({ message: "Failed to fetch artists.", cause: e }),
+  );
   if (rows instanceof Error) return rows;
 
   return { artists: rows };
@@ -21,9 +21,9 @@ export const getArtists = async () => {
 
 export const getArtist = async (id: string) => {
   const db = createDb();
-  const artist = await db
-    .transaction((tx) => findArtistById(tx, id))
-    .catch((e) => new DbError({ message: "Failed to fetch artist.", cause: e }));
+  const artist = await findArtistById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
+  );
   if (artist instanceof Error) return artist;
   if (artist === null) {
     return new DbError({ message: "Artist not found.", statusCode: 404 });
