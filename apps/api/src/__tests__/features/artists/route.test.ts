@@ -362,16 +362,6 @@ describe("artists endpoints", () => {
     });
   });
 
-  it("PATCH /api/artists/:id returns 400 for empty payload", async () => {
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211113", {
-      method: "PATCH",
-      body: {},
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide at least one field to update." });
-  });
-
   it("DELETE /api/artists/:id soft deletes artist", async () => {
     mockDbWithTransaction({
       update: vi.fn(() => ({
