@@ -166,6 +166,65 @@ describe("songs endpoints", () => {
     });
   });
 
+  it("POST /api/songs creates song with artistId", async () => {
+    const insert = vi
+      .fn()
+      .mockReturnValueOnce({
+        values: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([
+            {
+              id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
+              title: "New Song with Artist",
+              length: 200,
+              isrcs: null,
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ]),
+        })),
+      })
+      .mockReturnValueOnce({
+        values: vi.fn().mockResolvedValue(undefined),
+      });
+
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
+              },
+            ]),
+          })),
+        })),
+      })),
+      insert,
+    });
+
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: {
+        title: "New Song with Artist",
+        length: 200,
+        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
+      },
+    });
+
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({
+      song: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
+        title: "New Song with Artist",
+        length: 200,
+        isrcs: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    });
+    expect(insert).toHaveBeenCalledTimes(2);
+  });
+
   it("POST /api/songs returns 400 for invalid payload", async () => {
     const res = await testRequest("/api/songs", {
       method: "POST",
@@ -253,6 +312,113 @@ describe("songs endpoints", () => {
         updatedAt: "2026-01-02T00:00:00.000Z",
       },
     });
+  });
+
+  it("PATCH /api/songs/:id updates song with artistId", async () => {
+    const insert = vi.fn(() => ({
+      values: vi.fn().mockResolvedValue(undefined),
+    }));
+
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
+              },
+            ]),
+          })),
+        })),
+      })),
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222231",
+                title: "Updated Song with Artist",
+                length: 220,
+                isrcs: "JPABC240010",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-03T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue(undefined),
+      })),
+      insert,
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222231", {
+      method: "PATCH",
+      body: {
+        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      song: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222231",
+        title: "Updated Song with Artist",
+        length: 220,
+        isrcs: "JPABC240010",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-03T00:00:00.000Z",
+      },
+    });
+    expect(insert).toHaveBeenCalledTimes(1);
+  });
+
+  it("PATCH /api/songs/:id clears artistId with null", async () => {
+    const insert = vi.fn();
+
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222232",
+                title: "Updated Song without Artist",
+                length: 180,
+                isrcs: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-03T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue(undefined),
+      })),
+      insert,
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222232", {
+      method: "PATCH",
+      body: {
+        artistId: null,
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      song: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222232",
+        title: "Updated Song without Artist",
+        length: 180,
+        isrcs: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-03T00:00:00.000Z",
+      },
+    });
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("PATCH /api/songs/:id returns 400 for invalid id", async () => {
