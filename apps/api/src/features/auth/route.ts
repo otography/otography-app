@@ -78,10 +78,67 @@ const auth = new Hono<{ Bindings: Bindings }>()
         c,
       );
     }
-    const sessionCookie = await createSessionCookie(signUpResult.idToken);
+
+    // 1. DB にユーザーレコード作成 (firebase_id のみ、username は null)
+    const db = createDb();
+    const insertResult = await db
+      .insert(users)
+      .values({ firebaseId: signUpResult.localId })
+      .returning()
+      .catch(
+        (e) =>
+          new AuthError({
+            message: "Failed to create user record.",
+            code: "db-error",
+            statusCode: 500,
+            cause: e,
+          }),
+      );
+    if (insertResult instanceof Error) return handleAuthError(insertResult, c);
+
+    const newUser = insertResult[0];
+    if (!newUser) {
+      return handleAuthError(
+        new AuthError({
+          message: "Failed to create user record.",
+          code: "db-error",
+          statusCode: 500,
+        }),
+        c,
+      );
+    }
+
+    // 2. Custom Claims に UUID を設定
+    const claimsResult = await setCustomUserClaims(signUpResult.localId, {
+      db_uuid: newUser.id,
+    });
+    if (claimsResult instanceof Error) return handleAuthError(claimsResult, c);
+
+    // 3. Custom Token 作成 → ID Token 交換 (db_uuid を含む新鮮なトークンを取得)
+    const customTokenResult = await createCustomToken(signUpResult.localId);
+    if (customTokenResult instanceof Error) return handleAuthError(customTokenResult, c);
+
+    const tokenResult = await exchangeCustomToken(c.env.FIREBASE_API_KEY, customTokenResult);
+    if (tokenResult instanceof Error) {
+      return handleAuthError(
+        new AuthError({
+          message: tokenResult.message,
+          code: "token-exchange-failed",
+          statusCode: tokenResult.statusCode,
+          cause: tokenResult,
+        }),
+        c,
+      );
+    }
+
+    // 4. セッションクッキー作成
+    const sessionCookie = await createSessionCookie(tokenResult.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     setSessionCookie(c, sessionCookie);
-    await setRefreshTokenCookie(c, signUpResult.refreshToken);
+
+    // 5. リフレッシュトークン (交換で得られたものを使用)
+    await setRefreshTokenCookie(c, tokenResult.refreshToken);
+
     return c.json({ message: "Account created successfully." }, 201);
   })
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {

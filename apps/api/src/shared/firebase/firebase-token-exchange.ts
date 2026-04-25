@@ -2,11 +2,20 @@ import { type } from "arktype";
 import { AuthRestError } from "@repo/errors";
 
 const FIREBASE_SECURE_TOKEN_BASE_URL = "https://securetoken.googleapis.com/v1";
+const FIREBASE_IDENTITY_TOOLKIT_BASE_URL = "https://identitytoolkit.googleapis.com/v1";
 
 const firebaseTokenExchangeErrorSchema = type({
   error: {
     "message?": "string",
   },
+});
+
+// Custom Token 交換レスポンスのスキーマ
+const customTokenExchangeResponseSchema = type({
+  idToken: "string",
+  refreshToken: "string",
+  expiresIn: "string",
+  isNewUser: "boolean",
 });
 
 const firebaseTokenExchangeResponseSchema = type({
@@ -36,6 +45,23 @@ const TOKEN_EXCHANGE_ERROR_MESSAGE: Record<string, string> = {
   INVALID_GRANT_TYPE: "Invalid grant type.",
   MISSING_REFRESH_TOKEN: "No refresh token provided.",
   PROJECT_NUMBER_MISMATCH: "Project number mismatch.",
+};
+
+// Custom Token 交換 (identitytoolkit API) のエラーマッピング
+const CUSTOM_TOKEN_EXCHANGE_ERROR_STATUS: Readonly<Record<string, 400 | 401 | 403>> = {
+  INVALID_CUSTOM_TOKEN: 401,
+  TOKEN_EXPIRED: 401,
+  USER_DISABLED: 403,
+  USER_NOT_FOUND: 401,
+  INVALID_CREDENTIAL: 401,
+} as const;
+
+const CUSTOM_TOKEN_EXCHANGE_ERROR_MESSAGE: Record<string, string> = {
+  INVALID_CUSTOM_TOKEN: "Invalid custom token.",
+  TOKEN_EXPIRED: "Custom token has expired.",
+  USER_DISABLED: "This account has been disabled.",
+  USER_NOT_FOUND: "User not found.",
+  INVALID_CREDENTIAL: "Invalid credential.",
 };
 
 export const exchangeRefreshToken = async (firebaseApiKey: string, refreshToken: string) => {
@@ -70,6 +96,55 @@ export const exchangeRefreshToken = async (firebaseApiKey: string, refreshToken:
   }
 
   return parsedPayload;
+};
+
+// Custom Token → ID Token + Refresh Token に交換
+export const exchangeCustomToken = async (firebaseApiKey: string, customToken: string) => {
+  const url = new URL(`${FIREBASE_IDENTITY_TOOLKIT_BASE_URL}/accounts:signInWithCustomToken`);
+  url.searchParams.set("key", firebaseApiKey);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token: customToken, returnSecureToken: true }),
+  }).catch((e) => createCustomTokenExchangeError(undefined, 503, e));
+  if (response instanceof Error) return response;
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const parsedError = firebaseTokenExchangeErrorSchema(payload);
+    const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
+    return createCustomTokenExchangeError(code);
+  }
+
+  if (!payload) {
+    return createCustomTokenExchangeError(undefined, 502);
+  }
+
+  const parsedPayload = customTokenExchangeResponseSchema(payload);
+
+  if (parsedPayload instanceof type.errors) {
+    return createCustomTokenExchangeError(undefined, 502);
+  }
+
+  return parsedPayload;
+};
+
+const createCustomTokenExchangeError = (
+  code?: string,
+  fallbackStatus: 400 | 401 | 403 | 502 | 503 = 401,
+  cause?: unknown,
+) => {
+  // Identity Toolkit API はエラーメッセージにコードを含む
+  // 例: "INVALID_CUSTOM_TOKEN", "TOKEN_EXPIRED ...", etc.
+  const errorCode = code?.split(" ")[0];
+  return new AuthRestError({
+    message:
+      CUSTOM_TOKEN_EXCHANGE_ERROR_MESSAGE[errorCode ?? ""] ?? "Custom token exchange failed.",
+    statusCode: CUSTOM_TOKEN_EXCHANGE_ERROR_STATUS[errorCode ?? ""] ?? fallbackStatus,
+    ...(cause ? { cause } : {}),
+  });
 };
 
 const createTokenExchangeError = (

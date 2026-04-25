@@ -96,11 +96,14 @@ export const users = pgTable(
       "users_birthyear_check",
       sql`${table.birthyear} >= 1900 AND ${table.birthyear} <= EXTRACT(YEAR FROM CURRENT_DATE)`,
     ),
-    check("users_username_min_length", sql`length(btrim(${table.username})) >= 1`),
-    pgPolicy("users_select_all", {
+    check(
+      "users_username_min_length",
+      sql`${table.username} IS NULL OR length(btrim(${table.username})) >= 1`,
+    ),
+    pgPolicy("users_select_own", {
       for: "select",
-      to: "public",
-      using: sql`true`,
+      to: authenticatedRole,
+      using: sql`${table.id} = requesting_user_id()::uuid`,
     }),
     pgPolicy("users_insert_own", {
       for: "insert",
@@ -115,6 +118,20 @@ export const users = pgTable(
     }),
   ],
 );
+
+// 公開プロフィール用ビュー（機密カラムを除外、security_invoker で RLS を適用）
+export const userProfiles = pgView("user_profiles", {
+  id: uuid("id"),
+  username: varchar("username", { length: 50 }),
+  name: varchar("name", { length: 100 }),
+  bio: text("bio"),
+  createdAt: timestamp("created_at", { withTimezone: true }),
+})
+  .with({
+    securityInvoker: true,
+    securityBarrier: true,
+  })
+  .as(sql`SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL`);
 
 export const artists = pgTable(
   "artists",
