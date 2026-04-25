@@ -6,7 +6,7 @@
   "ddl": [
     {
       "values": ["person", "group"],
-      "name": "type",
+      "name": "artist_type",
       "entityType": "enums",
       "schema": "public"
     },
@@ -176,7 +176,7 @@
       "table": "artists"
     },
     {
-      "type": "type",
+      "type": "artist_type",
       "typeSchema": "public",
       "notNull": false,
       "dimensions": 0,
@@ -1136,6 +1136,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "idx_artists_type",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "artists"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"deleted_at\" IS NULL",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "idx_artists_not_deleted",
       "entityType": "indexes",
       "schema": "public",
       "table": "artists"

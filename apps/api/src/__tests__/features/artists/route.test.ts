@@ -258,6 +258,62 @@ describe("artists endpoints", () => {
     });
   });
 
+  it("PATCH /api/artists/:id returns 400 for invalid id", async () => {
+    const res = await testRequest("/api/artists/not-uuid", {
+      method: "PATCH",
+      body: {
+        name: "Updated Artist",
+      },
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid artist id." });
+  });
+
+  it("PATCH /api/artists/:id returns 400 for empty payload", async () => {
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211118", {
+      method: "PATCH",
+      body: {},
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide at least one field to update." });
+  });
+
+  it("PATCH /api/artists/:id returns 400 for invalid payload", async () => {
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211119", {
+      method: "PATCH",
+      body: {
+        birthdate: "not-date",
+      },
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
+  });
+
+  it("PATCH /api/artists/:id returns 404 when not found", async () => {
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211120", {
+      method: "PATCH",
+      body: {
+        name: "No Artist",
+      },
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Artist not found." });
+  });
+
   it("PATCH /api/artists/:id allows clearing nullable fields with null", async () => {
     mockDbWithTransaction({
       update: vi.fn(() => ({
@@ -336,5 +392,24 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(204);
+  });
+
+  it("DELETE /api/artists/:id returns 404 when not found", async () => {
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211121", {
+      method: "DELETE",
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Artist not found." });
   });
 });
