@@ -19,20 +19,6 @@ const mockDbWithRls = (txMethods: Record<string, unknown>) => {
   } as never);
 };
 
-// withRls フォールバック用モック: db_uuid なし → DB ルックアップ + トランザクション
-const mockDbWithRlsFallback = (uuid: string, txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
-        })),
-      })),
-    })),
-    transaction: vi.fn(async (fn) => fn(txMethods)),
-  } as never);
-};
-
 // selectUserByUsername など withRls を使わず直接 select するクエリ用のモック
 const mockDbWithSelect = (resolvedValue: unknown[]) => {
   vi.mocked(createDb).mockReturnValue({
@@ -185,46 +171,20 @@ describe("GET /api/user", () => {
     expect(await res.json()).toEqual({ message: "User record not found." });
   });
 
-  it("falls back to DB lookup when db_uuid is missing (backward compat)", async () => {
+  it("returns 500 when db_uuid is missing in session claims", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
-      // db_uuid なし → フォールバックで DB ルックアップ
-    });
-    mockDbWithRlsFallback("uuid-user", {
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "uuid-user",
-                firebaseId: "user123",
-                username: "test",
-                name: null,
-                bio: null,
-                birthplace: null,
-                birthyear: null,
-                gender: null,
-                createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-                deletedAt: null,
-              },
-            ]),
-          })),
-        })),
-      })),
-      execute: vi.fn().mockResolvedValue([]),
+      // db_uuid なし → withRls が RlsError を返す → usecase が AuthError でラップ
     });
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
     });
 
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body).toMatchObject({
-      profile: { username: "test" },
-    });
+    expect(body).toMatchObject({ message: "Failed to fetch user profile." });
   });
 });
 
