@@ -1,5 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { DbError } from "@repo/errors";
 import { users, type SetupProfileValues, type UpdateUserValues } from "../../shared/db/schema";
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
@@ -27,6 +28,10 @@ export const selectUserByUsername = async (username: string) => {
 
 // ユーザーを新規作成（username, name）— withRls を使わず createDb() を直接使用
 export const insertUserProfile = async (claims: DecodedIdToken, values: SetupProfileValues) => {
+  if (typeof claims.sub !== "string") {
+    return new DbError({ message: "Missing user identifier in session." });
+  }
+
   const db = createDb();
   return db
     .insert(users)
@@ -35,7 +40,10 @@ export const insertUserProfile = async (claims: DecodedIdToken, values: SetupPro
       target: users.firebaseId,
       set: { ...values, deletedAt: null, updatedAt: sql`now()` },
     })
-    .returning();
+    .returning()
+    .catch(
+      (e) => new DbError({ message: "Failed to insert user profile.", statusCode: 500, cause: e }),
+    );
 };
 
 // ユーザーのプロフィール詳細を更新（bio, birthplace, birthyear, gender, name）

@@ -104,13 +104,13 @@ export const users = pgTable(
     pgPolicy("users_insert_own", {
       for: "insert",
       to: authenticatedRole,
-      withCheck: sql`${table.id} = requesting_user_id()`,
+      withCheck: sql`${table.id} = requesting_user_id()::uuid`,
     }),
     pgPolicy("users_update_own", {
       for: "update",
       to: authenticatedRole,
-      using: sql`${table.id} = requesting_user_id()`,
-      withCheck: sql`${table.id} = requesting_user_id()`,
+      using: sql`${table.id} = requesting_user_id()::uuid`,
+      withCheck: sql`${table.id} = requesting_user_id()::uuid`,
     }),
   ],
 );

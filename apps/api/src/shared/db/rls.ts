@@ -19,7 +19,12 @@ export async function withRls<T>(
     .select({ id: users.id })
     .from(users)
     .where(eq(users.firebaseId, firebaseId))
-    .limit(1);
+    .limit(1)
+    .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+
+  if (lookupResult instanceof RlsError) {
+    return lookupResult;
+  }
 
   const userRow = lookupResult[0];
   if (!userRow) {
