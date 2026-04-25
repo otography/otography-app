@@ -30,4 +30,22 @@ const revokeRefreshTokens = (uid: string) =>
     .revokeRefreshTokens(uid)
     .catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
 
-export { createSessionCookie, verifySessionCookie, revokeRefreshTokens };
+// Custom Token 作成（ローカル JWT 署名、REST API 不要）
+const createCustomToken = (uid: string, developerClaims?: object) =>
+  firebaseAuth
+    .createCustomToken(uid, developerClaims)
+    .catch((e) => AuthError.fromFirebase(e, "Failed to create custom token.", 502));
+
+// Custom Claims 設定
+const setCustomUserClaims = (uid: string, customUserClaims: object | null) =>
+  firebaseAuth
+    .setCustomUserClaims(uid, customUserClaims)
+    .catch((e) => AuthError.fromFirebase(e, "Failed to set custom claims.", 502));
+
+export {
+  createSessionCookie,
+  verifySessionCookie,
+  revokeRefreshTokens,
+  createCustomToken,
+  setCustomUserClaims,
+};

@@ -12,8 +12,15 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { createDb } from "../../../shared/db";
 
-// withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
-const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
+// withRls のモック: Custom Claims の db_uuid 直接使用パターン
+const mockDbWithRls = (txMethods: Record<string, unknown>) => {
+  vi.mocked(createDb).mockReturnValue({
+    transaction: vi.fn(async (fn) => fn(txMethods)),
+  } as never);
+};
+
+// withRls フォールバック用モック: db_uuid なし → DB ルックアップ + トランザクション
+const mockDbWithRlsFallback = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
     select: vi.fn(() => ({
       from: vi.fn(() => ({
@@ -23,19 +30,6 @@ const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
       })),
     })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
-  } as never);
-};
-
-// insertUserProfile (withRls なし) のモック
-const mockDbWithInsert = (resolvedValue: unknown[]) => {
-  vi.mocked(createDb).mockReturnValue({
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue(resolvedValue),
-        })),
-      })),
-    })),
   } as never);
 };
 
@@ -83,22 +77,32 @@ describe("GET /api/user", () => {
       email: "test@example.com",
       name: "Test User",
       picture: "https://example.com/photo.jpg",
+      db_uuid: "uuid-user",
     });
-    mockDbWithSelect([
-      {
-        id: "uuid-user",
-        firebaseId: "user123",
-        username: "test",
-        name: null,
-        bio: null,
-        birthplace: null,
-        birthyear: null,
-        gender: null,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        deletedAt: null,
-      },
-    ]);
+    mockDbWithRls({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: "test",
+                name: null,
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
@@ -114,12 +118,64 @@ describe("GET /api/user", () => {
     });
   });
 
+  it("returns 200 with username null for profile-not-setup user", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+      db_uuid: "uuid-user",
+    });
+    mockDbWithRls({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: null,
+                name: null,
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      cookie: { otography_session: "valid-session" },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({
+      profile: { username: null },
+    });
+  });
+
   it("returns 404 when user record not found", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithSelect([]);
+    mockDbWithRls({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
@@ -127,6 +183,48 @@ describe("GET /api/user", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ message: "User record not found." });
+  });
+
+  it("falls back to DB lookup when db_uuid is missing (backward compat)", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+      // db_uuid なし → フォールバックで DB ルックアップ
+    });
+    mockDbWithRlsFallback("uuid-user", {
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: "test",
+                name: null,
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      cookie: { otography_session: "valid-session" },
+    });
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({
+      profile: { username: "test" },
+    });
   });
 });
 
@@ -164,22 +262,32 @@ describe("PATCH /api/user/profile", () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithInsert([
-      {
-        id: "uuid-user",
-        firebaseId: "user123",
-        username: "newuser",
-        name: "New User",
-        bio: null,
-        birthplace: null,
-        birthyear: null,
-        gender: null,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        deletedAt: null,
-      },
-    ]);
+    mockDbWithRls({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: "newuser",
+                name: "New User",
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
@@ -194,21 +302,22 @@ describe("PATCH /api/user/profile", () => {
     });
   });
 
-  it("returns 500 when DB insert fails", async () => {
+  it("returns 500 when DB update fails", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    // Make returning() reject to simulate a DB error
-    vi.mocked(createDb).mockReturnValue({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
+    mockDbWithRls({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
             returning: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),
       })),
-    } as never);
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
@@ -239,8 +348,9 @@ describe("PATCH /api/user", () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithRls("uuid-user", {
+    mockDbWithRls({
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -282,8 +392,9 @@ describe("PATCH /api/user", () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithRls("uuid-user", {
+    mockDbWithRls({
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -320,8 +431,9 @@ describe("DELETE /api/user", () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithRls("uuid-user", {
+    mockDbWithRls({
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -359,8 +471,9 @@ describe("DELETE /api/user", () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
+      db_uuid: "uuid-user",
     });
-    mockDbWithRls("uuid-user", {
+    mockDbWithRls({
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -390,16 +503,10 @@ describe("GET /api/users/:username", () => {
     mockDbWithSelect([
       {
         id: "uuid-user",
-        firebaseId: "user123",
         username: "testuser",
         name: "Test User",
         bio: "Hello world",
-        birthplace: "Tokyo",
-        birthyear: 1990,
-        gender: null,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        deletedAt: null,
       },
     ]);
 

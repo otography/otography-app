@@ -13,39 +13,41 @@ export async function withRls<T>(
     return new RlsError({ message: "Missing user identifier in session." });
   }
 
-  // Firebase ID → UUID 解決
-  const db = createDb();
-  const lookupResult = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.firebaseId, firebaseId))
-    .limit(1)
-    .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+  // Custom Claims の db_uuid を優先使用
+  let userId: string;
+  const dbUuid = (claims as { db_uuid?: string }).db_uuid;
 
-  if (lookupResult instanceof RlsError) {
-    return lookupResult;
+  if (typeof dbUuid === "string" && dbUuid.length > 0) {
+    // Custom Claims に db_uuid があれば直接使用（DB ルックアップなし）
+    userId = dbUuid;
+  } else {
+    // フォールバック: Firebase ID → UUID ルックアップ
+    const db = createDb();
+    const lookupResult = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.firebaseId, firebaseId))
+      .limit(1)
+      .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+
+    if (lookupResult instanceof RlsError) {
+      return lookupResult;
+    }
+
+    const userRow = lookupResult[0];
+    if (!userRow) {
+      return new RlsError({ message: "User not found in database." });
+    }
+    userId = userRow.id;
   }
 
-  const userRow = lookupResult[0];
-  if (!userRow) {
-    return new RlsError({ message: "User not found in database." });
-  }
-
-  const userId = userRow.id;
   const jwtClaims = JSON.stringify({ sub: userId });
+  const db = createDb();
 
   const result = await db
     .transaction(async (tx) => {
-      await tx
-        .execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`)
-        .catch((e) => {
-          throw new RlsError({ message: "Failed to set JWT claims for RLS.", cause: e });
-        });
-
-      await tx.execute(sql.raw("set local role authenticated")).catch((e) => {
-        throw new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e });
-      });
-
+      await tx.execute(sql`select set_config('request.jwt.claims', ${jwtClaims}, true)`);
+      await tx.execute(sql.raw("set local role authenticated"));
       return await fn(tx, userId);
     })
     .catch((e) =>

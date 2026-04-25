@@ -11,6 +11,7 @@ import {
   pgPolicy,
   pgRole,
   pgTable,
+  pgView,
   primaryKey,
   text,
   timestamp,
@@ -80,7 +81,7 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
-    username: varchar("username", { length: 50 }).notNull().unique(),
+    username: varchar("username", { length: 50 }).unique(),
     name: varchar("name", { length: 100 }),
     bio: text("bio"),
     birthplace: prefectureEnum("birthplace"),

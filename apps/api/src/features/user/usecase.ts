@@ -4,7 +4,7 @@ import type { SetupProfileValues, UpdateUserValues } from "../../shared/db/schem
 import {
   selectCurrentUser,
   selectUserByUsername,
-  insertUserProfile,
+  setupProfile as setupProfileRepo,
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
@@ -46,9 +46,9 @@ export const getProfile = async (session: DecodedIdToken) => {
   };
 };
 
-// 初回プロフィール設定（username, name）— DB レコードを新規作成
+// 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const result = await insertUserProfile(session, values);
+  const result = await setupProfileRepo(session, values);
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to create profile.",

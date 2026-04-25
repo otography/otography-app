@@ -4,10 +4,18 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
-import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
+import {
+  createSessionCookie,
+  revokeRefreshTokens,
+  createCustomToken,
+  setCustomUserClaims,
+} from "../../shared/firebase/firebase-admin";
+import { exchangeCustomToken } from "../../shared/firebase/firebase-token-exchange";
 import { csrfProtection, getAuthSession } from "../../shared/middleware";
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
+import { createDb } from "../../shared/db";
+import { users } from "../../shared/db/schema";
 import type { Bindings } from "../../shared/types/bindings";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
 
