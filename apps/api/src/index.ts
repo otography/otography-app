@@ -2,6 +2,8 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { auth } from "./features/auth";
+import { artists } from "./features/artists";
+import { songs } from "./features/songs";
 import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
@@ -26,6 +28,8 @@ const app = new Hono<{ Bindings: Bindings }>()
     return c.json({ message: "Internal server error." }, 500);
   })
   .route("/", auth)
+  .route("/", artists)
+  .route("/", songs)
   .route("/", user)
   .get("/", (c) => c.text("Hello Hono!"));
 

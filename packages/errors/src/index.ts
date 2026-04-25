@@ -17,3 +17,4 @@ export {
   OAuthStateError,
 } from "./oauth-errors";
 export { RlsError } from "./rls-error";
+export { DbError } from "./db-error";
