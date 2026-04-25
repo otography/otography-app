@@ -21,8 +21,15 @@ vi.mock("../../../shared/db", () => ({
 import { createDb } from "../../../shared/db";
 
 // リフレッシュ成功時にルートハンドラがDBにアクセスするためのモック
-const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
   } as never);
 };
@@ -74,7 +81,7 @@ describe("Session refresh on protected route (GET /api/user)", () => {
         sub: "user123",
         email: "test@example.com",
       });
-      mockDbWithTransaction(defaultDbTx);
+      mockDbWithRls("uuid-user", defaultDbTx);
 
       const res = await testRequest("/api/user");
 
@@ -140,7 +147,7 @@ describe("Session refresh on protected route (GET /api/user)", () => {
         refresh_token: "new-refresh-token",
       });
       mockCreateSessionCookie.mockResolvedValue("new-session-cookie");
-      mockDbWithTransaction(defaultDbTx);
+      mockDbWithRls("uuid-user", defaultDbTx);
 
       const res = await testRequest("/api/user", {
         cookie: { otography_session: "expired-session" },

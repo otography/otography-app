@@ -12,10 +12,30 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { createDb } from "../../../shared/db";
 
-// withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
-const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+// withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
+const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
+  } as never);
+};
+
+// insertUserProfile (withRls なし) のモック
+const mockDbWithInsert = (resolvedValue: unknown[]) => {
+  vi.mocked(createDb).mockReturnValue({
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue(resolvedValue),
+        })),
+      })),
+    })),
   } as never);
 };
 
@@ -64,7 +84,7 @@ describe("GET /api/user", () => {
       name: "Test User",
       picture: "https://example.com/photo.jpg",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -108,7 +128,7 @@ describe("GET /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -163,30 +183,21 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "uuid-user",
-                firebaseId: "user123",
-                username: "newuser",
-                name: "New User",
-                bio: null,
-                birthplace: null,
-                birthyear: null,
-                gender: null,
-                createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-                deletedAt: null,
-              },
-            ]),
-          })),
-        })),
-      })),
-      execute: vi.fn().mockResolvedValue([]),
-    });
+    mockDbWithInsert([
+      {
+        id: "uuid-user",
+        firebaseId: "user123",
+        username: "newuser",
+        name: "New User",
+        bio: null,
+        birthplace: null,
+        birthyear: null,
+        gender: null,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+        deletedAt: null,
+      },
+    ]);
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
@@ -206,16 +217,7 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(new Error("DB error")),
-          })),
-        })),
-      })),
-      execute: vi.fn().mockResolvedValue([]),
-    });
+    mockDbWithInsert([]);
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
@@ -247,7 +249,7 @@ describe("PATCH /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -290,7 +292,7 @@ describe("PATCH /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -328,7 +330,7 @@ describe("DELETE /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -367,7 +369,7 @@ describe("DELETE /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({

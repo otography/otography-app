@@ -2,7 +2,7 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
 import type { SetupProfileValues, UpdateUserValues } from "../../shared/db/schema";
 import {
-  selectUserByFirebaseId,
+  selectCurrentUser,
   selectUserByUsername,
   insertUserProfile,
   updateUserDetails,
@@ -11,7 +11,7 @@ import {
 
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
-  const result = await selectUserByFirebaseId(session);
+  const result = await selectCurrentUser(session);
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to fetch user profile.",
