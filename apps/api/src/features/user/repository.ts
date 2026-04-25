@@ -5,22 +5,27 @@ import { users, type SetupProfileValues, type UpdateUserValues } from "../../sha
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
 
-// UUID でユーザーを取得（論理削除済みは除外、RLS 適用）
+// 現在のユーザーを取得（論理削除済みは除外、公開 SELECT のため withRls 不要）
 export const selectCurrentUser = async (claims: DecodedIdToken) => {
-  return withRls(claims, async (tx, userId) =>
-    tx
-      .select()
-      .from(users)
-      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
-      .limit(1),
-  );
-};
-
-// username でユーザーを取得（論理削除済みは除外、公開プロフィール用）
-export const selectUserByUsername = async (username: string) => {
   const db = createDb();
   return db
     .select()
+    .from(users)
+    .where(and(eq(users.firebaseId, claims.sub), isNull(users.deletedAt)))
+    .limit(1);
+};
+
+// username でユーザーを取得（論理削除済みは除外、公開プロフィール用）
+// 公開プロフィールに必要なカラムのみ取得（firebaseId などの機密情報を含めない）
+export const selectUserByUsername = async (username: string) => {
+  const db = createDb();
+  return db
+    .select({
+      username: users.username,
+      name: users.name,
+      bio: users.bio,
+      createdAt: users.createdAt,
+    })
     .from(users)
     .where(and(eq(users.username, username), isNull(users.deletedAt)))
     .limit(1);
