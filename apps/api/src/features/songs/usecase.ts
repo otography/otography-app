@@ -6,7 +6,13 @@ import {
   toSongCreateDbModel,
   toSongUpdateDbModel,
 } from "./model";
-import { createSongWithArtist, findSongById, listSongs, updateSongById } from "./repository";
+import {
+  createSongWithArtist,
+  findActiveArtistById,
+  findSongById,
+  listSongs,
+  updateSongById,
+} from "./repository";
 
 export const getSongs = async () => {
   const db = createDb();
@@ -33,6 +39,17 @@ export const getSong = async (id: string) => {
 
 export const registerSong = async (payload: SongCreatePayload) => {
   const db = createDb();
+
+  if (payload.artistId !== undefined) {
+    const artist = await findActiveArtistById(db, payload.artistId).catch(
+      (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
+    );
+    if (artist instanceof Error) return artist;
+    if (artist === null) {
+      return new DbError({ message: "Artist not found.", statusCode: 404 });
+    }
+  }
+
   const song = await db
     .transaction((tx) =>
       createSongWithArtist(tx, {
@@ -56,6 +73,17 @@ type UpdateSongInput = {
 
 export const modifySong = async ({ id, payload }: UpdateSongInput) => {
   const db = createDb();
+
+  if (payload.artistId !== undefined && payload.artistId !== null) {
+    const artist = await findActiveArtistById(db, payload.artistId).catch(
+      (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
+    );
+    if (artist instanceof Error) return artist;
+    if (artist === null) {
+      return new DbError({ message: "Artist not found.", statusCode: 404 });
+    }
+  }
+
   const song = await db
     .transaction((tx) =>
       updateSongById(tx, {

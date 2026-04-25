@@ -191,4 +191,133 @@ describe("songs endpoints", () => {
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
   });
+
+  it("POST /api/songs returns 404 when artist does not exist", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: {
+        title: "Song with unknown artist",
+        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
+      },
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Artist not found." });
+  });
+
+  it("PATCH /api/songs/:id updates song", async () => {
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
+                title: "Updated Song",
+                length: 220,
+                isrcs: "JPABC240009",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-02T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222225", {
+      method: "PATCH",
+      body: {
+        title: "Updated Song",
+      },
+    });
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      song: {
+        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
+        title: "Updated Song",
+        length: 220,
+        isrcs: "JPABC240009",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      },
+    });
+  });
+
+  it("PATCH /api/songs/:id returns 400 for invalid id", async () => {
+    const res = await testRequest("/api/songs/not-uuid", {
+      method: "PATCH",
+      body: {
+        title: "Updated Song",
+      },
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
+  });
+
+  it("PATCH /api/songs/:id returns 400 for empty payload", async () => {
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222226", {
+      method: "PATCH",
+      body: {},
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide at least one field to update." });
+  });
+
+  it("PATCH /api/songs/:id returns 404 when song not found", async () => {
+    mockDbWithTransaction({
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222227", {
+      method: "PATCH",
+      body: {
+        title: "No Song",
+      },
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Song not found." });
+  });
+
+  it("PATCH /api/songs/:id returns 404 when artist does not exist", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222228", {
+      method: "PATCH",
+      body: {
+        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
+      },
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Artist not found." });
+  });
 });

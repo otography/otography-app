@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import { songArtists, songs } from "../../shared/db/schema";
+import { artists, songArtists, songs } from "../../shared/db/schema";
 import type { SongCreateDbModel, SongUpdateDbModel } from "./model";
 
 const songColumns = {
@@ -54,6 +54,15 @@ export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
+export const findActiveArtistById = async (db: DatabaseOrTransaction, id: string) => {
+  const rows = await db
+    .select({ id: artists.id })
+    .from(artists)
+    .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
+    .limit(1);
+  return rows[0] ?? null;
+};
+
 export const updateSongById = async (
   db: DatabaseOrTransaction,
   {
@@ -81,7 +90,9 @@ export const updateSongById = async (
   }
 
   if (artistId !== undefined) {
-    await db.delete(songArtists).where(eq(songArtists.songId, id));
+    await db
+      .delete(songArtists)
+      .where(and(eq(songArtists.songId, id), eq(songArtists.isGuest, false)));
 
     if (artistId !== null) {
       await db.insert(songArtists).values({
