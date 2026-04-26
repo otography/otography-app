@@ -75,7 +75,8 @@ const auth = new Hono<{ Bindings: Bindings }>()
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
 
     // DB にユーザーレコード作成（firebase_id のみ、username は null）
-    await createUserRecord({ firebaseId: signUpResult.localId });
+    const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
+    if (userRecord instanceof Error) return handleAuthError(userRecord, c);
 
     setSessionCookie(c, sessionCookie);
     await setRefreshTokenCookie(c, signUpResult.refreshToken);
