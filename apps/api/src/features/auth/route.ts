@@ -9,6 +9,7 @@ import { csrfProtection, getAuthSession } from "../../shared/middleware";
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import type { Bindings } from "../../shared/types/bindings";
+import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
 
 const credentialsBodySchema = type({
@@ -72,6 +73,10 @@ const auth = new Hono<{ Bindings: Bindings }>()
     }
     const sessionCookie = await createSessionCookie(signUpResult.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
+
+    // DB にユーザーレコード作成（firebase_id のみ、username は null）
+    await createUserRecord({ firebaseId: signUpResult.localId });
+
     setSessionCookie(c, sessionCookie);
     await setRefreshTokenCookie(c, signUpResult.refreshToken);
     return c.json({ message: "Account created successfully." }, 201);

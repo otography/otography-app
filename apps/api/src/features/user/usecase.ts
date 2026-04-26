@@ -1,13 +1,32 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
-import type { SetupProfileValues, UpdateUserValues } from "../../shared/db/schema";
+import type {
+  InsertUserValues,
+  SetupProfileValues,
+  UpdateUserValues,
+} from "../../shared/db/schema";
 import {
+  insertUser,
   selectCurrentUser,
   selectUserByUsername,
-  insertUserProfile,
+  setupProfile as setupProfileRepo,
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
+
+// サインアップ時にユーザーレコードを作成
+export const createUserRecord = async (values: InsertUserValues) => {
+  const result = await insertUser(values);
+  if (result instanceof Error) {
+    return new AuthError({
+      message: "Failed to create user record.",
+      code: "db-error",
+      statusCode: 500,
+      cause: result,
+    });
+  }
+  return result;
+};
 
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
@@ -46,9 +65,9 @@ export const getProfile = async (session: DecodedIdToken) => {
   };
 };
 
-// 初回プロフィール設定（username, name）— DB レコードを新規作成
+// 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const result = await insertUserProfile(session, values);
+  const result = await setupProfileRepo(session, values);
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to create profile.",
