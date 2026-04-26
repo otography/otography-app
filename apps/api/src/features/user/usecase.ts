@@ -16,15 +16,16 @@ import {
 
 // サインアップ時にユーザーレコードを作成
 export const createUserRecord = async (values: InsertUserValues) => {
-  const result = await insertUser(values);
-  if (result instanceof Error) {
-    return new AuthError({
-      message: "Failed to create user record.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
-  }
+  const result = await insertUser(values).catch(
+    (e) =>
+      new AuthError({
+        message: "Failed to create user record.",
+        code: "db-error",
+        statusCode: 500,
+        cause: e,
+      }),
+  );
+  if (result instanceof Error) return result;
   return result;
 };
 
