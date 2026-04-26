@@ -123,7 +123,7 @@ describe("GET /api/user", () => {
     });
   });
 
-  it("returns 404 when user record not found in DB", async () => {
+  it("returns 500 when withRls fails to resolve user UUID", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",

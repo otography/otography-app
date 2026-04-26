@@ -1,2 +1,3 @@
+DROP POLICY "users_insert_own" ON "users";--> statement-breakpoint
 ALTER TABLE "users" ALTER COLUMN "username" DROP NOT NULL;--> statement-breakpoint
 ALTER TABLE "users" DROP CONSTRAINT "users_username_min_length", ADD CONSTRAINT "users_username_min_length" CHECK ("username" IS NULL OR length(btrim("username")) >= 1);

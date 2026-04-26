@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "145fcb1d-e550-4b94-8b40-cf6d2b0daafe",
+  "id": "17dcf503-b985-4cff-82fc-0fec84737f90",
   "prevIds": ["80a76de3-8c83-4424-96b8-e565745e7c38"],
   "ddl": [
     {
@@ -1795,17 +1795,6 @@
       "using": "\"users\".\"id\" = requesting_user_id()::uuid",
       "withCheck": null,
       "name": "users_select_own",
-      "entityType": "policies",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "as": "PERMISSIVE",
-      "for": "INSERT",
-      "roles": ["authenticated"],
-      "using": null,
-      "withCheck": "\"users\".\"id\" = requesting_user_id()::uuid",
-      "name": "users_insert_own",
       "entityType": "policies",
       "schema": "public",
       "table": "users"
