@@ -1,28 +1,39 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { sql } from "drizzle-orm";
-import { AuthError } from "@repo/errors/server";
+import { eq, sql } from "drizzle-orm";
 import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
+import { users } from "./schema";
 
 export async function withRls<T>(
   claims: DecodedIdToken,
   fn: (tx: DatabaseTransaction, userId: string) => Promise<T>,
 ) {
-  // Custom Claims の db_uuid から UUID を取得
-  const dbUuid = (claims as { db_uuid?: string }).db_uuid;
-  if (typeof dbUuid !== "string" || dbUuid.length === 0) {
-    return new AuthError({
-      message: "Missing db_uuid in session claims.",
-      code: "missing-db-uuid",
-      statusCode: 401,
-      clearCookie: true,
-    });
+  const firebaseId = typeof claims.sub === "string" ? claims.sub : null;
+  if (!firebaseId) {
+    return new RlsError({ message: "Missing user identifier in session." });
   }
 
-  const userId = dbUuid;
+  // Firebase ID → UUID 解決
+  const db = createDb();
+  const lookupResult = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.firebaseId, firebaseId))
+    .limit(1)
+    .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+
+  if (lookupResult instanceof RlsError) {
+    return lookupResult;
+  }
+
+  const userRow = lookupResult[0];
+  if (!userRow) {
+    return new RlsError({ message: "User not found in database." });
+  }
+
+  const userId = userRow.id;
   const jwtClaims = JSON.stringify({ sub: userId });
 
-  const db = createDb();
   const result = await db
     .transaction(async (tx) => {
       await tx

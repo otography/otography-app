@@ -4,7 +4,7 @@ import type { SetupProfileValues, UpdateUserValues } from "../../shared/db/schem
 import {
   selectCurrentUser,
   selectUserByUsername,
-  setupProfile as setupProfileRepo,
+  insertUserProfile,
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
@@ -13,7 +13,6 @@ import {
 export const getProfile = async (session: DecodedIdToken) => {
   const result = await selectCurrentUser(session);
   if (result instanceof Error) {
-    if (result instanceof AuthError) return result;
     return new AuthError({
       message: "Failed to fetch user profile.",
       code: "db-error",
@@ -47,11 +46,10 @@ export const getProfile = async (session: DecodedIdToken) => {
   };
 };
 
-// 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
+// 初回プロフィール設定（username, name）— DB レコードを新規作成
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const result = await setupProfileRepo(session, values);
+  const result = await insertUserProfile(session, values);
   if (result instanceof Error) {
-    if (result instanceof AuthError) return result;
     return new AuthError({
       message: "Failed to create profile.",
       code: "db-error",
@@ -81,7 +79,6 @@ export const setupProfile = async (session: DecodedIdToken, values: SetupProfile
 export const updateProfile = async (session: DecodedIdToken, values: UpdateUserValues) => {
   const result = await updateUserDetails(session, values);
   if (result instanceof Error) {
-    if (result instanceof AuthError) return result;
     return new AuthError({
       message: "Failed to update profile.",
       code: "db-error",
@@ -115,7 +112,6 @@ export const updateProfile = async (session: DecodedIdToken, values: UpdateUserV
 export const deleteAccount = async (session: DecodedIdToken) => {
   const result = await softDeleteUser(session);
   if (result instanceof Error) {
-    if (result instanceof AuthError) return result;
     return new AuthError({
       message: "Failed to delete account.",
       code: "db-error",

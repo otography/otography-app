@@ -21,9 +21,15 @@ vi.mock("../../../shared/db", () => ({
 import { createDb } from "../../../shared/db";
 
 // リフレッシュ成功時にルートハンドラがDBにアクセスするためのモック
-// withRls が db_uuid を直接使用するため、select ルックアップは不要
-const mockDbWithRls = (txMethods: Record<string, unknown>) => {
+const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
   } as never);
 };
@@ -74,9 +80,8 @@ describe("Session refresh on protected route (GET /api/user)", () => {
       mockVerifySessionCookie.mockResolvedValue({
         sub: "user123",
         email: "test@example.com",
-        db_uuid: "uuid-user",
       });
-      mockDbWithRls(defaultDbTx);
+      mockDbWithRls("uuid-user", defaultDbTx);
 
       const res = await testRequest("/api/user");
 
@@ -135,7 +140,6 @@ describe("Session refresh on protected route (GET /api/user)", () => {
         .mockResolvedValue({
           sub: "user123",
           email: "test@example.com",
-          db_uuid: "uuid-user",
         });
       mockGetRefreshTokenCookie.mockResolvedValue("valid-refresh-token");
       mockExchangeRefreshToken.mockResolvedValue({
@@ -143,7 +147,7 @@ describe("Session refresh on protected route (GET /api/user)", () => {
         refresh_token: "new-refresh-token",
       });
       mockCreateSessionCookie.mockResolvedValue("new-session-cookie");
-      mockDbWithRls(defaultDbTx);
+      mockDbWithRls("uuid-user", defaultDbTx);
 
       const res = await testRequest("/api/user", {
         cookie: { otography_session: "expired-session" },

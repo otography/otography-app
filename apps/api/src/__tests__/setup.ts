@@ -13,8 +13,6 @@ const mockVerifySessionCookie = vi.fn();
 const mockCreateSessionCookie = vi.fn();
 const mockRevokeRefreshTokens = vi.fn();
 const mockVerifyIdToken = vi.fn();
-const mockCreateCustomToken = vi.fn();
-const mockSetCustomUserClaims = vi.fn();
 
 vi.mock("@repo/firebase-auth-rest/auth", () => ({
   getAuth: vi.fn(() => ({
@@ -22,8 +20,6 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
     createSessionCookie: mockCreateSessionCookie,
     revokeRefreshTokens: mockRevokeRefreshTokens,
     verifyIdToken: mockVerifyIdToken,
-    createCustomToken: mockCreateCustomToken,
-    setCustomUserClaims: mockSetCustomUserClaims,
   })),
   FirebaseAuthError: class extends Error {
     code: string;
@@ -42,12 +38,9 @@ vi.mock("../shared/firebase/firebase-admin", () => ({
   createSessionCookie: mockCreateSessionCookie,
   verifySessionCookie: mockVerifySessionCookie,
   revokeRefreshTokens: mockRevokeRefreshTokens,
-  createCustomToken: mockCreateCustomToken,
-  setCustomUserClaims: mockSetCustomUserClaims,
 }));
 
 const mockExchangeRefreshToken = vi.fn();
-const mockExchangeCustomToken = vi.fn();
 
 const mockGetRefreshTokenCookie = vi.fn().mockResolvedValue(null);
 const mockSetRefreshTokenCookie = vi.fn().mockResolvedValue(undefined);
@@ -55,7 +48,6 @@ const mockClearRefreshTokenCookie = vi.fn();
 
 vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,
-  exchangeCustomToken: mockExchangeCustomToken,
 }));
 
 vi.mock("../shared/auth/refresh-token", () => ({
@@ -67,12 +59,9 @@ vi.mock("../shared/auth/refresh-token", () => ({
 export {
   mockClearRefreshTokenCookie,
   mockCreateSessionCookie,
-  mockCreateCustomToken,
-  mockExchangeCustomToken,
   mockExchangeRefreshToken,
   mockGetRefreshTokenCookie,
   mockRevokeRefreshTokens,
-  mockSetCustomUserClaims,
   mockSetRefreshTokenCookie,
   mockVerifyIdToken,
   mockVerifySessionCookie,

@@ -81,7 +81,7 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
-    username: varchar("username", { length: 50 }).unique(),
+    username: varchar("username", { length: 50 }).notNull().unique(),
     name: varchar("name", { length: 100 }),
     bio: text("bio"),
     birthplace: prefectureEnum("birthplace"),
@@ -95,10 +95,6 @@ export const users = pgTable(
     check(
       "users_birthyear_check",
       sql`${table.birthyear} >= 1900 AND ${table.birthyear} <= EXTRACT(YEAR FROM CURRENT_DATE)`,
-    ),
-    check(
-      "users_username_min_length",
-      sql`${table.username} IS NULL OR length(btrim(${table.username})) >= 1`,
     ),
     pgPolicy("users_select_own", {
       for: "select",

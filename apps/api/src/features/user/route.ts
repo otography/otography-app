@@ -5,8 +5,6 @@ import { AuthError } from "@repo/errors/server";
 import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
-import { clearSessionCookie } from "../../shared/auth/session-cookie";
-import { clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import {
   getProfile,
   setupProfile,
@@ -16,10 +14,6 @@ import {
 } from "./usecase";
 
 const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
-  if (error.clearCookie) {
-    clearSessionCookie(c);
-    clearRefreshTokenCookie(c);
-  }
   return c.json({ message: error.message }, error.statusCode);
 };
 
