@@ -184,21 +184,30 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithInsert([
-      {
-        id: "uuid-user",
-        firebaseId: "user123",
-        username: "newuser",
-        name: "New User",
-        bio: null,
-        birthplace: null,
-        birthyear: null,
-        gender: null,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        deletedAt: null,
-      },
-    ]);
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: "newuser",
+                name: "New User",
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
@@ -218,16 +227,16 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    // Make returning() reject to simulate a DB error
-    vi.mocked(createDb).mockReturnValue({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
             returning: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),
       })),
-    } as never);
+      execute: vi.fn().mockResolvedValue([]),
+    });
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
