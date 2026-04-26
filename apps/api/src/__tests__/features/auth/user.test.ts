@@ -171,20 +171,20 @@ describe("GET /api/user", () => {
     expect(await res.json()).toEqual({ message: "User record not found." });
   });
 
-  it("returns 500 when db_uuid is missing in session claims", async () => {
+  it("returns 401 when db_uuid is missing in session claims", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
-      // db_uuid なし → withRls が RlsError を返す → usecase が AuthError でラップ
+      // db_uuid なし → withRls が AuthError(401) を返す → usecase が伝播
     });
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
     });
 
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(401);
     const body = await res.json();
-    expect(body).toMatchObject({ message: "Failed to fetch user profile." });
+    expect(body).toMatchObject({ message: "Missing db_uuid in session claims." });
   });
 });
 

@@ -1,5 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
+import { AuthError } from "@repo/errors/server";
 import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
 
@@ -10,7 +11,12 @@ export async function withRls<T>(
   // Custom Claims の db_uuid から UUID を取得
   const dbUuid = (claims as { db_uuid?: string }).db_uuid;
   if (typeof dbUuid !== "string" || dbUuid.length === 0) {
-    return new RlsError({ message: "Missing db_uuid in session claims." });
+    return new AuthError({
+      message: "Missing db_uuid in session claims.",
+      code: "missing-db-uuid",
+      statusCode: 401,
+      clearCookie: true,
+    });
   }
 
   const userId = dbUuid;
