@@ -114,7 +114,7 @@ export const users = pgTable(
   ],
 );
 
-// 公開プロフィール用ビュー（機密カラムを除外、security_invoker で RLS を適用）
+// 公開プロフィール用ビュー（機密カラムを除外、security_definer でどのロールからも閲覧可能）
 export const userProfiles = pgView("user_profiles", {
   id: uuid("id"),
   username: varchar("username", { length: 50 }),
@@ -123,7 +123,6 @@ export const userProfiles = pgView("user_profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }),
 })
   .with({
-    securityInvoker: true,
     securityBarrier: true,
   })
   .as(sql`SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL`);

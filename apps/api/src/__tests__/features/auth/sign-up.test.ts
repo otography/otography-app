@@ -27,7 +27,9 @@ const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
     transaction: vi.fn(async (fn) => fn(txMethods)),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
-        returning: vi.fn().mockResolvedValue([{ id: uuid }]),
+        onConflictDoNothing: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
       })),
     })),
   } as never);

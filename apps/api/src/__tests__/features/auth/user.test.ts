@@ -26,19 +26,6 @@ const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   } as never);
 };
 
-// insertUserProfile (withRls なし) のモック
-const mockDbWithInsert = (resolvedValue: unknown[]) => {
-  vi.mocked(createDb).mockReturnValue({
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue(resolvedValue),
-        })),
-      })),
-    })),
-  } as never);
-};
-
 // selectUserByUsername など withRls を使わず直接 select するクエリ用のモック
 const mockDbWithSelect = (resolvedValue: unknown[]) => {
   vi.mocked(createDb).mockReturnValue({

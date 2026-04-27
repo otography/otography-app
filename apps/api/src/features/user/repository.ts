@@ -10,10 +10,14 @@ import {
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
 
-// サインアップ時にユーザーレコードを作成（RLS 不要、まだセッションがないため）
+// ユーザーレコードを作成（冪等: firebase_id が既存なら何もしない）
 export const insertUser = async (values: InsertUserValues) => {
   const db = createDb();
-  return db.insert(users).values(values).returning();
+  return db
+    .insert(users)
+    .values(values)
+    .onConflictDoNothing({ target: users.firebaseId })
+    .returning();
 };
 
 // 現在のユーザーを取得（withRls で自分の行だけ取得、RLS で防御）
