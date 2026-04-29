@@ -1,17 +1,46 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
-import type { SetupProfileValues, UpdateUserValues } from "../../shared/db/schema";
+import type {
+  InsertUserValues,
+  SetupProfileValues,
+  UpdateUserValues,
+} from "../../shared/db/schema";
 import {
-  selectUserByFirebaseId,
+  insertUser,
+  selectCurrentUser,
   selectUserByUsername,
-  insertUserProfile,
+  setupProfile as setupProfileRepo,
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
 
+// サインアップ時にユーザーレコードを作成
+export const createUserRecord = async (values: InsertUserValues) => {
+  const result = await insertUser(values).catch(
+    (e) =>
+      new AuthError({
+        message: "Failed to create user record.",
+        code: "db-error",
+        statusCode: 500,
+        cause: e,
+      }),
+  );
+  if (result instanceof Error) return result;
+
+  const [user] = result;
+  if (!user) {
+    return new AuthError({
+      message: "Failed to create user record.",
+      code: "db-error",
+      statusCode: 500,
+    });
+  }
+  return user;
+};
+
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
-  const result = await selectUserByFirebaseId(session);
+  const result = await selectCurrentUser(session);
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to fetch user profile.",
@@ -46,9 +75,9 @@ export const getProfile = async (session: DecodedIdToken) => {
   };
 };
 
-// 初回プロフィール設定（username, name）— DB レコードを新規作成
+// 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const result = await insertUserProfile(session, values);
+  const result = await setupProfileRepo(session, values);
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to create profile.",
@@ -148,9 +177,6 @@ export const getPublicProfile = async (username: string) => {
       username: user.username,
       name: user.name,
       bio: user.bio,
-      birthplace: user.birthplace,
-      birthyear: user.birthyear,
-      gender: user.gender,
       createdAt: user.createdAt,
     },
   };

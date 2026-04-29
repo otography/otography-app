@@ -12,9 +12,16 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { createDb } from "../../../shared/db";
 
-// withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
-const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+// withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
+const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
   } as never);
 };
@@ -64,7 +71,7 @@ describe("GET /api/user", () => {
       name: "Test User",
       picture: "https://example.com/photo.jpg",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -103,26 +110,28 @@ describe("GET /api/user", () => {
     });
   });
 
-  it("returns 500 when user upsert fails", async () => {
+  it("returns 500 when withRls fails to resolve user UUID", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    // withRls の UUID lookup が空 → RlsError → usecase が 500 にラップ
+    // ※ withRls 内で lookup が空の場合は RlsError を返す
+    vi.mocked(createDb).mockReturnValue({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn().mockRejectedValue(new Error("DB error")),
+            limit: vi.fn().mockResolvedValue([]),
           })),
         })),
       })),
-      execute: vi.fn().mockResolvedValue([]),
-    });
+    } as never);
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
     });
 
+    // withRls が "User not found" エラー → usecase が 500 にラップ
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ message: "Failed to fetch user profile." });
   });
@@ -163,10 +172,10 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([
               {
                 id: "uuid-user",
@@ -206,10 +215,10 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
             returning: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),
@@ -247,7 +256,7 @@ describe("PATCH /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -290,7 +299,7 @@ describe("PATCH /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -328,7 +337,7 @@ describe("DELETE /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -367,7 +376,7 @@ describe("DELETE /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithTransaction({
+    mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -397,16 +406,10 @@ describe("GET /api/users/:username", () => {
     mockDbWithSelect([
       {
         id: "uuid-user",
-        firebaseId: "user123",
         username: "testuser",
         name: "Test User",
         bio: "Hello world",
-        birthplace: "Tokyo",
-        birthyear: 1990,
-        gender: null,
         createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-        deletedAt: null,
       },
     ]);
 
@@ -414,7 +417,12 @@ describe("GET /api/users/:username", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
-      profile: { username: "testuser", name: "Test User", bio: "Hello world" },
+      profile: {
+        username: "testuser",
+        name: "Test User",
+        bio: "Hello world",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
     });
   });
 

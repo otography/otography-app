@@ -7,6 +7,7 @@ const mockGenerateOAuthState = vi.hoisted(() => vi.fn());
 const mockVerifyOAuthState = vi.hoisted(() => vi.fn());
 const mockExchangeGoogleCode = vi.hoisted(() => vi.fn());
 const mockSignInWithGoogleIdp = vi.hoisted(() => vi.fn());
+const mockCreateDb = vi.hoisted(() => vi.fn());
 
 // --- モック定義 ---
 vi.mock("../../../shared/auth/oauth-state", async (importOriginal) => {
@@ -24,8 +25,20 @@ vi.mock("../../../shared/firebase/firebase-google", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(() => ({ transaction: vi.fn() })),
+  createDb: mockCreateDb,
 }));
+
+const defaultDbMock = () =>
+  mockCreateDb.mockReturnValue({
+    transaction: vi.fn(),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+        })),
+      })),
+    })),
+  });
 
 // --- テスト定数 ---
 const VALID_STATE = "valid-state-jwt-token";
@@ -136,6 +149,7 @@ describe("GET /api/auth/google", () => {
 describe("GET /api/auth/google/callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    defaultDbMock();
     mockVerifyOAuthState.mockResolvedValue({
       nonce: VALID_NONCE,
       iat: Math.floor(Date.now() / 1000),
@@ -525,5 +539,29 @@ describe("GET /api/auth/google/callback", () => {
     const location = res.headers.get("Location")!;
     expect(location).toContain("/login?error=firebase_auth_failed");
     expect(location).not.toContain("evil.com");
+  });
+
+  // --- ユーザーレコード作成 ---
+
+  it("DB insert失敗時、/login?error=session_failedへリダイレクトする", async () => {
+    mockCreateDb.mockReturnValue({
+      transaction: vi.fn(),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(new Error("DB error")),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest(
+      `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,
+      { cookie: { otography_oauth_nonce: VALID_NONCE } },
+    );
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location")!;
+    expect(location).toContain("error=session_failed");
   });
 });

@@ -15,6 +15,7 @@ import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebas
 import { createSessionCookie } from "../../../shared/firebase/firebase-admin";
 import { setSessionCookie } from "../../../shared/auth/session-cookie";
 import { setRefreshTokenCookie } from "../../../shared/auth/refresh-token";
+import { createUserRecord } from "../../user/usecase";
 import type { Bindings } from "../../../shared/types/bindings";
 
 // Google OAuth 認可エンドポイント
@@ -187,6 +188,12 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   // リフレッシュトークンCookieを設定
   const refreshResult = await setRefreshTokenCookie(c, firebaseResult.refreshToken);
   if (refreshResult instanceof Error) {
+    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
+  }
+
+  // ユーザーレコード作成（冪等: 既存なら何もしない）
+  const userRecord = await createUserRecord({ firebaseId: firebaseResult.localId });
+  if (userRecord instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 

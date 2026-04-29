@@ -11,6 +11,7 @@ import {
   pgPolicy,
   pgRole,
   pgTable,
+  pgView,
   primaryKey,
   text,
   timestamp,
@@ -80,7 +81,7 @@ export const users = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
-    username: varchar("username", { length: 50 }).notNull().unique(),
+    username: varchar("username", { length: 50 }).unique(),
     name: varchar("name", { length: 100 }),
     bio: text("bio"),
     birthplace: prefectureEnum("birthplace"),
@@ -95,25 +96,38 @@ export const users = pgTable(
       "users_birthyear_check",
       sql`${table.birthyear} >= 1900 AND ${table.birthyear} <= EXTRACT(YEAR FROM CURRENT_DATE)`,
     ),
-    check("users_username_min_length", sql`length(btrim(${table.username})) >= 1`),
-    pgPolicy("users_select_all", {
+    check(
+      "users_username_min_length",
+      sql`${table.username} IS NULL OR length(btrim(${table.username})) >= 1`,
+    ),
+    pgPolicy("users_select_own", {
       for: "select",
-      to: "public",
-      using: sql`true`,
-    }),
-    pgPolicy("users_insert_own", {
-      for: "insert",
       to: authenticatedRole,
-      withCheck: sql`${table.firebaseId} = requesting_user_id()`,
+      using: sql`${table.id} = requesting_user_id()::uuid`,
     }),
     pgPolicy("users_update_own", {
       for: "update",
       to: authenticatedRole,
-      using: sql`${table.firebaseId} = requesting_user_id()`,
-      withCheck: sql`${table.firebaseId} = requesting_user_id()`,
+      using: sql`${table.id} = requesting_user_id()::uuid`,
+      withCheck: sql`${table.id} = requesting_user_id()::uuid`,
     }),
   ],
 );
+
+// 公開プロフィール用ビュー（機密カラムを除外）
+// 明示的に securityInvoker: false を指定し、ビュー所有者権限で実行（どのロールからも閲覧可能）
+export const userProfiles = pgView("user_profiles", {
+  id: uuid("id"),
+  username: varchar("username", { length: 50 }),
+  name: varchar("name", { length: 100 }),
+  bio: text("bio"),
+  createdAt: timestamp("created_at", { withTimezone: true }),
+})
+  .with({
+    securityInvoker: false,
+    securityBarrier: true,
+  })
+  .as(sql`SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL`);
 
 export const artists = pgTable(
   "artists",

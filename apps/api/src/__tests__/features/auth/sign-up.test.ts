@@ -14,17 +14,31 @@ vi.mock("../../../shared/db", () => ({
 import { signUpWithPassword } from "../../../shared/firebase/firebase-rest";
 import { createDb } from "../../../shared/db";
 
-// withRls が createDb().transaction() → tx.execute() × 2 → callback(tx) の順で呼ぶためのモック
-const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+// withRls のモック: Firebase ID → UUID ルックアップ + トランザクション
+const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    select: vi.fn(() => ({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
     transaction: vi.fn(async (fn) => fn(txMethods)),
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([{ id: uuid }]),
+        })),
+      })),
+    })),
   } as never);
 };
 
 const defaultTx = {
   insert: vi.fn(() => ({
     values: vi.fn(() => ({
-      onConflictDoNothing: vi.fn().mockResolvedValue([]),
+      onConflictDoUpdate: vi.fn().mockResolvedValue([]),
     })),
   })),
   execute: vi.fn().mockResolvedValue([]),
@@ -33,7 +47,7 @@ const defaultTx = {
 describe("POST /api/auth/sign-up", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDbWithTransaction(defaultTx);
+    mockDbWithRls("uuid-user", defaultTx);
   });
 
   describe("error passthrough", () => {
