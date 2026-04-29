@@ -10,13 +10,19 @@ import {
 import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
 
-// ユーザーレコードを作成（冪等: firebase_id が既存なら何もしない）
+// ユーザーレコードを作成（冪等: firebase_id が既存なら論理削除を取り消して再利用）
 export const insertUser = async (values: InsertUserValues) => {
   const db = createDb();
   return db
     .insert(users)
     .values(values)
-    .onConflictDoNothing({ target: users.firebaseId })
+    .onConflictDoUpdate({
+      target: users.firebaseId,
+      set: {
+        deletedAt: null,
+        updatedAt: sql`now()`,
+      },
+    })
     .returning();
 };
 

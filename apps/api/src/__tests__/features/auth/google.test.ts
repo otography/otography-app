@@ -33,7 +33,7 @@ const defaultDbMock = () =>
     transaction: vi.fn(),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
-        onConflictDoNothing: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
         })),
       })),
@@ -548,7 +548,7 @@ describe("GET /api/auth/google/callback", () => {
       transaction: vi.fn(),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
-          onConflictDoNothing: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
             returning: vi.fn().mockRejectedValue(new Error("DB error")),
           })),
         })),

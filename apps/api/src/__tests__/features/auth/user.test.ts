@@ -133,6 +133,7 @@ describe("GET /api/user", () => {
 
     // withRls が "User not found" エラー → usecase が 500 にラップ
     expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ message: "Failed to fetch user profile." });
   });
 });
 
