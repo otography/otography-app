@@ -26,7 +26,16 @@ export const createUserRecord = async (values: InsertUserValues) => {
       }),
   );
   if (result instanceof Error) return result;
-  return result;
+
+  const [user] = result;
+  if (!user) {
+    return new AuthError({
+      message: "Failed to create user record.",
+      code: "db-error",
+      statusCode: 500,
+    });
+  }
+  return user;
 };
 
 // 自分のプロフィールを取得
