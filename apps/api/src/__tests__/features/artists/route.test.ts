@@ -147,6 +147,7 @@ describe("artists endpoints", () => {
             {
               id: "8f648f36-5be1-4af1-bf5d-cf8ebf211112",
               name: "New Artist",
+              appleMusicId: "am-new-artist-1",
               ipiCode: null,
               type: "group",
               gender: null,
@@ -164,6 +165,7 @@ describe("artists endpoints", () => {
       method: "POST",
       body: {
         name: "New Artist",
+        appleMusicId: "am-new-artist-1",
         type: "group",
       },
     });
@@ -173,6 +175,7 @@ describe("artists endpoints", () => {
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211112",
         name: "New Artist",
+        appleMusicId: "am-new-artist-1",
         ipiCode: null,
         type: "group",
         gender: null,

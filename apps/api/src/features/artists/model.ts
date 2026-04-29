@@ -10,14 +10,14 @@ export const artistInsertSchema = createInsertSchema(artists, {
   ipiCode: (s) => type.pipe(s, type("null | string <= 20")),
   gender: (s) => type.pipe(s, type("null | string <= 20")),
   birthdate: (s) => type.pipe(s, type("null | string.date.iso")),
-}).pick("name", "ipiCode", "type", "gender", "birthplace", "birthdate");
+}).pick("name", "appleMusicId", "ipiCode", "type", "gender", "birthplace", "birthdate");
 
 export const artistUpdateSchema = createUpdateSchema(artists, {
   name: (s) => type.pipe(s, type("1 <= string <= 255")),
   ipiCode: (s) => type.pipe(s, type("null | string <= 20")),
   gender: (s) => type.pipe(s, type("null | string <= 20")),
   birthdate: (s) => type.pipe(s, type("null | string.date.iso")),
-}).pick("name", "ipiCode", "type", "gender", "birthplace", "birthdate");
+}).pick("name", "appleMusicId", "ipiCode", "type", "gender", "birthplace", "birthdate");
 
 export type ArtistCreateDbModel = typeof artistInsertSchema.infer;
 export type ArtistUpdateDbModel = typeof artistUpdateSchema.infer;

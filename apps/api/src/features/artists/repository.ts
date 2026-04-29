@@ -6,6 +6,7 @@ import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 const artistColumns = {
   id: artists.id,
   name: artists.name,
+  appleMusicId: artists.appleMusicId,
   ipiCode: artists.ipiCode,
   type: artists.type,
   gender: artists.gender,

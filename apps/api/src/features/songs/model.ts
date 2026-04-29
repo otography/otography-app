@@ -6,14 +6,14 @@ export const songInsertSchema = createInsertSchema(songs, {
   title: (s) => type.pipe(s, type("1 <= string <= 255")),
   length: (s) => type.pipe(s, type("null | number.integer >= 0")),
   isrcs: (s) => type.pipe(s, type("null | string.trim"), type("null | 1 <= string <= 50")),
-}).pick("title", "length", "isrcs");
+}).pick("title", "appleMusicId", "length", "isrcs");
 
 export const songUpdateSchema = createUpdateSchema(songs, {
   title: (s) => type.pipe(s, type("1 <= string <= 255")),
   length: (s) => type.pipe(s, type("null | number.integer >= 0")),
   isrcs: (s) => type.pipe(s, type("null | string.trim"), type("null | 1 <= string <= 50")),
 })
-  .pick("title", "length", "isrcs")
+  .pick("title", "appleMusicId", "length", "isrcs")
   .partial();
 
 export type SongCreateDbModel = typeof songInsertSchema.infer;
