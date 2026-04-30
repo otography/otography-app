@@ -1,6 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { fetchSong } from "../../shared/apple-music";
 import { createDb } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
@@ -65,7 +65,7 @@ export const registerFavoriteSong = async (
   const existing = await db
     .select({ id: songs.id })
     .from(songs)
-    .where(sql`${songs.appleMusicId} = ${input.appleMusicId}`)
+    .where(and(eq(songs.appleMusicId, input.appleMusicId), isNull(songs.deletedAt)))
     .limit(1)
     .catch((e) => new DbError({ message: "楽曲の検索に失敗しました。", cause: e }));
   if (existing instanceof Error) return existing;

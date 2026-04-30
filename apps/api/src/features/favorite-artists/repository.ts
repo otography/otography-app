@@ -91,5 +91,15 @@ export const createArtistFromAppleMusic = async (
   appleMusicId: string,
   name: string,
 ) => {
-  return tx.insert(artists).values({ name, appleMusicId }).returning(artistColumns);
+  return tx
+    .insert(artists)
+    .values({ name, appleMusicId })
+    .onConflictDoUpdate({
+      target: artists.appleMusicId,
+      set: {
+        name,
+        deletedAt: null,
+      },
+    })
+    .returning(artistColumns);
 };

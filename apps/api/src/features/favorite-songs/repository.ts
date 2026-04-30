@@ -100,5 +100,12 @@ export const createSongFromAppleMusic = async (
       length: durationInMillis != null ? Math.round(durationInMillis / 1000) : undefined,
       isrcs: isrc,
     })
+    .onConflictDoUpdate({
+      target: songs.appleMusicId,
+      set: {
+        title,
+        deletedAt: null,
+      },
+    })
     .returning(songColumns);
 };
