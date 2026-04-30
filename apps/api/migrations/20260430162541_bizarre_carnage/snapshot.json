@@ -1,8 +1,8 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "4b512431-9f29-415d-b2b0-f58d7fcfeeae",
-  "prevIds": ["4d883457-9921-4e9a-96f4-1e5db8bf31a4"],
+  "id": "be210afb-a746-4d47-ad15-fed31c8caed8",
+  "prevIds": ["4b512431-9f29-415d-b2b0-f58d7fcfeeae"],
   "ddl": [
     {
       "values": ["person", "group"],
@@ -165,7 +165,7 @@
     {
       "type": "varchar(100)",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -906,7 +906,7 @@
     {
       "type": "varchar(100)",
       "typeSchema": null,
-      "notNull": false,
+      "notNull": true,
       "dimensions": 0,
       "default": null,
       "generated": null,
