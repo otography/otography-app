@@ -89,7 +89,7 @@ export const registerFavoriteSong = async (
       songId = found.id;
     } else {
       if (!songData) {
-        throw new DbError({
+        return new DbError({
           message: "楽曲情報の取得に失敗しました。",
         });
       }
@@ -101,7 +101,7 @@ export const registerFavoriteSong = async (
         songData.isrc,
       );
       if (!created[0]) {
-        throw new DbError({ message: "楽曲の作成に失敗しました。" });
+        return new DbError({ message: "楽曲の作成に失敗しました。" });
       }
       songId = created[0].id;
     }

@@ -85,13 +85,13 @@ export const registerFavoriteArtist = async (
       artistId = found.id;
     } else {
       if (!artistName) {
-        throw new DbError({
+        return new DbError({
           message: "アーティスト情報の取得に失敗しました。",
         });
       }
       const created = await createArtistFromAppleMusic(tx, input.appleMusicId, artistName);
       if (!created[0]) {
-        throw new DbError({ message: "アーティストの作成に失敗しました。" });
+        return new DbError({ message: "アーティストの作成に失敗しました。" });
       }
       artistId = created[0].id;
     }

@@ -11,7 +11,7 @@ const favoriteSongValuesSchema = createInsertSchema(favoriteSongs, {
 
 // appleMusicId のバリデーション（trim + 長さ制限）
 const songAppleMusicIdSchema = createInsertSchema(songs, {
-  appleMusicId: () => type.pipe(type("string.trim"), type("1 <= string <= 100")),
+  appleMusicId: (s) => type.pipe(s, type("string.trim"), type("1 <= string <= 100")),
 }).pick("appleMusicId");
 
 // API リクエスト用スキーマ
