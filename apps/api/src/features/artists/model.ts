@@ -7,6 +7,7 @@ import { artists } from "../../shared/db/schema";
 // コールバックで元スキーマを拡張（nullable/optional性を保持）
 export const artistInsertSchema = createInsertSchema(artists, {
   name: (s) => type.pipe(s, type("1 <= string <= 255")),
+  appleMusicId: () => type.pipe(type("string.trim"), type("1 <= string <= 100")),
   ipiCode: (s) => type.pipe(s, type("null | string <= 20")),
   gender: (s) => type.pipe(s, type("null | string <= 20")),
   birthdate: (s) => type.pipe(s, type("null | string.date.iso")),
@@ -14,6 +15,7 @@ export const artistInsertSchema = createInsertSchema(artists, {
 
 export const artistUpdateSchema = createUpdateSchema(artists, {
   name: (s) => type.pipe(s, type("1 <= string <= 255")),
+  appleMusicId: () => type.pipe(type("string.trim"), type("1 <= string <= 100")),
   ipiCode: (s) => type.pipe(s, type("null | string <= 20")),
   gender: (s) => type.pipe(s, type("null | string <= 20")),
   birthdate: (s) => type.pipe(s, type("null | string.date.iso")),

@@ -1,6 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { fetchSong } from "../../shared/apple-music";
 import { createDb } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
@@ -63,9 +63,9 @@ export const registerFavoriteSong = async (
   // トランザクション外で DB を確認し、未登録なら事前に Apple Music API から取得
   const db = createDb();
   const existing = await db
-    .select({ id: songs.id, appleMusicId: songs.appleMusicId })
+    .select({ id: songs.id })
     .from(songs)
-    .where(eq(songs.appleMusicId, input.appleMusicId))
+    .where(sql`${songs.appleMusicId} = ${input.appleMusicId}`)
     .limit(1)
     .catch((e) => new DbError({ message: "楽曲の検索に失敗しました。", cause: e }));
   if (existing instanceof Error) return existing;
@@ -116,8 +116,14 @@ export const registerFavoriteSong = async (
   });
 
   if (result instanceof Error) {
-    // unique 制約違反（既にお気に入り登録済み）
-    if (result.cause && String(result.cause).includes("23505")) {
+    // favorite_songs の PK 制約違反（userId + songId の重複）のみ 409 とする
+    // songs.apple_music_id の unique 制約違反は別エラーとして扱う
+    const causeStr = String(result.cause);
+    if (
+      result.cause &&
+      causeStr.includes("23505") &&
+      (causeStr.includes("favorite_songs") || causeStr.includes("FavoriteSongs"))
+    ) {
       return new DbError({
         message: "この楽曲は既にお気に入りに登録されています。",
         statusCode: 409,

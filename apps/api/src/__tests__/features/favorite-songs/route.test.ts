@@ -275,7 +275,7 @@ describe("Favorite Songs endpoints", () => {
       expect(await res.json()).toEqual({ message: "お気に入り楽曲が見つかりません。" });
     });
 
-    it("returns 400 for invalid appleMusicId", async () => {
+    it("returns 404 for invalid appleMusicId", async () => {
       const res = await testRequest("/api/me/favorites/songs/", {
         method: "DELETE",
       });

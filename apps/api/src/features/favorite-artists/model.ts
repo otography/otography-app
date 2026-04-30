@@ -9,8 +9,10 @@ const favoriteArtistValuesSchema = createInsertSchema(favoriteArtists, {
   color: (s) => type.pipe(s, type("string <= 20")),
 }).pick("comment", "emoji", "color");
 
-// appleMusicId は artists テーブルのカラムから取得（.notNull() なので string）
-const artistAppleMusicIdSchema = createInsertSchema(artists).pick("appleMusicId");
+// appleMusicId のバリデーション（trim + 長さ制限）
+const artistAppleMusicIdSchema = createInsertSchema(artists, {
+  appleMusicId: () => type.pipe(type("string.trim"), type("1 <= string <= 100")),
+}).pick("appleMusicId");
 
 // API リクエスト用スキーマ
 export const addFavoriteArtistSchema = favoriteArtistValuesSchema.merge(artistAppleMusicIdSchema);

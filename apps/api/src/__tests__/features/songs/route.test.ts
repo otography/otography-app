@@ -272,7 +272,7 @@ describe("songs endpoints", () => {
       method: "POST",
       body: {
         title: "Song with unknown artist",
-        appleMusicId: "am-song-unknown-artist",
+        appleMusicId: "am-unknown-song",
         artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
       },
     });

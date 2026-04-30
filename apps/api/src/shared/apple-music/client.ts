@@ -43,6 +43,12 @@ export const fetchArtist = async (appleMusicId: string) => {
   if (response instanceof Error) return response;
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return new DbError({
+        message: "指定されたアーティストが見つかりません。",
+        statusCode: 404,
+      });
+    }
     return new DbError({
       message: "Apple Music API からアーティスト情報を取得できませんでした。",
       statusCode: 502,
@@ -94,6 +100,12 @@ export const fetchSong = async (appleMusicId: string) => {
   if (response instanceof Error) return response;
 
   if (!response.ok) {
+    if (response.status === 404) {
+      return new DbError({
+        message: "指定された楽曲が見つかりません。",
+        statusCode: 404,
+      });
+    }
     return new DbError({
       message: "Apple Music API から楽曲情報を取得できませんでした。",
       statusCode: 502,
