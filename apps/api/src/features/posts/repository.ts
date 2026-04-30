@@ -63,16 +63,6 @@ export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) 
   return rows[0] ?? null;
 };
 
-export const findActiveUserById = async (db: DatabaseOrTransaction, id: string) => {
-  const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.id, id), isNull(users.deletedAt)))
-    .limit(1);
-
-  return rows[0] ?? null;
-};
-
 export const findActiveUserByFirebaseId = async (db: DatabaseOrTransaction, firebaseId: string) => {
   const rows = await db
     .select({ id: users.id })

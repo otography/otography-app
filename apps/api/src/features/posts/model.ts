@@ -3,11 +3,11 @@ import { type } from "arktype";
 import { posts } from "../../shared/db/schema";
 
 export const postInsertSchema = createInsertSchema(posts, {
-  content: (s) => type.pipe(s, type("string.trim"), type("1 <= string")),
+  content: (s) => type.pipe(s, type("string.trim"), type("string >= 1")),
 }).pick("songId", "content");
 
 export const postUpdateSchema = createUpdateSchema(posts, {
-  content: (s) => type.pipe(s, type("string.trim"), type("1 <= string")),
+  content: (s) => type.pipe(s, type("string.trim"), type("string >= 1")),
 })
   .pick("songId", "content")
   .partial();
