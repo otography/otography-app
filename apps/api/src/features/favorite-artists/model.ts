@@ -1,6 +1,6 @@
 import { type } from "arktype";
 import { createInsertSchema } from "drizzle-orm/arktype";
-import { artists, favoriteArtists } from "../../shared/db/schema";
+import { favoriteArtists } from "../../shared/db/schema";
 
 // DB カラムのスキーマ（refinement 済み）
 const favoriteArtistValuesSchema = createInsertSchema(favoriteArtists, {
@@ -9,10 +9,10 @@ const favoriteArtistValuesSchema = createInsertSchema(favoriteArtists, {
   color: (s) => type.pipe(s, type("string <= 20")),
 }).pick("comment", "emoji", "color");
 
-// appleMusicId のバリデーション（trim + 長さ制限）
-const artistAppleMusicIdSchema = createInsertSchema(artists, {
-  appleMusicId: () => type.pipe(type("string.trim"), type("1 <= string <= 100")),
-}).pick("appleMusicId");
+// appleMusicId のバリデーション（trim + 長さ制限、必須）
+const artistAppleMusicIdSchema = type({
+  appleMusicId: type.pipe(type("string.trim"), type("1 <= string <= 100")),
+});
 
 // API リクエスト用スキーマ
 export const addFavoriteArtistSchema = favoriteArtistValuesSchema.merge(artistAppleMusicIdSchema);

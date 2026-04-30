@@ -21,7 +21,15 @@ type AppleMusicSong = {
 
 // アーティストを lookup で取得
 export const fetchArtist = async (appleMusicId: string) => {
-  const token = await generateDeveloperToken();
+  const token = await generateDeveloperToken().catch(
+    (e) =>
+      new DbError({
+        message: "Apple Music トークンの生成に失敗しました。",
+        statusCode: 502,
+        cause: e,
+      }),
+  );
+  if (token instanceof Error) return token;
   const storefront = "jp";
 
   const response = await fetch(
@@ -78,7 +86,15 @@ export const fetchArtist = async (appleMusicId: string) => {
 
 // 楽曲を lookup で取得
 export const fetchSong = async (appleMusicId: string) => {
-  const token = await generateDeveloperToken();
+  const token = await generateDeveloperToken().catch(
+    (e) =>
+      new DbError({
+        message: "Apple Music トークンの生成に失敗しました。",
+        statusCode: 502,
+        cause: e,
+      }),
+  );
+  if (token instanceof Error) return token;
   const storefront = "jp";
 
   const response = await fetch(
