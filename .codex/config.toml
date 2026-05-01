@@ -1,0 +1,14 @@
+[mcp_servers.serena]
+args = [
+  "--python",
+  "3.13",
+  "--from",
+  "git+https://github.com/oraios/serena",
+  "serena",
+  "start-mcp-server",
+  "--context",
+  "claude-code",
+  "--project",
+  "/Users/yusukekimura/GitHub/otography-app",
+]
+command = "uvx"
