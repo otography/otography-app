@@ -6,6 +6,10 @@ import type {
   UpdateUserValues,
 } from "../../shared/db/schema";
 import {
+  isPostgresCheckViolation,
+  isPostgresUniqueViolation,
+} from "../../shared/db/postgres-error";
+import {
   insertUser,
   selectCurrentUser,
   selectUserByUsername,
@@ -13,6 +17,36 @@ import {
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
+
+const USERS_USERNAME_KEY = "users_username_key";
+const USERS_BIRTHYEAR_CHECK = "users_birthyear_check";
+
+const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
+  if (isPostgresUniqueViolation(error, USERS_USERNAME_KEY)) {
+    return new AuthError({
+      message: "Username is already taken.",
+      code: "username-taken",
+      statusCode: 409,
+      cause: error,
+    });
+  }
+
+  if (isPostgresCheckViolation(error, USERS_BIRTHYEAR_CHECK)) {
+    return new AuthError({
+      message: "Invalid birthyear.",
+      code: "invalid-birthyear",
+      statusCode: 400,
+      cause: error,
+    });
+  }
+
+  return new AuthError({
+    message: fallbackMessage,
+    code: "db-error",
+    statusCode: 500,
+    cause: error,
+  });
+};
 
 // サインアップ時にユーザーレコードを作成
 export const createUserRecord = async (values: InsertUserValues) => {
@@ -79,12 +113,7 @@ export const getProfile = async (session: DecodedIdToken) => {
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
   const result = await setupProfileRepo(session, values);
   if (result instanceof Error) {
-    return new AuthError({
-      message: "Failed to create profile.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    return toProfileDbAuthError(result, "Failed to create profile.");
   }
 
   const [user] = result;
@@ -108,12 +137,7 @@ export const setupProfile = async (session: DecodedIdToken, values: SetupProfile
 export const updateProfile = async (session: DecodedIdToken, values: UpdateUserValues) => {
   const result = await updateUserDetails(session, values);
   if (result instanceof Error) {
-    return new AuthError({
-      message: "Failed to update profile.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    return toProfileDbAuthError(result, "Failed to update profile.");
   }
 
   const [user] = result;

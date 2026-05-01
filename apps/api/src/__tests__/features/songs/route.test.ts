@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
+import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
@@ -231,6 +232,47 @@ describe("songs endpoints", () => {
     expect(insert).toHaveBeenCalledTimes(2);
   });
 
+  it("POST /api/songs returns 409 when appleMusicId is already registered", async () => {
+    vi.mocked(createDb).mockReturnValue({
+      transaction: vi.fn().mockRejectedValue(
+        createDrizzleConstraintError({
+          constraintName: "songs_apple_music_id_key",
+          query: 'insert into "songs"',
+        }),
+      ),
+    } as never);
+
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: {
+        title: "Duplicate Song",
+        appleMusicId: "am-duplicate-song",
+      },
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      message: "Apple Music ID is already registered for another song.",
+    });
+  });
+
+  it("POST /api/songs returns 500 for unrelated DB errors", async () => {
+    vi.mocked(createDb).mockReturnValue({
+      transaction: vi.fn().mockRejectedValue(new Error("DB error")),
+    } as never);
+
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: {
+        title: "Broken Song",
+        appleMusicId: "am-broken-song",
+      },
+    });
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ message: "Failed to create song." });
+  });
+
   it("POST /api/songs returns 400 for invalid payload", async () => {
     const res = await testRequest("/api/songs", {
       method: "POST",
@@ -426,6 +468,29 @@ describe("songs endpoints", () => {
       },
     });
     expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("PATCH /api/songs/:id returns 409 when appleMusicId is already registered", async () => {
+    vi.mocked(createDb).mockReturnValue({
+      transaction: vi.fn().mockRejectedValue(
+        createDrizzleConstraintError({
+          constraintName: "songs_apple_music_id_key",
+          query: 'update "songs"',
+        }),
+      ),
+    } as never);
+
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222233", {
+      method: "PATCH",
+      body: {
+        appleMusicId: "am-duplicate-song",
+      },
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      message: "Apple Music ID is already registered for another song.",
+    });
   });
 
   it("PATCH /api/songs/:id returns 400 for invalid id", async () => {

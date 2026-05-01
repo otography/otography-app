@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { mockVerifySessionCookie } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
+import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
@@ -235,6 +236,37 @@ describe("PATCH /api/user/profile", () => {
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ message: "Failed to create profile." });
   });
+
+  it("returns 409 when username is already taken", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(
+              createDrizzleConstraintError({
+                constraintName: "users_username_key",
+                query: 'update "users"',
+              }),
+            ),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user/profile", {
+      method: "PATCH",
+      cookie: { otography_session: "valid-session" },
+      body: { username: "existinguser", name: "Existing User" },
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ message: "Username is already taken." });
+  });
 });
 
 describe("PATCH /api/user", () => {
@@ -318,6 +350,69 @@ describe("PATCH /api/user", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ message: "Failed to update profile." });
+  });
+
+  it("returns 400 when DB rejects birthyear check constraint", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(
+              createDrizzleConstraintError({
+                code: "23514",
+                constraintName: "users_birthyear_check",
+                query: 'update "users"',
+              }),
+            ),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      method: "PATCH",
+      cookie: { otography_session: "valid-session" },
+      body: { birthyear: 3000 },
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Invalid birthyear." });
+  });
+
+  it("returns 409 when updating username to a taken value", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({
+            returning: vi.fn().mockRejectedValue(
+              createDrizzleConstraintError({
+                constraintName: "users_username_key",
+                query: 'update "users"',
+              }),
+            ),
+          })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      method: "PATCH",
+      cookie: { otography_session: "valid-session" },
+      body: { username: "existinguser" },
+    });
+
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ message: "Username is already taken." });
   });
 });
 
