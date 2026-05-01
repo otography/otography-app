@@ -1,5 +1,6 @@
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
+import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import {
   createArtist,
   findArtistById,
@@ -8,6 +9,20 @@ import {
   updateArtistById,
 } from "./repository";
 import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
+
+const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
+
+const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
+  if (isPostgresUniqueViolation(error, ARTIST_APPLE_MUSIC_ID_KEY)) {
+    return new DbError({
+      message: "Apple Music ID is already registered for another artist.",
+      statusCode: 409,
+      cause: error,
+    });
+  }
+
+  return new DbError({ message: fallbackMessage, cause: error });
+};
 
 export const getArtists = async () => {
   const db = createDb();
@@ -34,8 +49,8 @@ export const getArtist = async (id: string) => {
 
 export const registerArtist = async (payload: ArtistCreateDbModel) => {
   const db = createDb();
-  const rows = await createArtist(db, payload).catch(
-    (e) => new DbError({ message: "Failed to create artist.", cause: e }),
+  const rows = await createArtist(db, payload).catch((e) =>
+    toArtistAppleMusicIdError(e, "Failed to create artist."),
   );
   if (rows instanceof Error) return rows;
 
@@ -54,8 +69,8 @@ type UpdateArtistInput = {
 
 export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   const db = createDb();
-  const updatedArtist = await updateArtistById(db, { id, values: payload }).catch(
-    (e) => new DbError({ message: "Failed to update artist.", cause: e }),
+  const updatedArtist = await updateArtistById(db, { id, values: payload }).catch((e) =>
+    toArtistAppleMusicIdError(e, "Failed to update artist."),
   );
   if (updatedArtist instanceof Error) return updatedArtist;
   if (updatedArtist === null) {
