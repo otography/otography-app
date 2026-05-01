@@ -36,7 +36,7 @@ export const createPost = async (db: DatabaseOrTransaction, values: PostInsertDb
 
 export const updatePostById = async (
   db: DatabaseOrTransaction,
-  { id, userId, values }: { id: string; userId: string; values: PostUpdateDbModel },
+  { id, values }: { id: string; values: PostUpdateDbModel },
 ) => {
   const rows = await db
     .update(posts)
@@ -44,23 +44,20 @@ export const updatePostById = async (
       ...values,
       updatedAt: sql`now()`,
     })
-    .where(and(eq(posts.id, id), eq(posts.userId, userId), isNull(posts.deletedAt)))
+    .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .returning(postColumns);
 
   return rows[0] ?? null;
 };
 
-export const softDeletePostById = async (
-  db: DatabaseOrTransaction,
-  { id, userId }: { id: string; userId: string },
-) => {
+export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) => {
   const rows = await db
     .update(posts)
     .set({
       deletedAt: sql`now()`,
       updatedAt: sql`now()`,
     })
-    .where(and(eq(posts.id, id), eq(posts.userId, userId), isNull(posts.deletedAt)))
+    .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .returning({ id: posts.id });
 
   return rows[0] ?? null;

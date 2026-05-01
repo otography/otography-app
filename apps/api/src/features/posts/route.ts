@@ -56,7 +56,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     }
     const payload = c.req.valid("json");
 
-    const result = await registerPost(payload, session.sub);
+    const result = await registerPost(payload, session);
     if (result instanceof Error) return handlePostError(result, c);
 
     return c.json(result, 201);
@@ -78,7 +78,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
         return c.json({ message: "Please provide at least one field to update." }, 400);
       }
 
-      const result = await modifyPost({ id, firebaseId: session.sub, payload });
+      const result = await modifyPost({ id, session, payload });
       if (result instanceof Error) return handlePostError(result, c);
 
       return c.json(result);
@@ -95,7 +95,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
         return c.json({ message: "You are not logged in." }, 401);
       }
       const { id } = c.req.valid("param");
-      const result = await removePost(id, session.sub);
+      const result = await removePost(id, session);
       if (result instanceof Error) return handlePostError(result, c);
 
       return c.body(null, 204);

@@ -9,7 +9,7 @@ export const postInsertSchema = createInsertSchema(posts, {
 export const postUpdateSchema = createUpdateSchema(posts, {
   content: (s) => type.pipe(s, type("string.trim"), type("string >= 1")),
 })
-  .pick("songId", "content")
+  .pick("content")
   .partial();
 
 export type PostCreateDbModel = typeof postInsertSchema.infer;

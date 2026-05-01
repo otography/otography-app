@@ -22,9 +22,14 @@ import { createDb } from "../../../shared/db";
 import { getAuthSession } from "../../../shared/middleware";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
+  const methods = {
+    execute: vi.fn().mockResolvedValue([]),
     ...txMethods,
-    transaction: vi.fn(async (fn) => fn(txMethods)),
+  };
+
+  vi.mocked(createDb).mockReturnValue({
+    ...methods,
+    transaction: vi.fn(async (fn) => fn(methods)),
   } as never);
 };
 
@@ -111,14 +116,14 @@ describe("posts endpoints", () => {
       .mockReturnValueOnce({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222223" }]),
+            limit: vi.fn().mockResolvedValue([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf222223" }]),
           })),
         })),
       })
       .mockReturnValueOnce({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf222223" }]),
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222223" }]),
           })),
         })),
       });
@@ -163,38 +168,13 @@ describe("posts endpoints", () => {
   });
 
   it("PATCH /api/posts/:id updates post", async () => {
-    const select = vi
-      .fn()
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
-          })),
+    const select = vi.fn().mockReturnValueOnce({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
         })),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
-          })),
-        })),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222224",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222224",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222224",
-                content: "Original post",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-          })),
-        })),
-      });
+      })),
+    });
 
     mockDbWithTransaction({
       select,
@@ -220,7 +200,6 @@ describe("posts endpoints", () => {
       method: "PATCH",
       body: {
         content: "Updated post",
-        songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222224",
       },
     });
 
@@ -238,31 +217,13 @@ describe("posts endpoints", () => {
   });
 
   it("DELETE /api/posts/:id returns 204", async () => {
-    const select = vi
-      .fn()
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222225" }]),
-          })),
+    const select = vi.fn().mockReturnValueOnce({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222225" }]),
         })),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222225",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222225",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
-                content: "Delete me",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-          })),
-        })),
-      });
+      })),
+    });
 
     mockDbWithTransaction({
       select,
@@ -282,33 +243,21 @@ describe("posts endpoints", () => {
     expect(res.status).toBe(204);
   });
 
-  it("PATCH /api/posts/:id returns 403 when the post belongs to another user", async () => {
-    const update = vi.fn();
-    const select = vi
-      .fn()
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222226" }]),
-          })),
+  it("PATCH /api/posts/:id returns 404 when RLS filters out the post", async () => {
+    const update = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([]),
         })),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222226",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222227",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222226",
-                content: "Another user's post",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-          })),
+      })),
+    }));
+    const select = vi.fn().mockReturnValueOnce({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222226" }]),
         })),
-      });
+      })),
+    });
 
     mockDbWithTransaction({ select, update });
 
@@ -319,38 +268,26 @@ describe("posts endpoints", () => {
       },
     });
 
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ message: "You are not allowed to modify this post." });
-    expect(update).not.toHaveBeenCalled();
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(update).toHaveBeenCalled();
   });
 
-  it("DELETE /api/posts/:id returns 403 when the post belongs to another user", async () => {
-    const update = vi.fn();
-    const select = vi
-      .fn()
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222228" }]),
-          })),
+  it("DELETE /api/posts/:id returns 404 when RLS filters out the post", async () => {
+    const update = vi.fn(() => ({
+      set: vi.fn(() => ({
+        where: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue([]),
         })),
-      })
-      .mockReturnValueOnce({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222228",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222229",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222228",
-                content: "Another user's post",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-          })),
+      })),
+    }));
+    const select = vi.fn().mockReturnValueOnce({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222228" }]),
         })),
-      });
+      })),
+    });
 
     mockDbWithTransaction({ select, update });
 
@@ -358,9 +295,9 @@ describe("posts endpoints", () => {
       method: "DELETE",
     });
 
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ message: "You are not allowed to delete this post." });
-    expect(update).not.toHaveBeenCalled();
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(update).toHaveBeenCalled();
   });
 
   it("returns 400 for invalid post id", async () => {

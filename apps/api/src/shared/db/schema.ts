@@ -307,7 +307,7 @@ export const favoriteSongs = pgTable(
   ],
 );
 
-export const posts = pgTable(
+export const posts = pgTable.withRLS(
   "posts",
   {
     id: uuid("id").defaultRandom().primaryKey(),
@@ -328,6 +328,17 @@ export const posts = pgTable(
     index("idx_posts_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    pgPolicy("posts_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+    }),
+    pgPolicy("posts_update_own", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`${table.userId} = requesting_user_id()::uuid`,
+      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+    }),
   ],
 );
 
