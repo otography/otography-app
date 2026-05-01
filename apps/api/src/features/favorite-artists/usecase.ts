@@ -101,24 +101,13 @@ export const registerFavoriteArtist = async (
       emoji: input.emoji,
       color: input.color,
     });
+    if (rows instanceof Error) return rows;
 
     return rows[0] ?? null;
   });
 
   if (result instanceof Error) {
-    // favorite_artists の PK 制約違反（userId + artistId の重複）のみ 409 とする
-    // artists.apple_music_id の unique 制約違反は別エラーとして扱う
-    const causeStr = String(result.cause);
-    if (
-      result.cause &&
-      causeStr.includes("23505") &&
-      (causeStr.includes("favorite_artists") || causeStr.includes("FavoriteArtists"))
-    ) {
-      return new DbError({
-        message: "このアーティストは既にお気に入りに登録されています。",
-        statusCode: 409,
-      });
-    }
+    if (result instanceof DbError && result.statusCode !== 500) return result;
     return new DbError({
       message: "お気に入りアーティストの登録に失敗しました。",
       cause: result,

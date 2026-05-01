@@ -1,6 +1,8 @@
 import { and, eq, isNull } from "drizzle-orm";
+import { DbError } from "@repo/errors";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
+import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import type { FavoriteSongValues } from "./model";
 
 const favoriteSongColumns = {
@@ -17,6 +19,18 @@ const songColumns = {
   title: songs.title,
   appleMusicId: songs.appleMusicId,
 } as const;
+
+const toAddFavoriteSongError = (error: unknown) => {
+  if (isPostgresUniqueViolation(error, "favorite_songs_pkey")) {
+    return new DbError({
+      message: "この楽曲は既にお気に入りに登録されています。",
+      statusCode: 409,
+      cause: error,
+    });
+  }
+
+  return new DbError({ message: "お気に入り楽曲の登録に失敗しました。", cause: error });
+};
 
 // お気に入り楽曲一覧取得
 export const listFavoriteSongs = async (tx: DatabaseTransaction, userId: string) => {
@@ -37,14 +51,17 @@ export const addFavoriteSong = async (
   songId: string,
   values: FavoriteSongValues,
 ) => {
-  return tx
+  const result = await tx
     .insert(favoriteSongs)
     .values({
       userId,
       songId,
       ...values,
     })
-    .returning(favoriteSongColumns);
+    .returning(favoriteSongColumns)
+    .catch(toAddFavoriteSongError);
+
+  return result;
 };
 
 // お気に入り楽曲削除（appleMusicId 指定）
