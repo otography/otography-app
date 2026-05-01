@@ -51,17 +51,18 @@ export const exchangeRefreshToken = async (firebaseApiKey: string, refreshToken:
   }).catch((e) => createTokenExchangeError(undefined, 503, e));
   if (response instanceof Error) return response;
 
-  const payload = await response.json().catch(() => null);
+  const payload = await (response.json() as Promise<unknown>).catch((e) =>
+    createTokenExchangeError(undefined, 502, e),
+  );
 
   if (!response.ok) {
+    if (payload instanceof Error) return createTokenExchangeError(undefined, 401, payload);
     const parsedError = firebaseTokenExchangeErrorSchema(payload);
     const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
     return createTokenExchangeError(code);
   }
 
-  if (!payload) {
-    return createTokenExchangeError(undefined, 502);
-  }
+  if (payload instanceof Error) return createTokenExchangeError(undefined, 502, payload);
 
   const parsedPayload = firebaseTokenExchangeResponseSchema(payload);
 

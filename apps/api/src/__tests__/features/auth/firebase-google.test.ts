@@ -102,6 +102,24 @@ describe("exchangeGoogleCode", () => {
 
     expect(result).toBeInstanceOf(Error);
   });
+
+  it("JSON parse失敗をcauseに保持してGoogleTokenExchangeErrorを返す", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("not-json", { status: 400, headers: { "Content-Type": "application/json" } }),
+    );
+
+    const result = await exchangeGoogleCode(validParams);
+
+    expect(result).toBeInstanceOf(Error);
+    if (result instanceof Error) {
+      expect((result as unknown as { _tag: string })._tag).toBe("GoogleTokenExchangeError");
+      expect(result.message).toBe("Google token exchange failed.");
+      expect((result.cause as { _tag?: string } | undefined)?._tag).toBe(
+        "GoogleTokenExchangeError",
+      );
+      expect((result.cause as Error | undefined)?.cause).toBeInstanceOf(Error);
+    }
+  });
 });
 
 describe("signInWithGoogleIdp", () => {
@@ -164,7 +182,7 @@ describe("signInWithGoogleIdp", () => {
     expect(result).toBeInstanceOf(Error);
     // AccountConflictErrorの_tag確認
     if (result instanceof Error) {
-      expect((result as { _tag: string })._tag).toBe("AccountConflictError");
+      expect((result as unknown as { _tag: string })._tag).toBe("AccountConflictError");
     }
   });
 
@@ -208,7 +226,7 @@ describe("signInWithGoogleIdp", () => {
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {
-      expect((result as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
+      expect((result as unknown as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
     }
   });
 
@@ -226,7 +244,7 @@ describe("signInWithGoogleIdp", () => {
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {
-      expect((result as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
+      expect((result as unknown as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
     }
   });
 
@@ -237,7 +255,23 @@ describe("signInWithGoogleIdp", () => {
 
     expect(result).toBeInstanceOf(Error);
     if (result instanceof Error) {
-      expect((result as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
+      expect((result as unknown as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
+    }
+  });
+
+  it("JSON parse失敗をcauseに保持してFirebaseIdpSigninErrorを返す", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("not-json", { status: 400, headers: { "Content-Type": "application/json" } }),
+    );
+
+    const result = await signInWithGoogleIdp({ firebaseApiKey, googleIdToken, requestUri });
+
+    expect(result).toBeInstanceOf(Error);
+    if (result instanceof Error) {
+      expect((result as unknown as { _tag: string })._tag).toBe("FirebaseIdpSigninError");
+      expect(result.message).toBe("Firebase IdP sign-in failed.");
+      expect((result.cause as { _tag?: string } | undefined)?._tag).toBe("FirebaseIdpSigninError");
+      expect((result.cause as Error | undefined)?.cause).toBeInstanceOf(Error);
     }
   });
 });

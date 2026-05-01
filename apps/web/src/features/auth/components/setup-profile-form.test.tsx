@@ -132,6 +132,28 @@ describe("SetupProfileForm", () => {
       });
     });
 
+    it("displays fallback message when API error response cannot be parsed", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const user = userEvent.setup();
+      mockPatch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error("Invalid JSON")),
+      } as unknown as Response);
+
+      render(<SetupProfileForm />);
+
+      await user.type(screen.getByLabelText("Username"), "testuser");
+      await user.type(screen.getByLabelText("Name"), "Test");
+      await user.click(screen.getByRole("button", { name: "Set up profile" }));
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to set up profile.")).toBeInTheDocument();
+      });
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
     it("displays error message when network request fails", async () => {
       const user = userEvent.setup();
       mockPatch.mockRejectedValue(new Error("Network error"));

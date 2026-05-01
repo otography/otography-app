@@ -87,14 +87,33 @@ export const exchangeGoogleCode = async ({
     return response;
   }
 
-  const responseText = await response.text().catch(() => "");
+  const responseText = await response
+    .text()
+    .catch(
+      (e) => new GoogleTokenExchangeError({ message: "Google token exchange failed.", cause: e }),
+    );
+  if (responseText instanceof Error) return responseText;
+
+  if (response.ok && responseText.length === 0) {
+    return new GoogleTokenExchangeError({ message: "Empty response from Google token endpoint." });
+  }
 
   const payload = errore.try({
     try: () => JSON.parse(responseText),
-    catch: () => null,
+    catch: (e) =>
+      new GoogleTokenExchangeError({
+        message: "Invalid response format from Google token endpoint.",
+        cause: e,
+      }),
   });
 
   if (!response.ok) {
+    if (payload instanceof Error) {
+      return new GoogleTokenExchangeError({
+        message: "Google token exchange failed.",
+        cause: payload,
+      });
+    }
     const parsedError = googleErrorResponseSchema(payload);
     const errorDesc =
       parsedError instanceof type.errors
@@ -103,8 +122,11 @@ export const exchangeGoogleCode = async ({
     return new GoogleTokenExchangeError({ message: errorDesc });
   }
 
-  if (!payload) {
-    return new GoogleTokenExchangeError({ message: "Empty response from Google token endpoint." });
+  if (payload instanceof Error) {
+    return new GoogleTokenExchangeError({
+      message: "Invalid response format from Google token endpoint.",
+      cause: payload,
+    });
   }
 
   const parsedPayload = googleTokenResponseSchema(payload);
@@ -151,14 +173,35 @@ export const signInWithGoogleIdp = async ({
   }
 
   // レスポンス本文を取得して後続のパースとエラー判定に利用
-  const responseText = await response.text().catch(() => "");
+  const responseText = await response
+    .text()
+    .catch(
+      (e) => new FirebaseIdpSigninError({ message: "Firebase IdP sign-in failed.", cause: e }),
+    );
+  if (responseText instanceof Error) return responseText;
+
+  if (response.ok && responseText.length === 0) {
+    return new FirebaseIdpSigninError({
+      message: "Empty response from Firebase signInWithIdp.",
+    });
+  }
 
   const payload = errore.try({
     try: () => JSON.parse(responseText),
-    catch: () => null,
+    catch: (e) =>
+      new FirebaseIdpSigninError({
+        message: "Invalid response format from Firebase signInWithIdp.",
+        cause: e,
+      }),
   });
 
   if (!response.ok) {
+    if (payload instanceof Error) {
+      return new FirebaseIdpSigninError({
+        message: "Firebase IdP sign-in failed.",
+        cause: payload,
+      });
+    }
     const parsedError = firebaseErrorResponseSchema(payload);
     const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
     return new FirebaseIdpSigninError({
@@ -166,9 +209,10 @@ export const signInWithGoogleIdp = async ({
     });
   }
 
-  if (!payload) {
+  if (payload instanceof Error) {
     return new FirebaseIdpSigninError({
-      message: "Empty response from Firebase signInWithIdp.",
+      message: "Invalid response format from Firebase signInWithIdp.",
+      cause: payload,
     });
   }
 

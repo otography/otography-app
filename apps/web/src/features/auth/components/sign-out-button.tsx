@@ -2,6 +2,7 @@
 
 import { createContext, type ReactNode, useCallback, use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
 
 interface SignOutState {
@@ -27,9 +28,13 @@ function SignOutProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     setState({ error: null, isPending: true });
 
-    const response = await api.auth["sign-out"]
-      .$post()
-      .catch(() => new Error("Unable to reach the authentication API."));
+    const response = await api.auth["sign-out"].$post().catch(
+      (e) =>
+        new WebAuthClientError({
+          message: "Unable to reach the authentication API.",
+          cause: e,
+        }),
+    );
 
     if (response instanceof Error) {
       setState({ error: response.message, isPending: false });
@@ -37,8 +42,23 @@ function SignOutProvider({ children }: { children: ReactNode }) {
     }
 
     if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-      setState({ error: payload?.message ?? "Failed to sign out.", isPending: false });
+      const payload = (await response.json().catch(
+        (e) =>
+          new WebAuthClientError({
+            message: "Failed to parse sign-out error response.",
+            cause: e,
+          }),
+      )) as WebAuthClientError | { message?: string } | null;
+      if (payload instanceof Error) {
+        console.warn("Failed to parse sign-out error response:", payload.message);
+      }
+      setState({
+        error:
+          payload instanceof Error
+            ? "Failed to sign out."
+            : (payload?.message ?? "Failed to sign out."),
+        isPending: false,
+      });
       return;
     }
 
