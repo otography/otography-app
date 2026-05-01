@@ -163,13 +163,38 @@ describe("posts endpoints", () => {
   });
 
   it("PATCH /api/posts/:id updates post", async () => {
-    const select = vi.fn().mockReturnValue({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
+    const select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
+          })),
         })),
-      })),
-    });
+      })
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf222224" }]),
+          })),
+        })),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222224",
+                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222224",
+                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222224",
+                content: "Original post",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      });
 
     mockDbWithTransaction({
       select,
@@ -213,7 +238,34 @@ describe("posts endpoints", () => {
   });
 
   it("DELETE /api/posts/:id returns 204", async () => {
+    const select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222225" }]),
+          })),
+        })),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222225",
+                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222225",
+                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
+                content: "Delete me",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      });
+
     mockDbWithTransaction({
+      select,
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -228,6 +280,87 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(204);
+  });
+
+  it("PATCH /api/posts/:id returns 403 when the post belongs to another user", async () => {
+    const update = vi.fn();
+    const select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222226" }]),
+          })),
+        })),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222226",
+                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222227",
+                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222226",
+                content: "Another user's post",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      });
+
+    mockDbWithTransaction({ select, update });
+
+    const res = await testRequest("/api/posts/6f648f36-5be1-4af1-bf5d-cf8ebf222226", {
+      method: "PATCH",
+      body: {
+        content: "Updated post",
+      },
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ message: "You are not allowed to modify this post." });
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("DELETE /api/posts/:id returns 403 when the post belongs to another user", async () => {
+    const update = vi.fn();
+    const select = vi
+      .fn()
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222228" }]),
+          })),
+        })),
+      })
+      .mockReturnValueOnce({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222228",
+                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222229",
+                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222228",
+                content: "Another user's post",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      });
+
+    mockDbWithTransaction({ select, update });
+
+    const res = await testRequest("/api/posts/6f648f36-5be1-4af1-bf5d-cf8ebf222228", {
+      method: "DELETE",
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ message: "You are not allowed to delete this post." });
+    expect(update).not.toHaveBeenCalled();
   });
 
   it("returns 400 for invalid post id", async () => {

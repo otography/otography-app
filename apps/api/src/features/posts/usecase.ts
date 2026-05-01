@@ -68,11 +68,20 @@ export const registerPost = async (payload: PostCreateDbModel, firebaseId: strin
 
 type UpdatePostInput = {
   id: string;
+  firebaseId: string;
   payload: PostUpdateDbModel;
 };
 
-export const modifyPost = async ({ id, payload }: UpdatePostInput) => {
+export const modifyPost = async ({ id, firebaseId, payload }: UpdatePostInput) => {
   const db = createDb();
+
+  const user = await findActiveUserByFirebaseId(db, firebaseId).catch(
+    (e) => new DbError({ message: "Failed to fetch user.", cause: e }),
+  );
+  if (user instanceof Error) return user;
+  if (user === null) {
+    return new DbError({ message: "User not found.", statusCode: 404 });
+  }
 
   if (payload.songId !== undefined) {
     const song = await findActiveSongById(db, payload.songId).catch(
@@ -84,7 +93,18 @@ export const modifyPost = async ({ id, payload }: UpdatePostInput) => {
     }
   }
 
-  const post = await updatePostById(db, { id, values: payload }).catch(
+  const existingPost = await findPostById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch post.", cause: e }),
+  );
+  if (existingPost instanceof Error) return existingPost;
+  if (existingPost === null) {
+    return new DbError({ message: "Post not found.", statusCode: 404 });
+  }
+  if (existingPost.userId !== user.id) {
+    return new DbError({ message: "You are not allowed to modify this post.", statusCode: 403 });
+  }
+
+  const post = await updatePostById(db, { id, userId: user.id, values: payload }).catch(
     (e) => new DbError({ message: "Failed to update post.", cause: e }),
   );
   if (post instanceof Error) return post;
@@ -95,9 +115,29 @@ export const modifyPost = async ({ id, payload }: UpdatePostInput) => {
   return { post };
 };
 
-export const removePost = async (id: string) => {
+export const removePost = async (id: string, firebaseId: string) => {
   const db = createDb();
-  const deletedPost = await softDeletePostById(db, id).catch(
+
+  const user = await findActiveUserByFirebaseId(db, firebaseId).catch(
+    (e) => new DbError({ message: "Failed to fetch user.", cause: e }),
+  );
+  if (user instanceof Error) return user;
+  if (user === null) {
+    return new DbError({ message: "User not found.", statusCode: 404 });
+  }
+
+  const existingPost = await findPostById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch post.", cause: e }),
+  );
+  if (existingPost instanceof Error) return existingPost;
+  if (existingPost === null) {
+    return new DbError({ message: "Post not found.", statusCode: 404 });
+  }
+  if (existingPost.userId !== user.id) {
+    return new DbError({ message: "You are not allowed to delete this post.", statusCode: 403 });
+  }
+
+  const deletedPost = await softDeletePostById(db, { id, userId: user.id }).catch(
     (e) => new DbError({ message: "Failed to delete post.", cause: e }),
   );
   if (deletedPost instanceof Error) return deletedPost;
