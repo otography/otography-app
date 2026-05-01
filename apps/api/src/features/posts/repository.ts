@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import { posts, songs, users } from "../../shared/db/schema";
+import { posts, songs } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 const postColumns = {
@@ -59,16 +59,6 @@ export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) 
     })
     .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .returning({ id: posts.id });
-
-  return rows[0] ?? null;
-};
-
-export const findActiveUserByFirebaseId = async (db: DatabaseOrTransaction, firebaseId: string) => {
-  const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
-    .limit(1);
 
   return rows[0] ?? null;
 };
