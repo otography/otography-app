@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useMemo, useState } from "react";
 import { useForm } from "@formisch/react";
+import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
 import {
   type AuthActions,
@@ -44,9 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPending(true);
       setError(null);
 
-      const response = await api.auth["sign-in"]
-        .$post({ json: output })
-        .catch(() => new Error("Unable to reach the authentication API."));
+      const response = await api.auth["sign-in"].$post({ json: output }).catch(
+        (e) =>
+          new WebAuthClientError({
+            message: "Unable to reach the authentication API.",
+            cause: e,
+          }),
+      );
 
       if (response instanceof Error) {
         setError(response.message);
@@ -55,8 +60,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        setError(payload?.message ?? "Authentication failed.");
+        const payload = (await response.json().catch(
+          (e) =>
+            new WebAuthClientError({
+              message: "Failed to parse authentication error response.",
+              cause: e,
+            }),
+        )) as WebAuthClientError | { message?: string } | null;
+        if (payload instanceof Error) {
+          console.warn("Failed to parse authentication error response:", payload.message);
+        }
+        setError(
+          payload instanceof Error
+            ? "Authentication failed."
+            : (payload?.message ?? "Authentication failed."),
+        );
         setIsPending(false);
         return;
       }
@@ -73,9 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPending(true);
       setError(null);
 
-      const response = await api.auth["sign-up"]
-        .$post({ json: output })
-        .catch(() => new Error("Unable to reach the authentication API."));
+      const response = await api.auth["sign-up"].$post({ json: output }).catch(
+        (e) =>
+          new WebAuthClientError({
+            message: "Unable to reach the authentication API.",
+            cause: e,
+          }),
+      );
 
       if (response instanceof Error) {
         setError(response.message);
@@ -84,8 +106,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        setError(payload?.message ?? "Authentication failed.");
+        const payload = (await response.json().catch(
+          (e) =>
+            new WebAuthClientError({
+              message: "Failed to parse authentication error response.",
+              cause: e,
+            }),
+        )) as WebAuthClientError | { message?: string } | null;
+        if (payload instanceof Error) {
+          console.warn("Failed to parse authentication error response:", payload.message);
+        }
+        setError(
+          payload instanceof Error
+            ? "Authentication failed."
+            : (payload?.message ?? "Authentication failed."),
+        );
         setIsPending(false);
         return;
       }

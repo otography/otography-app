@@ -2,6 +2,7 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
+import { AuthRestError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
 import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
@@ -28,8 +29,8 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
   }
 });
 
-const handleAuthError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
-  if (error.clearCookie) {
+const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings: Bindings }>) => {
+  if ("clearCookie" in error && error.clearCookie) {
     clearSessionCookie(c);
     clearRefreshTokenCookie(c);
   }
@@ -54,7 +55,8 @@ const auth = new Hono<{ Bindings: Bindings }>()
     const sessionCookie = await createSessionCookie(result.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     setSessionCookie(c, sessionCookie);
-    await setRefreshTokenCookie(c, result.refreshToken);
+    const refreshCookie = await setRefreshTokenCookie(c, result.refreshToken);
+    if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
     return c.json({ message: "Signed in successfully." }, 200);
   })
   .post("/api/auth/sign-up", csrfProtection(), credentialsValidator, async (c) => {
@@ -79,7 +81,8 @@ const auth = new Hono<{ Bindings: Bindings }>()
     if (userRecord instanceof Error) return handleAuthError(userRecord, c);
 
     setSessionCookie(c, sessionCookie);
-    await setRefreshTokenCookie(c, signUpResult.refreshToken);
+    const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
+    if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
     return c.json({ message: "Account created successfully." }, 201);
   })
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {

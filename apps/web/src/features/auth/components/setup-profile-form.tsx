@@ -4,6 +4,7 @@ import { createContext, type ReactNode, useCallback, use, useMemo, useState } fr
 import { useRouter } from "next/navigation";
 import { Field, Form, useForm } from "@formisch/react";
 import type { FormStore } from "@formisch/react";
+import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
 import * as v from "valibot";
 
@@ -52,7 +53,7 @@ function SetupProfileProvider({ children }: { children: ReactNode }) {
 
       const response = await api.user.profile
         .$patch({ json: output })
-        .catch(() => new Error("Unable to reach the server."));
+        .catch((e) => new WebAuthClientError({ message: "Unable to reach the server.", cause: e }));
 
       if (response instanceof Error) {
         setError(response.message);
@@ -60,8 +61,21 @@ function SetupProfileProvider({ children }: { children: ReactNode }) {
       }
 
       if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-        setError(payload?.message ?? "Failed to set up profile.");
+        const payload = (await response.json().catch(
+          (e) =>
+            new WebAuthClientError({
+              message: "Failed to parse profile error response.",
+              cause: e,
+            }),
+        )) as WebAuthClientError | { message?: string } | null;
+        if (payload instanceof Error) {
+          console.warn("Failed to parse profile error response:", payload.message);
+        }
+        setError(
+          payload instanceof Error
+            ? "Failed to set up profile."
+            : (payload?.message ?? "Failed to set up profile."),
+        );
         return;
       }
 

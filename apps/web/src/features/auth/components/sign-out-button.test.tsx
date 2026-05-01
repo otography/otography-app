@@ -103,6 +103,24 @@ describe("SignOutButton", () => {
       });
     });
 
+    it("shows fallback error when server error response cannot be parsed", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      mockSignOutPost.mockResolvedValue({
+        ok: false as const,
+        json: () => Promise.reject(new Error("Invalid JSON")),
+      });
+      const user = userEvent.setup();
+
+      render(<SignOutButton />);
+      await user.click(screen.getByRole("button", { name: "Sign out" }));
+
+      await waitFor(() => {
+        expect(screen.getByText("Failed to sign out.")).toBeInTheDocument();
+      });
+      expect(warnSpy).toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
     it("shows network error message", async () => {
       mockSignOutPost.mockRejectedValue(new Error("Network error"));
       const user = userEvent.setup();

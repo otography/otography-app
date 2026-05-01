@@ -119,6 +119,26 @@ describe("SignInForm", () => {
     });
   });
 
+  it("shows fallback error when auth error response cannot be parsed", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockSignInPost.mockResolvedValue({
+      ok: false as const,
+      json: () => Promise.reject(new Error("Invalid JSON")),
+    });
+    const user = userEvent.setup();
+
+    render(<SignInForm />);
+    await user.type(screen.getByLabelText("Email"), "test@example.com");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Authentication failed.")).toBeInTheDocument();
+    });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   it("shows network error message when API is unreachable", async () => {
     mockSignInPost.mockRejectedValue(new Error("Network error"));
     const user = userEvent.setup();
@@ -189,5 +209,25 @@ describe("SignUpForm", () => {
     await waitFor(() => {
       expect(screen.getByText("Email already exists.")).toBeInTheDocument();
     });
+  });
+
+  it("shows fallback error when sign-up error response cannot be parsed", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockSignUpPost.mockResolvedValue({
+      ok: false as const,
+      json: () => Promise.reject(new Error("Invalid JSON")),
+    });
+    const user = userEvent.setup();
+
+    render(<SignUpForm />);
+    await user.type(screen.getByLabelText("Email"), "test@example.com");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Authentication failed.")).toBeInTheDocument();
+    });
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });
