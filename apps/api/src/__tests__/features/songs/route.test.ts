@@ -135,6 +135,7 @@ describe("songs endpoints", () => {
             {
               id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
               title: "New Song",
+              appleMusicId: "am-new-song-1",
               length: 240,
               isrcs: null,
               createdAt: "2026-01-01T00:00:00.000Z",
@@ -149,6 +150,7 @@ describe("songs endpoints", () => {
       method: "POST",
       body: {
         title: "New Song",
+        appleMusicId: "am-new-song-1",
         length: 240,
       },
     });
@@ -158,6 +160,7 @@ describe("songs endpoints", () => {
       song: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
         title: "New Song",
+        appleMusicId: "am-new-song-1",
         length: 240,
         isrcs: null,
         createdAt: "2026-01-01T00:00:00.000Z",
@@ -175,6 +178,7 @@ describe("songs endpoints", () => {
             {
               id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
               title: "New Song with Artist",
+              appleMusicId: "am-new-song-2",
               length: 200,
               isrcs: null,
               createdAt: "2026-01-01T00:00:00.000Z",
@@ -206,6 +210,7 @@ describe("songs endpoints", () => {
       method: "POST",
       body: {
         title: "New Song with Artist",
+        appleMusicId: "am-new-song-2",
         length: 200,
         artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
       },
@@ -216,6 +221,7 @@ describe("songs endpoints", () => {
       song: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
         title: "New Song with Artist",
+        appleMusicId: "am-new-song-2",
         length: 200,
         isrcs: null,
         createdAt: "2026-01-01T00:00:00.000Z",
@@ -266,6 +272,7 @@ describe("songs endpoints", () => {
       method: "POST",
       body: {
         title: "Song with unknown artist",
+        appleMusicId: "am-unknown-song",
         artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
       },
     });

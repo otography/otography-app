@@ -6,6 +6,7 @@ import type { SongCreateDbModel, SongUpdateDbModel } from "./model";
 const songColumns = {
   id: songs.id,
   title: songs.title,
+  appleMusicId: songs.appleMusicId,
   length: songs.length,
   isrcs: songs.isrcs,
   createdAt: songs.createdAt,

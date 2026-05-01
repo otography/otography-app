@@ -3,6 +3,8 @@ import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { auth } from "./features/auth";
 import { artists } from "./features/artists";
+import { favoriteArtists } from "./features/favorite-artists";
+import { favoriteSongs } from "./features/favorite-songs";
 import { songs } from "./features/songs";
 import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
@@ -31,6 +33,8 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/", artists)
   .route("/", songs)
   .route("/", user)
+  .route("/", favoriteArtists)
+  .route("/", favoriteSongs)
   .get("/", (c) => c.text("Hello Hono!"));
 
 export default app;

@@ -134,6 +134,7 @@ export const artists = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
+    appleMusicId: varchar("apple_music_id", { length: 100 }).notNull().unique(),
     ipiCode: varchar("ipi_code", { length: 20 }),
     type: artistTypeEnum("type"),
     gender: varchar("gender", { length: 20 }),
@@ -178,6 +179,7 @@ export const songs = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
+    appleMusicId: varchar("apple_music_id", { length: 100 }).notNull().unique(),
     length: integer("length"),
     isrcs: varchar("isrcs", { length: 50 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

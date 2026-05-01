@@ -18,6 +18,9 @@ declare namespace Cloudflare {
     GOOGLE_CLIENT_SECRET: string;
     AUTH_OAUTH_STATE_SECRET: string;
     AUTH_ENCRYPTION_KEY: string;
+    APPLE_KEY_ID: string;
+    APPLE_TEAM_ID: string;
+    APPLE_MUSIC_PRIVATE_KEY: string;
   }
 }
 interface Env extends Cloudflare.Env {}
@@ -40,6 +43,9 @@ declare namespace NodeJS {
       | "GOOGLE_CLIENT_SECRET"
       | "AUTH_OAUTH_STATE_SECRET"
       | "AUTH_ENCRYPTION_KEY"
+      | "APPLE_KEY_ID"
+      | "APPLE_TEAM_ID"
+      | "APPLE_MUSIC_PRIVATE_KEY"
     >
   > {}
 }

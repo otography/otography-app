@@ -3,6 +3,9 @@ export type Bindings = {
   AUTH_ENCRYPTION_KEY: string;
   AUTH_OAUTH_STATE_SECRET: string;
   APP_FRONTEND_URL: string;
+  APPLE_KEY_ID: string;
+  APPLE_TEAM_ID: string;
+  APPLE_MUSIC_PRIVATE_KEY: string;
   DATABASE_URL: string;
   FIREBASE_API_KEY: string;
   FIREBASE_CLIENT_EMAIL: string;
