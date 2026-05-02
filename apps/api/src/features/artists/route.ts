@@ -6,13 +6,13 @@ import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
-import { artistInsertSchema, artistUpdateSchema } from "./model";
+import { artistCreateBodySchema, artistUpdateSchema } from "./model";
 
 const handleArtistError = (error: DbError, c: Context<{ Bindings: Bindings }>) => {
   return c.json({ message: error.message }, error.statusCode);
 };
 
-const artistBodyValidator = arktypeValidator("json", artistInsertSchema, (result, c) => {
+const artistCreateValidator = arktypeValidator("json", artistCreateBodySchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid artist payload." }, 400);
   }
@@ -52,7 +52,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     "/api/artists",
     csrfProtection(),
     requireAuthMiddleware(),
-    artistBodyValidator,
+    artistCreateValidator,
     async (c) => {
       const payload = c.req.valid("json");
       const result = await registerArtist(payload);

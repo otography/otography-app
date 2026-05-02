@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DbError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -18,7 +19,12 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
+vi.mock("../../../shared/apple-music", () => ({
+  fetchArtist: vi.fn(),
+}));
+
 import { createDb } from "../../../shared/db";
+import { fetchArtist } from "../../../shared/apple-music";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
@@ -140,7 +146,14 @@ describe("artists endpoints", () => {
     expect(await res.json()).toEqual({ message: "Artist not found." });
   });
 
-  it("POST /api/artists creates artist", async () => {
+  it("POST /api/artists creates artist from appleMusicId", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue({
+      id: "am-new-artist-1",
+      attributes: {
+        name: "New Artist",
+      },
+    });
+
     mockDbWithTransaction({
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
@@ -150,7 +163,7 @@ describe("artists endpoints", () => {
               name: "New Artist",
               appleMusicId: "am-new-artist-1",
               ipiCode: null,
-              type: "group",
+              type: null,
               gender: null,
               birthplace: null,
               birthdate: null,
@@ -165,9 +178,7 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists", {
       method: "POST",
       body: {
-        name: "New Artist",
         appleMusicId: "am-new-artist-1",
-        type: "group",
       },
     });
 
@@ -178,7 +189,7 @@ describe("artists endpoints", () => {
         name: "New Artist",
         appleMusicId: "am-new-artist-1",
         ipiCode: null,
-        type: "group",
+        type: null,
         gender: null,
         birthplace: null,
         birthdate: null,
@@ -186,10 +197,16 @@ describe("artists endpoints", () => {
         updatedAt: "2026-01-01T00:00:00.000Z",
       },
     });
+    expect(fetchArtist).toHaveBeenCalledWith("am-new-artist-1");
   });
 
   it("POST /api/artists returns 409 when appleMusicId is already registered", async () => {
-    mockDbWithTransaction({
+    vi.mocked(fetchArtist).mockResolvedValue({
+      id: "am-duplicate-artist",
+      attributes: { name: "Duplicate Artist" },
+    });
+
+    vi.mocked(createDb).mockReturnValue({
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockRejectedValue(
@@ -200,14 +217,11 @@ describe("artists endpoints", () => {
           ),
         })),
       })),
-    });
+    } as never);
 
     const res = await testRequest("/api/artists", {
       method: "POST",
-      body: {
-        name: "Duplicate Artist",
-        appleMusicId: "am-duplicate-artist",
-      },
+      body: { appleMusicId: "am-duplicate-artist" },
     });
 
     expect(res.status).toBe(409);
@@ -217,20 +231,22 @@ describe("artists endpoints", () => {
   });
 
   it("POST /api/artists returns 500 for unrelated DB errors", async () => {
-    mockDbWithTransaction({
+    vi.mocked(fetchArtist).mockResolvedValue({
+      id: "am-broken-artist",
+      attributes: { name: "Broken Artist" },
+    });
+
+    vi.mocked(createDb).mockReturnValue({
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           returning: vi.fn().mockRejectedValue(new Error("DB error")),
         })),
       })),
-    });
+    } as never);
 
     const res = await testRequest("/api/artists", {
       method: "POST",
-      body: {
-        name: "Broken Artist",
-        appleMusicId: "am-broken-artist",
-      },
+      body: { appleMusicId: "am-broken-artist" },
     });
 
     expect(res.status).toBe(500);
@@ -240,27 +256,40 @@ describe("artists endpoints", () => {
   it("POST /api/artists returns 400 for invalid payload", async () => {
     const res = await testRequest("/api/artists", {
       method: "POST",
-      body: {
-        name: "",
-        type: "band",
-      },
+      body: {},
     });
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
   });
 
-  it("POST /api/artists returns 400 for invalid birthplace", async () => {
+  it("POST /api/artists returns 400 when appleMusicId is empty", async () => {
     const res = await testRequest("/api/artists", {
       method: "POST",
-      body: {
-        name: "Bad Birthplace Artist",
-        birthplace: "New York",
-      },
+      body: { appleMusicId: "" },
     });
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
+  });
+
+  it("POST /api/artists returns 502 when Apple Music API fails", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue(
+      new DbError({
+        message: "Apple Music API からアーティスト情報を取得できませんでした。",
+        statusCode: 502,
+      }),
+    );
+
+    const res = await testRequest("/api/artists", {
+      method: "POST",
+      body: { appleMusicId: "am-not-found" },
+    });
+
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({
+      message: "Apple Music API からアーティスト情報を取得できませんでした。",
+    });
   });
 
   it("PATCH /api/artists/:id updates artist", async () => {

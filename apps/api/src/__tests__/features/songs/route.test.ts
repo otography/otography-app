@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { DbError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -18,7 +19,12 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
+vi.mock("../../../shared/apple-music", () => ({
+  fetchSong: vi.fn(),
+}));
+
 import { createDb } from "../../../shared/db";
+import { fetchSong } from "../../../shared/apple-music";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
@@ -128,57 +134,140 @@ describe("songs endpoints", () => {
     expect(await res.json()).toEqual({ message: "Song not found." });
   });
 
-  it("POST /api/songs creates song", async () => {
+  it("POST /api/songs creates song from appleMusicId", async () => {
+    vi.mocked(fetchSong).mockResolvedValue({
+      id: "am-new-song-1",
+      attributes: {
+        name: "New Song",
+        durationInMillis: 240000,
+        isrc: "JPABC2400001",
+        genreNames: ["J-Pop", "Pop"],
+      },
+      relationships: {
+        artists: {
+          data: [{ id: "am-artist-1", type: "artists", attributes: { name: "Artist One" } }],
+        },
+      },
+    });
+
+    // Drizzle: select().from(table).where(...).limit(...) or await select().from(table).where(...)
+    // from() の返り値が thenable であり、かつ where/limit メソッドも持つ
+    const queryable = (resolvedValue: unknown) => {
+      const obj: Record<string, unknown> = {
+        where: vi.fn(() => obj),
+        limit: vi.fn(() => obj),
+        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
+      };
+      return obj;
+    };
+
+    const selectFrom = vi
+      .fn()
+      // findActiveArtistByAppleMusicId（resolveArtistIds、db直）
+      .mockReturnValueOnce(queryable([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111" }]))
+      // findOrCreateGenreIds（ジャンルID検索、トランザクション内）
+      .mockReturnValueOnce(queryable([{ id: "genre-id-1" }, { id: "genre-id-2" }]));
+
     mockDbWithTransaction({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([
-            {
-              id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
-              title: "New Song",
-              appleMusicId: "am-new-song-1",
-              length: 240,
-              isrcs: null,
-              createdAt: "2026-01-01T00:00:00.000Z",
-              updatedAt: "2026-01-01T00:00:00.000Z",
-            },
-          ]),
-        })),
+      select: vi.fn(() => ({
+        from: selectFrom,
+      })),
+      insert: vi
+        .fn()
+        // 1. songs INSERT
+        .mockReturnValueOnce({
+          values: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
+                title: "New Song",
+                appleMusicId: "am-new-song-1",
+                length: 240,
+                isrcs: "JPABC2400001",
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })
+        // 2. songArtists INSERT (syncSongArtists)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        })
+        // 3. genres INSERT (findOrCreateGenreIds) - values → onConflictDoNothing
+        .mockReturnValueOnce({
+          values: vi.fn(() => ({
+            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          })),
+        })
+        // 4. songGenres INSERT (syncSongGenres)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        }),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue(undefined),
       })),
     });
 
     const res = await testRequest("/api/songs", {
       method: "POST",
       body: {
-        title: "New Song",
         appleMusicId: "am-new-song-1",
-        length: 240,
       },
     });
 
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({
-      song: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
-        title: "New Song",
-        appleMusicId: "am-new-song-1",
-        length: 240,
-        isrcs: null,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      },
-    });
+    expect(fetchSong).toHaveBeenCalledWith("am-new-song-1");
   });
 
-  it("POST /api/songs creates song with artistId", async () => {
+  it("POST /api/songs auto-creates unknown artists", async () => {
+    vi.mocked(fetchSong).mockResolvedValue({
+      id: "am-new-song-2",
+      attributes: {
+        name: "New Song with New Artist",
+        durationInMillis: 200000,
+        isrc: null,
+        genreNames: [],
+      },
+      relationships: {
+        artists: {
+          data: [
+            { id: "am-artist-unknown", type: "artists", attributes: { name: "Unknown Artist" } },
+          ],
+        },
+      },
+    });
+
+    const queryable = (resolvedValue: unknown) => {
+      const obj: Record<string, unknown> = {
+        where: vi.fn(() => obj),
+        limit: vi.fn(() => obj),
+        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
+      };
+      return obj;
+    };
+
+    // findActiveArtistByAppleMusicId → 空配列（未登録）
+    // findOrCreateGenreIds → 空配列（genreNames無し）
+    const selectFrom = vi.fn().mockReturnValueOnce(queryable([]));
+
     const insert = vi
       .fn()
+      // 1. artists INSERT（自動作成）
+      .mockReturnValueOnce({
+        values: vi.fn(() => ({
+          returning: vi
+            .fn()
+            .mockResolvedValue([{ id: "auto-created-artist-id", name: "Unknown Artist" }]),
+        })),
+      })
+      // 2. songs INSERT
       .mockReturnValueOnce({
         values: vi.fn(() => ({
           returning: vi.fn().mockResolvedValue([
             {
               id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
-              title: "New Song with Artist",
+              title: "New Song with New Artist",
               appleMusicId: "am-new-song-2",
               length: 200,
               isrcs: null,
@@ -188,51 +277,37 @@ describe("songs endpoints", () => {
           ]),
         })),
       })
+      // 3. songArtists INSERT
       .mockReturnValueOnce({
         values: vi.fn().mockResolvedValue(undefined),
       });
 
     mockDbWithTransaction({
       select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
-              },
-            ]),
-          })),
-        })),
+        from: selectFrom,
       })),
       insert,
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue(undefined),
+      })),
     });
 
     const res = await testRequest("/api/songs", {
       method: "POST",
-      body: {
-        title: "New Song with Artist",
-        appleMusicId: "am-new-song-2",
-        length: 200,
-        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
-      },
+      body: { appleMusicId: "am-new-song-2" },
     });
 
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({
-      song: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
-        title: "New Song with Artist",
-        appleMusicId: "am-new-song-2",
-        length: 200,
-        isrcs: null,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-      },
-    });
-    expect(insert).toHaveBeenCalledTimes(2);
+    // artists INSERT + songs INSERT + songArtists INSERT = 3回
+    expect(insert).toHaveBeenCalledTimes(3);
   });
 
   it("POST /api/songs returns 409 when appleMusicId is already registered", async () => {
+    vi.mocked(fetchSong).mockResolvedValue({
+      id: "am-duplicate-song",
+      attributes: { name: "Duplicate Song", genreNames: [] },
+    });
+
     vi.mocked(createDb).mockReturnValue({
       transaction: vi.fn().mockRejectedValue(
         createDrizzleConstraintError({
@@ -244,10 +319,7 @@ describe("songs endpoints", () => {
 
     const res = await testRequest("/api/songs", {
       method: "POST",
-      body: {
-        title: "Duplicate Song",
-        appleMusicId: "am-duplicate-song",
-      },
+      body: { appleMusicId: "am-duplicate-song" },
     });
 
     expect(res.status).toBe(409);
@@ -257,16 +329,18 @@ describe("songs endpoints", () => {
   });
 
   it("POST /api/songs returns 500 for unrelated DB errors", async () => {
+    vi.mocked(fetchSong).mockResolvedValue({
+      id: "am-broken-song",
+      attributes: { name: "Broken Song", genreNames: [] },
+    });
+
     vi.mocked(createDb).mockReturnValue({
       transaction: vi.fn().mockRejectedValue(new Error("DB error")),
     } as never);
 
     const res = await testRequest("/api/songs", {
       method: "POST",
-      body: {
-        title: "Broken Song",
-        appleMusicId: "am-broken-song",
-      },
+      body: { appleMusicId: "am-broken-song" },
     });
 
     expect(res.status).toBe(500);
@@ -276,55 +350,92 @@ describe("songs endpoints", () => {
   it("POST /api/songs returns 400 for invalid payload", async () => {
     const res = await testRequest("/api/songs", {
       method: "POST",
-      body: {
-        title: "",
-        length: -1,
-      },
+      body: {},
     });
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
   });
 
-  it("POST /api/songs returns 400 when isrcs is empty after trim", async () => {
+  it("POST /api/songs returns 400 when appleMusicId is empty", async () => {
     const res = await testRequest("/api/songs", {
       method: "POST",
-      body: {
-        title: "Song with empty isrcs",
-        isrcs: "   ",
-      },
+      body: { appleMusicId: "" },
     });
 
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
   });
 
-  it("POST /api/songs returns 404 when artist does not exist", async () => {
+  it("POST /api/songs returns 502 when Apple Music API fails", async () => {
+    vi.mocked(fetchSong).mockResolvedValue(
+      new DbError({
+        message: "Apple Music API から楽曲情報を取得できませんでした。",
+        statusCode: 502,
+      }),
+    );
+
+    const res = await testRequest("/api/songs", {
+      method: "POST",
+      body: { appleMusicId: "am-not-found" },
+    });
+
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({
+      message: "Apple Music API から楽曲情報を取得できませんでした。",
+    });
+  });
+
+  it("PATCH /api/songs/:id syncs song from Apple Music API", async () => {
+    vi.mocked(fetchSong).mockResolvedValue({
+      id: "am-existing-song",
+      attributes: {
+        name: "Updated Song",
+        durationInMillis: 220000,
+        isrc: "JPABC240009",
+        genreNames: ["Rock"],
+      },
+      relationships: {
+        artists: {
+          data: [{ id: "am-artist-1", type: "artists", attributes: { name: "Artist One" } }],
+        },
+      },
+    });
+
+    const queryable = (resolvedValue: unknown) => {
+      const obj: Record<string, unknown> = {
+        where: vi.fn(() => obj),
+        limit: vi.fn(() => obj),
+        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
+      };
+      return obj;
+    };
+
+    const selectFrom = vi
+      .fn()
+      // findSongById（syncSong冒頭）
+      .mockReturnValueOnce(
+        queryable([
+          {
+            id: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
+            title: "Old Song",
+            appleMusicId: "am-existing-song",
+            length: 180,
+            isrcs: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            updatedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ]),
+      )
+      // findActiveArtistByAppleMusicId（resolveArtistIds）
+      .mockReturnValueOnce(queryable([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111" }]))
+      // findOrCreateGenreIds（ジャンルID検索）
+      .mockReturnValueOnce(queryable([{ id: "genre-id-1" }]));
+
     mockDbWithTransaction({
       select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
+        from: selectFrom,
       })),
-    });
-
-    const res = await testRequest("/api/songs", {
-      method: "POST",
-      body: {
-        title: "Song with unknown artist",
-        appleMusicId: "am-unknown-song",
-        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
-      },
-    });
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Artist not found." });
-  });
-
-  it("PATCH /api/songs/:id updates song", async () => {
-    mockDbWithTransaction({
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -332,6 +443,7 @@ describe("songs endpoints", () => {
               {
                 id: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
                 title: "Updated Song",
+                appleMusicId: "am-existing-song",
                 length: 220,
                 isrcs: "JPABC240009",
                 createdAt: "2026-01-01T00:00:00.000Z",
@@ -341,203 +453,37 @@ describe("songs endpoints", () => {
           })),
         })),
       })),
+      insert: vi
+        .fn()
+        // songArtists INSERT (syncSongArtists)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        })
+        // genres INSERT (findOrCreateGenreIds)
+        .mockReturnValueOnce({
+          values: vi.fn(() => ({
+            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          })),
+        })
+        // songGenres INSERT (syncSongGenres)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        }),
+      delete: vi.fn(() => ({
+        where: vi.fn().mockResolvedValue(undefined),
+      })),
     });
 
     const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222225", {
       method: "PATCH",
-      body: {
-        title: "Updated Song",
-      },
-    });
-
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      song: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222225",
-        title: "Updated Song",
-        length: 220,
-        isrcs: "JPABC240009",
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-02T00:00:00.000Z",
-      },
-    });
-  });
-
-  it("PATCH /api/songs/:id updates song with artistId", async () => {
-    const insert = vi.fn(() => ({
-      values: vi.fn().mockResolvedValue(undefined),
-    }));
-
-    mockDbWithTransaction({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
-              },
-            ]),
-          })),
-        })),
-      })),
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222231",
-                title: "Updated Song with Artist",
-                length: 220,
-                isrcs: "JPABC240010",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-03T00:00:00.000Z",
-              },
-            ]),
-          })),
-        })),
-      })),
-      delete: vi.fn(() => ({
-        where: vi.fn().mockResolvedValue(undefined),
-      })),
-      insert,
-    });
-
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222231", {
-      method: "PATCH",
-      body: {
-        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
-      },
-    });
-
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      song: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222231",
-        title: "Updated Song with Artist",
-        length: 220,
-        isrcs: "JPABC240010",
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-03T00:00:00.000Z",
-      },
-    });
-    expect(insert).toHaveBeenCalledTimes(1);
-  });
-
-  it("PATCH /api/songs/:id clears artistId with null", async () => {
-    const insert = vi.fn();
-
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222232",
-                title: "Updated Song without Artist",
-                length: 180,
-                isrcs: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-03T00:00:00.000Z",
-              },
-            ]),
-          })),
-        })),
-      })),
-      delete: vi.fn(() => ({
-        where: vi.fn().mockResolvedValue(undefined),
-      })),
-      insert,
-    });
-
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222232", {
-      method: "PATCH",
-      body: {
-        artistId: null,
-      },
-    });
-
-    expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      song: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf222232",
-        title: "Updated Song without Artist",
-        length: 180,
-        isrcs: null,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-03T00:00:00.000Z",
-      },
-    });
-    expect(insert).not.toHaveBeenCalled();
-  });
-
-  it("PATCH /api/songs/:id returns 409 when appleMusicId is already registered", async () => {
-    vi.mocked(createDb).mockReturnValue({
-      transaction: vi.fn().mockRejectedValue(
-        createDrizzleConstraintError({
-          constraintName: "songs_apple_music_id_key",
-          query: 'update "songs"',
-        }),
-      ),
-    } as never);
-
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222233", {
-      method: "PATCH",
-      body: {
-        appleMusicId: "am-duplicate-song",
-      },
-    });
-
-    expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({
-      message: "Apple Music ID is already registered for another song.",
-    });
-  });
-
-  it("PATCH /api/songs/:id returns 400 for invalid id", async () => {
-    const res = await testRequest("/api/songs/not-uuid", {
-      method: "PATCH",
-      body: {
-        title: "Updated Song",
-      },
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
-  });
-
-  it("PATCH /api/songs/:id returns 400 for empty payload", async () => {
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222226", {
-      method: "PATCH",
       body: {},
     });
 
-    expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide at least one field to update." });
+    expect(res.status).toBe(200);
+    expect(fetchSong).toHaveBeenCalledWith("am-existing-song");
   });
 
-  it("PATCH /api/songs/:id returns 404 when song not found", async () => {
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-    });
-
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222227", {
-      method: "PATCH",
-      body: {
-        title: "No Song",
-      },
-    });
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Song not found." });
-  });
-
-  it("PATCH /api/songs/:id returns 404 when artist does not exist", async () => {
+  it("PATCH /api/songs/:id returns 404 when song not found in DB", async () => {
     mockDbWithTransaction({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
@@ -548,14 +494,22 @@ describe("songs endpoints", () => {
       })),
     });
 
-    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222228", {
+    const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222227", {
       method: "PATCH",
-      body: {
-        artistId: "8f648f36-5be1-4af1-bf5d-cf8ebf222299",
-      },
+      body: {},
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Artist not found." });
+    expect(await res.json()).toEqual({ message: "Song not found." });
+  });
+
+  it("PATCH /api/songs/:id returns 400 for invalid id", async () => {
+    const res = await testRequest("/api/songs/not-uuid", {
+      method: "PATCH",
+      body: {},
+    });
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
   });
 });

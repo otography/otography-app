@@ -9,6 +9,15 @@ type AppleMusicArtist = {
   };
 };
 
+// Apple Music API の楽曲情報（include=artists 時に attributes も取得）
+type AppleMusicSongArtist = {
+  id: string;
+  type: "artists";
+  attributes?: {
+    name: string;
+  };
+};
+
 // Apple Music API の楽曲情報
 type AppleMusicSong = {
   id: string;
@@ -16,6 +25,12 @@ type AppleMusicSong = {
     name: string;
     durationInMillis?: number;
     isrc?: string;
+    genreNames: string[];
+  };
+  relationships?: {
+    artists?: {
+      data?: AppleMusicSongArtist[];
+    };
   };
 };
 
@@ -98,7 +113,7 @@ export const fetchSong = async (appleMusicId: string) => {
   const storefront = "jp";
 
   const response = await fetch(
-    `https://api.music.apple.com/v1/catalog/${storefront}/songs/${appleMusicId}`,
+    `https://api.music.apple.com/v1/catalog/${storefront}/songs/${appleMusicId}?include=artists`,
     {
       headers: {
         Authorization: `Bearer ${token}`,
