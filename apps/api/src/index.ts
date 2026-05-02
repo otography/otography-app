@@ -6,6 +6,7 @@ import { artists } from "./features/artists";
 import { favoriteArtists } from "./features/favorite-artists";
 import { favoriteSongs } from "./features/favorite-songs";
 import { songs } from "./features/songs";
+import { posts } from "./features/posts";
 import { user } from "./features/user";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
@@ -32,6 +33,7 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/", auth)
   .route("/", artists)
   .route("/", songs)
+  .route("/", posts)
   .route("/", user)
   .route("/", favoriteArtists)
   .route("/", favoriteSongs)

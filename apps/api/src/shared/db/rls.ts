@@ -20,6 +20,29 @@ const setupRlsTransaction = async (tx: DatabaseTransaction, jwtClaims: string) =
   if (roleResult instanceof Error) return roleResult;
 };
 
+const setupAnonymousRlsTransaction = async (tx: DatabaseTransaction) => {
+  const roleResult = await tx
+    .execute(sql.raw("set local role anon"))
+    .catch((e) => new RlsError({ message: "Failed to switch to anonymous role.", cause: e }));
+  if (roleResult instanceof Error) return roleResult;
+};
+
+export async function withAnonymousRls<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
+  const db = createDb();
+  const result = await db
+    .transaction(async (tx) => {
+      const setupResult = await setupAnonymousRlsTransaction(tx);
+      if (setupResult instanceof Error) abortRlsTransaction(setupResult);
+
+      return await fn(tx);
+    })
+    .catch((e) =>
+      e instanceof RlsError ? e : new RlsError({ message: "Transaction failed.", cause: e }),
+    );
+
+  return result;
+}
+
 export async function withRls<T>(
   claims: DecodedIdToken,
   fn: (tx: DatabaseTransaction, userId: string) => Promise<T>,

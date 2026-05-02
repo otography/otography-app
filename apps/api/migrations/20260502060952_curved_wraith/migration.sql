@@ -1,0 +1,1 @@
+CREATE POLICY "posts_select_active" ON "posts" AS PERMISSIVE FOR SELECT TO "anon", "authenticated" USING ("posts"."deleted_at" IS NULL);

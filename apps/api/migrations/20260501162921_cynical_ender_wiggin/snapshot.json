@@ -1,8 +1,8 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "eebad43e-76a0-438f-9d07-942795222b2b",
-  "prevIds": ["ee3a0e5a-847f-40a3-bee6-3f079bb695fe"],
+  "id": "fa438b5f-3427-443f-bdd2-dae1df8d3747",
+  "prevIds": ["e8263b09-aacd-4bf7-9807-ff5cbf3522f3"],
   "ddl": [
     {
       "values": ["person", "group"],
@@ -107,7 +107,7 @@
       "schema": "public"
     },
     {
-      "isRlsEnabled": false,
+      "isRlsEnabled": true,
       "name": "posts",
       "entityType": "tables",
       "schema": "public"
@@ -158,6 +158,19 @@
       "generated": null,
       "identity": null,
       "name": "name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "artists"
+    },
+    {
+      "type": "varchar(100)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "apple_music_id",
       "entityType": "columns",
       "schema": "public",
       "table": "artists"
@@ -891,6 +904,19 @@
       "table": "songs"
     },
     {
+      "type": "varchar(100)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "apple_music_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "songs"
+    },
+    {
       "type": "integer",
       "typeSchema": null,
       "notNull": false,
@@ -984,7 +1010,7 @@
     {
       "type": "varchar(50)",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1735,11 +1761,29 @@
     },
     {
       "nameExplicit": false,
+      "columns": ["apple_music_id"],
+      "nullsNotDistinct": false,
+      "name": "artists_apple_music_id_key",
+      "schema": "public",
+      "table": "artists",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
       "columns": ["name"],
       "nullsNotDistinct": false,
       "name": "genres_name_key",
       "schema": "public",
       "table": "genres",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": ["apple_music_id"],
+      "nullsNotDistinct": false,
+      "name": "songs_apple_music_id_key",
+      "schema": "public",
+      "table": "songs",
       "entityType": "uniques"
     },
     {
@@ -1782,20 +1826,9 @@
       "table": "users"
     },
     {
-      "value": "length(btrim(\"username\")) >= 1",
+      "value": "\"username\" IS NULL OR length(btrim(\"username\")) >= 1",
       "name": "users_username_min_length",
       "entityType": "checks",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "as": "PERMISSIVE",
-      "for": "SELECT",
-      "roles": ["public"],
-      "using": "true",
-      "withCheck": null,
-      "name": "users_select_all",
-      "entityType": "policies",
       "schema": "public",
       "table": "users"
     },
@@ -1804,8 +1837,41 @@
       "for": "INSERT",
       "roles": ["authenticated"],
       "using": null,
-      "withCheck": "\"users\".\"id\" = requesting_user_id()::uuid",
-      "name": "users_insert_own",
+      "withCheck": "\"posts\".\"user_id\" = requesting_user_id()::uuid",
+      "name": "posts_insert_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "UPDATE",
+      "roles": ["authenticated"],
+      "using": "\"posts\".\"user_id\" = requesting_user_id()::uuid",
+      "withCheck": "\"posts\".\"user_id\" = requesting_user_id()::uuid",
+      "name": "posts_update_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": ["authenticated"],
+      "using": "\"posts\".\"user_id\" = requesting_user_id()::uuid",
+      "withCheck": null,
+      "name": "posts_select_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": ["authenticated"],
+      "using": "\"users\".\"id\" = requesting_user_id()::uuid",
+      "withCheck": null,
+      "name": "users_select_own",
       "entityType": "policies",
       "schema": "public",
       "table": "users"
@@ -1820,6 +1886,39 @@
       "entityType": "policies",
       "schema": "public",
       "table": "users"
+    },
+    {
+      "definition": "SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL",
+      "with": {
+        "checkOption": null,
+        "securityBarrier": true,
+        "securityInvoker": false,
+        "autovacuumEnabled": null,
+        "autovacuumFreezeMaxAge": null,
+        "autovacuumFreezeMinAge": null,
+        "autovacuumFreezeTableAge": null,
+        "autovacuumMultixactFreezeMaxAge": null,
+        "autovacuumMultixactFreezeMinAge": null,
+        "autovacuumMultixactFreezeTableAge": null,
+        "autovacuumVacuumCostDelay": null,
+        "autovacuumVacuumCostLimit": null,
+        "autovacuumVacuumScaleFactor": null,
+        "autovacuumVacuumThreshold": null,
+        "fillfactor": null,
+        "logAutovacuumMinDuration": null,
+        "parallelWorkers": null,
+        "toastTupleTarget": null,
+        "userCatalogTable": null,
+        "vacuumIndexCleanup": null,
+        "vacuumTruncate": null
+      },
+      "withNoData": null,
+      "using": null,
+      "tablespace": null,
+      "materialized": false,
+      "name": "user_profiles",
+      "entityType": "views",
+      "schema": "public"
     }
   ],
   "renames": []
