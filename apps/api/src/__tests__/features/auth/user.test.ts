@@ -13,6 +13,26 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { createDb } from "../../../shared/db";
 
+const conditionReferencesColumn = (
+  value: unknown,
+  columnName: string,
+  seen = new WeakSet<object>(),
+): boolean => {
+  if (value === null || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+
+  if ("name" in value && value.name === columnName) return true;
+
+  if (Array.isArray(value)) {
+    return value.some((item) => conditionReferencesColumn(item, columnName, seen));
+  }
+
+  return Object.values(value as Record<string, unknown>).some((item) =>
+    conditionReferencesColumn(item, columnName, seen),
+  );
+};
+
 // withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
@@ -135,6 +155,30 @@ describe("GET /api/user", () => {
     // withRls が "User not found" エラー → usecase が 500 にラップ
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ message: "Failed to fetch user profile." });
+  });
+
+  it("filters out deleted users while resolving the RLS UUID", async () => {
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    const where = vi.fn((_: unknown) => ({
+      limit: vi.fn().mockResolvedValue([]),
+    }));
+    vi.mocked(createDb).mockReturnValue({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where,
+        })),
+      })),
+    } as never);
+
+    const res = await testRequest("/api/user", {
+      cookie: { otography_session: "valid-session" },
+    });
+
+    expect(res.status).toBe(500);
+    expect(conditionReferencesColumn(where.mock.calls[0]![0], "deleted_at")).toBe(true);
   });
 });
 

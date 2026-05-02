@@ -1,5 +1,5 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
 import { users } from "./schema";
@@ -57,7 +57,7 @@ export async function withRls<T>(
   const lookupResult = await db
     .select({ id: users.id })
     .from(users)
-    .where(eq(users.firebaseId, firebaseId))
+    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
     .limit(1)
     .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
 

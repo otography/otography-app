@@ -3,6 +3,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./auth-cookies": "./src/shared/auth/cookies.ts",
     "./client": "./src/client.ts"
   },
   "scripts": {

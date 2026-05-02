@@ -1,7 +1,7 @@
 import type { Context } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { SESSION_COOKIE_NAME } from "./cookies";
 
-const SESSION_COOKIE_NAME = "otography_session";
 export const SESSION_COOKIE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 5;
 
 const createSessionCookieOptions = (c: Context) => {
