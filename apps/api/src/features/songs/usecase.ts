@@ -1,12 +1,11 @@
 import { DbError } from "@repo/errors";
-import { createDb, type DatabaseOrTransaction } from "../../shared/db";
+import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { fetchSong } from "../../shared/apple-music";
 import type { SongCreateBody } from "./model";
 import {
   createSongFull,
-  findActiveArtistByAppleMusicId,
-  findOrCreateArtist,
+  findOrCreateArtists,
   findSongById,
   listSongs,
   updateSongFull,
@@ -48,32 +47,14 @@ const toSongDbValues = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
   };
 };
 
-// アーティストの find-or-create（未登録なら自動作成）
+// アーティストをバッチで find-or-create
 const resolveArtistIds = async (
-  db: DatabaseOrTransaction,
+  db: import("../../shared/db").DatabaseOrTransaction,
   artists: { appleMusicId: string; name: string }[],
 ): Promise<string[] | DbError> => {
-  const artistIds: string[] = [];
-  for (const artist of artists) {
-    if (!artist.name) continue;
-    const result = await findActiveArtistByAppleMusicId(db, artist.appleMusicId).catch(
-      (e) => new DbError({ message: "Failed to find artist.", cause: e }),
-    );
-    if (result instanceof Error) return result;
-    if (result !== null) {
-      artistIds.push(result);
-    } else {
-      // 未登録アーティストを自動作成
-      const created = await findOrCreateArtist(db, artist).catch(
-        (e) => new DbError({ message: "Failed to create artist.", cause: e }),
-      );
-      if (created instanceof Error) return created;
-      if (created !== null) {
-        artistIds.push(created);
-      }
-    }
-  }
-  return artistIds;
+  return findOrCreateArtists(db, artists).catch(
+    (e) => new DbError({ message: "Failed to resolve artists.", cause: e }),
+  );
 };
 
 export const getSongs = async () => {

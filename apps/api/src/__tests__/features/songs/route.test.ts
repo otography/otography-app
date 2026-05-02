@@ -163,9 +163,9 @@ describe("songs endpoints", () => {
 
     const selectFrom = vi
       .fn()
-      // findActiveArtistByAppleMusicId（resolveArtistIds、db直）
+      // findOrCreateArtists（アーティストID検索）
       .mockReturnValueOnce(queryable([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111" }]))
-      // findOrCreateGenreIds（ジャンルID検索、トランザクション内）
+      // findOrCreateGenreIds（ジャンルID検索）
       .mockReturnValueOnce(queryable([{ id: "genre-id-1" }, { id: "genre-id-2" }]));
 
     mockDbWithTransaction({
@@ -174,7 +174,13 @@ describe("songs endpoints", () => {
       })),
       insert: vi
         .fn()
-        // 1. songs INSERT
+        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
+        .mockReturnValueOnce({
+          values: vi.fn(() => ({
+            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          })),
+        })
+        // 2. songs INSERT
         .mockReturnValueOnce({
           values: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([
@@ -190,17 +196,17 @@ describe("songs endpoints", () => {
             ]),
           })),
         })
-        // 2. songArtists INSERT (syncSongArtists)
+        // 3. songArtists INSERT (syncSongArtists)
         .mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
         })
-        // 3. genres INSERT (findOrCreateGenreIds) - values → onConflictDoNothing
+        // 4. genres INSERT (findOrCreateGenreIds) - values → onConflictDoNothing
         .mockReturnValueOnce({
           values: vi.fn(() => ({
             onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
           })),
         })
-        // 4. songGenres INSERT (syncSongGenres)
+        // 5. songGenres INSERT (syncSongGenres)
         .mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
         }),
@@ -247,18 +253,19 @@ describe("songs endpoints", () => {
       return obj;
     };
 
-    // findActiveArtistByAppleMusicId → 空配列（未登録）
-    // findOrCreateGenreIds → 空配列（genreNames無し）
-    const selectFrom = vi.fn().mockReturnValueOnce(queryable([]));
+    // findOrCreateArtists → 空配列（INSERT後のSELECT、未登録なら新規作成される）
+    // findOrCreateGenreIds → 呼ばれない（genreNames無し）
+    const selectFrom = vi
+      .fn()
+      // findOrCreateArtists SELECT（INSERT後の確認）
+      .mockReturnValueOnce(queryable([{ id: "auto-created-artist-id" }]));
 
     const insert = vi
       .fn()
-      // 1. artists INSERT（自動作成）
+      // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
       .mockReturnValueOnce({
         values: vi.fn(() => ({
-          returning: vi
-            .fn()
-            .mockResolvedValue([{ id: "auto-created-artist-id", name: "Unknown Artist" }]),
+          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
         })),
       })
       // 2. songs INSERT
@@ -427,9 +434,9 @@ describe("songs endpoints", () => {
           },
         ]),
       )
-      // findActiveArtistByAppleMusicId（resolveArtistIds）
+      // findOrCreateArtists SELECT（アーティストID検索）
       .mockReturnValueOnce(queryable([{ id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111" }]))
-      // findOrCreateGenreIds（ジャンルID検索）
+      // findOrCreateGenreIds SELECT（ジャンルID検索）
       .mockReturnValueOnce(queryable([{ id: "genre-id-1" }]));
 
     mockDbWithTransaction({
@@ -455,17 +462,23 @@ describe("songs endpoints", () => {
       })),
       insert: vi
         .fn()
-        // songArtists INSERT (syncSongArtists)
-        .mockReturnValueOnce({
-          values: vi.fn().mockResolvedValue(undefined),
-        })
-        // genres INSERT (findOrCreateGenreIds)
+        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
         .mockReturnValueOnce({
           values: vi.fn(() => ({
             onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
           })),
         })
-        // songGenres INSERT (syncSongGenres)
+        // 2. songArtists INSERT (syncSongArtists)
+        .mockReturnValueOnce({
+          values: vi.fn().mockResolvedValue(undefined),
+        })
+        // 3. genres INSERT (findOrCreateGenreIds)
+        .mockReturnValueOnce({
+          values: vi.fn(() => ({
+            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          })),
+        })
+        // 4. songGenres INSERT (syncSongGenres)
         .mockReturnValueOnce({
           values: vi.fn().mockResolvedValue(undefined),
         }),

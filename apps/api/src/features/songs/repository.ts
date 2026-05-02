@@ -118,25 +118,28 @@ export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
-export const findOrCreateArtist = async (
+// アーティストをバッチで find-or-create し、DB上のID配列を返す
+export const findOrCreateArtists = async (
   db: DatabaseOrTransaction,
-  { appleMusicId, name }: { appleMusicId: string; name: string },
+  artistEntries: { appleMusicId: string; name: string }[],
 ) => {
-  const rows = await db
-    .insert(artists)
-    .values({ name, appleMusicId })
-    .returning({ id: artists.id });
-  return rows[0]?.id ?? null;
-};
+  if (artistEntries.length === 0) return [];
 
-export const findActiveArtistByAppleMusicId = async (
-  db: DatabaseOrTransaction,
-  appleMusicId: string,
-) => {
-  const rows = await db
+  // 未登録アーティストを一括 INSERT
+  const newArtists = artistEntries.filter((a) => a.name);
+  if (newArtists.length > 0) {
+    await db
+      .insert(artists)
+      .values(newArtists.map((a) => ({ name: a.name, appleMusicId: a.appleMusicId })))
+      .onConflictDoNothing({ target: artists.appleMusicId });
+  }
+
+  // 全アーティストの Apple Music ID で一括 SELECT
+  const appleMusicIds = artistEntries.map((a) => a.appleMusicId);
+  const found = await db
     .select({ id: artists.id })
     .from(artists)
-    .where(and(eq(artists.appleMusicId, appleMusicId), isNull(artists.deletedAt)))
-    .limit(1);
-  return rows[0]?.id ?? null;
+    .where(inArray(artists.appleMusicId, appleMusicIds));
+
+  return found.map((r) => r.id);
 };
