@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { posts, postLikes } from "../../shared/db/schema";
@@ -14,32 +14,26 @@ export const findActivePostById = async (db: DatabaseOrTransaction, id: string) 
   return rows[0] ?? null;
 };
 
-// いいねトグル
+// いいねトグル（1クエリ: CTEでDELETEを試み、削除0件ならINSERT）
 export const togglePostLike = async (
   tx: DatabaseTransaction,
   userId: string,
   postId: string,
 ): Promise<{ liked: boolean }> => {
-  // 既存レコード確認
-  const existing = await tx
-    .select({ userId: postLikes.userId })
-    .from(postLikes)
-    .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)))
-    .limit(1);
+  const rows = await tx.execute<{ liked: boolean }>(sql`
+    WITH deleted AS (
+      DELETE FROM post_likes
+      WHERE user_id = ${userId} AND post_id = ${postId}
+      RETURNING user_id
+    )
+    INSERT INTO post_likes (user_id, post_id)
+    SELECT ${userId}, ${postId}
+    WHERE NOT EXISTS (SELECT 1 FROM deleted)
+    RETURNING user_id
+  `);
 
-  if (existing.length > 0) {
-    // 既にある → 削除
-    await tx
-      .delete(postLikes)
-      .where(and(eq(postLikes.userId, userId), eq(postLikes.postId, postId)));
-
-    return { liked: false };
-  }
-
-  // ない → 挿入
-  await tx.insert(postLikes).values({ userId, postId });
-
-  return { liked: true };
+  // INSERTが成功 → liked=true, INSERTなし(DELETE成功) → liked=false
+  return { liked: rows.length > 0 };
 };
 
 // 投稿ID配列に対するいいね数取得

@@ -10,40 +10,26 @@ const userId = "7f648f36-5be1-4af1-bf5d-cf8ebf222220";
 
 describe("post-likes repository", () => {
   describe("togglePostLike", () => {
-    it("deletes the like and returns liked=false when already liked", async () => {
-      // 既存あり → DELETE → liked=false
-      const deleteReturning = vi.fn().mockResolvedValue([{ userId, postId }]);
-      const deleteWhere = vi.fn(() => ({ returning: deleteReturning }));
-      const del = vi.fn(() => ({ where: deleteWhere }));
-      // select で既存レコードを返す
-      const selectLimit = vi.fn().mockResolvedValue([{ userId, postId }]);
-      const selectWhere = vi.fn(() => ({ limit: selectLimit }));
-      const selectFrom = vi.fn(() => ({ where: selectWhere }));
-      const select = vi.fn(() => ({ from: selectFrom }));
-      const tx = { select, delete: del } as never;
+    it("returns liked=false when existing like is deleted", async () => {
+      // CTE: DELETEが1行返す → INSERTのWHERE NOT EXISTSがfalse → INSERTなし
+      const execute = vi.fn().mockResolvedValue([]);
+      const tx = { execute } as never;
 
       const result = await togglePostLike(tx, userId, postId);
 
       expect(result).toEqual({ liked: false });
-      expect(del).toHaveBeenCalled();
+      expect(execute).toHaveBeenCalled();
     });
 
-    it("returns liked=true when no existing like found and insert succeeds", async () => {
-      // select → 空配列 → insert
-      const selectLimit = vi.fn().mockResolvedValue([]);
-      const selectWhere = vi.fn(() => ({ limit: selectLimit }));
-      const selectFrom = vi.fn(() => ({ where: selectWhere }));
-      const select = vi.fn(() => ({ from: selectFrom }));
-
-      const insertReturning = vi.fn().mockResolvedValue([{ userId, postId }]);
-      const insertValues = vi.fn(() => ({ returning: insertReturning }));
-      const insert = vi.fn(() => ({ values: insertValues }));
-      const tx = { select, insert } as never;
+    it("returns liked=true when no existing like and insert succeeds", async () => {
+      // CTE: DELETEが0行 → INSERT実行 → 1行返す
+      const execute = vi.fn().mockResolvedValue([{ user_id: userId }]);
+      const tx = { execute } as never;
 
       const result = await togglePostLike(tx, userId, postId);
 
       expect(result).toEqual({ liked: true });
-      expect(insert).toHaveBeenCalled();
+      expect(execute).toHaveBeenCalled();
     });
   });
 
