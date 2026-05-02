@@ -7,6 +7,7 @@
   "project": [],
   // Exclude non-source directories
   "ignore": [".agents/**", ".claude/**", ".factory/**"],
+  "tags": ["-db-schema"],
   "workspaces": {
     "packages/typescript-config": {
       "entry": [],
