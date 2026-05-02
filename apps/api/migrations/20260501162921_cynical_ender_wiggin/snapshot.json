@@ -1858,6 +1858,17 @@
       "as": "PERMISSIVE",
       "for": "SELECT",
       "roles": ["authenticated"],
+      "using": "\"posts\".\"user_id\" = requesting_user_id()::uuid",
+      "withCheck": null,
+      "name": "posts_select_own",
+      "entityType": "policies",
+      "schema": "public",
+      "table": "posts"
+    },
+    {
+      "as": "PERMISSIVE",
+      "for": "SELECT",
+      "roles": ["authenticated"],
       "using": "\"users\".\"id\" = requesting_user_id()::uuid",
       "withCheck": null,
       "name": "users_select_own",

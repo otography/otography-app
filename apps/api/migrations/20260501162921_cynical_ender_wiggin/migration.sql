@@ -1,3 +1,4 @@
 ALTER TABLE "posts" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 CREATE POLICY "posts_insert_own" ON "posts" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("posts"."user_id" = requesting_user_id()::uuid);--> statement-breakpoint
+CREATE POLICY "posts_select_own" ON "posts" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("posts"."user_id" = requesting_user_id()::uuid);--> statement-breakpoint
 CREATE POLICY "posts_update_own" ON "posts" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("posts"."user_id" = requesting_user_id()::uuid) WITH CHECK ("posts"."user_id" = requesting_user_id()::uuid);

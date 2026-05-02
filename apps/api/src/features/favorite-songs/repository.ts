@@ -1,4 +1,4 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
@@ -122,6 +122,7 @@ export const createSongFromAppleMusic = async (
       set: {
         title,
         deletedAt: null,
+        updatedAt: sql`now()`,
       },
     })
     .returning(songColumns);

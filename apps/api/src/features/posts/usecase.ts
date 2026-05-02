@@ -1,7 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
-import { withRls } from "../../shared/db/rls";
+import { withAnonymousRls, withRls } from "../../shared/db/rls";
 import {
   createPost,
   findActiveSongById,
@@ -13,21 +13,19 @@ import {
 import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
 
 export const getPosts = async () => {
-  const db = createDb();
-  const rows = await listPosts(db).catch(
-    (e) => new DbError({ message: "Failed to fetch posts.", cause: e }),
-  );
-  if (rows instanceof Error) return rows;
+  const rows = await withAnonymousRls((tx) => listPosts(tx));
+  if (rows instanceof Error) {
+    return new DbError({ message: "Failed to fetch posts.", cause: rows });
+  }
 
   return { posts: rows };
 };
 
 export const getPost = async (id: string) => {
-  const db = createDb();
-  const post = await findPostById(db, id).catch(
-    (e) => new DbError({ message: "Failed to fetch post.", cause: e }),
-  );
-  if (post instanceof Error) return post;
+  const post = await withAnonymousRls((tx) => findPostById(tx, id));
+  if (post instanceof Error) {
+    return new DbError({ message: "Failed to fetch post.", cause: post });
+  }
   if (post === null) {
     return new DbError({ message: "Post not found.", statusCode: 404 });
   }
