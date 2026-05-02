@@ -45,7 +45,7 @@ jobs:
         image: postgres:17
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: otography_test
         ports:
           - 54322:5432
@@ -81,7 +81,7 @@ jobs:
       - name: Database tests
         run: bun run test:db --filter=api
         env:
-          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/otography_test
+          TEST_DATABASE_URL: postgresql://postgres@localhost:54322/otography_test
 
   build:
     runs-on: ubuntu-latest
