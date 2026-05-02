@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 vi.mock("@repo/firebase-auth-rest/app", () => ({
   initializeApp: vi.fn(() => ({})),
@@ -9,10 +9,10 @@ vi.mock("../shared/middleware/csrf.middleware", () => ({
   csrfProtection: () => async (_c: unknown, next: () => Promise<void>) => await next(),
 }));
 
-const mockVerifySessionCookie = vi.fn();
-const mockCreateSessionCookie = vi.fn();
-const mockRevokeRefreshTokens = vi.fn();
-const mockVerifyIdToken = vi.fn();
+const mockVerifySessionCookie: Mock = vi.fn();
+const mockCreateSessionCookie: Mock = vi.fn();
+const mockRevokeRefreshTokens: Mock = vi.fn();
+const mockVerifyIdToken: Mock = vi.fn();
 
 vi.mock("@repo/firebase-auth-rest/auth", () => ({
   getAuth: vi.fn(() => ({
@@ -40,11 +40,11 @@ vi.mock("../shared/firebase/firebase-admin", () => ({
   revokeRefreshTokens: mockRevokeRefreshTokens,
 }));
 
-const mockExchangeRefreshToken = vi.fn();
+const mockExchangeRefreshToken: Mock = vi.fn();
 
-const mockGetRefreshTokenCookie = vi.fn().mockResolvedValue(null);
-const mockSetRefreshTokenCookie = vi.fn().mockResolvedValue(undefined);
-const mockClearRefreshTokenCookie = vi.fn();
+const mockGetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(null);
+const mockSetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(undefined);
+const mockClearRefreshTokenCookie: Mock = vi.fn();
 
 vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,

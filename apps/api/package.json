@@ -27,21 +27,21 @@
     "@repo/errors": "workspace:*",
     "@repo/firebase-auth-rest": "workspace:*",
     "arktype": "^2.2.0",
-    "drizzle-orm": "^1.0.0-beta.22",
+    "drizzle-orm": "^1.0.0-rc.2-203eab8",
     "errore": "^0.14.1",
-    "hono": "^4.12.14",
-    "jose": "^6.2.2",
-    "postgres": "^3.4.8"
+    "hono": "^4.12.16",
+    "jose": "^6.2.3",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.14.1",
+    "@cloudflare/vitest-pool-workers": "^0.14.9",
     "@repo/typescript-config": "workspace:*",
     "@types/bun": "latest",
-    "@types/node": "^25.5.2",
-    "@vitest/spy": "^4.1.2",
-    "drizzle-kit": "^1.0.0-beta.22",
-    "oxlint": "^1.56.0",
+    "@types/node": "^25.6.0",
+    "@vitest/spy": "^4.1.5",
+    "drizzle-kit": "^1.0.0-rc.2-203eab8",
+    "oxlint": "^1.62.0",
     "typescript": "5.9.2",
-    "wrangler": "^4.80.0"
+    "wrangler": "^4.87.0"
   }
 }

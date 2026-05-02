@@ -63,7 +63,7 @@ export default async function setupDb() {
   await ensureTestDatabase(databaseUrl);
 
   const sql = postgres(databaseUrl, { max: 1, onnotice: () => undefined, prepare: false });
-  const db = drizzle({ client: sql });
+  const db = drizzle({ client: sql, jit: true });
 
   await sql`DROP SCHEMA IF EXISTS public CASCADE`;
   await sql`DROP SCHEMA IF EXISTS drizzle CASCADE`;

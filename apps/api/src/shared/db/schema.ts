@@ -21,7 +21,7 @@ import {
 
 const anonRole = pgRole("anon").existing();
 const authenticatedRole = pgRole("authenticated").existing();
-export const JAPAN_PREFECTURES = [
+const JAPAN_PREFECTURES = [
   "Hokkaido",
   "Aomori",
   "Iwate",
@@ -72,10 +72,10 @@ export const JAPAN_PREFECTURES = [
 ] as const;
 
 // アーティスト種別
-export const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
+const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
 
 // 都道府県（users.birthplace と artists.birthplace で使用）
-export const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
+const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
 
 export const users = pgTable(
   "users",
@@ -214,6 +214,7 @@ export const songArtists = pgTable(
   ],
 );
 
+/** @db-schema */
 export const groups = pgTable(
   "groups",
   {
@@ -237,6 +238,7 @@ export const groups = pgTable(
   ],
 );
 
+/** @db-schema */
 export const groupSongs = pgTable(
   "group_songs",
   {
@@ -254,6 +256,7 @@ export const groupSongs = pgTable(
   ],
 );
 
+/** @db-schema */
 export const genres = pgTable(
   "genres",
   {
@@ -271,6 +274,7 @@ export const genres = pgTable(
   ],
 );
 
+/** @db-schema */
 export const songGenres = pgTable(
   "song_genres",
   {
@@ -353,6 +357,7 @@ export const posts = pgTable.withRLS(
   ],
 );
 
+/** @db-schema */
 export const postLikes = pgTable(
   "post_likes",
   {
@@ -372,7 +377,7 @@ export const postLikes = pgTable(
 
 // users テーブルの arktype スキーマ
 // insert 用: firebaseId, username は必須、name はオプショナル
-export const insertUserSchema = createInsertSchema(users);
+const insertUserSchema = createInsertSchema(users);
 
 // update 用: すべてオプショナル（id, firebaseId, createdAt, updatedAt, deletedAt は自動管理のため除外）
 export const updateUserSchema = createUpdateSchema(users).omit(

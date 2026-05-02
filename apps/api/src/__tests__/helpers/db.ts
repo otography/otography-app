@@ -1,11 +1,10 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import * as schema from "../../shared/db/schema";
 import { getTestDatabaseUrl } from "./test-database-url";
 
 export const createTestSql = () => postgres(getTestDatabaseUrl(), { max: 1, prepare: false });
 
-export const createTestDb = (sql: postgres.Sql) => drizzle({ client: sql, schema });
+export const createTestDb = (sql: postgres.Sql) => drizzle({ client: sql, jit: true });
 
 export const resetPublicTables = async (sql: postgres.Sql) => {
   const tables = await sql<{ tablename: string }[]>`
