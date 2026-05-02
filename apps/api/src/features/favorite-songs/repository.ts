@@ -20,13 +20,16 @@ const songColumns = {
   appleMusicId: songs.appleMusicId,
 } as const;
 
+const createDuplicateFavoriteSongError = (cause?: unknown) =>
+  new DbError({
+    message: "この楽曲は既にお気に入りに登録されています。",
+    statusCode: 409,
+    cause,
+  });
+
 const toAddFavoriteSongError = (error: unknown) => {
   if (isPostgresUniqueViolation(error, "favorite_songs_pkey")) {
-    return new DbError({
-      message: "この楽曲は既にお気に入りに登録されています。",
-      statusCode: 409,
-      cause: error,
-    });
+    return createDuplicateFavoriteSongError(error);
   }
 
   return new DbError({ message: "お気に入り楽曲の登録に失敗しました。", cause: error });
@@ -58,8 +61,15 @@ export const addFavoriteSong = async (
       songId,
       ...values,
     })
+    .onConflictDoNothing({
+      target: [favoriteSongs.userId, favoriteSongs.songId],
+    })
     .returning(favoriteSongColumns)
     .catch(toAddFavoriteSongError);
+
+  if (!(result instanceof Error) && result.length === 0) {
+    return createDuplicateFavoriteSongError();
+  }
 
   return result;
 };
