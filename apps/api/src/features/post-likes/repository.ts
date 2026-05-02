@@ -14,20 +14,26 @@ export const findActivePostById = async (db: DatabaseOrTransaction, id: string) 
   return rows[0] ?? null;
 };
 
-// いいねトグル（1クエリ: CTEでDELETEを試み、削除0件ならINSERT）
+// いいねトグル（1クエリ: 同一user/postを直列化し、DELETE 0件ならINSERT）
 export const togglePostLike = async (
   tx: DatabaseTransaction,
   userId: string,
   postId: string,
 ): Promise<{ liked: boolean }> => {
   const rows = await tx.execute<{ liked: boolean }>(sql`
-    WITH deleted AS (
+    WITH lock AS (
+      SELECT pg_advisory_xact_lock(hashtextextended(${userId}::text || ':' || ${postId}::text, 0))
+    ),
+    deleted AS (
       DELETE FROM post_likes
-      WHERE user_id = ${userId} AND post_id = ${postId}
+      WHERE user_id = ${userId}
+        AND post_id = ${postId}
+        AND EXISTS (SELECT 1 FROM lock)
       RETURNING user_id
     )
     INSERT INTO post_likes (user_id, post_id)
     SELECT ${userId}, ${postId}
+    FROM lock
     WHERE NOT EXISTS (SELECT 1 FROM deleted)
     RETURNING user_id
   `);
