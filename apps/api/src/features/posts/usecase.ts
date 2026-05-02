@@ -1,7 +1,10 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
+import { and, eq, isNull } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
+import { users } from "../../shared/db/schema";
 import { withAnonymousRls, withRls } from "../../shared/db/rls";
+import { countLikesByPostIds, findUserLikesByPostIds } from "../post-likes/repository";
 import {
   createPost,
   findActiveSongById,
@@ -12,16 +15,36 @@ import {
 } from "./repository";
 import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
 
-export const getPosts = async () => {
+export const getPosts = async (session?: DecodedIdToken | null) => {
   const rows = await withAnonymousRls((tx) => listPosts(tx));
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to fetch posts.", cause: rows });
   }
 
-  return { posts: rows };
+  // いいね情報の付与
+  const postIds = rows.map((r) => r.id);
+  const db = createDb();
+  const likeCounts = await countLikesByPostIds(db, postIds);
+  const likeCountMap = new Map(likeCounts.map((r) => [r.postId, r.count]));
+
+  let likedPostIds: Set<string> = new Set();
+  if (session) {
+    const userId = await resolveUserId(session);
+    if (typeof userId !== "string") return userId;
+    const liked = await findUserLikesByPostIds(db, userId, postIds);
+    likedPostIds = new Set(liked);
+  }
+
+  const postsWithLikes = rows.map((post) => ({
+    ...post,
+    likeCount: likeCountMap.get(post.id) ?? 0,
+    ...(session !== undefined ? { isLiked: likedPostIds.has(post.id) } : {}),
+  }));
+
+  return { posts: postsWithLikes };
 };
 
-export const getPost = async (id: string) => {
+export const getPost = async (id: string, session?: DecodedIdToken | null) => {
   const post = await withAnonymousRls((tx) => findPostById(tx, id));
   if (post instanceof Error) {
     return new DbError({ message: "Failed to fetch post.", cause: post });
@@ -30,7 +53,26 @@ export const getPost = async (id: string) => {
     return new DbError({ message: "Post not found.", statusCode: 404 });
   }
 
-  return { post };
+  // いいね情報の付与
+  const db = createDb();
+  const likeCounts = await countLikesByPostIds(db, [id]);
+  const likeCount = likeCounts[0]?.count ?? 0;
+
+  let isLiked = false;
+  if (session) {
+    const userId = await resolveUserId(session);
+    if (typeof userId !== "string") return userId;
+    const liked = await findUserLikesByPostIds(db, userId, [id]);
+    isLiked = liked.length > 0;
+  }
+
+  return {
+    post: {
+      ...post,
+      likeCount,
+      ...(session !== undefined ? { isLiked } : {}),
+    },
+  };
 };
 
 export const registerPost = async (payload: PostCreateDbModel, session: DecodedIdToken) => {
@@ -85,4 +127,27 @@ export const removePost = async (id: string, session: DecodedIdToken) => {
   }
 
   return { deleted: true };
+};
+
+// Firebase ID → UUID 解決（RLS外で使用）
+const resolveUserId = async (session: DecodedIdToken): Promise<string | DbError> => {
+  const firebaseId = typeof session.sub === "string" ? session.sub : null;
+  if (!firebaseId) {
+    return new DbError({ message: "Missing user identifier in session." });
+  }
+
+  const db = createDb();
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
+    .limit(1)
+    .catch((e) => new DbError({ message: "Failed to resolve user ID.", cause: e }));
+
+  if (rows instanceof Error) return rows;
+  if (!rows[0]) {
+    return new DbError({ message: "User not found in database." });
+  }
+
+  return rows[0].id;
 };
