@@ -70,43 +70,52 @@ export const registerFavoriteSong = async (
     .catch((e) => new DbError({ message: "楽曲の検索に失敗しました。", cause: e }));
   if (existing instanceof Error) return existing;
 
-  let songData: { title: string; durationInMillis?: number; isrc?: string } | undefined;
-  if (existing.length === 0) {
+  const songData = await (async () => {
+    if (existing.length > 0) return null;
+
     const appleMusicSong = await fetchSong(input.appleMusicId);
     if (appleMusicSong instanceof Error) return appleMusicSong;
-    songData = {
+
+    return {
       title: appleMusicSong.attributes.name,
       durationInMillis: appleMusicSong.attributes.durationInMillis,
       isrc: appleMusicSong.attributes.isrc,
     };
-  }
+  })();
+  if (songData instanceof Error) return songData;
 
   // トランザクション内では DB 操作のみ
   const result = await withRls(session, async (tx, userId) => {
-    let songId: string;
     const found = await findSongByAppleMusicId(tx, input.appleMusicId);
     if (found) {
-      songId = found.id;
-    } else {
-      if (!songData) {
-        return new DbError({
-          message: "楽曲情報の取得に失敗しました。",
-        });
-      }
-      const created = await createSongFromAppleMusic(
-        tx,
-        input.appleMusicId,
-        songData.title,
-        songData.durationInMillis,
-        songData.isrc,
-      );
-      if (!created[0]) {
-        return new DbError({ message: "楽曲の作成に失敗しました。" });
-      }
-      songId = created[0].id;
+      const rows = await addFavoriteSong(tx, userId, found.id, {
+        comment: input.comment,
+        emoji: input.emoji,
+        color: input.color,
+      });
+      if (rows instanceof Error) return rows;
+
+      return rows[0] ?? null;
     }
 
-    const rows = await addFavoriteSong(tx, userId, songId, {
+    if (!songData) {
+      return new DbError({
+        message: "楽曲情報の取得に失敗しました。",
+      });
+    }
+
+    const created = await createSongFromAppleMusic(
+      tx,
+      input.appleMusicId,
+      songData.title,
+      songData.durationInMillis,
+      songData.isrc,
+    );
+    if (!created[0]) {
+      return new DbError({ message: "楽曲の作成に失敗しました。" });
+    }
+
+    const rows = await addFavoriteSong(tx, userId, created[0].id, {
       comment: input.comment,
       emoji: input.emoji,
       color: input.color,
