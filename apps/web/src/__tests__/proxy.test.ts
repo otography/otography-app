@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { REFRESH_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME } from "api/auth-cookies";
 
 // NextResponse の呼び出しを追跡
 const mockNext = vi.fn();
@@ -14,11 +15,21 @@ vi.mock("next/server", () => ({
 
 const { proxy } = await import("../../proxy");
 
-function createRequest(path: string, cookieValue?: string): NextRequest {
+function createRequest(
+  path: string,
+  sessionCookieValue?: string,
+  refreshTokenCookieValue?: string,
+): NextRequest {
   const base = "http://localhost:3000";
   const cookies = new Map<string, { name: string; value: string }>();
-  if (cookieValue !== undefined) {
-    cookies.set("otography_session", { name: "otography_session", value: cookieValue });
+  if (sessionCookieValue !== undefined) {
+    cookies.set(SESSION_COOKIE_NAME, { name: SESSION_COOKIE_NAME, value: sessionCookieValue });
+  }
+  if (refreshTokenCookieValue !== undefined) {
+    cookies.set(REFRESH_TOKEN_COOKIE_NAME, {
+      name: REFRESH_TOKEN_COOKIE_NAME,
+      value: refreshTokenCookieValue,
+    });
   }
   return {
     nextUrl: {
@@ -61,6 +72,12 @@ describe("proxy", () => {
       expect(mockNext).toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
     });
+
+    it("refresh token cookie のみでも next() を返す", () => {
+      proxy(createRequest("/account", undefined, "valid-refresh-token"));
+      expect(mockNext).toHaveBeenCalled();
+      expect(mockRedirect).not.toHaveBeenCalled();
+    });
   });
 
   describe("保護パス — クッキーなし", () => {
@@ -85,8 +102,13 @@ describe("proxy", () => {
   });
 
   describe("クッキーが空文字", () => {
-    it("リダイレクトされる", () => {
+    it("session cookie が空文字ならリダイレクトされる", () => {
       proxy(createRequest("/account", ""));
+      expect(mockRedirect).toHaveBeenCalled();
+    });
+
+    it("refresh token cookie が空文字ならリダイレクトされる", () => {
+      proxy(createRequest("/account", undefined, ""));
       expect(mockRedirect).toHaveBeenCalled();
     });
   });
