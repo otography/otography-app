@@ -37,14 +37,14 @@ const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (
 const artists = new Hono<{ Bindings: Bindings }>()
   .get("/api/artists", async (c) => {
     const result = await getArtists();
-    if (result instanceof Error) return handleArtistError(result, c);
+    if (result instanceof DbError) return handleArtistError(result, c);
     return c.json(result);
   })
   .get("/api/artists/:id", artistIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
     const result = await getArtist(id);
-    if (result instanceof Error) return handleArtistError(result, c);
+    if (result instanceof DbError) return handleArtistError(result, c);
 
     return c.json(result);
   })
@@ -56,7 +56,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const payload = c.req.valid("json");
       const result = await registerArtist(payload);
-      if (result instanceof Error) return handleArtistError(result, c);
+      if (result instanceof DbError) return handleArtistError(result, c);
 
       return c.json(result, 201);
     },
@@ -77,7 +77,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
         id,
         payload,
       });
-      if (result instanceof Error) return handleArtistError(result, c);
+      if (result instanceof DbError) return handleArtistError(result, c);
 
       return c.json(result);
     },
@@ -91,7 +91,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
       const { id } = c.req.valid("param");
 
       const result = await removeArtist(id);
-      if (result instanceof Error) return handleArtistError(result, c);
+      if (result instanceof DbError) return handleArtistError(result, c);
 
       return c.body(null, 204);
     },

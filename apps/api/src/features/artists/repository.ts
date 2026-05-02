@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
+import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
 
 const artistColumns = {
   id: artists.id,
@@ -24,7 +24,7 @@ export const listArtists = async (db: DatabaseOrTransaction) => {
     .orderBy(desc(artists.createdAt));
 };
 
-export const createArtist = async (db: DatabaseOrTransaction, values: ArtistCreateDbModel) => {
+export const createArtist = async (db: DatabaseOrTransaction, values: ArtistCreateDbValues) => {
   return db.insert(artists).values(values).returning(artistColumns);
 };
 

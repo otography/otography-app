@@ -59,6 +59,9 @@ export const registerArtist = async (payload: ArtistCreateBody) => {
   const dbValues: ArtistCreateDbValues = {
     name: apiResponse.attributes.name,
     appleMusicId: apiResponse.id,
+    ipiCode: null,
+    gender: null,
+    birthdate: null,
   };
 
   const db = createDb();

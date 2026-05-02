@@ -37,14 +37,14 @@ const songSyncValidator = arktypeValidator("json", songSyncBodySchema, (result, 
 const songs = new Hono<{ Bindings: Bindings }>()
   .get("/api/songs", async (c) => {
     const result = await getSongs();
-    if (result instanceof Error) return handleSongError(result, c);
+    if (result instanceof DbError) return handleSongError(result, c);
     return c.json(result);
   })
   .get("/api/songs/:id", songIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
     const result = await getSong(id);
-    if (result instanceof Error) return handleSongError(result, c);
+    if (result instanceof DbError) return handleSongError(result, c);
 
     return c.json(result);
   })
@@ -52,7 +52,7 @@ const songs = new Hono<{ Bindings: Bindings }>()
     const payload = c.req.valid("json");
     const result = await registerSong(payload);
 
-    if (result instanceof Error) return handleSongError(result, c);
+    if (result instanceof DbError) return handleSongError(result, c);
 
     return c.json(result, 201);
   })
@@ -66,7 +66,7 @@ const songs = new Hono<{ Bindings: Bindings }>()
       const { id } = c.req.valid("param");
       const result = await syncSong(id);
 
-      if (result instanceof Error) return handleSongError(result, c);
+      if (result instanceof DbError) return handleSongError(result, c);
 
       return c.json(result);
     },

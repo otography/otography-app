@@ -232,7 +232,6 @@ describe("songs endpoints", () => {
       attributes: {
         name: "New Song with New Artist",
         durationInMillis: 200000,
-        isrc: null,
         genreNames: [],
       },
       relationships: {

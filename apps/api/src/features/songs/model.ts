@@ -11,7 +11,6 @@ export const songCreateBodySchema = type({
 export const songSyncBodySchema = type({});
 
 export type SongCreateBody = typeof songCreateBodySchema.infer;
-export type SongSyncBody = typeof songSyncBodySchema.infer;
 
 // Drizzle の songs テーブルスキーマからDB挿入値を生成し、API由来のフィールドを追加
 const songDbInsertSchema = createInsertSchema(songs, {
