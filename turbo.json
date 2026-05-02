@@ -18,6 +18,11 @@
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"]
     },
+    "test:db": {
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "cache": false
+    },
     "quality": {
       "dependsOn": ["//#_lint", "//#_format", "//#check-dead-code"]
     },

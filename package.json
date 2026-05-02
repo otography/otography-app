@@ -26,6 +26,7 @@
     "quality:fix": "turbo run quality:fix",
     "check-types": "turbo run check-types",
     "test": "turbo run test",
+    "test:db": "turbo run test:db",
     "check-dead-code": "knip --exclude binaries",
     "check-dead-code:fix": "knip --fix --exclude binaries",
     "hooks:install": "lefthook install"
