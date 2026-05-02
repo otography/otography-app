@@ -372,6 +372,21 @@ export const postLikes = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.postId] }),
     index("idx_post_likes_post_id").on(table.postId),
+    pgPolicy("post_likes_select_all", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`true`,
+    }),
+    pgPolicy("post_likes_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+    }),
+    pgPolicy("post_likes_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${table.userId} = requesting_user_id()::uuid`,
+    }),
   ],
 );
 
