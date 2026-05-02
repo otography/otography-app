@@ -22,9 +22,15 @@ const postLikes = new Hono<{ Bindings: Bindings }>().post(
   requireAuthMiddleware(),
   postIdParamValidator,
   async (c) => {
+    // レートリミット: ユーザーごとに30回/分
     const session = getAuthSession(c);
     if (!session) {
       return c.json({ message: "You are not logged in." }, 401);
+    }
+
+    const { success } = await c.env.LIKE_RATE_LIMITER.limit({ key: session.sub });
+    if (!success) {
+      return c.json({ message: "Too many requests. Please try again later." }, 429);
     }
 
     const { id } = c.req.valid("param");

@@ -11,4 +11,14 @@
     "FIREBASE_PROJECT_ID": "otography-676f1",
     "GOOGLE_OAUTH_REDIRECT_URI": "http://localhost:3000/api/auth/google/callback",
   },
+  "ratelimits": [
+    {
+      "name": "LIKE_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 30,
+        "period": 60,
+      },
+    },
+  ],
 }
