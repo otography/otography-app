@@ -1,6 +1,16 @@
 {
   "version": 1,
   "skills": {
+    "autoship": {
+      "source": "vercel-labs/autoship",
+      "sourceType": "github",
+      "computedHash": "a813370b550f6b2a7c0dceba1c2f3c06978b10e4bbfbcf39421220d8140ab220"
+    },
+    "deploy-to-vercel": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "computedHash": "03e0eaaa9bf13ba1e7ffa387f5893de6f324c0868c627001f179395a8feaa7c9"
+    },
     "errore": {
       "source": "remorses/errore",
       "sourceType": "github",
@@ -35,6 +45,11 @@
       "source": "vercel/turborepo",
       "sourceType": "github",
       "computedHash": "eac26b6172cb38dc87ffe2ad056b540cdf6abeea227a1cde854e478b06446845"
+    },
+    "vercel-cli": {
+      "source": "vercel/vercel",
+      "sourceType": "github",
+      "computedHash": "d45f913d342cd4eed63e586f194641882aeded904458428b267556b2110f71bb"
     },
     "vercel-composition-patterns": {
       "source": "vercel-labs/agent-skills",
