@@ -71,11 +71,11 @@ const JAPAN_PREFECTURES = [
   "Okinawa",
 ] as const;
 
-// アーティスト種別
-const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
+/** @db-schema */
+export const artistTypeEnum = pgEnum("artist_type", ["person", "group"]);
 
-// 都道府県（users.birthplace と artists.birthplace で使用）
-const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
+/** @db-schema */
+export const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
 
 export const users = pgTable(
   "users",
