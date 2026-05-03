@@ -1,0 +1,11 @@
+node_modules
+.next
+.turbo
+opensrc
+plans
+.data
+*.tsbuildinfo
+.env.keys
+.env*.keys
+.DS_Store
+coverage
