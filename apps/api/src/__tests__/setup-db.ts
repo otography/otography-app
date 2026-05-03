@@ -69,6 +69,7 @@ export default async function setupDb() {
   await sql`DROP SCHEMA IF EXISTS drizzle CASCADE`;
   await sql`CREATE SCHEMA public`;
   await sql`CREATE EXTENSION IF NOT EXISTS pgcrypto`;
+  await sql`CREATE EXTENSION IF NOT EXISTS pg_uuidv7`;
   await setupSupabaseCompatibleRoles(sql);
   await migrate(db, { migrationsFolder });
   await grantMigratedObjectsToTestRoles(sql);
