@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:17
+        image: postgres:15.17
         env:
           POSTGRES_USER: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -71,6 +71,11 @@ jobs:
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install pg_uuidv7
+        run: |
+          docker exec "${{ job.services.postgres.id }}" apt-get update
+          docker exec "${{ job.services.postgres.id }}" apt-get install -y postgresql-15-pg-uuidv7
 
       - name: Typecheck
         run: bun run check-types
