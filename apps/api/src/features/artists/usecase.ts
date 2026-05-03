@@ -1,6 +1,12 @@
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { fetchArtist } from "../../shared/apple-music";
+import {
+  type ArtistCreateBody,
+  type ArtistCreateDbValues,
+  type ArtistUpdateDbModel,
+} from "./model";
 import {
   createArtist,
   findArtistById,
@@ -8,7 +14,6 @@ import {
   softDeleteArtistById,
   updateArtistById,
 } from "./repository";
-import type { ArtistCreateDbModel, ArtistUpdateDbModel } from "./model";
 
 const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
 
@@ -47,9 +52,20 @@ export const getArtist = async (id: string) => {
   return { artist };
 };
 
-export const registerArtist = async (payload: ArtistCreateDbModel) => {
+export const registerArtist = async (payload: ArtistCreateBody) => {
+  const apiResponse = await fetchArtist(payload.appleMusicId);
+  if (apiResponse instanceof Error) return apiResponse;
+
+  const dbValues: ArtistCreateDbValues = {
+    name: apiResponse.attributes.name,
+    appleMusicId: apiResponse.id,
+    ipiCode: null,
+    gender: null,
+    birthdate: null,
+  };
+
   const db = createDb();
-  const rows = await createArtist(db, payload).catch((e) =>
+  const rows = await createArtist(db, dbValues).catch((e) =>
     toArtistAppleMusicIdError(e, "Failed to create artist."),
   );
   if (rows instanceof Error) return rows;

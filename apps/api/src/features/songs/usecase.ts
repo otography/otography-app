@@ -1,18 +1,14 @@
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { fetchSong } from "../../shared/apple-music";
+import type { SongCreateBody } from "./model";
 import {
-  type SongCreatePayload,
-  type SongUpdatePayload,
-  toSongCreateDbModel,
-  toSongUpdateDbModel,
-} from "./model";
-import {
-  createSongWithArtist,
-  findActiveArtistById,
+  createSongFull,
+  findOrCreateArtists,
   findSongById,
   listSongs,
-  updateSongById,
+  updateSongFull,
 } from "./repository";
 
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
@@ -27,6 +23,38 @@ const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   }
 
   return new DbError({ message: fallbackMessage, cause: error });
+};
+
+// Apple Music API レスポンスからDB挿入値を構築
+const toSongDbValues = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
+  if (apiResponse instanceof Error) return apiResponse;
+
+  const { attributes, relationships } = apiResponse;
+  const artists =
+    relationships?.artists?.data?.map((a) => ({
+      appleMusicId: a.id,
+      name: a.attributes?.name ?? "",
+    })) ?? [];
+
+  return {
+    title: attributes.name,
+    appleMusicId: apiResponse.id,
+    length:
+      attributes.durationInMillis != null ? Math.round(attributes.durationInMillis / 1000) : null,
+    isrcs: attributes.isrc ?? null,
+    genreNames: attributes.genreNames,
+    artists,
+  };
+};
+
+// アーティストをバッチで find-or-create
+const resolveArtistIds = async (
+  db: import("../../shared/db").DatabaseOrTransaction,
+  artists: { appleMusicId: string; name: string }[],
+): Promise<string[] | DbError> => {
+  return findOrCreateArtists(db, artists).catch(
+    (e) => new DbError({ message: "Failed to resolve artists.", cause: e }),
+  );
 };
 
 export const getSongs = async () => {
@@ -52,27 +80,26 @@ export const getSong = async (id: string) => {
   return { song };
 };
 
-export const registerSong = async (payload: SongCreatePayload) => {
+export const registerSong = async (payload: SongCreateBody) => {
+  const apiResponse = await fetchSong(payload.appleMusicId);
+  if (apiResponse instanceof Error) return apiResponse;
+
+  const dbValues = toSongDbValues(apiResponse);
+  if (dbValues instanceof Error) return dbValues;
+
   const db = createDb();
 
-  if (payload.artistId !== undefined) {
-    const artist = await findActiveArtistById(db, payload.artistId).catch(
-      (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
-    );
-    if (artist instanceof Error) return artist;
-    if (artist === null) {
-      return new DbError({ message: "Artist not found.", statusCode: 404 });
-    }
-  }
-
   const song = await db
-    .transaction((tx) =>
-      createSongWithArtist(tx, {
-        values: toSongCreateDbModel(payload),
-        artistId: payload.artistId,
-      }),
-    )
-    .catch((e) => toSongAppleMusicIdError(e, "Failed to create song."));
+    .transaction(async (tx) => {
+      const artistIds = await resolveArtistIds(tx, dbValues.artists);
+      if (artistIds instanceof Error) throw artistIds;
+
+      return createSongFull(tx, { values: dbValues, artistIds });
+    })
+    .catch((e) => {
+      if (e instanceof DbError) return e;
+      return toSongAppleMusicIdError(e, "Failed to create song.");
+    });
   if (song instanceof Error) return song;
   if (!song) {
     return new DbError({ message: "Failed to create song." });
@@ -81,33 +108,36 @@ export const registerSong = async (payload: SongCreatePayload) => {
   return { song };
 };
 
-type UpdateSongInput = {
-  id: string;
-  payload: SongUpdatePayload;
-};
-
-export const modifySong = async ({ id, payload }: UpdateSongInput) => {
+export const syncSong = async (id: string) => {
   const db = createDb();
 
-  if (payload.artistId !== undefined && payload.artistId !== null) {
-    const artist = await findActiveArtistById(db, payload.artistId).catch(
-      (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
-    );
-    if (artist instanceof Error) return artist;
-    if (artist === null) {
-      return new DbError({ message: "Artist not found.", statusCode: 404 });
-    }
+  // 既存曲を取得
+  const existing = await findSongById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch song.", cause: e }),
+  );
+  if (existing instanceof Error) return existing;
+  if (existing === null) {
+    return new DbError({ message: "Song not found.", statusCode: 404 });
   }
 
+  // Apple Music API から再フェッチ
+  const apiResponse = await fetchSong(existing.appleMusicId);
+  if (apiResponse instanceof Error) return apiResponse;
+
+  const dbValues = toSongDbValues(apiResponse);
+  if (dbValues instanceof Error) return dbValues;
+
   const song = await db
-    .transaction((tx) =>
-      updateSongById(tx, {
-        id,
-        values: toSongUpdateDbModel(payload),
-        artistId: payload.artistId,
-      }),
-    )
-    .catch((e) => toSongAppleMusicIdError(e, "Failed to update song."));
+    .transaction(async (tx) => {
+      const artistIds = await resolveArtistIds(tx, dbValues.artists);
+      if (artistIds instanceof Error) throw artistIds;
+
+      return updateSongFull(tx, { id, values: dbValues, artistIds });
+    })
+    .catch((e) => {
+      if (e instanceof DbError) return e;
+      return toSongAppleMusicIdError(e, "Failed to sync song.");
+    });
 
   if (song instanceof Error) return song;
   if (song === null) {
