@@ -1,16 +1,3 @@
-CREATE EXTENSION IF NOT EXISTS pg_uuidv7;--> statement-breakpoint
-CREATE OR REPLACE FUNCTION public.requesting_user_id()
-RETURNS text
-LANGUAGE sql
-STABLE
-RETURNS NULL ON NULL INPUT
-SET search_path = pg_catalog
-AS $$
-    SELECT NULLIF(
-        current_setting('request.jwt.claims', true)::json->>'sub',
-        ''
-    )::text;
-$$;--> statement-breakpoint
 CREATE TYPE "artist_type" AS ENUM('person', 'group');--> statement-breakpoint
 CREATE TYPE "prefecture" AS ENUM('Hokkaido', 'Aomori', 'Iwate', 'Miyagi', 'Akita', 'Yamagata', 'Fukushima', 'Ibaraki', 'Tochigi', 'Gunma', 'Saitama', 'Chiba', 'Tokyo', 'Kanagawa', 'Niigata', 'Toyama', 'Ishikawa', 'Fukui', 'Yamanashi', 'Nagano', 'Gifu', 'Shizuoka', 'Aichi', 'Mie', 'Shiga', 'Kyoto', 'Osaka', 'Hyogo', 'Nara', 'Wakayama', 'Tottori', 'Shimane', 'Okayama', 'Hiroshima', 'Yamaguchi', 'Tokushima', 'Kagawa', 'Ehime', 'Kochi', 'Fukuoka', 'Saga', 'Nagasaki', 'Kumamoto', 'Oita', 'Miyazaki', 'Kagoshima', 'Okinawa');--> statement-breakpoint
 CREATE TABLE "artists" (
@@ -171,11 +158,11 @@ ALTER TABLE "song_genres" ADD CONSTRAINT "song_genres_song_id_songs_id_fkey" FOR
 ALTER TABLE "song_genres" ADD CONSTRAINT "song_genres_genre_id_genres_id_fkey" FOREIGN KEY ("genre_id") REFERENCES "genres"("id") ON DELETE CASCADE;--> statement-breakpoint
 CREATE VIEW "user_profiles" WITH (security_barrier = true, security_invoker = false) AS (SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL);--> statement-breakpoint
 CREATE POLICY "post_likes_select_all" ON "post_likes" AS PERMISSIVE FOR SELECT TO "anon", "authenticated" USING (true);--> statement-breakpoint
-CREATE POLICY "post_likes_insert_own" ON "post_likes" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("post_likes"."user_id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
-CREATE POLICY "post_likes_delete_own" ON "post_likes" AS PERMISSIVE FOR DELETE TO "authenticated" USING ("post_likes"."user_id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
-CREATE POLICY "posts_insert_own" ON "posts" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("posts"."user_id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
+CREATE POLICY "post_likes_insert_own" ON "post_likes" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("post_likes"."user_id" = (SELECT requesting_user_id()));--> statement-breakpoint
+CREATE POLICY "post_likes_delete_own" ON "post_likes" AS PERMISSIVE FOR DELETE TO "authenticated" USING ("post_likes"."user_id" = (SELECT requesting_user_id()));--> statement-breakpoint
+CREATE POLICY "posts_insert_own" ON "posts" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK ("posts"."user_id" = (SELECT requesting_user_id()));--> statement-breakpoint
 CREATE POLICY "posts_select_active" ON "posts" AS PERMISSIVE FOR SELECT TO "anon", "authenticated" USING ("posts"."deleted_at" IS NULL);--> statement-breakpoint
-CREATE POLICY "posts_select_own" ON "posts" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("posts"."user_id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
-CREATE POLICY "posts_update_own" ON "posts" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("posts"."user_id" = (SELECT requesting_user_id())::uuid) WITH CHECK ("posts"."user_id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
-CREATE POLICY "users_select_own" ON "users" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("users"."id" = (SELECT requesting_user_id())::uuid);--> statement-breakpoint
-CREATE POLICY "users_update_own" ON "users" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("users"."id" = (SELECT requesting_user_id())::uuid) WITH CHECK ("users"."id" = (SELECT requesting_user_id())::uuid);
+CREATE POLICY "posts_select_own" ON "posts" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("posts"."user_id" = (SELECT requesting_user_id()));--> statement-breakpoint
+CREATE POLICY "posts_update_own" ON "posts" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("posts"."user_id" = (SELECT requesting_user_id())) WITH CHECK ("posts"."user_id" = (SELECT requesting_user_id()));--> statement-breakpoint
+CREATE POLICY "users_select_own" ON "users" AS PERMISSIVE FOR SELECT TO "authenticated" USING ("users"."id" = (SELECT requesting_user_id()));--> statement-breakpoint
+CREATE POLICY "users_update_own" ON "users" AS PERMISSIVE FOR UPDATE TO "authenticated" USING ("users"."id" = (SELECT requesting_user_id())) WITH CHECK ("users"."id" = (SELECT requesting_user_id()));

@@ -10,7 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        postgresql = pkgs.postgresql_15.withPackages (ps: [ pkgs.postgresql_15 ps.pg_uuidv7 ]);
+        postgresql = pkgs.postgresql_15;
         port = "54322";
         dataDir = ".data/postgres";
         confFile = ./nix/postgresql.conf;

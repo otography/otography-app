@@ -21,7 +21,7 @@ import {
 
 const anonRole = pgRole("anon").existing();
 const authenticatedRole = pgRole("authenticated").existing();
-const requestingUserId = sql`(SELECT requesting_user_id())::uuid`;
+const requestingUserId = sql`(SELECT requesting_user_id())`;
 const uuidV7 = (name: string) => uuid(name).default(sql`uuid_generate_v7()`);
 const JAPAN_PREFECTURES = [
   "Hokkaido",
