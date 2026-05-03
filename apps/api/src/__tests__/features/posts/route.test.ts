@@ -18,6 +18,12 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
+// いいね情報取得をモック（posts usecaseが呼び出す）
+vi.mock("../../../features/post-likes/repository", () => ({
+  countLikesByPostIds: vi.fn().mockResolvedValue([]),
+  findUserLikesByPostIds: vi.fn().mockResolvedValue([]),
+}));
+
 import { createDb } from "../../../shared/db";
 import { getAuthSession } from "../../../shared/middleware";
 
@@ -39,24 +45,25 @@ describe("posts endpoints", () => {
   });
 
   it("GET /api/posts returns posts list", async () => {
-    mockDbWithTransaction({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            orderBy: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                content: "Sample post",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-          })),
+    const select = vi.fn().mockReturnValue({
+      from: vi.fn(() => ({
+        where: vi.fn(() => ({
+          orderBy: vi.fn().mockResolvedValue([
+            {
+              id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
+              userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
+              songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
+              content: "Sample post",
+              createdAt: "2026-01-01T00:00:00.000Z",
+              updatedAt: "2026-01-01T00:00:00.000Z",
+            },
+          ]),
+          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222221" }]),
         })),
       })),
     });
+
+    mockDbWithTransaction({ select });
 
     const res = await testRequest("/api/posts");
 
@@ -70,6 +77,8 @@ describe("posts endpoints", () => {
           content: "Sample post",
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
+          likeCount: 0,
+          isLiked: false,
         },
       ],
     });
@@ -106,6 +115,8 @@ describe("posts endpoints", () => {
         content: "Detail post",
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
+        likeCount: 0,
+        isLiked: false,
       },
     });
   });

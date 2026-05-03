@@ -21,6 +21,7 @@ declare namespace Cloudflare {
     APPLE_KEY_ID: string;
     APPLE_TEAM_ID: string;
     APPLE_MUSIC_PRIVATE_KEY: string;
+    LIKE_RATE_LIMITER: RateLimit;
   }
 }
 interface Env extends Cloudflare.Env {}

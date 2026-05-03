@@ -14,4 +14,5 @@ export type Bindings = {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_OAUTH_REDIRECT_URI: string;
+  LIKE_RATE_LIMITER: RateLimit;
 };

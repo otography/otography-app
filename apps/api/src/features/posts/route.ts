@@ -36,15 +36,17 @@ const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (resu
 
 const posts = new Hono<{ Bindings: Bindings }>()
   .get("/api/posts", async (c) => {
-    const result = await getPosts();
+    const session = getAuthSession(c);
+    const result = await getPosts(session);
     if (result instanceof Error) return handlePostError(result, c);
 
     return c.json(result);
   })
   .get("/api/posts/:id", postIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
+    const session = getAuthSession(c);
 
-    const result = await getPost(id);
+    const result = await getPost(id, session);
     if (result instanceof Error) return handlePostError(result, c);
 
     return c.json(result);
