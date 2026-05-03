@@ -4,6 +4,9 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-04-04",
   "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
   "vars": {
     "APP_FRONTEND_URL": "https://web-opal-one-91.vercel.app",
     "FIREBASE_API_KEY": "AIzaSyDqxumBWwkyWSIm3LOkrxBF5JQpqVMElb0",
