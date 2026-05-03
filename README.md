@@ -26,8 +26,8 @@ bun run --cwd apps/api db:migrate
 ```
 
 The local database uses Supabase-compatible `authenticated` and `anon` roles.
-The baseline migration enables `pg_uuidv7` and creates the RLS helper
-function.
+The baseline migration vendors the UUIDv7 generator and creates the RLS helper
+function, so no UUID extension package is required on the database server.
 
 ## Development
 
