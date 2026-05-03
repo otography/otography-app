@@ -10,6 +10,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        postgresql = pkgs.postgresql_15.withPackages (ps: [ pkgs.postgresql_15 ps.pg_uuidv7 ]);
         port = "54322";
         dataDir = ".data/postgres";
         confFile = ./nix/postgresql.conf;
@@ -36,7 +37,7 @@
           if [ ! -d "$DATA_DIR" ]; then
             echo "Initializing PostgreSQL data directory..."
             mkdir -p "$DATA_DIR"
-            ${pkgs.postgresql_15}/bin/initdb \
+            ${postgresql}/bin/initdb \
               --auth=trust \
               --username=postgres \
               --locale=en_US.UTF-8 \
@@ -53,18 +54,18 @@
 
           # 起動
           echo "Starting PostgreSQL on port $PORT..."
-          ${pkgs.postgresql_15}/bin/pg_ctl \
+          ${postgresql}/bin/pg_ctl \
             -D "$DATA_DIR" \
             -o "-c config_file=$CONF_FILE -p $PORT" \
             -l "$DATA_DIR/postgresql.log" \
             start
 
           # init.sqlを流す
-          until ${pkgs.postgresql_15}/bin/pg_isready -h localhost -p "$PORT" -U postgres > /dev/null 2>&1; do
+          until ${postgresql}/bin/pg_isready -h localhost -p "$PORT" -U postgres > /dev/null 2>&1; do
             sleep 0.5
           done
 
-          ${pkgs.postgresql_15}/bin/psql \
+          ${postgresql}/bin/psql \
             -h localhost -p "$PORT" -U postgres \
             -f "$INIT_FILE" > /dev/null 2>&1 || true
 
@@ -83,7 +84,7 @@
           fi
 
           echo "Stopping PostgreSQL..."
-          ${pkgs.postgresql_15}/bin/pg_ctl \
+          ${postgresql}/bin/pg_ctl \
             -D "$DATA_DIR" \
             -m fast \
             stop
@@ -98,7 +99,7 @@
           # 停止
           if [ -f "$DATA_DIR/postmaster.pid" ]; then
             echo "Stopping PostgreSQL..."
-            ${pkgs.postgresql_15}/bin/pg_ctl \
+            ${postgresql}/bin/pg_ctl \
               -D "$DATA_DIR" \
               -m fast \
               stop 2>/dev/null || true
@@ -112,7 +113,7 @@
 
         psqlScript = pkgs.writeShellScript "db-psql" ''
           set -euo pipefail
-          exec ${pkgs.postgresql_15}/bin/psql \
+          exec ${postgresql}/bin/psql \
             -h localhost -p ${port} -U postgres "$@"
         '';
       in

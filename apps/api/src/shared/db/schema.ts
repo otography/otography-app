@@ -21,6 +21,8 @@ import {
 
 const anonRole = pgRole("anon").existing();
 const authenticatedRole = pgRole("authenticated").existing();
+const requestingUserId = sql`(SELECT requesting_user_id())::uuid`;
+const uuidV7 = (name: string) => uuid(name).default(sql`uuid_generate_v7()`);
 const JAPAN_PREFECTURES = [
   "Hokkaido",
   "Aomori",
@@ -80,7 +82,7 @@ export const prefectureEnum = pgEnum("prefecture", JAPAN_PREFECTURES);
 export const users = pgTable(
   "users",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     firebaseId: varchar("firebase_id", { length: 128 }).notNull().unique(),
     username: varchar("username", { length: 50 }).unique(),
     name: varchar("name", { length: 100 }),
@@ -104,13 +106,13 @@ export const users = pgTable(
     pgPolicy("users_select_own", {
       for: "select",
       to: authenticatedRole,
-      using: sql`${table.id} = requesting_user_id()::uuid`,
+      using: sql`${table.id} = ${requestingUserId}`,
     }),
     pgPolicy("users_update_own", {
       for: "update",
       to: authenticatedRole,
-      using: sql`${table.id} = requesting_user_id()::uuid`,
-      withCheck: sql`${table.id} = requesting_user_id()::uuid`,
+      using: sql`${table.id} = ${requestingUserId}`,
+      withCheck: sql`${table.id} = ${requestingUserId}`,
     }),
   ],
 );
@@ -133,7 +135,7 @@ export const userProfiles = pgView("user_profiles", {
 export const artists = pgTable(
   "artists",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     appleMusicId: varchar("apple_music_id", { length: 100 }).notNull().unique(),
     ipiCode: varchar("ipi_code", { length: 20 }),
@@ -178,7 +180,7 @@ export const favoriteArtists = pgTable(
 export const songs = pgTable(
   "songs",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     title: varchar("title", { length: 255 }).notNull(),
     appleMusicId: varchar("apple_music_id", { length: 100 }).notNull().unique(),
     length: integer("length"),
@@ -218,7 +220,7 @@ export const songArtists = pgTable(
 export const groups = pgTable(
   "groups",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     name: varchar("name", { length: 255 }).notNull(),
     type: varchar("type", { length: 50 }),
     description: varchar("description", { length: 255 }),
@@ -260,7 +262,7 @@ export const groupSongs = pgTable(
 export const genres = pgTable(
   "genres",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     name: varchar("name", { length: 100 }).notNull().unique(),
     description: varchar("description", { length: 255 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -315,7 +317,7 @@ export const favoriteSongs = pgTable(
 export const posts = pgTable.withRLS(
   "posts",
   {
-    id: uuid("id").defaultRandom().primaryKey(),
+    id: uuidV7("id").primaryKey(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -336,7 +338,7 @@ export const posts = pgTable.withRLS(
     pgPolicy("posts_insert_own", {
       for: "insert",
       to: authenticatedRole,
-      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+      withCheck: sql`${table.userId} = ${requestingUserId}`,
     }),
     pgPolicy("posts_select_active", {
       for: "select",
@@ -346,13 +348,13 @@ export const posts = pgTable.withRLS(
     pgPolicy("posts_select_own", {
       for: "select",
       to: authenticatedRole,
-      using: sql`${table.userId} = requesting_user_id()::uuid`,
+      using: sql`${table.userId} = ${requestingUserId}`,
     }),
     pgPolicy("posts_update_own", {
       for: "update",
       to: authenticatedRole,
-      using: sql`${table.userId} = requesting_user_id()::uuid`,
-      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+      using: sql`${table.userId} = ${requestingUserId}`,
+      withCheck: sql`${table.userId} = ${requestingUserId}`,
     }),
   ],
 );
@@ -380,12 +382,12 @@ export const postLikes = pgTable(
     pgPolicy("post_likes_insert_own", {
       for: "insert",
       to: authenticatedRole,
-      withCheck: sql`${table.userId} = requesting_user_id()::uuid`,
+      withCheck: sql`${table.userId} = ${requestingUserId}`,
     }),
     pgPolicy("post_likes_delete_own", {
       for: "delete",
       to: authenticatedRole,
-      using: sql`${table.userId} = requesting_user_id()::uuid`,
+      using: sql`${table.userId} = ${requestingUserId}`,
     }),
   ],
 );

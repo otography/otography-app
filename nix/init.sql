@@ -1,5 +1,7 @@
 -- Supabase互換のロールと関数
 
+CREATE EXTENSION IF NOT EXISTS pg_uuidv7;
+
 -- ロール
 DO $$
 BEGIN
