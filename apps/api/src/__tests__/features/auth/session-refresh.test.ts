@@ -43,7 +43,7 @@ const defaultDbTx = {
             id: "uuid-user",
             firebaseId: "user123",
             username: "test",
-            name: null,
+            name: "Test User",
             bio: null,
             birthplace: null,
             birthyear: null,

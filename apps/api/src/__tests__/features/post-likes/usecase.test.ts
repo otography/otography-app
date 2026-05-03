@@ -7,6 +7,11 @@ const mocks = vi.hoisted(() => ({
   findActivePostById: vi.fn(),
   countPostLikes: vi.fn(),
   withRls: vi.fn(),
+  createDb: vi.fn(),
+}));
+
+vi.mock("../../../shared/db", () => ({
+  createDb: mocks.createDb,
 }));
 
 vi.mock("../../../shared/db/rls", () => ({
@@ -27,12 +32,14 @@ const session = {
   email: "test@example.com",
 } as DecodedIdToken;
 
+const db = { kind: "db" } as never;
 const tx = { kind: "transaction" } as never;
 const postId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 
 describe("post-likes usecase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.createDb.mockReturnValue(db);
     mocks.withRls.mockImplementation(async (_session, fn) => await fn(tx, "user-id"));
   });
 
