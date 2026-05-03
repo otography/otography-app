@@ -33,6 +33,16 @@ const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   } as never);
 };
 
+const queryable = (resolvedValue: unknown) => {
+  const promise = Promise.resolve(resolvedValue) as Promise<unknown> & {
+    where: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
+  };
+  promise.where = vi.fn(() => promise);
+  promise.limit = vi.fn(() => promise);
+  return promise;
+};
+
 describe("songs endpoints", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -150,17 +160,6 @@ describe("songs endpoints", () => {
       },
     });
 
-    // Drizzle: select().from(table).where(...).limit(...) or await select().from(table).where(...)
-    // from() の返り値が thenable であり、かつ where/limit メソッドも持つ
-    const queryable = (resolvedValue: unknown) => {
-      const obj: Record<string, unknown> = {
-        where: vi.fn(() => obj),
-        limit: vi.fn(() => obj),
-        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
-      };
-      return obj;
-    };
-
     const selectFrom = vi
       .fn()
       // findOrCreateArtists（アーティストID検索）
@@ -242,15 +241,6 @@ describe("songs endpoints", () => {
         },
       },
     });
-
-    const queryable = (resolvedValue: unknown) => {
-      const obj: Record<string, unknown> = {
-        where: vi.fn(() => obj),
-        limit: vi.fn(() => obj),
-        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
-      };
-      return obj;
-    };
 
     // findOrCreateArtists → 空配列（INSERT後のSELECT、未登録なら新規作成される）
     // findOrCreateGenreIds → 呼ばれない（genreNames無し）
@@ -407,15 +397,6 @@ describe("songs endpoints", () => {
         },
       },
     });
-
-    const queryable = (resolvedValue: unknown) => {
-      const obj: Record<string, unknown> = {
-        where: vi.fn(() => obj),
-        limit: vi.fn(() => obj),
-        then: (resolve: (v: unknown) => void) => resolve(resolvedValue),
-      };
-      return obj;
-    };
 
     const selectFrom = vi
       .fn()

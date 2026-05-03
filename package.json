@@ -27,8 +27,8 @@
     "check-types": "turbo run check-types",
     "test": "turbo run test",
     "test:db": "turbo run test:db",
-    "check-dead-code": "knip --exclude binaries",
-    "check-dead-code:fix": "knip --fix --exclude binaries",
+    "check-dead-code": "knip --exclude binaries --no-config-hints",
+    "check-dead-code:fix": "knip --fix --exclude binaries --no-config-hints",
     "hooks:install": "lefthook install"
   },
   "devDependencies": {

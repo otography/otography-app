@@ -14,7 +14,7 @@ import postgres from "postgres";
 export const createDb = () => {
   const client = postgres(env.DATABASE_URL, { prepare: false });
 
-  return drizzle({ client, jit: true });
+  return drizzle({ client, jit: false });
 };
 
 export type Database = ReturnType<typeof createDb>;
