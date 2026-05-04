@@ -26,19 +26,76 @@ describe("database schema", () => {
     await sql.end();
   });
 
-  it("applies migrations with RLS enabled on protected tables", async () => {
+  it("applies migrations with RLS enabled on public tables", async () => {
     const rows = await sql<{ relname: string; relrowsecurity: boolean }[]>`
       SELECT relname, relrowsecurity
       FROM pg_class
       WHERE relnamespace = 'public'::regnamespace
-        AND relname IN ('users', 'posts')
+        AND relname IN (
+          'artists',
+          'favorite_artists',
+          'favorite_songs',
+          'genres',
+          'group_songs',
+          'groups',
+          'post_likes',
+          'posts',
+          'song_artists',
+          'song_genres',
+          'songs',
+          'users'
+        )
       ORDER BY relname
     `;
 
     expect(rows).toEqual([
+      { relname: "artists", relrowsecurity: true },
+      { relname: "favorite_artists", relrowsecurity: true },
+      { relname: "favorite_songs", relrowsecurity: true },
+      { relname: "genres", relrowsecurity: true },
+      { relname: "group_songs", relrowsecurity: true },
+      { relname: "groups", relrowsecurity: true },
+      { relname: "post_likes", relrowsecurity: true },
       { relname: "posts", relrowsecurity: true },
+      { relname: "song_artists", relrowsecurity: true },
+      { relname: "song_genres", relrowsecurity: true },
+      { relname: "songs", relrowsecurity: true },
       { relname: "users", relrowsecurity: true },
     ]);
+  });
+
+  it("hardens public helper functions and views for Supabase linting", async () => {
+    const functions = await sql<{ proname: string; search_path: string | null }[]>`
+      SELECT
+        proname,
+        (
+          SELECT split_part(option, '=', 2)
+          FROM unnest(proconfig) option
+          WHERE option LIKE 'search_path=%'
+        ) AS search_path
+      FROM pg_proc
+      WHERE pronamespace = 'public'::regnamespace
+        AND proname IN ('gen_random_uuid_v7', 'uuid_generate_v7')
+      ORDER BY proname
+    `;
+
+    expect(functions).toEqual([
+      { proname: "gen_random_uuid_v7", search_path: "pg_catalog" },
+      { proname: "uuid_generate_v7", search_path: "pg_catalog" },
+    ]);
+
+    const views = await sql<{ security_invoker: string | null }[]>`
+      SELECT (
+        SELECT split_part(option, '=', 2)
+        FROM unnest(reloptions) option
+        WHERE option LIKE 'security_invoker=%'
+      ) AS security_invoker
+      FROM pg_class
+      WHERE relnamespace = 'public'::regnamespace
+        AND relname = 'user_profiles'
+    `;
+
+    expect(views).toEqual([{ security_invoker: "true" }]);
   });
 
   it("allows unfinished profiles but rejects blank usernames", async () => {

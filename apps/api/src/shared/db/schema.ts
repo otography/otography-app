@@ -118,7 +118,6 @@ export const users = pgTable(
 );
 
 // 公開プロフィール用ビュー（機密カラムを除外）
-// 明示的に securityInvoker: false を指定し、ビュー所有者権限で実行（どのロールからも閲覧可能）
 export const userProfiles = pgView("user_profiles", {
   id: uuid("id"),
   username: varchar("username", { length: 50 }),
@@ -127,12 +126,12 @@ export const userProfiles = pgView("user_profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }),
 })
   .with({
-    securityInvoker: false,
+    securityInvoker: true,
     securityBarrier: true,
   })
   .as(sql`SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL`);
 
-export const artists = pgTable(
+export const artists = pgTable.withRLS(
   "artists",
   {
     id: uuidV7("id").primaryKey(),
@@ -153,10 +152,26 @@ export const artists = pgTable(
     index("idx_artists_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    pgPolicy("artists_select_active", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`${table.deletedAt} IS NULL`,
+    }),
+    pgPolicy("artists_insert_authenticated", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("artists_update_authenticated", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
   ],
 );
 
-export const favoriteArtists = pgTable(
+export const favoriteArtists = pgTable.withRLS(
   "favorite_artists",
   {
     userId: uuid("user_id")
@@ -174,10 +189,25 @@ export const favoriteArtists = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.artistId] }),
     index("idx_favorite_artists_artist_id").on(table.artistId),
+    pgPolicy("favorite_artists_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.userId} = ${requestingUserId}`,
+    }),
+    pgPolicy("favorite_artists_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.userId} = ${requestingUserId}`,
+    }),
+    pgPolicy("favorite_artists_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${table.userId} = ${requestingUserId}`,
+    }),
   ],
 );
 
-export const songs = pgTable(
+export const songs = pgTable.withRLS(
   "songs",
   {
     id: uuidV7("id").primaryKey(),
@@ -195,10 +225,26 @@ export const songs = pgTable(
     index("idx_songs_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    pgPolicy("songs_select_active", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`${table.deletedAt} IS NULL`,
+    }),
+    pgPolicy("songs_insert_authenticated", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("songs_update_authenticated", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
   ],
 );
 
-export const songArtists = pgTable(
+export const songArtists = pgTable.withRLS(
   "song_artists",
   {
     songId: uuid("song_id")
@@ -217,7 +263,7 @@ export const songArtists = pgTable(
 );
 
 /** @db-schema */
-export const groups = pgTable(
+export const groups = pgTable.withRLS(
   "groups",
   {
     id: uuidV7("id").primaryKey(),
@@ -241,7 +287,7 @@ export const groups = pgTable(
 );
 
 /** @db-schema */
-export const groupSongs = pgTable(
+export const groupSongs = pgTable.withRLS(
   "group_songs",
   {
     groupId: uuid("group_id")
@@ -259,7 +305,7 @@ export const groupSongs = pgTable(
 );
 
 /** @db-schema */
-export const genres = pgTable(
+export const genres = pgTable.withRLS(
   "genres",
   {
     id: uuidV7("id").primaryKey(),
@@ -277,7 +323,7 @@ export const genres = pgTable(
 );
 
 /** @db-schema */
-export const songGenres = pgTable(
+export const songGenres = pgTable.withRLS(
   "song_genres",
   {
     songId: uuid("song_id")
@@ -294,7 +340,7 @@ export const songGenres = pgTable(
   ],
 );
 
-export const favoriteSongs = pgTable(
+export const favoriteSongs = pgTable.withRLS(
   "favorite_songs",
   {
     userId: uuid("user_id")
@@ -311,6 +357,21 @@ export const favoriteSongs = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.songId] }),
     index("idx_favorite_songs_song_id").on(table.songId),
+    pgPolicy("favorite_songs_select_own", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`${table.userId} = ${requestingUserId}`,
+    }),
+    pgPolicy("favorite_songs_insert_own", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`${table.userId} = ${requestingUserId}`,
+    }),
+    pgPolicy("favorite_songs_delete_own", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`${table.userId} = ${requestingUserId}`,
+    }),
   ],
 );
 
@@ -360,7 +421,7 @@ export const posts = pgTable.withRLS(
 );
 
 /** @db-schema */
-export const postLikes = pgTable(
+export const postLikes = pgTable.withRLS(
   "post_likes",
   {
     userId: uuid("user_id")
