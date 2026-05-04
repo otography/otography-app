@@ -2,7 +2,12 @@ import { fileURLToPath } from "node:url";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import { getMaintenanceDatabaseUrl, getTestDatabaseUrl } from "./helpers/test-database-url";
+import {
+  getMaintenanceDatabaseUrl,
+  getPostgresRoleDatabaseUrl,
+  getTestDatabaseUrl,
+  getTestOwnerDatabaseUrl,
+} from "./helpers/test-database-url";
 
 const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
 
@@ -12,11 +17,14 @@ const ensureTestDatabase = async (databaseUrl: string) => {
     throw new Error(`Refusing to reset non-test database: ${databaseName}`);
   }
 
-  const maintenanceSql = postgres(getMaintenanceDatabaseUrl(databaseUrl), {
-    max: 1,
-    onnotice: () => undefined,
-    prepare: false,
-  });
+  const maintenanceSql = postgres(
+    getPostgresRoleDatabaseUrl(getMaintenanceDatabaseUrl(databaseUrl)),
+    {
+      max: 1,
+      onnotice: () => undefined,
+      prepare: false,
+    },
+  );
   const rows = await maintenanceSql<{ exists: boolean }[]>`
     SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = ${databaseName}) AS exists
   `;
@@ -62,7 +70,11 @@ export default async function setupDb() {
   const databaseUrl = getTestDatabaseUrl();
   await ensureTestDatabase(databaseUrl);
 
-  const sql = postgres(databaseUrl, { max: 1, onnotice: () => undefined, prepare: false });
+  const sql = postgres(getTestOwnerDatabaseUrl(), {
+    max: 1,
+    onnotice: () => undefined,
+    prepare: false,
+  });
   const db = drizzle({ client: sql, jit: true });
 
   await sql`DROP SCHEMA IF EXISTS public CASCADE`;

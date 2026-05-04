@@ -7,23 +7,24 @@ import {
   type SetupProfileValues,
   type UpdateUserValues,
 } from "../../shared/db/schema";
-import { withRls } from "../../shared/db/rls";
 import { createDb } from "../../shared/db";
+import { withAuthenticatedRole, withRls } from "../../shared/db/rls";
 
 // ユーザーレコードを作成（冪等: firebase_id が既存なら論理削除を取り消して再利用）
 export const insertUser = async (values: InsertUserValues) => {
-  const db = createDb();
-  return db
-    .insert(users)
-    .values(values)
-    .onConflictDoUpdate({
-      target: users.firebaseId,
-      set: {
-        deletedAt: null,
-        updatedAt: sql`now()`,
-      },
-    })
-    .returning();
+  return withAuthenticatedRole((tx) =>
+    tx
+      .insert(users)
+      .values(values)
+      .onConflictDoUpdate({
+        target: users.firebaseId,
+        set: {
+          deletedAt: null,
+          updatedAt: sql`now()`,
+        },
+      })
+      .returning(),
+  );
 };
 
 // 現在のユーザーを取得（withRls で自分の行だけ取得、RLS で防御）

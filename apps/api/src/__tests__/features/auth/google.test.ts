@@ -30,7 +30,26 @@ vi.mock("../../../shared/db", () => ({
 
 const defaultDbMock = () =>
   mockCreateDb.mockReturnValue({
-    transaction: vi.fn(),
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
+    transaction: vi.fn(async (fn) =>
+      fn({
+        execute: vi.fn(() => Promise.resolve([])),
+        insert: vi.fn(() => ({
+          values: vi.fn(() => ({
+            onConflictDoUpdate: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+            })),
+          })),
+        })),
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+            })),
+          })),
+        })),
+      }),
+    ),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
         onConflictDoUpdate: vi.fn(() => ({
@@ -545,7 +564,26 @@ describe("GET /api/auth/google/callback", () => {
 
   it("DB insert失敗時、/login?error=session_failedへリダイレクトする", async () => {
     mockCreateDb.mockReturnValue({
-      transaction: vi.fn(),
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          execute: vi.fn(() => Promise.resolve([])),
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn().mockRejectedValue(new Error("DB error")),
+              })),
+            })),
+          })),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+              })),
+            })),
+          })),
+        }),
+      ),
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           onConflictDoUpdate: vi.fn(() => ({

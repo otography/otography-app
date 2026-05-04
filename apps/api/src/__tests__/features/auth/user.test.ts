@@ -13,29 +13,10 @@ vi.mock("../../../shared/db", () => ({
 }));
 import { createDb } from "../../../shared/db";
 
-const conditionReferencesColumn = (
-  value: unknown,
-  columnName: string,
-  seen = new WeakSet<object>(),
-): boolean => {
-  if (value === null || typeof value !== "object") return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
-
-  if ("name" in value && value.name === columnName) return true;
-
-  if (Array.isArray(value)) {
-    return value.some((item) => conditionReferencesColumn(item, columnName, seen));
-  }
-
-  return Object.values(value as Record<string, unknown>).some((item) =>
-    conditionReferencesColumn(item, columnName, seen),
-  );
-};
-
 // withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
@@ -47,9 +28,10 @@ const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   } as never);
 };
 
-// selectUserByUsername など withRls を使わず直接 select するクエリ用のモック
+// selectUserByUsername など公開 read 用のモック
 const mockDbWithSelect = (resolvedValue: unknown[]) => {
   vi.mocked(createDb).mockReturnValue({
+    execute: vi.fn(() => Promise.resolve([])),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
@@ -57,6 +39,18 @@ const mockDbWithSelect = (resolvedValue: unknown[]) => {
         })),
       })),
     })),
+    transaction: vi.fn(async (fn) =>
+      fn({
+        execute: vi.fn(() => Promise.resolve([])),
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue(resolvedValue),
+            })),
+          })),
+        })),
+      }),
+    ),
   } as never);
 };
 
@@ -136,52 +130,20 @@ describe("GET /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
+    // 1回目: withRls → resolveFirebaseId → db.execute() → ユーザーなし
     vi.mocked(createDb).mockReturnValueOnce({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: null }])),
     } as never);
+    // 2回目: insertUser → withAuthenticatedRole → db.transaction() → INSERT
     vi.mocked(createDb).mockReturnValueOnce({
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "uuid-user",
-                firebaseId: "user123",
-                username: null,
-                name: null,
-                bio: null,
-                birthplace: null,
-                birthyear: null,
-                gender: null,
-                createdAt: new Date("2026-01-01T00:00:00.000Z"),
-                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-                deletedAt: null,
-              },
-            ]),
-          })),
-        })),
-      })),
-    } as never);
-    vi.mocked(createDb).mockReturnValueOnce({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
-          })),
-        })),
-      })),
+      execute: vi.fn(() => Promise.resolve([])),
       transaction: vi.fn(async (fn) =>
         fn({
-          select: vi.fn(() => ({
-            from: vi.fn(() => ({
-              where: vi.fn(() => ({
-                limit: vi.fn().mockResolvedValue([
+          execute: vi.fn(() => Promise.resolve([])),
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([
                   {
                     id: "uuid-user",
                     firebaseId: "user123",
@@ -199,7 +161,13 @@ describe("GET /api/user", () => {
               })),
             })),
           })),
-          execute: vi.fn().mockResolvedValue([]),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([]),
+              })),
+            })),
+          })),
         }),
       ),
     } as never);
@@ -210,32 +178,6 @@ describe("GET /api/user", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ message: "Profile is not set up." });
-  });
-
-  it("filters out deleted users while resolving the RLS UUID", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-    });
-    const where = vi.fn((_: unknown) => ({
-      limit: vi.fn().mockResolvedValue([]),
-    }));
-    // 前テストの mockReturnValue が残るのを防ぐためリセット
-    vi.mocked(createDb).mockReset();
-    vi.mocked(createDb).mockReturnValue({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          where,
-        })),
-      })),
-    } as never);
-
-    const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-session" },
-    });
-
-    expect(res.status).toBe(500);
-    expect(conditionReferencesColumn(where.mock.calls[0]![0], "deleted_at")).toBe(true);
   });
 });
 

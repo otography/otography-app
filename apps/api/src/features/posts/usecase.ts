@@ -1,9 +1,8 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { and, eq, isNull } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
-import { users } from "../../shared/db/schema";
-import { withAnonymousRls, withRls } from "../../shared/db/rls";
+import { withRls } from "../../shared/db/rls";
 import { countLikesByPostIds, findUserLikesByPostIds } from "../post-likes/repository";
 import {
   createPost,
@@ -16,14 +15,16 @@ import {
 import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
 
 export const getPosts = async (session?: DecodedIdToken | null) => {
-  const rows = await withAnonymousRls((tx) => listPosts(tx));
+  const db = createDb();
+  const rows = await listPosts(db).catch(
+    (e) => new DbError({ message: "Failed to fetch posts.", cause: e }),
+  );
   if (rows instanceof Error) {
-    return new DbError({ message: "Failed to fetch posts.", cause: rows });
+    return rows;
   }
 
   // いいね情報の付与
   const postIds = rows.map((r) => r.id);
-  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, postIds);
   const likeCountMap = new Map(likeCounts.map((r) => [r.postId, r.count]));
 
@@ -45,16 +46,18 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {
-  const post = await withAnonymousRls((tx) => findPostById(tx, id));
+  const db = createDb();
+  const post = await findPostById(db, id).catch(
+    (e) => new DbError({ message: "Failed to fetch post.", cause: e }),
+  );
   if (post instanceof Error) {
-    return new DbError({ message: "Failed to fetch post.", cause: post });
+    return post;
   }
   if (post === null) {
     return new DbError({ message: "Post not found.", statusCode: 404 });
   }
 
   // いいね情報の付与
-  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, [id]);
   const likeCount = likeCounts[0]?.count ?? 0;
 
@@ -138,16 +141,14 @@ const resolveUserId = async (session: DecodedIdToken): Promise<string | DbError>
 
   const db = createDb();
   const rows = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
-    .limit(1)
+    .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
     .catch((e) => new DbError({ message: "Failed to resolve user ID.", cause: e }));
 
   if (rows instanceof Error) return rows;
-  if (!rows[0]) {
+  const userId = rows[0]?.resolve_firebase_id;
+  if (!userId) {
     return new DbError({ message: "User not found in database." });
   }
 
-  return rows[0].id;
+  return userId;
 };

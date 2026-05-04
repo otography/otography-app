@@ -29,13 +29,18 @@ import { getAuthSession } from "../../../shared/middleware";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   const methods = {
-    execute: vi.fn().mockResolvedValue([]),
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "firebase-user-1" }])),
     ...txMethods,
   };
 
   vi.mocked(createDb).mockReturnValue({
     ...methods,
-    transaction: vi.fn(async (fn) => fn(methods)),
+    transaction: vi.fn(async (fn) =>
+      fn({
+        ...methods,
+        execute: vi.fn(() => Promise.resolve([])),
+      }),
+    ),
   } as never);
 };
 

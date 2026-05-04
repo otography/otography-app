@@ -98,6 +98,33 @@ describe("database schema", () => {
     expect(views).toEqual([{ security_invoker: "true" }]);
   });
 
+  it("resolves Firebase IDs only for active users from the anon role", async () => {
+    const [activeUser] = await db
+      .insert(users)
+      .values({ firebaseId: "firebase-active-user" })
+      .returning({ id: users.id });
+    await db.insert(users).values({
+      firebaseId: "firebase-deleted-user",
+      deletedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    expect(activeUser).toBeDefined();
+
+    await db.transaction(async (tx) => {
+      await tx.execute(drizzleSql.raw("set local role anon"));
+
+      const activeResult = await tx.execute<{ user_id: string | null }>(drizzleSql`
+        SELECT public.resolve_firebase_id('firebase-active-user') AS user_id
+      `);
+      const deletedResult = await tx.execute<{ user_id: string | null }>(drizzleSql`
+        SELECT public.resolve_firebase_id('firebase-deleted-user') AS user_id
+      `);
+
+      expect(activeResult).toEqual([{ user_id: activeUser!.id }]);
+      expect(deletedResult).toEqual([{ user_id: null }]);
+    });
+  });
+
   it("allows unfinished profiles but rejects blank usernames", async () => {
     await db.insert(users).values({ firebaseId: "firebase-user-without-profile" });
 

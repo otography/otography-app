@@ -16,6 +16,26 @@ import { createDb } from "../../../shared/db";
 
 const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
   vi.mocked(createDb).mockReturnValue({
+    execute: vi.fn(() => Promise.resolve([])),
+    transaction: vi.fn(async (fn) =>
+      fn({
+        execute: vi.fn(() => Promise.resolve([])),
+        insert: vi.fn(() => ({
+          values: vi.fn(() => ({
+            onConflictDoUpdate: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue(rows),
+            })),
+          })),
+        })),
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue(rows),
+            })),
+          })),
+        })),
+      }),
+    ),
     insert: vi.fn(() => ({
       values: vi.fn(() => ({
         onConflictDoUpdate: vi.fn(() => ({
@@ -101,13 +121,18 @@ describe("POST /api/auth/sign-in", () => {
       });
       mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
       vi.mocked(createDb).mockReturnValue({
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            onConflictDoUpdate: vi.fn(() => ({
-              returning: vi.fn().mockRejectedValue(new Error("db unavailable")),
+        transaction: vi.fn(async (fn) =>
+          fn({
+            execute: vi.fn(() => Promise.resolve([])),
+            insert: vi.fn(() => ({
+              values: vi.fn(() => ({
+                onConflictDoUpdate: vi.fn(() => ({
+                  returning: vi.fn().mockRejectedValue(new Error("db unavailable")),
+                })),
+              })),
             })),
-          })),
-        })),
+          }),
+        ),
       } as never);
 
       const res = await testRequest("/api/auth/sign-in", {

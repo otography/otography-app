@@ -1,8 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { RlsError } from "@repo/errors";
 import { createDb, type DatabaseTransaction } from "./index";
-import { users } from "./schema";
 
 const abortRlsTransaction = (error: RlsError): never => {
   throw error;
@@ -20,18 +19,35 @@ const setupRlsTransaction = async (tx: DatabaseTransaction, jwtClaims: string) =
   if (roleResult instanceof Error) return roleResult;
 };
 
-const setupAnonymousRlsTransaction = async (tx: DatabaseTransaction) => {
+const setupAuthenticatedRole = async (tx: DatabaseTransaction) => {
   const roleResult = await tx
-    .execute(sql.raw("set local role anon"))
-    .catch((e) => new RlsError({ message: "Failed to switch to anonymous role.", cause: e }));
+    .execute(sql.raw("set local role authenticated"))
+    .catch((e) => new RlsError({ message: "Failed to switch to 'authenticated' role.", cause: e }));
   if (roleResult instanceof Error) return roleResult;
 };
 
-export async function withAnonymousRls<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
+// SECURITY DEFINER 関数経由で Firebase ID → UUID 解決（postgres 権限で実行）
+const resolveFirebaseId = async (firebaseId: string): Promise<string | RlsError> => {
+  const db = createDb();
+  const result = await db
+    .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
+    .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+
+  if (result instanceof Error) return result;
+
+  const userId = result[0]?.resolve_firebase_id;
+  if (!userId) {
+    return new RlsError({ message: "User not found in database." });
+  }
+  return userId;
+};
+
+// 認証済みユーザーとしてトランザクションを実行（JWT claims なし、ロールのみ authenticated）
+export async function withAuthenticatedRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
   const db = createDb();
   const result = await db
     .transaction(async (tx) => {
-      const setupResult = await setupAnonymousRlsTransaction(tx);
+      const setupResult = await setupAuthenticatedRole(tx);
       if (setupResult instanceof Error) abortRlsTransaction(setupResult);
 
       return await fn(tx);
@@ -52,26 +68,12 @@ export async function withRls<T>(
     return new RlsError({ message: "Missing user identifier in session." });
   }
 
-  // Firebase ID → UUID 解決
-  const db = createDb();
-  const lookupResult = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(and(eq(users.firebaseId, firebaseId), isNull(users.deletedAt)))
-    .limit(1)
-    .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
+  // SECURITY DEFINER 関数で Firebase ID → UUID 解決
+  const userId = await resolveFirebaseId(firebaseId);
+  if (userId instanceof Error) return userId;
 
-  if (lookupResult instanceof RlsError) {
-    return lookupResult;
-  }
-
-  const userRow = lookupResult[0];
-  if (!userRow) {
-    return new RlsError({ message: "User not found in database." });
-  }
-
-  const userId = userRow.id;
   const jwtClaims = JSON.stringify({ sub: userId });
+  const db = createDb();
 
   const result = await db
     .transaction(async (tx) => {

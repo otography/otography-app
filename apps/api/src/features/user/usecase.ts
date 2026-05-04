@@ -72,9 +72,19 @@ export const createUserRecord = async (values: InsertUserValues) => {
         cause: e,
       }),
   );
-  if (result instanceof Error) {
+  if (result instanceof AuthError) {
     console.error("User record creation failed.", result);
     return result;
+  }
+  if (result instanceof Error) {
+    const error = new AuthError({
+      message: "Failed to create user record.",
+      code: "db-error",
+      statusCode: 500,
+      cause: result,
+    });
+    console.error("User record creation failed.", error);
+    return error;
   }
 
   const [user] = result;
@@ -259,7 +269,18 @@ export const deleteAccount = async (session: DecodedIdToken) => {
 
 // 公開プロフィールを取得（username で検索）
 export const getPublicProfile = async (username: string) => {
-  const [user] = await selectUserByUsername(username);
+  const result = await selectUserByUsername(username).catch(
+    (e) =>
+      new AuthError({
+        message: "Failed to fetch public profile.",
+        code: "db-error",
+        statusCode: 500,
+        cause: e,
+      }),
+  );
+  if (result instanceof Error) return result;
+
+  const [user] = result;
   if (!user) {
     return new AuthError({
       message: "User not found.",
