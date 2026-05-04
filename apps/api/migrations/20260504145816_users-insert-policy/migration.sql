@@ -1,0 +1,1 @@
+CREATE POLICY "users_insert_authenticated" ON "users" AS PERMISSIVE FOR INSERT TO "authenticated" WITH CHECK (true);
