@@ -8,14 +8,28 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(() => ({ transaction: vi.fn() })),
+  createDb: vi.fn(),
 }));
 
 import { signInWithPassword } from "../../../shared/firebase/firebase-rest";
+import { createDb } from "../../../shared/db";
+
+const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
+  vi.mocked(createDb).mockReturnValue({
+    insert: vi.fn(() => ({
+      values: vi.fn(() => ({
+        onConflictDoUpdate: vi.fn(() => ({
+          returning: vi.fn().mockResolvedValue(rows),
+        })),
+      })),
+    })),
+  } as never);
+};
 
 describe("POST /api/auth/sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDbWithUserInsert();
   });
 
   describe("error passthrough", () => {
@@ -77,6 +91,34 @@ describe("POST /api/auth/sign-in", () => {
       expect(res.status).toBe(502);
       expect(await res.json()).toEqual({ message: "Session creation failed." });
     });
+
+    it("returns 500 when user record creation fails", async () => {
+      vi.mocked(signInWithPassword).mockResolvedValue({
+        idToken: "test-id-token",
+        localId: "user123",
+        expiresIn: "3600",
+        refreshToken: "test-refresh",
+      });
+      mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
+      vi.mocked(createDb).mockReturnValue({
+        insert: vi.fn(() => ({
+          values: vi.fn(() => ({
+            onConflictDoUpdate: vi.fn(() => ({
+              returning: vi.fn().mockRejectedValue(new Error("db unavailable")),
+            })),
+          })),
+        })),
+      } as never);
+
+      const res = await testRequest("/api/auth/sign-in", {
+        method: "POST",
+        body: { email: "test@example.com", password: "password123" },
+      });
+
+      expect(res.status).toBe(500);
+      expect(await res.json()).toEqual({ message: "Failed to create user record." });
+      expect(res.getCookie("otography_session")).toBeUndefined();
+    });
   });
 
   describe("success", () => {
@@ -98,6 +140,7 @@ describe("POST /api/auth/sign-in", () => {
       expect(await res.json()).toEqual({ message: "Signed in successfully." });
       expect(res.getCookie("otography_session")).toBe("test-session-cookie");
       expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(expect.anything(), "test-refresh");
+      expect(createDb).toHaveBeenCalled();
     });
   });
 

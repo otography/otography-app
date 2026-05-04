@@ -58,6 +58,10 @@ const auth = new Hono<{ Bindings: Bindings }>()
     }
     const sessionCookie = await createSessionCookie(result.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
+
+    const userRecord = await createUserRecord({ firebaseId: result.localId });
+    if (userRecord instanceof Error) return handleAuthError(userRecord, c);
+
     setSessionCookie(c, sessionCookie);
     const refreshCookie = await setRefreshTokenCookie(c, result.refreshToken);
     if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
