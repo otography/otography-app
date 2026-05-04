@@ -8,11 +8,12 @@ import {
   type UpdateUserValues,
 } from "../../shared/db/schema";
 import { createDb } from "../../shared/db";
-import { withAuthenticatedRole, withRls } from "../../shared/db/rls";
+import { withDatabaseOwnerRole, withRls } from "../../shared/db/rls";
 
-// ユーザーレコードを作成（冪等: firebase_id が既存なら論理削除を取り消して再利用）
+// Firebase Auth と DB の同期はサーバー管理操作として行う。
+// DB のデフォルトロールは anon に落としているため、ここだけ owner role に戻す。
 export const insertUser = async (values: InsertUserValues) => {
-  return withAuthenticatedRole((tx) =>
+  return withDatabaseOwnerRole((tx) =>
     tx
       .insert(users)
       .values(values)

@@ -125,6 +125,30 @@ describe("database schema", () => {
     });
   });
 
+  it("allows server-side user sync to upsert users from the owner role", async () => {
+    await db.transaction(async (tx) => {
+      await tx.execute(drizzleSql.raw("set local role postgres"));
+
+      const inserted = await tx.execute<{ id: string }>(drizzleSql`
+        INSERT INTO users (firebase_id)
+        VALUES ('firebase-owner-sync')
+        ON CONFLICT (firebase_id) DO UPDATE
+        SET deleted_at = NULL, updated_at = now()
+        RETURNING id
+      `);
+      const restored = await tx.execute<{ id: string }>(drizzleSql`
+        INSERT INTO users (firebase_id)
+        VALUES ('firebase-owner-sync')
+        ON CONFLICT (firebase_id) DO UPDATE
+        SET deleted_at = NULL, updated_at = now()
+        RETURNING id
+      `);
+
+      expect(inserted).toHaveLength(1);
+      expect(restored).toEqual(inserted);
+    });
+  });
+
   it("allows unfinished profiles but rejects blank usernames", async () => {
     await db.insert(users).values({ firebaseId: "firebase-user-without-profile" });
 

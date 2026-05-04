@@ -26,6 +26,13 @@ const setupAuthenticatedRole = async (tx: DatabaseTransaction) => {
   if (roleResult instanceof Error) return roleResult;
 };
 
+const setupDatabaseOwnerRole = async (tx: DatabaseTransaction) => {
+  const roleResult = await tx
+    .execute(sql.raw("set local role postgres"))
+    .catch((e) => new RlsError({ message: "Failed to switch to database owner role.", cause: e }));
+  if (roleResult instanceof Error) return roleResult;
+};
+
 // SECURITY DEFINER 関数経由で Firebase ID → UUID 解決（postgres 権限で実行）
 const resolveFirebaseId = async (firebaseId: string): Promise<string | RlsError> => {
   const db = createDb();
@@ -48,6 +55,22 @@ export async function withAuthenticatedRole<T>(fn: (tx: DatabaseTransaction) => 
   const result = await db
     .transaction(async (tx) => {
       const setupResult = await setupAuthenticatedRole(tx);
+      if (setupResult instanceof Error) abortRlsTransaction(setupResult);
+
+      return await fn(tx);
+    })
+    .catch((e) =>
+      e instanceof RlsError ? e : new RlsError({ message: "Transaction failed.", cause: e }),
+    );
+
+  return result;
+}
+
+export async function withDatabaseOwnerRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
+  const db = createDb();
+  const result = await db
+    .transaction(async (tx) => {
+      const setupResult = await setupDatabaseOwnerRole(tx);
       if (setupResult instanceof Error) abortRlsTransaction(setupResult);
 
       return await fn(tx);
