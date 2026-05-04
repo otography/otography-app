@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "api",
   "main": "src/index.ts",
+  "preview_urls": true,
   "compatibility_date": "2025-04-04",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
@@ -32,6 +33,28 @@
         "FIREBASE_PROJECT_ID": "otography-676f1",
         "AUTH_COOKIE_DOMAIN": "localhost",
         "GOOGLE_OAUTH_REDIRECT_URI": "http://localhost:3000/api/auth/google/callback",
+      },
+      "ratelimits": [
+        {
+          "name": "LIKE_RATE_LIMITER",
+          "namespace_id": "1001",
+          "simple": {
+            "limit": 30,
+            "period": 60,
+          },
+        },
+      ],
+    },
+    "preview": {
+      "observability": {
+        "enabled": true,
+      },
+      "vars": {
+        "APP_FRONTEND_URL": "",
+        "AUTH_COOKIE_DOMAIN": "",
+        "FIREBASE_API_KEY": "AIzaSyDqxumBWwkyWSIm3LOkrxBF5JQpqVMElb0",
+        "FIREBASE_PROJECT_ID": "otography-676f1",
+        "GOOGLE_OAUTH_REDIRECT_URI": "",
       },
       "ratelimits": [
         {
