@@ -30,6 +30,10 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
 });
 
 const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings: Bindings }>) => {
+  if (error.statusCode >= 500) {
+    console.error("Auth request failed:", error);
+  }
+
   if ("clearCookie" in error && error.clearCookie) {
     clearSessionCookie(c);
     clearRefreshTokenCookie(c);
