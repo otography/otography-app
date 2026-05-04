@@ -33,7 +33,7 @@ const defaultDbMock = () =>
     execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
     transaction: vi.fn(async (fn) =>
       fn({
-        execute: vi.fn(() => Promise.resolve([])),
+        execute: vi.fn(() => Promise.resolve([{ id: "uuid-user" }])),
         insert: vi.fn(() => ({
           values: vi.fn(() => ({
             onConflictDoUpdate: vi.fn(() => ({
@@ -567,11 +567,11 @@ describe("GET /api/auth/google/callback", () => {
       execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
       transaction: vi.fn(async (fn) =>
         fn({
-          execute: vi.fn(() => Promise.resolve([])),
+          execute: vi.fn(() => Promise.reject(new Error("DB error"))),
           insert: vi.fn(() => ({
             values: vi.fn(() => ({
               onConflictDoUpdate: vi.fn(() => ({
-                returning: vi.fn().mockRejectedValue(new Error("DB error")),
+                returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
               })),
             })),
           })),
@@ -587,7 +587,7 @@ describe("GET /api/auth/google/callback", () => {
       insert: vi.fn(() => ({
         values: vi.fn(() => ({
           onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(new Error("DB error")),
+            returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
           })),
         })),
       })),
