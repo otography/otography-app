@@ -2,7 +2,7 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
-import { withRls } from "../../shared/db/rls";
+import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import { countLikesByPostIds, findUserLikesByPostIds } from "../post-likes/repository";
 import {
   createPost,
@@ -15,16 +15,14 @@ import {
 import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
 
 export const getPosts = async (session?: DecodedIdToken | null) => {
-  const db = createDb();
-  const rows = await listPosts(db).catch(
-    (e) => new DbError({ message: "Failed to fetch posts.", cause: e }),
-  );
+  const rows = await withAnonymousRole((tx) => listPosts(tx));
   if (rows instanceof Error) {
-    return rows;
+    return new DbError({ message: "Failed to fetch posts.", cause: rows });
   }
 
   // いいね情報の付与
   const postIds = rows.map((r) => r.id);
+  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, postIds);
   const likeCountMap = new Map(likeCounts.map((r) => [r.postId, r.count]));
 
@@ -46,18 +44,16 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {
-  const db = createDb();
-  const post = await findPostById(db, id).catch(
-    (e) => new DbError({ message: "Failed to fetch post.", cause: e }),
-  );
+  const post = await withAnonymousRole((tx) => findPostById(tx, id));
   if (post instanceof Error) {
-    return post;
+    return new DbError({ message: "Failed to fetch post.", cause: post });
   }
   if (post === null) {
     return new DbError({ message: "Post not found.", statusCode: 404 });
   }
 
   // いいね情報の付与
+  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, [id]);
   const likeCount = likeCounts[0]?.count ?? 0;
 

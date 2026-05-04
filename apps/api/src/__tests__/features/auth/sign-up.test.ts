@@ -44,7 +44,7 @@ const defaultTx = {
       })),
     })),
   })),
-  execute: vi.fn(() => Promise.resolve([])),
+  execute: vi.fn(() => Promise.resolve([{ id: "uuid-user" }])),
   select: vi.fn(() => ({
     from: vi.fn(() => ({
       where: vi.fn(() => ({

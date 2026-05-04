@@ -26,10 +26,10 @@ const setupAuthenticatedRole = async (tx: DatabaseTransaction) => {
   if (roleResult instanceof Error) return roleResult;
 };
 
-const setupDatabaseOwnerRole = async (tx: DatabaseTransaction) => {
+const setupAnonymousRole = async (tx: DatabaseTransaction) => {
   const roleResult = await tx
-    .execute(sql.raw("set local role postgres"))
-    .catch((e) => new RlsError({ message: "Failed to switch to database owner role.", cause: e }));
+    .execute(sql.raw("set local role anon"))
+    .catch((e) => new RlsError({ message: "Failed to switch to anonymous role.", cause: e }));
   if (roleResult instanceof Error) return roleResult;
 };
 
@@ -66,11 +66,11 @@ export async function withAuthenticatedRole<T>(fn: (tx: DatabaseTransaction) => 
   return result;
 }
 
-export async function withDatabaseOwnerRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
+export async function withAnonymousRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
   const db = createDb();
   const result = await db
     .transaction(async (tx) => {
-      const setupResult = await setupDatabaseOwnerRole(tx);
+      const setupResult = await setupAnonymousRole(tx);
       if (setupResult instanceof Error) abortRlsTransaction(setupResult);
 
       return await fn(tx);

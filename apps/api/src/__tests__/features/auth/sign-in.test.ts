@@ -19,7 +19,7 @@ const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
     execute: vi.fn(() => Promise.resolve([])),
     transaction: vi.fn(async (fn) =>
       fn({
-        execute: vi.fn(() => Promise.resolve([])),
+        execute: vi.fn(() => Promise.resolve(rows)),
         insert: vi.fn(() => ({
           values: vi.fn(() => ({
             onConflictDoUpdate: vi.fn(() => ({
@@ -123,7 +123,7 @@ describe("POST /api/auth/sign-in", () => {
       vi.mocked(createDb).mockReturnValue({
         transaction: vi.fn(async (fn) =>
           fn({
-            execute: vi.fn(() => Promise.resolve([])),
+            execute: vi.fn().mockRejectedValue(new Error("db unavailable")),
             insert: vi.fn(() => ({
               values: vi.fn(() => ({
                 onConflictDoUpdate: vi.fn(() => ({

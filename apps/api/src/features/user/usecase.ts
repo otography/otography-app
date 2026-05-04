@@ -278,7 +278,15 @@ export const getPublicProfile = async (username: string) => {
         cause: e,
       }),
   );
-  if (result instanceof Error) return result;
+  if (result instanceof AuthError) return result;
+  if (result instanceof Error) {
+    return new AuthError({
+      message: "Failed to fetch public profile.",
+      code: "db-error",
+      statusCode: 500,
+      cause: result,
+    });
+  }
 
   const [user] = result;
   if (!user) {

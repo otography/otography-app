@@ -125,23 +125,15 @@ describe("database schema", () => {
     });
   });
 
-  it("allows server-side user sync to upsert users from the owner role", async () => {
+  it("allows server-side user sync through a narrow definer function", async () => {
     await db.transaction(async (tx) => {
-      await tx.execute(drizzleSql.raw("set local role postgres"));
+      await tx.execute(drizzleSql.raw("set local role authenticated"));
 
       const inserted = await tx.execute<{ id: string }>(drizzleSql`
-        INSERT INTO users (firebase_id)
-        VALUES ('firebase-owner-sync')
-        ON CONFLICT (firebase_id) DO UPDATE
-        SET deleted_at = NULL, updated_at = now()
-        RETURNING id
+        SELECT id FROM public.sync_firebase_user('firebase-owner-sync')
       `);
       const restored = await tx.execute<{ id: string }>(drizzleSql`
-        INSERT INTO users (firebase_id)
-        VALUES ('firebase-owner-sync')
-        ON CONFLICT (firebase_id) DO UPDATE
-        SET deleted_at = NULL, updated_at = now()
-        RETURNING id
+        SELECT id FROM public.sync_firebase_user('firebase-owner-sync')
       `);
 
       expect(inserted).toHaveLength(1);

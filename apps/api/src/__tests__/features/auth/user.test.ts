@@ -134,12 +134,28 @@ describe("GET /api/user", () => {
     vi.mocked(createDb).mockReturnValueOnce({
       execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: null }])),
     } as never);
-    // 2回目: insertUser → withAuthenticatedRole → db.transaction() → INSERT
+    // 2回目: insertUser → withAuthenticatedRole → sync_firebase_user()
     vi.mocked(createDb).mockReturnValueOnce({
       execute: vi.fn(() => Promise.resolve([])),
       transaction: vi.fn(async (fn) =>
         fn({
-          execute: vi.fn(() => Promise.resolve([])),
+          execute: vi.fn(() =>
+            Promise.resolve([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: null,
+                name: null,
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          ),
           insert: vi.fn(() => ({
             values: vi.fn(() => ({
               onConflictDoUpdate: vi.fn(() => ({
