@@ -5,6 +5,8 @@ opensrc
 plans
 .data
 *.tsbuildinfo
+.env
+apps/web/.env
 .env.keys
 .env*.keys
 .DS_Store
