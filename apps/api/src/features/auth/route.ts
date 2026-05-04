@@ -29,6 +29,9 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
   }
 });
 
+const maskUserId = (value: string) =>
+  value.length <= 8 ? "[short-id]" : `${value.slice(0, 4)}...${value.slice(-4)}`;
+
 const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings: Bindings }>) => {
   if (error.statusCode >= 500) {
     console.error("Auth request failed:", error);
@@ -44,8 +47,14 @@ const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings
 const auth = new Hono<{ Bindings: Bindings }>()
   .post("/api/auth/sign-in", csrfProtection(), credentialsValidator, async (c) => {
     const { email, password } = c.req.valid("json");
+    console.info("Email sign-in started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
+
     const result = await signInWithPassword(c.env.FIREBASE_API_KEY, email, password);
     if (result instanceof Error) {
+      console.warn("Email sign-in failed before session creation.", {
+        statusCode: result.statusCode,
+        message: result.message,
+      });
       return handleAuthError(
         new AuthError({
           message: result.message,
@@ -56,21 +65,36 @@ const auth = new Hono<{ Bindings: Bindings }>()
         c,
       );
     }
+    console.info("Email sign-in authenticated with Firebase.", {
+      firebaseId: maskUserId(result.localId),
+    });
+
     const sessionCookie = await createSessionCookie(result.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
+    console.info("Email sign-in session cookie created.", {
+      firebaseId: maskUserId(result.localId),
+    });
 
     const userRecord = await createUserRecord({ firebaseId: result.localId });
     if (userRecord instanceof Error) return handleAuthError(userRecord, c);
+    console.info("Email sign-in user record ensured.", { firebaseId: maskUserId(result.localId) });
 
     setSessionCookie(c, sessionCookie);
     const refreshCookie = await setRefreshTokenCookie(c, result.refreshToken);
     if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
+    console.info("Email sign-in completed.", { firebaseId: maskUserId(result.localId) });
     return c.json({ message: "Signed in successfully." }, 200);
   })
   .post("/api/auth/sign-up", csrfProtection(), credentialsValidator, async (c) => {
     const { email, password } = c.req.valid("json");
+    console.info("Email sign-up started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
+
     const signUpResult = await signUpWithPassword(c.env.FIREBASE_API_KEY, email, password);
     if (signUpResult instanceof Error) {
+      console.warn("Email sign-up failed before session creation.", {
+        statusCode: signUpResult.statusCode,
+        message: signUpResult.message,
+      });
       return handleAuthError(
         new AuthError({
           message: signUpResult.message,
@@ -81,16 +105,27 @@ const auth = new Hono<{ Bindings: Bindings }>()
         c,
       );
     }
+    console.info("Email sign-up created Firebase account.", {
+      firebaseId: maskUserId(signUpResult.localId),
+    });
+
     const sessionCookie = await createSessionCookie(signUpResult.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
+    console.info("Email sign-up session cookie created.", {
+      firebaseId: maskUserId(signUpResult.localId),
+    });
 
     // DB にユーザーレコード作成（firebase_id のみ、username は null）
     const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
     if (userRecord instanceof Error) return handleAuthError(userRecord, c);
+    console.info("Email sign-up user record created.", {
+      firebaseId: maskUserId(signUpResult.localId),
+    });
 
     setSessionCookie(c, sessionCookie);
     const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
     if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
+    console.info("Email sign-up completed.", { firebaseId: maskUserId(signUpResult.localId) });
     return c.json({ message: "Account created successfully." }, 201);
   })
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {

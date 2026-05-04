@@ -14,6 +14,13 @@ import {
 } from "./usecase";
 
 const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
+  console.warn("User route returned error.", {
+    path: c.req.path,
+    statusCode: error.statusCode,
+    message: error.message,
+    code: error.code,
+    cause: error.cause,
+  });
   return c.json({ message: error.message }, error.statusCode);
 };
 
@@ -22,10 +29,16 @@ const user = new Hono<{ Bindings: Bindings }>()
   .get("/api/user", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
     if (!session) {
+      console.warn("GET /api/user reached without auth session.");
       return c.json({ message: "You are not logged in." }, 401);
     }
+    console.info("GET /api/user started.", { hasEmail: Boolean(session.email) });
     const result = await getProfile(session);
     if (result instanceof Error) return handleUserError(result, c);
+    console.info("GET /api/user succeeded.", {
+      username: result.profile.username,
+      hasName: Boolean(result.profile.name),
+    });
     return c.json({ message: "You are logged in!", profile: result.profile }, 200);
   })
 
