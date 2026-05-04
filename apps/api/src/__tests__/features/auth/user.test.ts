@@ -220,6 +220,8 @@ describe("GET /api/user", () => {
     const where = vi.fn((_: unknown) => ({
       limit: vi.fn().mockResolvedValue([]),
     }));
+    // 前テストの mockReturnValue が残るのを防ぐためリセット
+    vi.mocked(createDb).mockReset();
     vi.mocked(createDb).mockReturnValue({
       select: vi.fn(() => ({
         from: vi.fn(() => ({

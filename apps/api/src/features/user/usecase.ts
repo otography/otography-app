@@ -120,10 +120,14 @@ export const getProfile = async (session: DecodedIdToken) => {
           const createdUser = await createUserRecord({ firebaseId: session.sub });
           if (createdUser instanceof Error) return createdUser;
 
-          console.info("Retrying profile fetch after user record creation.", {
+          // createUserRecord の .returning() で全カラム取得済みなので、
+          // selectCurrentUser（withRls 経由の RLS トランザクション）を再試行せず
+          // 直接その結果を使う。RLS トランザクションの失敗による 500 を回避する。
+          console.info("Using created user record directly.", {
             firebaseId: maskUserId(session.sub),
+            userId: createdUser.id,
           });
-          return await selectCurrentUser(session);
+          return [createdUser];
         })()
       : initialResult;
 
