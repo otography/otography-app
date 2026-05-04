@@ -101,7 +101,7 @@ describe("GET /api/user", () => {
                 id: "uuid-user",
                 firebaseId: "user123",
                 username: "test",
-                name: null,
+                name: "Test User",
                 bio: null,
                 birthplace: null,
                 birthyear: null,
@@ -131,14 +131,12 @@ describe("GET /api/user", () => {
     });
   });
 
-  it("returns 500 when withRls fails to resolve user UUID", async () => {
+  it("creates a missing user record and returns 404 when profile is not set up", async () => {
     mockVerifySessionCookie.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
     });
-    // withRls の UUID lookup が空 → RlsError → usecase が 500 にラップ
-    // ※ withRls 内で lookup が空の場合は RlsError を返す
-    vi.mocked(createDb).mockReturnValue({
+    vi.mocked(createDb).mockReturnValueOnce({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -147,14 +145,71 @@ describe("GET /api/user", () => {
         })),
       })),
     } as never);
+    vi.mocked(createDb).mockReturnValueOnce({
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "uuid-user",
+                firebaseId: "user123",
+                username: null,
+                name: null,
+                bio: null,
+                birthplace: null,
+                birthyear: null,
+                gender: null,
+                createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                deletedAt: null,
+              },
+            ]),
+          })),
+        })),
+      })),
+    } as never);
+    vi.mocked(createDb).mockReturnValueOnce({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+          })),
+        })),
+      })),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: "uuid-user",
+                    firebaseId: "user123",
+                    username: null,
+                    name: null,
+                    bio: null,
+                    birthplace: null,
+                    birthyear: null,
+                    gender: null,
+                    createdAt: new Date("2026-01-01T00:00:00.000Z"),
+                    updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+                    deletedAt: null,
+                  },
+                ]),
+              })),
+            })),
+          })),
+          execute: vi.fn().mockResolvedValue([]),
+        }),
+      ),
+    } as never);
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "valid-session" },
     });
 
-    // withRls が "User not found" エラー → usecase が 500 にラップ
-    expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to fetch user profile." });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ message: "Profile is not set up." });
   });
 
   it("filters out deleted users while resolving the RLS UUID", async () => {

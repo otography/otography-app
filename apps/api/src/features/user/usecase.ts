@@ -20,6 +20,14 @@ import {
 
 const USERS_USERNAME_KEY = "users_username_key";
 const USERS_BIRTHYEAR_CHECK = "users_birthyear_check";
+const USER_NOT_FOUND_IN_DATABASE = "User not found in database.";
+
+const isMissingDatabaseUser = (error: Error) => {
+  return (
+    (error as Error & { _tag?: string })._tag === "RlsError" &&
+    error.message === USER_NOT_FOUND_IN_DATABASE
+  );
+};
 
 const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
   if (isPostgresUniqueViolation(error, USERS_USERNAME_KEY)) {
@@ -74,7 +82,26 @@ export const createUserRecord = async (values: InsertUserValues) => {
 
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
-  const result = await selectCurrentUser(session);
+  const initialResult = await selectCurrentUser(session);
+  if (initialResult instanceof Error && !isMissingDatabaseUser(initialResult)) {
+    return new AuthError({
+      message: "Failed to fetch user profile.",
+      code: "db-error",
+      statusCode: 500,
+      cause: initialResult,
+    });
+  }
+
+  const result =
+    initialResult instanceof Error
+      ? await (async () => {
+          const createdUser = await createUserRecord({ firebaseId: session.sub });
+          if (createdUser instanceof Error) return createdUser;
+
+          return await selectCurrentUser(session);
+        })()
+      : initialResult;
+
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to fetch user profile.",
@@ -89,6 +116,14 @@ export const getProfile = async (session: DecodedIdToken) => {
     return new AuthError({
       message: "User record not found.",
       code: "user-not-found",
+      statusCode: 404,
+    });
+  }
+
+  if (!user.username || !user.name) {
+    return new AuthError({
+      message: "Profile is not set up.",
+      code: "profile-not-set-up",
       statusCode: 404,
     });
   }
