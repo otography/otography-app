@@ -18,18 +18,12 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
-// いいね情報取得をモック（posts usecaseが呼び出す）
-vi.mock("../../../features/post-likes/repository", () => ({
-  countLikesByPostIds: vi.fn().mockResolvedValue([]),
-  findUserLikesByPostIds: vi.fn().mockResolvedValue([]),
-}));
-
 import { createDb } from "../../../shared/db";
 import { getAuthSession } from "../../../shared/middleware";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   const methods = {
-    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "firebase-user-1" }])),
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "user-uuid-1" }])),
     ...txMethods,
   };
 
@@ -44,34 +38,48 @@ const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   } as never);
 };
 
+// サブクエリ + innerJoin パターンのモックビルダー
+// .select() → .from() はサブクエリ (.where().as()/.limit().as()) と
+// メインクエリ (.innerJoin().where().orderBy/limit()) の両方チェーンを返す
+const createSelectChainWithLikes = (resolvedValue: unknown) =>
+  vi.fn().mockReturnValue({
+    from: vi.fn(() => ({
+      where: vi.fn(() => ({
+        as: vi.fn(() => "subquery"),
+        limit: vi.fn().mockReturnValue({
+          as: vi.fn(() => "subquery"),
+        }),
+      })),
+      innerJoin: vi.fn(() => ({
+        where: vi.fn(() => ({
+          orderBy: vi.fn().mockResolvedValue(resolvedValue),
+          limit: vi.fn().mockResolvedValue(resolvedValue),
+        })),
+      })),
+    })),
+  });
+
 describe("posts endpoints", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("GET /api/posts returns posts list", async () => {
-    const select = vi.fn().mockReturnValue({
-      from: vi.fn(() => ({
-        innerJoin: vi.fn(() => ({
-          where: vi.fn(() => ({
-            orderBy: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                content: "Sample post",
-                author: { username: "testuser", name: "Test User" },
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222221" }]),
-          })),
-        })),
-      })),
+  it("GET /api/posts returns posts list with like info", async () => {
+    mockDbWithTransaction({
+      select: createSelectChainWithLikes([
+        {
+          id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
+          userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
+          songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
+          content: "Sample post",
+          author: { username: "testuser", name: "Test User" },
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          likeCount: 3,
+          isLiked: false,
+        },
+      ]),
     });
-
-    mockDbWithTransaction({ select });
 
     const res = await testRequest("/api/posts");
 
@@ -86,34 +94,28 @@ describe("posts endpoints", () => {
           author: { username: "testuser", name: "Test User" },
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
-          likeCount: 0,
+          likeCount: 3,
           isLiked: false,
         },
       ],
     });
   });
 
-  it("GET /api/posts/:id returns post", async () => {
+  it("GET /api/posts/:id returns post with like info", async () => {
     mockDbWithTransaction({
-      select: vi.fn(() => ({
-        from: vi.fn(() => ({
-          innerJoin: vi.fn(() => ({
-            where: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue([
-                {
-                  id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                  userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                  songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                  content: "Detail post",
-                  author: { username: "testuser", name: "Test User" },
-                  createdAt: "2026-01-01T00:00:00.000Z",
-                  updatedAt: "2026-01-01T00:00:00.000Z",
-                },
-              ]),
-            })),
-          })),
-        })),
-      })),
+      select: createSelectChainWithLikes([
+        {
+          id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
+          userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
+          songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
+          content: "Detail post",
+          author: { username: "testuser", name: "Test User" },
+          createdAt: "2026-01-01T00:00:00.000Z",
+          updatedAt: "2026-01-01T00:00:00.000Z",
+          likeCount: 5,
+          isLiked: true,
+        },
+      ]),
     });
 
     const res = await testRequest("/api/posts/6f648f36-5be1-4af1-bf5d-cf8ebf222222");
@@ -128,8 +130,8 @@ describe("posts endpoints", () => {
         author: { username: "testuser", name: "Test User" },
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
-        likeCount: 0,
-        isLiked: false,
+        likeCount: 5,
+        isLiked: true,
       },
     });
   });

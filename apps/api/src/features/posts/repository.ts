@@ -1,6 +1,6 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import { posts, userProfiles } from "../../shared/db/schema";
+import { postLikes, posts, userProfiles } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 const postColumns = {
@@ -17,11 +17,30 @@ const authorColumns = {
   name: userProfiles.name,
 } as const;
 
-export const listPosts = async (db: DatabaseOrTransaction) => {
+// いいね情報のスカラーサブクエリ（groupBy 不要、自己完結）
+const likeFields = (db: DatabaseOrTransaction, userId: string | null) => ({
+  likeCount: db
+    .select({ count: count().mapWith(Number) })
+    .from(postLikes)
+    .where(eq(postLikes.postId, posts.id))
+    .as("likeCount"),
+  isLiked: userId
+    ? db
+        .select({ value: sql<boolean>`true` })
+        .from(postLikes)
+        .where(and(eq(postLikes.postId, posts.id), eq(postLikes.userId, userId)))
+        .limit(1)
+        .as("isLiked")
+    : sql<boolean>`false`.as("isLiked"),
+});
+
+// 投稿一覧をいいね情報付きで1クエリで取得
+export const listPostsWithLikes = async (db: DatabaseOrTransaction, userId: string | null) => {
   return db
     .select({
       ...postColumns,
       author: authorColumns,
+      ...likeFields(db, userId),
     })
     .from(posts)
     .innerJoin(userProfiles, eq(posts.userId, userProfiles.id))
@@ -29,11 +48,17 @@ export const listPosts = async (db: DatabaseOrTransaction) => {
     .orderBy(desc(posts.createdAt));
 };
 
-export const findPostById = async (db: DatabaseOrTransaction, id: string) => {
+// 投稿詳細をいいね情報付きで1クエリで取得
+export const findPostByIdWithLikes = async (
+  db: DatabaseOrTransaction,
+  id: string,
+  userId: string | null,
+) => {
   const rows = await db
     .select({
       ...postColumns,
       author: authorColumns,
+      ...likeFields(db, userId),
     })
     .from(posts)
     .innerJoin(userProfiles, eq(posts.userId, userProfiles.id))
