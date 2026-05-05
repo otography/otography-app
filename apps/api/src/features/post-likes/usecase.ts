@@ -2,7 +2,8 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { withRls } from "../../shared/db/rls";
-import { countPostLikes, findActivePostById, togglePostLike } from "./repository";
+import { findActivePostById } from "../posts/repository";
+import { countPostLikes, togglePostLike } from "./repository";
 import type { ToggleLikeResponse } from "./model";
 
 // いいねトグル

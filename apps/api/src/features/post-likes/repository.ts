@@ -1,18 +1,7 @@
-import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
-import { posts, postLikes } from "../../shared/db/schema";
-
-// 投稿の存在確認（soft-deleted除外）
-export const findActivePostById = async (db: DatabaseOrTransaction, id: string) => {
-  const rows = await db
-    .select({ id: posts.id })
-    .from(posts)
-    .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
-    .limit(1);
-
-  return rows[0] ?? null;
-};
+import { postLikes } from "../../shared/db/schema";
 
 // いいねトグル（1クエリ: 同一user/postを直列化し、DELETE 0件ならINSERT）
 export const togglePostLike = async (

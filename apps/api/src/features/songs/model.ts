@@ -21,9 +21,3 @@ const songDbInsertSchema = createInsertSchema(songs, {
 }).pick("title", "appleMusicId", "length", "isrcs");
 
 export type SongDbValues = typeof songDbInsertSchema.infer;
-
-// DB挿入値 + Apple Music API由来の追加フィールド
-export type SongCreateDbValues = SongDbValues & {
-  genreNames: string[];
-  artists: { appleMusicId: string; name: string }[];
-};
