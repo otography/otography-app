@@ -98,7 +98,7 @@ describe("database schema", () => {
     expect(views).toEqual([{ security_invoker: "true" }]);
   });
 
-  it("resolves Firebase IDs only for active users from the anon role", async () => {
+  it("resolves Firebase IDs only for active users", async () => {
     const [activeUser] = await db
       .insert(users)
       .values({ firebaseId: "firebase-active-user" })
@@ -110,19 +110,16 @@ describe("database schema", () => {
 
     expect(activeUser).toBeDefined();
 
-    await db.transaction(async (tx) => {
-      await tx.execute(drizzleSql.raw("set local role anon"));
+    // アプリは postgres ロールのままトランザクション外で呼ぶ（withRls の resolveFirebaseId と同じパターン）
+    const activeResult = await db.execute<{ user_id: string | null }>(drizzleSql`
+      SELECT public.resolve_firebase_id('firebase-active-user') AS user_id
+    `);
+    const deletedResult = await db.execute<{ user_id: string | null }>(drizzleSql`
+      SELECT public.resolve_firebase_id('firebase-deleted-user') AS user_id
+    `);
 
-      const activeResult = await tx.execute<{ user_id: string | null }>(drizzleSql`
-        SELECT public.resolve_firebase_id('firebase-active-user') AS user_id
-      `);
-      const deletedResult = await tx.execute<{ user_id: string | null }>(drizzleSql`
-        SELECT public.resolve_firebase_id('firebase-deleted-user') AS user_id
-      `);
-
-      expect(activeResult).toEqual([{ user_id: activeUser!.id }]);
-      expect(deletedResult).toEqual([{ user_id: null }]);
-    });
+    expect(activeResult).toEqual([{ user_id: activeUser!.id }]);
+    expect(deletedResult).toEqual([{ user_id: null }]);
   });
 
   it("allows server-side user sync through a narrow definer function", async () => {
