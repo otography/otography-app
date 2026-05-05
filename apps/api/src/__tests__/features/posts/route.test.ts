@@ -24,6 +24,7 @@ import { getAuthSession } from "../../../shared/middleware";
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
   const methods = {
     execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "user-uuid-1" }])),
+    $count: vi.fn(() => "subquery"),
     ...txMethods,
   };
 

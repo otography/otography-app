@@ -1,4 +1,4 @@
-import { and, count, desc, eq, exists, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, exists, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { postLikes, posts, userProfiles } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
@@ -19,11 +19,7 @@ const authorColumns = {
 
 // いいね情報のスカラーサブクエリ（groupBy 不要、自己完結）
 const likeFields = (db: DatabaseOrTransaction, userId: string | null) => ({
-  likeCount: db
-    .select({ count: count().mapWith(Number).as("count") })
-    .from(postLikes)
-    .where(eq(postLikes.postId, posts.id))
-    .as("likeCount"),
+  likeCount: db.$count(postLikes, eq(postLikes.postId, posts.id)),
   isLiked: userId
     ? exists(
         db
