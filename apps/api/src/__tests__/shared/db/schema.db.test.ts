@@ -2,7 +2,7 @@ import { eq, sql as drizzleSql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
-import { findOrCreateArtists } from "../../../features/artists/repository";
+import { findOrCreateArtists } from "../../../features/songs/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db";
 import { isPostgresCheckViolation } from "../../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
