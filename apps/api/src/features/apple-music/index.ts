@@ -1,0 +1,1 @@
+export { appleMusic } from "./route";
