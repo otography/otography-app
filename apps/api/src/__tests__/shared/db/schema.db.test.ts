@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { findOrCreateArtists } from "../../../features/artists/repository";
+import { listPostsWithLikes, findPostByIdWithLikes } from "../../../features/posts/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db";
 import { isPostgresCheckViolation } from "../../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
@@ -11,6 +12,7 @@ import {
   favoriteArtists,
   favoriteSongs,
   genres,
+  postLikes,
   songArtists,
   songGenres,
   songs,
@@ -480,10 +482,14 @@ describe("database schema", () => {
         .returning({ id: songs.id });
 
       // postgres 権限で両ユーザーのお気に入りを作成
-      await db.insert(favoriteArtists).values({ userId: user1!.id, artistId: artist!.id });
-      await db.insert(favoriteArtists).values({ userId: user2!.id, artistId: artist!.id });
-      await db.insert(favoriteSongs).values({ userId: user1!.id, songId: song!.id });
-      await db.insert(favoriteSongs).values({ userId: user2!.id, songId: song!.id });
+      await db.insert(favoriteArtists).values([
+        { userId: user1!.id, artistId: artist!.id },
+        { userId: user2!.id, artistId: artist!.id },
+      ]);
+      await db.insert(favoriteSongs).values([
+        { userId: user1!.id, songId: song!.id },
+        { userId: user2!.id, songId: song!.id },
+      ]);
 
       // user1 として SELECT → 自分のだけ取得
       const favArtists = await db.transaction(async (tx) => {
@@ -530,6 +536,165 @@ describe("database schema", () => {
         tx.select({ content: posts.content }).from(posts),
       );
       expect(anonPosts).toEqual([{ content: "active post" }]);
+    });
+  });
+
+  describe("listPostsWithLikes / findPostByIdWithLikes", () => {
+    it("投稿一覧に post / author / like 情報がすべて含まれる", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-list-author", username: "listauthor", name: "List Author" })
+        .returning({ id: users.id });
+      const [liker] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-list-liker" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "List Song", appleMusicId: "am-list-song" })
+        .returning({ id: songs.id });
+
+      // postgres 権限で投稿作成
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${author!.id}, ${song!.id}, 'hello world')
+      `);
+      const [post] = await db.select({ id: posts.id }).from(posts);
+
+      // liker がいいね
+      await db.insert(postLikes).values({ userId: liker!.id, postId: post!.id });
+
+      // liker として取得 → isLiked: true, likeCount: 1
+      const rows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, liker!.id));
+      if (rows instanceof Error) throw rows;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({
+        id: post!.id,
+        userId: author!.id,
+        songId: song!.id,
+        content: "hello world",
+        author: { username: "listauthor", name: "List Author" },
+        likeCount: 1,
+        isLiked: true,
+      });
+
+      // 未ログイン (userId=null) → isLiked: false, likeCount: 1
+      const anonRows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, null));
+      if (anonRows instanceof Error) throw anonRows;
+      expect(anonRows).toHaveLength(1);
+      expect(anonRows[0]).toMatchObject({
+        likeCount: 1,
+        isLiked: false,
+      });
+    });
+
+    it("投稿詳細に post / author / like 情報がすべて含まれる", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({
+          firebaseId: "firebase-detail-author",
+          username: "detailauthor",
+          name: "Detail Author",
+        })
+        .returning({ id: users.id });
+      const [other] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-detail-other" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "Detail Song", appleMusicId: "am-detail-song" })
+        .returning({ id: songs.id });
+
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${author!.id}, ${song!.id}, 'detail content')
+      `);
+      const [post] = await db.select({ id: posts.id }).from(posts);
+
+      // 2人がいいね
+      await db.insert(postLikes).values([
+        { userId: author!.id, postId: post!.id },
+        { userId: other!.id, postId: post!.id },
+      ]);
+
+      // other として詳細取得
+      const result = await withAnonymousRole(db, (tx) =>
+        findPostByIdWithLikes(tx, post!.id, other!.id),
+      );
+      expect(result).toMatchObject({
+        id: post!.id,
+        userId: author!.id,
+        songId: song!.id,
+        content: "detail content",
+        author: { username: "detailauthor", name: "Detail Author" },
+        likeCount: 2,
+        isLiked: true,
+      });
+
+      // author はいいねしているので isLiked: true
+      const authorResult = await withAnonymousRole(db, (tx) =>
+        findPostByIdWithLikes(tx, post!.id, author!.id),
+      );
+      expect(authorResult).toMatchObject({ likeCount: 2, isLiked: true });
+
+      // 未ログイン → isLiked: false
+      const anonResult = await withAnonymousRole(db, (tx) =>
+        findPostByIdWithLikes(tx, post!.id, null),
+      );
+      expect(anonResult).toMatchObject({ likeCount: 2, isLiked: false });
+    });
+
+    it("いいねなしの投稿は likeCount=0, isLiked=false になる", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-nolike-author", username: "nolike", name: "NoLike" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "NoLike Song", appleMusicId: "am-nolike-song" })
+        .returning({ id: songs.id });
+
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${author!.id}, ${song!.id}, 'no likes yet')
+      `);
+      const [post] = await db.select({ id: posts.id }).from(posts);
+
+      const result = await withAnonymousRole(db, (tx) =>
+        findPostByIdWithLikes(tx, post!.id, author!.id),
+      );
+      expect(result).toMatchObject({
+        likeCount: 0,
+        isLiked: false,
+      });
+    });
+
+    it("soft-deleted 投稿は一覧にも詳細にも含まれない", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-deleted-author", username: "deleted", name: "Deleted" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "Deleted Song", appleMusicId: "am-deleted-song" })
+        .returning({ id: songs.id });
+
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content, deleted_at)
+        VALUES (${author!.id}, ${song!.id}, 'deleted post', now())
+      `);
+      const [deletedPost] = await db.select({ id: posts.id }).from(posts);
+
+      // 一覧
+      const rows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, null));
+      expect(rows).toHaveLength(0);
+
+      // 詳細
+      const result = await withAnonymousRole(db, (tx) =>
+        findPostByIdWithLikes(tx, deletedPost!.id, null),
+      );
+      expect(result).toBeNull();
     });
   });
 });
