@@ -9,7 +9,7 @@ let privateKeyPromise: ReturnType<typeof importPKCS8> | null = null;
 
 const getPrivateKey = () => {
   if (!privateKeyPromise) {
-    const rawKey = env.APPLE_MUSIC_PRIVATE_KEY;
+    const rawKey = env.APPLE_PRIVATE_KEY;
     const pemKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
     privateKeyPromise = importPKCS8(pemKey, "ES256");
   }
