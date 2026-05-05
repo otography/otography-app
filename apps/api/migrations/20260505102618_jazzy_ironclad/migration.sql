@@ -1,0 +1,4 @@
+ALTER POLICY "song_artists_select_all" ON "song_artists" RENAME TO "song_artists_select_active";--> statement-breakpoint
+ALTER POLICY "song_genres_select_all" ON "song_genres" RENAME TO "song_genres_select_active";--> statement-breakpoint
+ALTER POLICY "song_artists_select_active" ON "song_artists" TO "anon", "authenticated" USING (EXISTS (SELECT 1 FROM "songs" WHERE "songs"."id" = "song_artists"."song_id" AND "songs"."deleted_at" IS NULL) AND EXISTS (SELECT 1 FROM "artists" WHERE "artists"."id" = "song_artists"."artist_id" AND "artists"."deleted_at" IS NULL));--> statement-breakpoint
+ALTER POLICY "song_genres_select_active" ON "song_genres" TO "anon", "authenticated" USING (EXISTS (SELECT 1 FROM "songs" WHERE "songs"."id" = "song_genres"."song_id" AND "songs"."deleted_at" IS NULL) AND EXISTS (SELECT 1 FROM "genres" WHERE "genres"."id" = "song_genres"."genre_id" AND "genres"."deleted_at" IS NULL));

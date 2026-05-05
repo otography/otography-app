@@ -259,10 +259,10 @@ export const songArtists = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.songId, table.artistId] }),
     index("idx_song_artists_artist_id").on(table.artistId),
-    pgPolicy("song_artists_select_all", {
+    pgPolicy("song_artists_select_active", {
       for: "select",
       to: [anonRole, authenticatedRole],
-      using: sql`true`,
+      using: sql`EXISTS (SELECT 1 FROM ${songs} WHERE ${songs.id} = ${table.songId} AND ${songs.deletedAt} IS NULL) AND EXISTS (SELECT 1 FROM ${artists} WHERE ${artists.id} = ${table.artistId} AND ${artists.deletedAt} IS NULL)`,
     }),
     pgPolicy("song_artists_insert_authenticated", {
       for: "insert",
@@ -368,10 +368,10 @@ export const songGenres = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.songId, table.genreId] }),
     index("idx_song_genres_genre_id").on(table.genreId),
-    pgPolicy("song_genres_select_all", {
+    pgPolicy("song_genres_select_active", {
       for: "select",
       to: [anonRole, authenticatedRole],
-      using: sql`true`,
+      using: sql`EXISTS (SELECT 1 FROM ${songs} WHERE ${songs.id} = ${table.songId} AND ${songs.deletedAt} IS NULL) AND EXISTS (SELECT 1 FROM ${genres} WHERE ${genres.id} = ${table.genreId} AND ${genres.deletedAt} IS NULL)`,
     }),
     pgPolicy("song_genres_insert_authenticated", {
       for: "insert",
