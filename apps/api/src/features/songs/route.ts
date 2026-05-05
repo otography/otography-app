@@ -5,7 +5,7 @@ import type { Context } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
-import { songCreateBodySchema, songSyncBodySchema } from "./model";
+import { songCreateBodySchema } from "./model";
 import { getSong, getSongs, registerSong, syncSong } from "./usecase";
 
 const handleSongError = (error: DbError, c: Context<{ Bindings: Bindings }>) => {
@@ -25,12 +25,6 @@ const songIdParamSchema = type({
 const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (result, c) => {
   if (!result.success) {
     return c.json({ message: "Please provide a valid song id." }, 400);
-  }
-});
-
-const songSyncValidator = arktypeValidator("json", songSyncBodySchema, (result, c) => {
-  if (!result.success) {
-    return c.json({ message: "Please provide a valid song payload." }, 400);
   }
 });
 
@@ -61,7 +55,6 @@ const songs = new Hono<{ Bindings: Bindings }>()
     csrfProtection(),
     requireAuthMiddleware(),
     songIdParamValidator,
-    songSyncValidator,
     async (c) => {
       const { id } = c.req.valid("param");
       const result = await syncSong(id);

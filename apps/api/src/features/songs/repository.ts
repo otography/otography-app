@@ -105,25 +105,25 @@ const replaceSongArtists = async (
 };
 
 export const createSongFull = async (
-  db: DatabaseOrTransaction,
+  tx: DatabaseTransaction,
   {
     songValues,
     artistIds,
     genreNames,
   }: { songValues: SongDbValues; artistIds: string[]; genreNames: string[] },
 ) => {
-  const rows = await db.insert(songs).values(songValues).returning(songColumns);
+  const rows = await tx.insert(songs).values(songValues).returning(songColumns);
   const [song] = rows;
   if (!song) return null;
 
-  await addSongArtists(db, song.id, artistIds);
-  await addSongGenres(db, song.id, genreNames);
+  await addSongArtists(tx, song.id, artistIds);
+  await addSongGenres(tx, song.id, genreNames);
 
   return song;
 };
 
 export const updateSongFull = async (
-  db: DatabaseOrTransaction,
+  tx: DatabaseTransaction,
   {
     id,
     songValues,
@@ -131,7 +131,7 @@ export const updateSongFull = async (
     genreNames,
   }: { id: string; songValues: SongDbValues; artistIds: string[]; genreNames: string[] },
 ) => {
-  const rows = await db
+  const rows = await tx
     .update(songs)
     .set({
       title: songValues.title,
@@ -144,8 +144,8 @@ export const updateSongFull = async (
   const song = rows[0] ?? null;
   if (!song) return null;
 
-  await replaceSongArtists(db, id, artistIds);
-  await replaceSongGenres(db, id, genreNames);
+  await replaceSongArtists(tx, id, artistIds);
+  await replaceSongGenres(tx, id, genreNames);
 
   return song;
 };
