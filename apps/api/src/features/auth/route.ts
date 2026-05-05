@@ -9,6 +9,7 @@ import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/
 import { csrfProtection, getAuthSession } from "../../shared/middleware";
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
+import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
 import type { Bindings } from "../../shared/types/bindings";
 import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
@@ -29,12 +30,9 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
   }
 });
 
-const maskUserId = (value: string) =>
-  value.length <= 8 ? "[short-id]" : `${value.slice(0, 4)}...${value.slice(-4)}`;
-
 const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings: Bindings }>) => {
   if (error.statusCode >= 500) {
-    console.error("Auth request failed:", error);
+    console.error("Auth request failed.", errorLogFields(error));
   }
 
   if ("clearCookie" in error && error.clearCookie) {
@@ -66,23 +64,25 @@ const auth = new Hono<{ Bindings: Bindings }>()
       );
     }
     console.info("Email sign-in authenticated with Firebase.", {
-      firebaseId: maskUserId(result.localId),
+      firebaseId: maskIdentifier(result.localId),
     });
 
     const sessionCookie = await createSessionCookie(result.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     console.info("Email sign-in session cookie created.", {
-      firebaseId: maskUserId(result.localId),
+      firebaseId: maskIdentifier(result.localId),
     });
 
     const userRecord = await createUserRecord({ firebaseId: result.localId });
     if (userRecord instanceof Error) return handleAuthError(userRecord, c);
-    console.info("Email sign-in user record ensured.", { firebaseId: maskUserId(result.localId) });
+    console.info("Email sign-in user record ensured.", {
+      firebaseId: maskIdentifier(result.localId),
+    });
 
     setSessionCookie(c, sessionCookie);
     const refreshCookie = await setRefreshTokenCookie(c, result.refreshToken);
     if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
-    console.info("Email sign-in completed.", { firebaseId: maskUserId(result.localId) });
+    console.info("Email sign-in completed.", { firebaseId: maskIdentifier(result.localId) });
     return c.json({ message: "Signed in successfully." }, 200);
   })
   .post("/api/auth/sign-up", csrfProtection(), credentialsValidator, async (c) => {
@@ -106,26 +106,26 @@ const auth = new Hono<{ Bindings: Bindings }>()
       );
     }
     console.info("Email sign-up created Firebase account.", {
-      firebaseId: maskUserId(signUpResult.localId),
+      firebaseId: maskIdentifier(signUpResult.localId),
     });
 
     const sessionCookie = await createSessionCookie(signUpResult.idToken);
     if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
     console.info("Email sign-up session cookie created.", {
-      firebaseId: maskUserId(signUpResult.localId),
+      firebaseId: maskIdentifier(signUpResult.localId),
     });
 
     // DB にユーザーレコード作成（firebase_id のみ、username は null）
     const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
     if (userRecord instanceof Error) return handleAuthError(userRecord, c);
     console.info("Email sign-up user record created.", {
-      firebaseId: maskUserId(signUpResult.localId),
+      firebaseId: maskIdentifier(signUpResult.localId),
     });
 
     setSessionCookie(c, sessionCookie);
     const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
     if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
-    console.info("Email sign-up completed.", { firebaseId: maskUserId(signUpResult.localId) });
+    console.info("Email sign-up completed.", { firebaseId: maskIdentifier(signUpResult.localId) });
     return c.json({ message: "Account created successfully." }, 201);
   })
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {

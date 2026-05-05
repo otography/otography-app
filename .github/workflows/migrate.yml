@@ -3,6 +3,9 @@ name: Database Migration
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - "apps/api/migrations/**"
+      - "apps/api/drizzle.config.ts"
   push:
     branches: [main]
     paths:
@@ -42,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: preview
     concurrency:
-      group: preview-database-migration
+      group: preview-database-migration-${{ github.event.pull_request.number }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6

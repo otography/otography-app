@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
 import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
+import { errorLogFields } from "../../shared/logging/redaction";
 import type { Bindings } from "../../shared/types/bindings";
 import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
 import {
@@ -16,10 +17,7 @@ import {
 const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
   console.warn("User route returned error.", {
     path: c.req.path,
-    statusCode: error.statusCode,
-    message: error.message,
-    code: error.code,
-    cause: error.cause,
+    ...errorLogFields(error),
   });
   return c.json({ message: error.message }, error.statusCode);
 };
@@ -36,7 +34,6 @@ const user = new Hono<{ Bindings: Bindings }>()
     const result = await getProfile(session);
     if (result instanceof Error) return handleUserError(result, c);
     console.info("GET /api/user succeeded.", {
-      username: result.profile.username,
       hasName: Boolean(result.profile.name),
     });
     return c.json({ message: "You are logged in!", profile: result.profile }, 200);

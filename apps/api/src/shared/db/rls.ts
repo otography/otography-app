@@ -1,7 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { RlsError } from "@repo/errors";
-import { createDb, type DatabaseTransaction } from "./index";
+import { createDb, type DatabaseOrTransaction, type DatabaseTransaction } from "./index";
 
 const abortRlsTransaction = (error: RlsError): never => {
   throw error;
@@ -34,8 +34,10 @@ const setupAnonymousRole = async (tx: DatabaseTransaction) => {
 };
 
 // SECURITY DEFINER 関数経由で Firebase ID → UUID 解決（postgres 権限で実行）
-const resolveFirebaseId = async (firebaseId: string): Promise<string | RlsError> => {
-  const db = createDb();
+const resolveFirebaseId = async (
+  db: DatabaseOrTransaction,
+  firebaseId: string,
+): Promise<string | RlsError> => {
   const result = await db
     .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
     .catch((e) => new RlsError({ message: "Failed to resolve Firebase ID to UUID.", cause: e }));
@@ -91,15 +93,14 @@ export async function withRls<T>(
     return new RlsError({ message: "Missing user identifier in session." });
   }
 
-  // SECURITY DEFINER 関数で Firebase ID → UUID 解決
-  const userId = await resolveFirebaseId(firebaseId);
-  if (userId instanceof Error) return userId;
-
-  const jwtClaims = JSON.stringify({ sub: userId });
   const db = createDb();
+  // SECURITY DEFINER 関数で Firebase ID → UUID 解決
+  const userId = await resolveFirebaseId(db, firebaseId);
+  if (userId instanceof Error) return userId;
 
   const result = await db
     .transaction(async (tx) => {
+      const jwtClaims = JSON.stringify({ sub: userId });
       const setupResult = await setupRlsTransaction(tx, jwtClaims);
       if (setupResult instanceof Error) abortRlsTransaction(setupResult);
 

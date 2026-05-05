@@ -17,13 +17,11 @@ import {
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
+import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
 
 const USERS_USERNAME_KEY = "users_username_key";
 const USERS_BIRTHYEAR_CHECK = "users_birthyear_check";
 const USER_NOT_FOUND_IN_DATABASE = "User not found in database.";
-
-const maskUserId = (value: string) =>
-  value.length <= 8 ? "[short-id]" : `${value.slice(0, 4)}...${value.slice(-4)}`;
 
 const isMissingDatabaseUser = (error: Error) => {
   return (
@@ -61,7 +59,7 @@ const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
 
 // サインアップ時にユーザーレコードを作成
 export const createUserRecord = async (values: InsertUserValues) => {
-  console.info("Creating user record.", { firebaseId: maskUserId(values.firebaseId) });
+  console.info("Creating user record.", { firebaseId: maskIdentifier(values.firebaseId) });
 
   const result = await insertUser(values).catch(
     (e) =>
@@ -73,7 +71,7 @@ export const createUserRecord = async (values: InsertUserValues) => {
       }),
   );
   if (result instanceof AuthError) {
-    console.error("User record creation failed.", result);
+    console.error("User record creation failed.", errorLogFields(result));
     return result;
   }
   if (result instanceof Error) {
@@ -83,14 +81,14 @@ export const createUserRecord = async (values: InsertUserValues) => {
       statusCode: 500,
       cause: result,
     });
-    console.error("User record creation failed.", error);
+    console.error("User record creation failed.", errorLogFields(error));
     return error;
   }
 
   const [user] = result;
   if (!user) {
     console.error("User record creation returned no rows.", {
-      firebaseId: maskUserId(values.firebaseId),
+      firebaseId: maskIdentifier(values.firebaseId),
     });
     return new AuthError({
       message: "Failed to create user record.",
@@ -99,8 +97,8 @@ export const createUserRecord = async (values: InsertUserValues) => {
     });
   }
   console.info("User record creation succeeded.", {
-    firebaseId: maskUserId(values.firebaseId),
-    userId: user.id,
+    firebaseId: maskIdentifier(values.firebaseId),
+    userId: maskIdentifier(user.id),
     hasProfile: Boolean(user.username && user.name),
   });
   return user;
@@ -108,11 +106,11 @@ export const createUserRecord = async (values: InsertUserValues) => {
 
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken) => {
-  console.info("Fetching current user profile.", { firebaseId: maskUserId(session.sub) });
+  console.info("Fetching current user profile.", { firebaseId: maskIdentifier(session.sub) });
 
   const initialResult = await selectCurrentUser(session);
   if (initialResult instanceof Error && !isMissingDatabaseUser(initialResult)) {
-    console.error("Initial profile fetch failed.", initialResult);
+    console.error("Initial profile fetch failed.", errorLogFields(initialResult));
     return new AuthError({
       message: "Failed to fetch user profile.",
       code: "db-error",
@@ -125,7 +123,7 @@ export const getProfile = async (session: DecodedIdToken) => {
     initialResult instanceof Error
       ? await (async () => {
           console.warn("Database user missing during profile fetch; creating it.", {
-            firebaseId: maskUserId(session.sub),
+            firebaseId: maskIdentifier(session.sub),
           });
           const createdUser = await createUserRecord({ firebaseId: session.sub });
           if (createdUser instanceof Error) return createdUser;
@@ -134,15 +132,15 @@ export const getProfile = async (session: DecodedIdToken) => {
           // selectCurrentUser（withRls 経由の RLS トランザクション）を再試行せず
           // 直接その結果を使う。RLS トランザクションの失敗による 500 を回避する。
           console.info("Using created user record directly.", {
-            firebaseId: maskUserId(session.sub),
-            userId: createdUser.id,
+            firebaseId: maskIdentifier(session.sub),
+            userId: maskIdentifier(createdUser.id),
           });
           return [createdUser];
         })()
       : initialResult;
 
   if (result instanceof Error) {
-    console.error("Profile fetch failed after self-heal.", result);
+    console.error("Profile fetch failed after self-heal.", errorLogFields(result));
     return new AuthError({
       message: "Failed to fetch user profile.",
       code: "db-error",
@@ -153,7 +151,9 @@ export const getProfile = async (session: DecodedIdToken) => {
 
   const [user] = result;
   if (!user) {
-    console.warn("Profile fetch returned no user row.", { firebaseId: maskUserId(session.sub) });
+    console.warn("Profile fetch returned no user row.", {
+      firebaseId: maskIdentifier(session.sub),
+    });
     return new AuthError({
       message: "User record not found.",
       code: "user-not-found",
@@ -163,8 +163,8 @@ export const getProfile = async (session: DecodedIdToken) => {
 
   if (!user.username || !user.name) {
     console.info("Profile is not set up.", {
-      firebaseId: maskUserId(session.sub),
-      userId: user.id,
+      firebaseId: maskIdentifier(session.sub),
+      userId: maskIdentifier(user.id),
       hasUsername: Boolean(user.username),
       hasName: Boolean(user.name),
     });

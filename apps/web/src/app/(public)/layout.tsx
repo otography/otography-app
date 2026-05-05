@@ -15,6 +15,5 @@ export default async function PublicLayout({ children }: { children: React.React
   if (result instanceof NoProfileError) redirect("/setup-profile");
   if (result instanceof UnauthenticatedError) return <>{children}</>;
 
-  console.warn("Failed to resolve current user on public route:", result);
-  return <>{children}</>;
+  throw result;
 }

@@ -11,23 +11,18 @@ import { getCurrentUser } from "./current-user";
  *    呼び出してもAPI呼び出しは1回のみ。
  */
 export async function requireAuth() {
-  console.info("requireAuth started.");
   const result = await getCurrentUser();
 
   if (result instanceof UnauthenticatedError) {
-    console.info("requireAuth redirecting to /login.");
     redirect("/login");
   }
   if (result instanceof NoProfileError) {
-    console.info("requireAuth redirecting to /setup-profile.");
     redirect("/setup-profile");
   }
   if (result instanceof Error) {
-    console.error("requireAuth throwing unexpected error.", result);
     throw result;
   }
 
-  console.info("requireAuth succeeded.");
   return result;
 }
 
@@ -36,21 +31,16 @@ export async function requireAuth() {
  * 未認証 → /login、プロフィール既存 → /account へリダイレクト。
  */
 export async function requireNoProfile() {
-  console.info("requireNoProfile started.");
   const result = await getCurrentUser();
 
   if (result instanceof UnauthenticatedError) {
-    console.info("requireNoProfile redirecting to /login.");
     redirect("/login");
   }
   if (result instanceof Error && !(result instanceof NoProfileError)) {
-    console.error("requireNoProfile throwing unexpected error.", result);
     throw result;
   }
   // NoProfileError = 期待される状態 → そのまま表示
   if (!(result instanceof Error)) {
-    console.info("requireNoProfile redirecting to /account.");
     redirect("/account");
   }
-  console.info("requireNoProfile allowing setup-profile render.");
 }
