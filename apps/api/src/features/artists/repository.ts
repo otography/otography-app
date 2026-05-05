@@ -1,6 +1,6 @@
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
-import type { DatabaseOrTransaction } from "../../shared/db";
+import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
 
 const artistColumns = {
@@ -64,4 +64,66 @@ export const softDeleteArtistById = async (db: DatabaseOrTransaction, id: string
     .returning({ id: artists.id });
 
   return rows[0] ?? null;
+};
+
+// appleMusicId でアーティストを検索（soft-deleted 除外）
+const artistLookupColumns = {
+  id: artists.id,
+  name: artists.name,
+  appleMusicId: artists.appleMusicId,
+} as const;
+
+export const findArtistByAppleMusicId = async (tx: DatabaseTransaction, appleMusicId: string) => {
+  const rows = await tx
+    .select(artistLookupColumns)
+    .from(artists)
+    .where(and(eq(artists.appleMusicId, appleMusicId), isNull(artists.deletedAt)))
+    .limit(1);
+  return rows[0] ?? null;
+};
+
+// アーティストを新規作成（Apple Music API から取得した情報を使用）
+export const createArtistFromAppleMusic = async (
+  tx: DatabaseTransaction,
+  appleMusicId: string,
+  name: string,
+) => {
+  return tx
+    .insert(artists)
+    .values({ name, appleMusicId })
+    .onConflictDoUpdate({
+      target: artists.appleMusicId,
+      set: {
+        name,
+        deletedAt: null,
+        updatedAt: sql`now()`,
+      },
+    })
+    .returning(artistLookupColumns);
+};
+
+// アーティストをバッチで find-or-create し、DB上のID配列を返す
+export const findOrCreateArtists = async (
+  db: DatabaseOrTransaction,
+  artistEntries: { appleMusicId: string; name: string }[],
+) => {
+  if (artistEntries.length === 0) return [];
+
+  // 未登録アーティストを一括 INSERT
+  const newArtists = artistEntries.filter((a) => a.name);
+  if (newArtists.length > 0) {
+    await db
+      .insert(artists)
+      .values(newArtists.map((a) => ({ name: a.name, appleMusicId: a.appleMusicId })))
+      .onConflictDoNothing({ target: artists.appleMusicId });
+  }
+
+  // 全アーティストの Apple Music ID で一括 SELECT
+  const appleMusicIds = artistEntries.map((a) => a.appleMusicId);
+  const found = await db
+    .select({ id: artists.id })
+    .from(artists)
+    .where(inArray(artists.appleMusicId, appleMusicIds));
+
+  return found.map((r) => r.id);
 };

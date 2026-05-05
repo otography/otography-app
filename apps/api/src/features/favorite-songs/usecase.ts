@@ -5,11 +5,10 @@ import { fetchSong } from "../../shared/apple-music";
 import { createDb } from "../../shared/db";
 import { songs } from "../../shared/db/schema";
 import { withRls } from "../../shared/db/rls";
+import { findSongByAppleMusicId, createSongFromAppleMusic } from "../songs/repository";
 import {
   addFavoriteSong,
-  removeFavoriteSongByAppleMusicId,
-  findSongByAppleMusicId,
-  createSongFromAppleMusic,
+  removeFavoriteSong,
   listFavoriteSongs,
   listFavoriteSongsPublic,
 } from "./repository";
@@ -145,7 +144,10 @@ export const registerFavoriteSong = async (
 export const deleteFavoriteSong = async (session: DecodedIdToken, appleMusicId: string) => {
   const db = createDb();
   const result = await withRls(db, session, async (tx, userId) => {
-    return removeFavoriteSongByAppleMusicId(tx, userId, appleMusicId);
+    const song = await findSongByAppleMusicId(tx, appleMusicId);
+    if (!song) return [];
+
+    return removeFavoriteSong(tx, userId, song.id);
   });
 
   if (result instanceof Error) {

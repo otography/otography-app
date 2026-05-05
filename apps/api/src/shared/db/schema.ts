@@ -319,7 +319,6 @@ export const groupSongs = pgTable.withRLS(
   ],
 );
 
-/** @db-schema */
 export const genres = pgTable.withRLS(
   "genres",
   {
@@ -353,7 +352,6 @@ export const genres = pgTable.withRLS(
   ],
 );
 
-/** @db-schema */
 export const songGenres = pgTable.withRLS(
   "song_genres",
   {

@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
   fetchSong: vi.fn(),
   findSongByAppleMusicId: vi.fn(),
   listFavoriteSongs: vi.fn(),
-  removeFavoriteSongByAppleMusicId: vi.fn(),
+  removeFavoriteSong: vi.fn(),
   withRls: vi.fn(),
 }));
 
@@ -27,10 +27,13 @@ vi.mock("../../../shared/apple-music", () => ({
 
 vi.mock("../../../features/favorite-songs/repository", () => ({
   addFavoriteSong: mocks.addFavoriteSong,
+  listFavoriteSongs: mocks.listFavoriteSongs,
+  removeFavoriteSong: mocks.removeFavoriteSong,
+}));
+
+vi.mock("../../../features/songs/repository", () => ({
   createSongFromAppleMusic: mocks.createSongFromAppleMusic,
   findSongByAppleMusicId: mocks.findSongByAppleMusicId,
-  listFavoriteSongs: mocks.listFavoriteSongs,
-  removeFavoriteSongByAppleMusicId: mocks.removeFavoriteSongByAppleMusicId,
 }));
 
 import {
@@ -253,20 +256,18 @@ describe("favorite songs usecase", () => {
 
   describe("deleteFavoriteSong", () => {
     it("returns deleted true when the repository removes a favorite", async () => {
-      mocks.removeFavoriteSongByAppleMusicId.mockResolvedValue([{ songId: "song-id" }]);
+      mocks.findSongByAppleMusicId.mockResolvedValue({ id: "song-id" });
+      mocks.removeFavoriteSong.mockResolvedValue([{ songId: "song-id" }]);
 
       const result = await deleteFavoriteSong(session, "apple-music-song-id");
 
       expect(result).toEqual({ deleted: true });
-      expect(mocks.removeFavoriteSongByAppleMusicId).toHaveBeenCalledWith(
-        tx,
-        "user-id",
-        "apple-music-song-id",
-      );
+      expect(mocks.findSongByAppleMusicId).toHaveBeenCalledWith(tx, "apple-music-song-id");
+      expect(mocks.removeFavoriteSong).toHaveBeenCalledWith(tx, "user-id", "song-id");
     });
 
     it("returns 404 when there is no favorite to remove", async () => {
-      mocks.removeFavoriteSongByAppleMusicId.mockResolvedValue([]);
+      mocks.findSongByAppleMusicId.mockResolvedValue(null);
 
       const result = await deleteFavoriteSong(session, "apple-music-song-id");
 

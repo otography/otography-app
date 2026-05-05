@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
-import type { DatabaseOrTransaction } from "../../shared/db";
-import { artists, genres, songArtists, songGenres, songs } from "../../shared/db/schema";
-import type { SongCreateDbValues } from "./model";
+import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
+import { genres, songArtists, songGenres, songs } from "../../shared/db/schema";
+import type { SongDbValues } from "./model";
 
 const songColumns = {
   id: songs.id,
@@ -38,8 +38,27 @@ const findOrCreateGenreIds = async (db: DatabaseOrTransaction, genreNames: strin
   return found.map((r) => r.id);
 };
 
+// song_genres の紐付けを追加
+const addSongGenres = async (db: DatabaseOrTransaction, songId: string, genreNames: string[]) => {
+  if (genreNames.length === 0) return;
+
+  const genreIds = await findOrCreateGenreIds(db, genreNames);
+  if (genreIds.length > 0) {
+    await db.insert(songGenres).values(
+      genreIds.map((genreId) => ({
+        songId,
+        genreId,
+      })),
+    );
+  }
+};
+
 // song_genres の紐付けを全置換
-const syncSongGenres = async (db: DatabaseOrTransaction, songId: string, genreNames: string[]) => {
+const replaceSongGenres = async (
+  db: DatabaseOrTransaction,
+  songId: string,
+  genreNames: string[],
+) => {
   await db.delete(songGenres).where(eq(songGenres.songId, songId));
   if (genreNames.length === 0) return;
 
@@ -54,8 +73,25 @@ const syncSongGenres = async (db: DatabaseOrTransaction, songId: string, genreNa
   }
 };
 
+// song_artists の紐付けを追加
+const addSongArtists = async (db: DatabaseOrTransaction, songId: string, artistIds: string[]) => {
+  if (artistIds.length === 0) return;
+
+  await db.insert(songArtists).values(
+    artistIds.map((artistId) => ({
+      songId,
+      artistId,
+      isGuest: false,
+    })),
+  );
+};
+
 // song_artists の紐付けを全置換
-const syncSongArtists = async (db: DatabaseOrTransaction, songId: string, artistIds: string[]) => {
+const replaceSongArtists = async (
+  db: DatabaseOrTransaction,
+  songId: string,
+  artistIds: string[],
+) => {
   await db.delete(songArtists).where(eq(songArtists.songId, songId));
   if (artistIds.length === 0) return;
 
@@ -70,26 +106,31 @@ const syncSongArtists = async (db: DatabaseOrTransaction, songId: string, artist
 
 export const createSongFull = async (
   db: DatabaseOrTransaction,
-  { values, artistIds }: { values: SongCreateDbValues; artistIds: string[] },
+  {
+    songValues,
+    artistIds,
+    genreNames,
+  }: { songValues: SongDbValues; artistIds: string[]; genreNames: string[] },
 ) => {
-  const { genreNames, artists: _, ...songValues } = values;
-
   const rows = await db.insert(songs).values(songValues).returning(songColumns);
   const [song] = rows;
   if (!song) return null;
 
-  await syncSongArtists(db, song.id, artistIds);
-  await syncSongGenres(db, song.id, genreNames);
+  await addSongArtists(db, song.id, artistIds);
+  await addSongGenres(db, song.id, genreNames);
 
   return song;
 };
 
 export const updateSongFull = async (
   db: DatabaseOrTransaction,
-  { id, values, artistIds }: { id: string; values: SongCreateDbValues; artistIds: string[] },
+  {
+    id,
+    songValues,
+    artistIds,
+    genreNames,
+  }: { id: string; songValues: SongDbValues; artistIds: string[]; genreNames: string[] },
 ) => {
-  const { genreNames, artists: _, ...songValues } = values;
-
   const rows = await db
     .update(songs)
     .set({
@@ -103,8 +144,8 @@ export const updateSongFull = async (
   const song = rows[0] ?? null;
   if (!song) return null;
 
-  await syncSongArtists(db, id, artistIds);
-  await syncSongGenres(db, id, genreNames);
+  await replaceSongArtists(db, id, artistIds);
+  await replaceSongGenres(db, id, genreNames);
 
   return song;
 };
@@ -118,28 +159,50 @@ export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
-// アーティストをバッチで find-or-create し、DB上のID配列を返す
-export const findOrCreateArtists = async (
-  db: DatabaseOrTransaction,
-  artistEntries: { appleMusicId: string; name: string }[],
+// appleMusicId で楽曲を検索（soft-deleted 除外）
+export const findSongByAppleMusicId = async (tx: DatabaseTransaction, appleMusicId: string) => {
+  const rows = await tx
+    .select(songColumns)
+    .from(songs)
+    .where(and(eq(songs.appleMusicId, appleMusicId), isNull(songs.deletedAt)))
+    .limit(1);
+  return rows[0] ?? null;
+};
+
+// 楽曲を新規作成（Apple Music API から取得した情報を使用）
+export const createSongFromAppleMusic = async (
+  tx: DatabaseTransaction,
+  appleMusicId: string,
+  title: string,
+  durationInMillis?: number,
+  isrc?: string,
 ) => {
-  if (artistEntries.length === 0) return [];
+  return tx
+    .insert(songs)
+    .values({
+      title,
+      appleMusicId,
+      length: durationInMillis != null ? Math.round(durationInMillis / 1000) : undefined,
+      isrcs: isrc,
+    })
+    .onConflictDoUpdate({
+      target: songs.appleMusicId,
+      set: {
+        title,
+        deletedAt: null,
+        updatedAt: sql`now()`,
+      },
+    })
+    .returning(songColumns);
+};
 
-  // 未登録アーティストを一括 INSERT
-  const newArtists = artistEntries.filter((a) => a.name);
-  if (newArtists.length > 0) {
-    await db
-      .insert(artists)
-      .values(newArtists.map((a) => ({ name: a.name, appleMusicId: a.appleMusicId })))
-      .onConflictDoNothing({ target: artists.appleMusicId });
-  }
+// 楽曲の存在確認（soft-deleted除外）
+export const findActiveSongById = async (db: DatabaseOrTransaction, id: string) => {
+  const rows = await db
+    .select({ id: songs.id })
+    .from(songs)
+    .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
+    .limit(1);
 
-  // 全アーティストの Apple Music ID で一括 SELECT
-  const appleMusicIds = artistEntries.map((a) => a.appleMusicId);
-  const found = await db
-    .select({ id: artists.id })
-    .from(artists)
-    .where(inArray(artists.appleMusicId, appleMusicIds));
-
-  return found.map((r) => r.id);
+  return rows[0] ?? null;
 };

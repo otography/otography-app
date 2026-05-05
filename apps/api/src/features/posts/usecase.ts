@@ -4,9 +4,9 @@ import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import { countLikesByPostIds, findUserLikesByPostIds } from "../post-likes/repository";
+import { findActiveSongById } from "../songs/repository";
 import {
   createPost,
-  findActiveSongById,
   findPostById,
   listPosts,
   softDeletePostById,

@@ -1,4 +1,4 @@
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { artists, favoriteArtists } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
@@ -65,18 +65,15 @@ export const addFavoriteArtist = async (
   return result;
 };
 
-// お気に入りアーティスト削除（appleMusicId 指定）
-export const removeFavoriteArtistByAppleMusicId = async (
+// お気に入りアーティスト削除（artistId 指定）
+export const removeFavoriteArtist = async (
   tx: DatabaseTransaction,
   userId: string,
-  appleMusicId: string,
+  artistId: string,
 ) => {
-  const artist = await findArtistByAppleMusicId(tx, appleMusicId);
-  if (!artist) return [];
-
   return tx
     .delete(favoriteArtists)
-    .where(and(eq(favoriteArtists.userId, userId), eq(favoriteArtists.artistId, artist.id)))
+    .where(and(eq(favoriteArtists.userId, userId), eq(favoriteArtists.artistId, artistId)))
     .returning({ artistId: favoriteArtists.artistId });
 };
 
@@ -90,34 +87,4 @@ export const listFavoriteArtistsPublic = async (db: DatabaseOrTransaction, userI
     .from(favoriteArtists)
     .innerJoin(artists, and(eq(favoriteArtists.artistId, artists.id), isNull(artists.deletedAt)))
     .where(eq(favoriteArtists.userId, userId));
-};
-
-// appleMusicId でアーティストを検索（soft-deleted 除外）
-export const findArtistByAppleMusicId = async (tx: DatabaseTransaction, appleMusicId: string) => {
-  const rows = await tx
-    .select(artistColumns)
-    .from(artists)
-    .where(and(eq(artists.appleMusicId, appleMusicId), isNull(artists.deletedAt)))
-    .limit(1);
-  return rows[0] ?? null;
-};
-
-// アーティストを新規作成（Apple Music API から取得した情報を使用）
-export const createArtistFromAppleMusic = async (
-  tx: DatabaseTransaction,
-  appleMusicId: string,
-  name: string,
-) => {
-  return tx
-    .insert(artists)
-    .values({ name, appleMusicId })
-    .onConflictDoUpdate({
-      target: artists.appleMusicId,
-      set: {
-        name,
-        deletedAt: null,
-        updatedAt: sql`now()`,
-      },
-    })
-    .returning(artistColumns);
 };

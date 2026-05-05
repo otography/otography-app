@@ -3,14 +3,9 @@ import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong } from "../../shared/apple-music";
+import { findOrCreateArtists } from "../artists/repository";
 import type { SongCreateBody } from "./model";
-import {
-  createSongFull,
-  findOrCreateArtists,
-  findSongById,
-  listSongs,
-  updateSongFull,
-} from "./repository";
+import { createSongFull, findSongById, listSongs, updateSongFull } from "./repository";
 
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
 
@@ -27,24 +22,26 @@ const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
 };
 
 // Apple Music API レスポンスからDB挿入値を構築
-const toSongDbValues = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
+const toSongInput = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
   if (apiResponse instanceof Error) return apiResponse;
 
   const { attributes, relationships } = apiResponse;
-  const artists =
+  const artistEntries =
     relationships?.artists?.data?.map((a) => ({
       appleMusicId: a.id,
       name: a.attributes?.name ?? "",
     })) ?? [];
 
   return {
-    title: attributes.name,
-    appleMusicId: apiResponse.id,
-    length:
-      attributes.durationInMillis != null ? Math.round(attributes.durationInMillis / 1000) : null,
-    isrcs: attributes.isrc ?? null,
+    songValues: {
+      title: attributes.name,
+      appleMusicId: apiResponse.id,
+      length:
+        attributes.durationInMillis != null ? Math.round(attributes.durationInMillis / 1000) : null,
+      isrcs: attributes.isrc ?? null,
+    },
     genreNames: attributes.genreNames,
-    artists,
+    artistEntries,
   };
 };
 
@@ -95,15 +92,19 @@ export const registerSong = async (payload: SongCreateBody) => {
   const apiResponse = await fetchSong(payload.appleMusicId);
   if (apiResponse instanceof Error) return apiResponse;
 
-  const dbValues = toSongDbValues(apiResponse);
-  if (dbValues instanceof Error) return dbValues;
+  const input = toSongInput(apiResponse);
+  if (input instanceof Error) return input;
 
   const db = createDb();
   const result = await withAuthenticatedRole(db, async (tx) => {
-    const artistIds = await resolveArtistIds(tx, dbValues.artists);
+    const artistIds = await resolveArtistIds(tx, input.artistEntries);
     if (artistIds instanceof Error) return artistIds;
 
-    return createSongFull(tx, { values: dbValues, artistIds });
+    return createSongFull(tx, {
+      songValues: input.songValues,
+      artistIds,
+      genreNames: input.genreNames,
+    });
   });
   if (result instanceof Error) return toDbError(result, "Failed to create song.");
   if (!result) {
@@ -128,14 +129,19 @@ export const syncSong = async (id: string) => {
   const apiResponse = await fetchSong(existing.appleMusicId);
   if (apiResponse instanceof Error) return apiResponse;
 
-  const dbValues = toSongDbValues(apiResponse);
-  if (dbValues instanceof Error) return dbValues;
+  const input = toSongInput(apiResponse);
+  if (input instanceof Error) return input;
 
   const result = await withAuthenticatedRole(db, async (tx) => {
-    const artistIds = await resolveArtistIds(tx, dbValues.artists);
+    const artistIds = await resolveArtistIds(tx, input.artistEntries);
     if (artistIds instanceof Error) return artistIds;
 
-    return updateSongFull(tx, { id, values: dbValues, artistIds });
+    return updateSongFull(tx, {
+      id,
+      songValues: input.songValues,
+      artistIds,
+      genreNames: input.genreNames,
+    });
   });
 
   if (result instanceof Error) return toDbError(result, "Failed to sync song.");

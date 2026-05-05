@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import { posts, songs } from "../../shared/db/schema";
+import { posts } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 const postColumns = {
@@ -63,11 +63,12 @@ export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) 
   return rows[0] ?? null;
 };
 
-export const findActiveSongById = async (db: DatabaseOrTransaction, id: string) => {
+// 投稿の存在確認（soft-deleted除外）
+export const findActivePostById = async (db: DatabaseOrTransaction, id: string) => {
   const rows = await db
-    .select({ id: songs.id })
-    .from(songs)
-    .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
+    .select({ id: posts.id })
+    .from(posts)
+    .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .limit(1);
 
   return rows[0] ?? null;

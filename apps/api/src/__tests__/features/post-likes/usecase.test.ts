@@ -20,8 +20,11 @@ vi.mock("../../../shared/db/rls", () => ({
 
 vi.mock("../../../features/post-likes/repository", () => ({
   togglePostLike: mocks.togglePostLike,
-  findActivePostById: mocks.findActivePostById,
   countPostLikes: mocks.countPostLikes,
+}));
+
+vi.mock("../../../features/posts/repository", () => ({
+  findActivePostById: mocks.findActivePostById,
 }));
 
 import { toggleLike, getPostLikeCount } from "../../../features/post-likes/usecase";
