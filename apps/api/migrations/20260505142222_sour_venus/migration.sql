@@ -1,0 +1,1 @@
+ALTER VIEW "user_profiles" RESET (security_invoker);

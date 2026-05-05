@@ -1,6 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
-import { posts } from "../../shared/db/schema";
+import { posts, userProfiles } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 const postColumns = {
@@ -12,18 +12,31 @@ const postColumns = {
   updatedAt: posts.updatedAt,
 } as const;
 
+const authorColumns = {
+  username: userProfiles.username,
+  name: userProfiles.name,
+} as const;
+
 export const listPosts = async (db: DatabaseOrTransaction) => {
   return db
-    .select(postColumns)
+    .select({
+      ...postColumns,
+      author: authorColumns,
+    })
     .from(posts)
+    .innerJoin(userProfiles, eq(posts.userId, userProfiles.id))
     .where(isNull(posts.deletedAt))
     .orderBy(desc(posts.createdAt));
 };
 
 export const findPostById = async (db: DatabaseOrTransaction, id: string) => {
   const rows = await db
-    .select(postColumns)
+    .select({
+      ...postColumns,
+      author: authorColumns,
+    })
     .from(posts)
+    .innerJoin(userProfiles, eq(posts.userId, userProfiles.id))
     .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .limit(1);
 

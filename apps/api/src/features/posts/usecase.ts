@@ -34,13 +34,13 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
     likedPostIds = new Set(liked);
   }
 
-  const postsWithLikes = rows.map((post) => ({
+  const postsWithExtras = rows.map((post) => ({
     ...post,
     likeCount: likeCountMap.get(post.id) ?? 0,
     ...(session !== undefined ? { isLiked: likedPostIds.has(post.id) } : {}),
   }));
 
-  return { posts: postsWithLikes };
+  return { posts: postsWithExtras };
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {
