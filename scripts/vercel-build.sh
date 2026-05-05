@@ -7,7 +7,22 @@ build_web() {
   bun run --cwd "$repo_root/apps/web" build
 }
 
-if [[ "${VERCEL_ENV:-}" != "preview" || -z "${VERCEL_GIT_PULL_REQUEST_ID:-}" ]]; then
+# Vercel以外（ローカル等）はそのままビルド
+if [[ -z "${VERCEL:-}" ]]; then
+  build_web
+  exit 0
+fi
+
+# PRがないプレビューデプロイはここに到達しないはず
+# （VercelのIgnored Build Stepでスキップされる前提）
+# 念のためガード: 到達したら明示的にエラーにする
+if [[ "${VERCEL_ENV:-}" == "preview" && -z "${VERCEL_GIT_PULL_REQUEST_ID:-}" ]]; then
+  echo "Error: preview deployment without PR ID. Configure Vercel Ignored Build Step to skip these." >&2
+  exit 1
+fi
+
+# Production は API URL が Vercel 環境変数で設定されている前提
+if [[ "${VERCEL_ENV:-}" == "production" ]]; then
   build_web
   exit 0
 fi
