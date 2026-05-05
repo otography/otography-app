@@ -15,14 +15,14 @@ import {
 import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
 
 export const getPosts = async (session?: DecodedIdToken | null) => {
-  const rows = await withAnonymousRole((tx) => listPosts(tx));
+  const db = createDb();
+  const rows = await withAnonymousRole(db, (tx) => listPosts(tx));
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to fetch posts.", cause: rows });
   }
 
   // いいね情報の付与
   const postIds = rows.map((r) => r.id);
-  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, postIds);
   const likeCountMap = new Map(likeCounts.map((r) => [r.postId, r.count]));
 
@@ -44,7 +44,8 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {
-  const post = await withAnonymousRole((tx) => findPostById(tx, id));
+  const db = createDb();
+  const post = await withAnonymousRole(db, (tx) => findPostById(tx, id));
   if (post instanceof Error) {
     return new DbError({ message: "Failed to fetch post.", cause: post });
   }
@@ -53,7 +54,6 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
   }
 
   // いいね情報の付与
-  const db = createDb();
   const likeCounts = await countLikesByPostIds(db, [id]);
   const likeCount = likeCounts[0]?.count ?? 0;
 
@@ -85,7 +85,7 @@ export const registerPost = async (payload: PostCreateDbModel, session: DecodedI
     return new DbError({ message: "Song not found.", statusCode: 404 });
   }
 
-  const rows = await withRls(session, (tx, userId) => createPost(tx, { ...payload, userId }));
+  const rows = await withRls(db, session, (tx, userId) => createPost(tx, { ...payload, userId }));
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to create post.", cause: rows });
   }
@@ -105,7 +105,8 @@ type UpdatePostInput = {
 };
 
 export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
-  const post = await withRls(session, (tx) => updatePostById(tx, { id, values: payload }));
+  const db = createDb();
+  const post = await withRls(db, session, (tx) => updatePostById(tx, { id, values: payload }));
   if (post instanceof Error) {
     return new DbError({ message: "Failed to update post.", cause: post });
   }
@@ -117,7 +118,8 @@ export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
 };
 
 export const removePost = async (id: string, session: DecodedIdToken) => {
-  const deletedPost = await withRls(session, (tx) => softDeletePostById(tx, id));
+  const db = createDb();
+  const deletedPost = await withRls(db, session, (tx) => softDeletePostById(tx, id));
   if (deletedPost instanceof Error) {
     return new DbError({ message: "Failed to delete post.", cause: deletedPost });
   }

@@ -70,7 +70,7 @@ describe("favorite songs usecase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createDb.mockReturnValue(createExistingSongQuery([{ id: "existing-song-id" }]));
-    mocks.withRls.mockImplementation(async (_session, fn) => await fn(tx, "user-id"));
+    mocks.withRls.mockImplementation(async (_db, _session, fn) => await fn(tx, "user-id"));
   });
 
   describe("getFavoriteSongs", () => {

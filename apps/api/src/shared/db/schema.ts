@@ -259,6 +259,21 @@ export const songArtists = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.songId, table.artistId] }),
     index("idx_song_artists_artist_id").on(table.artistId),
+    pgPolicy("song_artists_select_all", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`true`,
+    }),
+    pgPolicy("song_artists_insert_authenticated", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("song_artists_delete_authenticated", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
   ],
 );
 
@@ -319,6 +334,22 @@ export const genres = pgTable.withRLS(
     index("idx_genres_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    pgPolicy("genres_select_active", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`${table.deletedAt} IS NULL`,
+    }),
+    pgPolicy("genres_insert_authenticated", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("genres_update_authenticated", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`true`,
+      withCheck: sql`true`,
+    }),
   ],
 );
 
@@ -337,6 +368,21 @@ export const songGenres = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.songId, table.genreId] }),
     index("idx_song_genres_genre_id").on(table.genreId),
+    pgPolicy("song_genres_select_all", {
+      for: "select",
+      to: [anonRole, authenticatedRole],
+      using: sql`true`,
+    }),
+    pgPolicy("song_genres_insert_authenticated", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`true`,
+    }),
+    pgPolicy("song_genres_delete_authenticated", {
+      for: "delete",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
   ],
 );
 

@@ -5,10 +5,13 @@ import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { findOrCreateArtists } from "../../../features/songs/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db";
 import { isPostgresCheckViolation } from "../../../shared/db/postgres-error";
+import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
 import {
   artists,
+  favoriteArtists,
   favoriteSongs,
   genres,
+  songArtists,
   songGenres,
   songs,
   users,

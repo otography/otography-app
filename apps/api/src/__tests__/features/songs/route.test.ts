@@ -27,9 +27,13 @@ import { createDb } from "../../../shared/db";
 import { fetchSong } from "../../../shared/apple-music";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
+  const tx = {
+    execute: vi.fn().mockResolvedValue(undefined),
     ...txMethods,
-    transaction: vi.fn(async (fn) => fn(txMethods)),
+  };
+  vi.mocked(createDb).mockReturnValue({
+    ...tx,
+    transaction: vi.fn(async (fn) => fn(tx)),
   } as never);
 };
 
@@ -305,6 +309,7 @@ describe("songs endpoints", () => {
     });
 
     vi.mocked(createDb).mockReturnValue({
+      execute: vi.fn().mockResolvedValue(undefined),
       transaction: vi.fn().mockRejectedValue(
         createDrizzleConstraintError({
           constraintName: "songs_apple_music_id_key",
@@ -331,6 +336,7 @@ describe("songs endpoints", () => {
     });
 
     vi.mocked(createDb).mockReturnValue({
+      execute: vi.fn().mockResolvedValue(undefined),
       transaction: vi.fn().mockRejectedValue(new Error("DB error")),
     } as never);
 

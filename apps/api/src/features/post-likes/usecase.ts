@@ -18,7 +18,7 @@ export const toggleLike = async (
   }
 
   // トグル実行
-  const toggleResult = await withRls(session, async (tx, userId) => {
+  const toggleResult = await withRls(db, session, async (tx, userId) => {
     return togglePostLike(tx, userId, postId);
   });
 

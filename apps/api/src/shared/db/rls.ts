@@ -1,7 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { RlsError } from "@repo/errors";
-import { createDb, type DatabaseOrTransaction, type DatabaseTransaction } from "./index";
+import type { Database, DatabaseOrTransaction, DatabaseTransaction } from "./index";
 
 const abortRlsTransaction = (error: RlsError): never => {
   throw error;
@@ -52,8 +52,10 @@ const resolveFirebaseId = async (
 };
 
 // 認証済みユーザーとしてトランザクションを実行（JWT claims なし、ロールのみ authenticated）
-export async function withAuthenticatedRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
-  const db = createDb();
+export async function withAuthenticatedRole<T>(
+  db: Database,
+  fn: (tx: DatabaseTransaction) => Promise<T>,
+) {
   const result = await db
     .transaction(async (tx) => {
       const setupResult = await setupAuthenticatedRole(tx);
@@ -68,8 +70,10 @@ export async function withAuthenticatedRole<T>(fn: (tx: DatabaseTransaction) => 
   return result;
 }
 
-export async function withAnonymousRole<T>(fn: (tx: DatabaseTransaction) => Promise<T>) {
-  const db = createDb();
+export async function withAnonymousRole<T>(
+  db: Database,
+  fn: (tx: DatabaseTransaction) => Promise<T>,
+) {
   const result = await db
     .transaction(async (tx) => {
       const setupResult = await setupAnonymousRole(tx);
@@ -85,6 +89,7 @@ export async function withAnonymousRole<T>(fn: (tx: DatabaseTransaction) => Prom
 }
 
 export async function withRls<T>(
+  db: Database,
   claims: DecodedIdToken,
   fn: (tx: DatabaseTransaction, userId: string) => Promise<T>,
 ) {
@@ -93,7 +98,6 @@ export async function withRls<T>(
     return new RlsError({ message: "Missing user identifier in session." });
   }
 
-  const db = createDb();
   // SECURITY DEFINER 関数で Firebase ID → UUID 解決
   const userId = await resolveFirebaseId(db, firebaseId);
   if (userId instanceof Error) return userId;

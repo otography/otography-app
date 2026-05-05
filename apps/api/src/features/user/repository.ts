@@ -1,4 +1,3 @@
-import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import {
   users,
@@ -7,76 +6,72 @@ import {
   type SetupProfileValues,
   type UpdateUserValues,
 } from "../../shared/db/schema";
-import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
+import type { DatabaseOrTransaction } from "../../shared/db";
 
 // Firebase Auth と DB の同期は、限定的な SECURITY DEFINER 関数に閉じ込める。
-export const insertUser = async (values: InsertUserValues) => {
-  return withAuthenticatedRole((tx) =>
-    tx.execute<typeof users.$inferSelect>(sql`
-      SELECT
-        id,
-        firebase_id AS "firebaseId",
-        username,
-        name,
-        bio,
-        birthplace,
-        birthyear,
-        gender,
-        created_at AS "createdAt",
-        updated_at AS "updatedAt",
-        deleted_at AS "deletedAt"
-      FROM public.sync_firebase_user(${values.firebaseId})
-    `),
-  );
+export const insertUser = async (tx: DatabaseOrTransaction, values: InsertUserValues) => {
+  return tx.execute<typeof users.$inferSelect>(sql`
+    SELECT
+      id,
+      firebase_id AS "firebaseId",
+      username,
+      name,
+      bio,
+      birthplace,
+      birthyear,
+      gender,
+      created_at AS "createdAt",
+      updated_at AS "updatedAt",
+      deleted_at AS "deletedAt"
+    FROM public.sync_firebase_user(${values.firebaseId})
+  `);
 };
 
-// 現在のユーザーを取得（withRls で自分の行だけ取得、RLS で防御）
-export const selectCurrentUser = async (claims: DecodedIdToken) => {
-  return withRls(claims, async (tx, userId) =>
-    tx
-      .select()
-      .from(users)
-      .where(and(eq(users.id, userId), isNull(users.deletedAt)))
-      .limit(1),
-  );
+// 現在のユーザーを取得（RLS で自分の行だけ取得）
+export const selectCurrentUser = async (tx: DatabaseOrTransaction, userId: string) => {
+  return tx
+    .select()
+    .from(users)
+    .where(and(eq(users.id, userId), isNull(users.deletedAt)))
+    .limit(1);
 };
 
 // username で公開プロフィールを取得（user_profiles ビュー経由で機密カラムを除外）
-export const selectUserByUsername = async (username: string) => {
-  return withAnonymousRole((tx) =>
-    tx.select().from(userProfiles).where(eq(userProfiles.username, username)).limit(1),
-  );
+export const selectUserByUsername = async (tx: DatabaseOrTransaction, username: string) => {
+  return tx.select().from(userProfiles).where(eq(userProfiles.username, username)).limit(1);
 };
 
-// 初回プロフィール設定 — withRls 経由で UPDATE（レコードはサインアップ時に作成済み）
-export const setupProfile = async (claims: DecodedIdToken, values: SetupProfileValues) => {
-  return withRls(claims, async (tx, userId) =>
-    tx
-      .update(users)
-      .set({ ...values, updatedAt: sql`now()` })
-      .where(eq(users.id, userId))
-      .returning(),
-  );
+// 初回プロフィール設定 — UPDATE（レコードはサインアップ時に作成済み）
+export const setupProfile = async (
+  tx: DatabaseOrTransaction,
+  userId: string,
+  values: SetupProfileValues,
+) => {
+  return tx
+    .update(users)
+    .set({ ...values, updatedAt: sql`now()` })
+    .where(eq(users.id, userId))
+    .returning();
 };
 
 // ユーザーのプロフィール詳細を更新（bio, birthplace, birthyear, gender, name）
-export const updateUserDetails = async (claims: DecodedIdToken, values: UpdateUserValues) => {
-  return withRls(claims, async (tx, userId) =>
-    tx
-      .update(users)
-      .set({ ...values, updatedAt: sql`now()` })
-      .where(eq(users.id, userId))
-      .returning(),
-  );
+export const updateUserDetails = async (
+  tx: DatabaseOrTransaction,
+  userId: string,
+  values: UpdateUserValues,
+) => {
+  return tx
+    .update(users)
+    .set({ ...values, updatedAt: sql`now()` })
+    .where(eq(users.id, userId))
+    .returning();
 };
 
 // ユーザーを論理削除
-export const softDeleteUser = async (claims: DecodedIdToken) => {
-  return withRls(claims, async (tx, userId) =>
-    tx
-      .update(users)
-      .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-      .where(eq(users.id, userId))
-      .returning(),
-  );
+export const softDeleteUser = async (tx: DatabaseOrTransaction, userId: string) => {
+  return tx
+    .update(users)
+    .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+    .where(eq(users.id, userId))
+    .returning();
 };

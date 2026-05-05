@@ -40,7 +40,7 @@ describe("post-likes usecase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createDb.mockReturnValue(db);
-    mocks.withRls.mockImplementation(async (_session, fn) => await fn(tx, "user-id"));
+    mocks.withRls.mockImplementation(async (_db, _session, fn) => await fn(tx, "user-id"));
   });
 
   describe("toggleLike", () => {
