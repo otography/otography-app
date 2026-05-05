@@ -1,20 +1,9 @@
-import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
 
-const artistColumns = {
-  id: artists.id,
-  name: artists.name,
-  appleMusicId: artists.appleMusicId,
-  ipiCode: artists.ipiCode,
-  type: artists.type,
-  gender: artists.gender,
-  birthplace: artists.birthplace,
-  birthdate: artists.birthdate,
-  createdAt: artists.createdAt,
-  updatedAt: artists.updatedAt,
-} as const;
+const { deletedAt: _, ...artistColumns } = getColumns(artists);
 
 export const listArtists = async (db: DatabaseOrTransaction) => {
   return db

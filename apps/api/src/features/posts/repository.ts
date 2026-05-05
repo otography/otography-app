@@ -1,16 +1,9 @@
-import { and, desc, eq, exists, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, exists, getColumns, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { postLikes, posts, userProfiles } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
-const postColumns = {
-  id: posts.id,
-  userId: posts.userId,
-  songId: posts.songId,
-  content: posts.content,
-  createdAt: posts.createdAt,
-  updatedAt: posts.updatedAt,
-} as const;
+const { deletedAt: _, ...postColumns } = getColumns(posts);
 
 const authorColumns = {
   username: userProfiles.username,
