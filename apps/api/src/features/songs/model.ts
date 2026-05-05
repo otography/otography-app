@@ -7,9 +7,6 @@ export const songCreateBodySchema = type({
   appleMusicId: type.pipe(type("string.trim"), type("1 <= string <= 100")),
 });
 
-// 曲再同期APIのリクエストボディ（空ボディ、PATCHでApple Music APIから再フェッチ）
-export const songSyncBodySchema = type({});
-
 export type SongCreateBody = typeof songCreateBodySchema.infer;
 
 // Drizzle の songs テーブルスキーマからDB挿入値を生成し、API由来のフィールドを追加
