@@ -27,7 +27,7 @@ vi.mock("../../../features/posts/repository", () => ({
   findActivePostById: mocks.findActivePostById,
 }));
 
-import { toggleLike, getPostLikeCount } from "../../../features/post-likes/usecase";
+import { toggleLike } from "../../../features/post-likes/usecase";
 
 const session = {
   sub: "firebase-user-id",
@@ -92,24 +92,6 @@ describe("post-likes usecase", () => {
         statusCode: 500,
         cause,
       });
-    });
-  });
-
-  describe("getPostLikeCount", () => {
-    it("returns like count for a post", async () => {
-      mocks.countPostLikes.mockResolvedValue(42);
-
-      const result = await getPostLikeCount(postId);
-
-      expect(result).toEqual({ likeCount: 42 });
-    });
-
-    it("wraps repository errors as DbError", async () => {
-      mocks.countPostLikes.mockResolvedValue(new DbError({ message: "Count failed." }));
-
-      const result = await getPostLikeCount(postId);
-
-      expect(result).toBeInstanceOf(DbError);
     });
   });
 });

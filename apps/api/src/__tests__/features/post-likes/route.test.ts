@@ -22,7 +22,6 @@ vi.mock("../../../shared/middleware", async () => {
 // usecaseをモック
 vi.mock("../../../features/post-likes/usecase", () => ({
   toggleLike: vi.fn(),
-  getPostLikeCount: vi.fn(),
 }));
 
 import { toggleLike } from "../../../features/post-likes/usecase";

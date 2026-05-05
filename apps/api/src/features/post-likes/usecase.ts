@@ -36,12 +36,3 @@ export const toggleLike = async (
     likeCount,
   };
 };
-
-// 投稿のいいね数取得
-export const getPostLikeCount = async (postId: string) => {
-  const db = createDb();
-  const likeCount = await countPostLikes(db, postId);
-  if (likeCount instanceof Error) return likeCount;
-
-  return { likeCount };
-};
