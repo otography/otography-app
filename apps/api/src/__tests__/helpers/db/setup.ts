@@ -7,9 +7,9 @@ import {
   getPostgresRoleDatabaseUrl,
   getTestDatabaseUrl,
   getTestOwnerDatabaseUrl,
-} from "./helpers/test-database-url";
+} from "./url";
 
-const migrationsFolder = fileURLToPath(new URL("../../migrations", import.meta.url));
+const migrationsFolder = fileURLToPath(new URL("../../../../migrations", import.meta.url));
 
 const ensureTestDatabase = async (databaseUrl: string) => {
   const databaseName = new URL(databaseUrl).pathname.slice(1);
