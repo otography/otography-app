@@ -1,9 +1,16 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
+import type { DatabaseOrTransaction } from "../../shared/db";
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
-import { findActiveSongById } from "../songs/repository";
+import { fetchSong, toSongInput } from "../../shared/apple-music";
+import { findOrCreateArtists } from "../artists/repository";
+import {
+  createSongFull,
+  findSongByAppleMusicId,
+  songExistsByAppleMusicId,
+} from "../songs/repository";
 import {
   createPost,
   findPostByIdWithLikes,
@@ -11,16 +18,13 @@ import {
   softDeletePostById,
   updatePostById,
 } from "./repository";
-import type { PostCreateDbModel, PostUpdateDbModel } from "./model";
+import type { PostCreateDbModel, PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 // Firebase ID → UUID 解決
-const resolveUserId = async (session: DecodedIdToken): Promise<string | DbError> => {
-  const firebaseId = typeof session.sub === "string" ? session.sub : null;
-  if (!firebaseId) {
-    return new DbError({ message: "Missing user identifier in session." });
-  }
-
-  const db = createDb();
+const resolveUserId = async (
+  db: DatabaseOrTransaction,
+  firebaseId: string,
+): Promise<string | DbError> => {
   const rows = await db
     .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
     .catch((e) => new DbError({ message: "Failed to resolve user ID.", cause: e }));
@@ -35,16 +39,15 @@ const resolveUserId = async (session: DecodedIdToken): Promise<string | DbError>
 };
 
 export const getPosts = async (session?: DecodedIdToken | null) => {
-  // セッションがある場合は先にuserIdを解決
+  const db = createDb();
+
   let userId: string | null = null;
   if (session) {
-    const resolved = await resolveUserId(session);
+    const resolved = await resolveUserId(db, session.sub);
     if (typeof resolved !== "string") return resolved;
     userId = resolved;
   }
 
-  // 投稿取得 + いいね情報を1クエリで取得
-  const db = createDb();
   const rows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, userId));
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to fetch posts.", cause: rows });
@@ -54,16 +57,15 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {
-  // セッションがある場合は先にuserIdを解決
+  const db = createDb();
+
   let userId: string | null = null;
   if (session) {
-    const resolved = await resolveUserId(session);
+    const resolved = await resolveUserId(db, session.sub);
     if (typeof resolved !== "string") return resolved;
     userId = resolved;
   }
 
-  // 投稿取得 + いいね情報を1クエリで取得
-  const db = createDb();
   const post = await withAnonymousRole(db, (tx) => findPostByIdWithLikes(tx, id, userId));
   if (post instanceof Error) {
     return new DbError({ message: "Failed to fetch post.", cause: post });
@@ -78,20 +80,56 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
 export const registerPost = async (payload: PostCreateDbModel, session: DecodedIdToken) => {
   const db = createDb();
 
-  const song = await findActiveSongById(db, payload.songId).catch(
-    (e) => new DbError({ message: "Failed to fetch song.", cause: e }),
+  // トランザクション外で曲存在チェック（最適化: 不要なAPI呼び出しを回避）
+  const songExists = await songExistsByAppleMusicId(db, payload.appleMusicId).catch(
+    (e) => new DbError({ message: "Failed to check song existence.", cause: e }),
   );
-  if (song instanceof Error) return song;
-  if (song === null) {
-    return new DbError({ message: "Song not found.", statusCode: 404 });
+  if (songExists instanceof Error) return songExists;
+
+  let songInput: Awaited<ReturnType<typeof toSongInput>> | null = null;
+  if (!songExists) {
+    const apiResponse = await fetchSong(payload.appleMusicId);
+    if (apiResponse instanceof Error) return apiResponse;
+    songInput = toSongInput(apiResponse);
+    if (songInput instanceof Error) return songInput;
   }
 
-  const rows = await withRls(db, session, (tx, userId) => createPost(tx, { ...payload, userId }));
-  if (rows instanceof Error) {
-    return new DbError({ message: "Failed to create post.", cause: rows });
+  // トランザクション内: 曲 find-or-create + 投稿作成
+  const result = await withRls(db, session, async (tx, userId) => {
+    let songId: string;
+
+    const found = await findSongByAppleMusicId(tx, payload.appleMusicId);
+    if (found) {
+      songId = found.id;
+    } else {
+      if (!songInput) {
+        return new DbError({ message: "Failed to resolve song information." });
+      }
+      const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch(
+        (e) => new DbError({ message: "Failed to resolve artists.", cause: e }),
+      );
+      if (artistIds instanceof Error) return artistIds;
+
+      const song = await createSongFull(tx, {
+        songValues: songInput.songValues,
+        artistIds,
+        genreNames: songInput.genreNames,
+      });
+      if (!song) {
+        return new DbError({ message: "Failed to create song." });
+      }
+      songId = song.id;
+    }
+
+    return createPost(tx, { songId, userId, content: payload.content } satisfies PostInsertDbModel);
+  });
+
+  if (result instanceof Error) {
+    if (result instanceof DbError && result.statusCode !== 500) return result;
+    return new DbError({ message: "Failed to create post.", cause: result });
   }
 
-  const [post] = rows;
+  const [post] = result;
   if (!post) {
     return new DbError({ message: "Failed to create post." });
   }

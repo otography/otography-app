@@ -151,6 +151,16 @@ export const findSongById = async (db: DatabaseOrTransaction, id: string) => {
   return rows[0] ?? null;
 };
 
+// appleMusicId で楽曲の存在確認（soft-deleted 除外、軽量）
+export const songExistsByAppleMusicId = async (db: DatabaseOrTransaction, appleMusicId: string) => {
+  const rows = await db
+    .select({ id: songs.id })
+    .from(songs)
+    .where(and(eq(songs.appleMusicId, appleMusicId), isNull(songs.deletedAt)))
+    .limit(1);
+  return rows.length > 0;
+};
+
 // appleMusicId で楽曲を検索（soft-deleted 除外）
 export const findSongByAppleMusicId = async (tx: DatabaseTransaction, appleMusicId: string) => {
   const rows = await tx
@@ -186,15 +196,4 @@ export const createSongFromAppleMusic = async (
       },
     })
     .returning(songColumns);
-};
-
-// 楽曲の存在確認（soft-deleted除外）
-export const findActiveSongById = async (db: DatabaseOrTransaction, id: string) => {
-  const rows = await db
-    .select({ id: songs.id })
-    .from(songs)
-    .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
-    .limit(1);
-
-  return rows[0] ?? null;
 };

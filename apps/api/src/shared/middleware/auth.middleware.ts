@@ -25,7 +25,7 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
       return;
     }
 
-    const userId = typeof claims?.sub === "string" ? claims.sub : null;
+    const userId = claims?.sub;
 
     if (!userId) {
       await next();

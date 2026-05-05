@@ -77,11 +77,26 @@ describe("post-likes usecase", () => {
         message: "投稿が見つかりません。",
         statusCode: 404,
       });
+      // 存在確認はトランザクション内
+      expect(mocks.findActivePostById).toHaveBeenCalledWith(tx, postId);
+    });
+
+    it("calls all operations within the same withRls transaction", async () => {
+      mocks.findActivePostById.mockResolvedValue({ id: postId });
+      mocks.togglePostLike.mockResolvedValue({ liked: true });
+      mocks.countPostLikes.mockResolvedValue(3);
+
+      const result = await toggleLike(session, postId);
+
+      expect(result).toEqual({ liked: true, likeCount: 3 });
+      // 全操作が tx に対して実行される
+      expect(mocks.findActivePostById).toHaveBeenCalledWith(tx, postId);
+      expect(mocks.togglePostLike).toHaveBeenCalledWith(tx, "user-id", postId);
+      expect(mocks.countPostLikes).toHaveBeenCalledWith(tx, postId);
     });
 
     it("wraps RLS failures as DbError", async () => {
       const cause = new RlsError({ message: "User not found in database." });
-      mocks.findActivePostById.mockResolvedValue({ id: postId });
       mocks.withRls.mockResolvedValue(cause);
 
       const result = await toggleLike(session, postId);

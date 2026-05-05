@@ -93,7 +93,7 @@ export async function withRls<T>(
   claims: DecodedIdToken,
   fn: (tx: DatabaseTransaction, userId: string) => Promise<T>,
 ) {
-  const firebaseId = typeof claims.sub === "string" ? claims.sub : null;
+  const firebaseId = claims.sub;
   if (!firebaseId) {
     return new RlsError({ message: "Missing user identifier in session." });
   }

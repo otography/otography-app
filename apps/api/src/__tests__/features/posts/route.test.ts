@@ -138,6 +138,7 @@ describe("posts endpoints", () => {
   });
 
   it("POST /api/posts creates post", async () => {
+    // select モック: 1回目 = 曲存在チェック(トランザクション外), 2回目 = findSongByAppleMusicId(tx内)
     const select = vi
       .fn()
       .mockReturnValueOnce({
@@ -150,7 +151,13 @@ describe("posts endpoints", () => {
       .mockReturnValueOnce({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222223" }]),
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222223",
+                title: "Song",
+                appleMusicId: "am-song-001",
+              },
+            ]),
           })),
         })),
       });
@@ -176,7 +183,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts", {
       method: "POST",
       body: {
-        songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222223",
+        appleMusicId: "am-song-001",
         content: "New post",
       },
     });
@@ -338,7 +345,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts", {
       method: "POST",
       body: {
-        songId: "bad",
+        appleMusicId: "",
         content: "",
       },
     });
@@ -353,7 +360,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts", {
       method: "POST",
       body: {
-        songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222223",
+        appleMusicId: "am-song-001",
         content: "New post",
       },
     });
