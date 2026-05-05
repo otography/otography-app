@@ -56,6 +56,4 @@ GRANT USAGE ON TYPE public.prefecture TO authenticated;
 --> statement-breakpoint
 GRANT EXECUTE ON FUNCTION public.requesting_user_id() TO authenticated;
 --> statement-breakpoint
-GRANT EXECUTE ON FUNCTION public.resolve_firebase_id(varchar) TO anon, authenticated;
---> statement-breakpoint
 GRANT EXECUTE ON FUNCTION public.sync_firebase_user(varchar) TO authenticated;
