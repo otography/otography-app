@@ -1,4 +1,4 @@
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { postLikes } from "../../shared/db/schema";
@@ -29,39 +29,6 @@ export const togglePostLike = async (
 
   // INSERTが成功 → liked=true, INSERTなし(DELETE成功) → liked=false
   return { liked: rows.length > 0 };
-};
-
-// 投稿ID配列に対するいいね数取得
-export const countLikesByPostIds = async (
-  db: DatabaseOrTransaction,
-  postIds: string[],
-): Promise<{ postId: string; count: number }[]> => {
-  if (postIds.length === 0) return [];
-
-  return db
-    .select({
-      postId: postLikes.postId,
-      count: count(),
-    })
-    .from(postLikes)
-    .where(inArray(postLikes.postId, postIds))
-    .groupBy(postLikes.postId);
-};
-
-// ユーザーがいいね済みの投稿ID一覧
-export const findUserLikesByPostIds = async (
-  db: DatabaseOrTransaction,
-  userId: string,
-  postIds: string[],
-): Promise<string[]> => {
-  if (postIds.length === 0) return [];
-
-  const rows = await db
-    .select({ postId: postLikes.postId })
-    .from(postLikes)
-    .where(and(eq(postLikes.userId, userId), inArray(postLikes.postId, postIds)));
-
-  return rows.map((r) => r.postId);
 };
 
 // 単一投稿のいいね数取得
