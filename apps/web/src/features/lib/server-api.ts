@@ -13,6 +13,7 @@ import { env } from "@/env";
  */
 export const getServerApi = cache(async () => {
   const cookieStore = await cookies();
+
   const client = hc<AppType>(env.NEXT_PUBLIC_API_URL, {
     headers: async () => ({
       cookie: cookieStore.toString(),

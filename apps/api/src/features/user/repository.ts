@@ -7,23 +7,27 @@ import {
   type SetupProfileValues,
   type UpdateUserValues,
 } from "../../shared/db/schema";
-import { withRls } from "../../shared/db/rls";
-import { createDb } from "../../shared/db";
+import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 
-// ユーザーレコードを作成（冪等: firebase_id が既存なら論理削除を取り消して再利用）
+// Firebase Auth と DB の同期は、限定的な SECURITY DEFINER 関数に閉じ込める。
 export const insertUser = async (values: InsertUserValues) => {
-  const db = createDb();
-  return db
-    .insert(users)
-    .values(values)
-    .onConflictDoUpdate({
-      target: users.firebaseId,
-      set: {
-        deletedAt: null,
-        updatedAt: sql`now()`,
-      },
-    })
-    .returning();
+  return withAuthenticatedRole((tx) =>
+    tx.execute<typeof users.$inferSelect>(sql`
+      SELECT
+        id,
+        firebase_id AS "firebaseId",
+        username,
+        name,
+        bio,
+        birthplace,
+        birthyear,
+        gender,
+        created_at AS "createdAt",
+        updated_at AS "updatedAt",
+        deleted_at AS "deletedAt"
+      FROM public.sync_firebase_user(${values.firebaseId})
+    `),
+  );
 };
 
 // 現在のユーザーを取得（withRls で自分の行だけ取得、RLS で防御）
@@ -39,8 +43,9 @@ export const selectCurrentUser = async (claims: DecodedIdToken) => {
 
 // username で公開プロフィールを取得（user_profiles ビュー経由で機密カラムを除外）
 export const selectUserByUsername = async (username: string) => {
-  const db = createDb();
-  return db.select().from(userProfiles).where(eq(userProfiles.username, username)).limit(1);
+  return withAnonymousRole((tx) =>
+    tx.select().from(userProfiles).where(eq(userProfiles.username, username)).limit(1),
+  );
 };
 
 // 初回プロフィール設定 — withRls 経由で UPDATE（レコードはサインアップ時に作成済み）

@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
 import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
+import { errorLogFields } from "../../shared/logging/redaction";
 import type { Bindings } from "../../shared/types/bindings";
 import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
 import {
@@ -14,6 +15,10 @@ import {
 } from "./usecase";
 
 const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
+  console.warn("User route returned error.", {
+    path: c.req.path,
+    ...errorLogFields(error),
+  });
   return c.json({ message: error.message }, error.statusCode);
 };
 
@@ -22,10 +27,15 @@ const user = new Hono<{ Bindings: Bindings }>()
   .get("/api/user", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
     if (!session) {
+      console.warn("GET /api/user reached without auth session.");
       return c.json({ message: "You are not logged in." }, 401);
     }
+    console.info("GET /api/user started.", { hasEmail: Boolean(session.email) });
     const result = await getProfile(session);
     if (result instanceof Error) return handleUserError(result, c);
+    console.info("GET /api/user succeeded.", {
+      hasName: Boolean(result.profile.name),
+    });
     return c.json({ message: "You are logged in!", profile: result.profile }, 200);
   })
 

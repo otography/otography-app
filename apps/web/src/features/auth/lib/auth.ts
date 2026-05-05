@@ -13,9 +13,15 @@ import { getCurrentUser } from "./current-user";
 export async function requireAuth() {
   const result = await getCurrentUser();
 
-  if (result instanceof UnauthenticatedError) redirect("/login");
-  if (result instanceof NoProfileError) redirect("/setup-profile");
-  if (result instanceof Error) throw result;
+  if (result instanceof UnauthenticatedError) {
+    redirect("/login");
+  }
+  if (result instanceof NoProfileError) {
+    redirect("/setup-profile");
+  }
+  if (result instanceof Error) {
+    throw result;
+  }
 
   return result;
 }
@@ -27,8 +33,14 @@ export async function requireAuth() {
 export async function requireNoProfile() {
   const result = await getCurrentUser();
 
-  if (result instanceof UnauthenticatedError) redirect("/login");
-  if (result instanceof Error && !(result instanceof NoProfileError)) throw result;
+  if (result instanceof UnauthenticatedError) {
+    redirect("/login");
+  }
+  if (result instanceof Error && !(result instanceof NoProfileError)) {
+    throw result;
+  }
   // NoProfileError = 期待される状態 → そのまま表示
-  if (!(result instanceof Error)) redirect("/account");
+  if (!(result instanceof Error)) {
+    redirect("/account");
+  }
 }

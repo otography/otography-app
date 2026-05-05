@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { getTestDatabaseUrl } from "./test-database-url";
+import { getTestOwnerDatabaseUrl } from "./test-database-url";
 
-export const createTestSql = () => postgres(getTestDatabaseUrl(), { max: 1, prepare: false });
+export const createTestSql = () => postgres(getTestOwnerDatabaseUrl(), { max: 1, prepare: false });
 
 export const createTestDb = (sql: postgres.Sql) => drizzle({ client: sql, jit: true });
 

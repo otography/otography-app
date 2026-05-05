@@ -2,6 +2,15 @@ const DEFAULT_TEST_DATABASE_URL = "postgresql://postgres@localhost:54322/otograp
 
 export const getTestDatabaseUrl = () => process.env.TEST_DATABASE_URL ?? DEFAULT_TEST_DATABASE_URL;
 
+export const getPostgresRoleDatabaseUrl = (databaseUrl: string) => {
+  const url = new URL(databaseUrl);
+  const options = url.searchParams.get("options");
+  url.searchParams.set("options", `${options ? `${options} ` : ""}-c role=postgres`);
+  return url.toString();
+};
+
+export const getTestOwnerDatabaseUrl = () => getPostgresRoleDatabaseUrl(getTestDatabaseUrl());
+
 export const getMaintenanceDatabaseUrl = (databaseUrl: string) => {
   const url = new URL(databaseUrl);
   url.pathname = "/postgres";

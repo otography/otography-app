@@ -17,6 +17,7 @@ import { createDb } from "../../../shared/db";
 // withRls のモック: Firebase ID → UUID ルックアップ + トランザクション
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({
@@ -38,10 +39,19 @@ const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
 const defaultTx = {
   insert: vi.fn(() => ({
     values: vi.fn(() => ({
-      onConflictDoUpdate: vi.fn().mockResolvedValue([]),
+      onConflictDoUpdate: vi.fn(() => ({
+        returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+      })),
     })),
   })),
-  execute: vi.fn().mockResolvedValue([]),
+  execute: vi.fn(() => Promise.resolve([{ id: "uuid-user" }])),
+  select: vi.fn(() => ({
+    from: vi.fn(() => ({
+      where: vi.fn(() => ({
+        limit: vi.fn().mockResolvedValue([]),
+      })),
+    })),
+  })),
 };
 
 describe("POST /api/auth/sign-up", () => {

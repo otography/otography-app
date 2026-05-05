@@ -98,6 +98,46 @@ describe("database schema", () => {
     expect(views).toEqual([{ security_invoker: "true" }]);
   });
 
+  it("resolves Firebase IDs only for active users", async () => {
+    const [activeUser] = await db
+      .insert(users)
+      .values({ firebaseId: "firebase-active-user" })
+      .returning({ id: users.id });
+    await db.insert(users).values({
+      firebaseId: "firebase-deleted-user",
+      deletedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+
+    expect(activeUser).toBeDefined();
+
+    // アプリは postgres ロールのままトランザクション外で呼ぶ（withRls の resolveFirebaseId と同じパターン）
+    const activeResult = await db.execute<{ user_id: string | null }>(drizzleSql`
+      SELECT public.resolve_firebase_id('firebase-active-user') AS user_id
+    `);
+    const deletedResult = await db.execute<{ user_id: string | null }>(drizzleSql`
+      SELECT public.resolve_firebase_id('firebase-deleted-user') AS user_id
+    `);
+
+    expect(activeResult).toEqual([{ user_id: activeUser!.id }]);
+    expect(deletedResult).toEqual([{ user_id: null }]);
+  });
+
+  it("allows server-side user sync through a narrow definer function", async () => {
+    await db.transaction(async (tx) => {
+      await tx.execute(drizzleSql.raw("set local role authenticated"));
+
+      const inserted = await tx.execute<{ id: string }>(drizzleSql`
+        SELECT id FROM public.sync_firebase_user('firebase-owner-sync')
+      `);
+      const restored = await tx.execute<{ id: string }>(drizzleSql`
+        SELECT id FROM public.sync_firebase_user('firebase-owner-sync')
+      `);
+
+      expect(inserted).toHaveLength(1);
+      expect(restored).toEqual(inserted);
+    });
+  });
+
   it("allows unfinished profiles but rejects blank usernames", async () => {
     await db.insert(users).values({ firebaseId: "firebase-user-without-profile" });
 

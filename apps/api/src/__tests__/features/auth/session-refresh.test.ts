@@ -23,6 +23,7 @@ import { createDb } from "../../../shared/db";
 // リフレッシュ成功時にルートハンドラがDBにアクセスするためのモック
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
   vi.mocked(createDb).mockReturnValue({
+    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
     select: vi.fn(() => ({
       from: vi.fn(() => ({
         where: vi.fn(() => ({

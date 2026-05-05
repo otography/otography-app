@@ -14,14 +14,24 @@ export const getCurrentUser = cache(async () => {
   const response = await api.user
     .$get()
     .catch((e: unknown) => new FetchCurrentUserError({ cause: e }));
-  if (response instanceof Error) return response;
+  if (response instanceof Error) {
+    return response;
+  }
 
-  if (response.status === 401) return new UnauthenticatedError();
-  if (response.status === 404) return new NoProfileError();
-  if (!response.ok) return new UnexpectedStatusError({ status: response.status });
+  if (response.status === 401) {
+    return new UnauthenticatedError();
+  }
+  if (response.status === 404) {
+    return new NoProfileError();
+  }
+  if (!response.ok) {
+    return new UnexpectedStatusError({ status: response.status });
+  }
 
   const body = await response.json().catch((e: unknown) => new JsonParseError({ cause: e }));
-  if (body instanceof Error) return body;
+  if (body instanceof Error) {
+    return body;
+  }
 
   return body;
 });
