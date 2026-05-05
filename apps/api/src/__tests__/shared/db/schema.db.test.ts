@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { findOrCreateArtists } from "../../../features/artists/repository";
+import { countPostLikes } from "../../../features/post-likes/repository";
 import { listPostsWithLikes, findPostByIdWithLikes } from "../../../features/posts/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db";
 import { isPostgresCheckViolation } from "../../../shared/db/postgres-error";
@@ -695,6 +696,61 @@ describe("database schema", () => {
         findPostByIdWithLikes(tx, deletedPost!.id, null),
       );
       expect(result).toBeNull();
+    });
+  });
+
+  describe("countPostLikes", () => {
+    it("いいねが0件の場合は0を返す", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-count-zero", username: "countzero" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "Count Song", appleMusicId: "am-count-zero" })
+        .returning({ id: songs.id });
+
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${author!.id}, ${song!.id}, 'no likes')
+      `);
+      const [post] = await db.select({ id: posts.id }).from(posts);
+
+      const result = await countPostLikes(db, post!.id);
+      expect(result).toBe(0);
+    });
+
+    it("いいね数を正しく返す", async () => {
+      const [author] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-count-author", username: "countauthor" })
+        .returning({ id: users.id });
+      const [liker1] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-count-liker1" })
+        .returning({ id: users.id });
+      const [liker2] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-count-liker2" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "Count Song 2", appleMusicId: "am-count-two" })
+        .returning({ id: songs.id });
+
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${author!.id}, ${song!.id}, 'count me')
+      `);
+      const [post] = await db.select({ id: posts.id }).from(posts);
+
+      await db.insert(postLikes).values([
+        { userId: liker1!.id, postId: post!.id },
+        { userId: liker2!.id, postId: post!.id },
+      ]);
+
+      const result = await countPostLikes(db, post!.id);
+      expect(result).toBe(2);
     });
   });
 });
