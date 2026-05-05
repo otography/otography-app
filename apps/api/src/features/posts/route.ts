@@ -8,8 +8,9 @@ import type { Bindings } from "../../shared/types/bindings";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
 
-const handlePostError = (error: DbError, c: Context<{ Bindings: Bindings }>) => {
-  return c.json({ message: error.message }, error.statusCode);
+const handlePostError = (error: Error, c: Context<{ Bindings: Bindings }>) => {
+  const statusCode = error instanceof DbError ? error.statusCode : 500;
+  return c.json({ message: error.message }, statusCode);
 };
 
 const postBodyValidator = arktypeValidator("json", postInsertSchema, (result, c) => {

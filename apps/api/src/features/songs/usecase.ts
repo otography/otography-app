@@ -2,7 +2,7 @@ import { DbError, RlsError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
-import { fetchSong } from "../../shared/apple-music";
+import { fetchSong, toSongInput } from "../../shared/apple-music";
 import { findOrCreateArtists } from "../artists/repository";
 import type { SongCreateBody } from "./model";
 import { createSongFull, findSongById, listSongs, updateSongFull } from "./repository";
@@ -19,30 +19,6 @@ const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   }
 
   return new DbError({ message: fallbackMessage, cause: error });
-};
-
-// Apple Music API レスポンスからDB挿入値を構築
-const toSongInput = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
-  if (apiResponse instanceof Error) return apiResponse;
-
-  const { attributes, relationships } = apiResponse;
-  const artistEntries =
-    relationships?.artists?.data?.map((a) => ({
-      appleMusicId: a.id,
-      name: a.attributes?.name ?? "",
-    })) ?? [];
-
-  return {
-    songValues: {
-      title: attributes.name,
-      appleMusicId: apiResponse.id,
-      length:
-        attributes.durationInMillis != null ? Math.round(attributes.durationInMillis / 1000) : null,
-      isrcs: attributes.isrc ?? null,
-    },
-    genreNames: attributes.genreNames,
-    artistEntries,
-  };
 };
 
 // アーティストをバッチで find-or-create

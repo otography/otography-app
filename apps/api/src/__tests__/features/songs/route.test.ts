@@ -19,9 +19,13 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
-vi.mock("../../../shared/apple-music", () => ({
-  fetchSong: vi.fn(),
-}));
+vi.mock("../../../shared/apple-music", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../shared/apple-music")>();
+  return {
+    fetchSong: vi.fn(),
+    toSongInput: actual.toSongInput,
+  };
+});
 
 import { createDb } from "../../../shared/db";
 import { fetchSong } from "../../../shared/apple-music";

@@ -6,33 +6,32 @@ import { findActivePostById } from "../posts/repository";
 import { countPostLikes, togglePostLike } from "./repository";
 import type { ToggleLikeResponse } from "./model";
 
-// いいねトグル
 export const toggleLike = async (
   session: DecodedIdToken,
   postId: string,
 ): Promise<ToggleLikeResponse | DbError> => {
-  // 投稿存在確認
   const db = createDb();
-  const post = await findActivePostById(db, postId);
-  if (!post) {
-    return new DbError({ message: "投稿が見つかりません。", statusCode: 404 });
-  }
+  const result = await withRls(db, session, async (tx, userId) => {
+    const post = await findActivePostById(tx, postId);
+    if (!post) {
+      return new DbError({ message: "投稿が見つかりません。", statusCode: 404 });
+    }
 
-  // トグル実行
-  const toggleResult = await withRls(db, session, async (tx, userId) => {
-    return togglePostLike(tx, userId, postId);
+    const toggleResult = await togglePostLike(tx, userId, postId);
+
+    const likeCount = await countPostLikes(tx, postId);
+    if (likeCount instanceof Error) return likeCount;
+
+    return {
+      liked: toggleResult.liked,
+      likeCount,
+    };
   });
 
-  if (toggleResult instanceof Error) {
-    return new DbError({ message: "いいねの操作に失敗しました。", cause: toggleResult });
+  if (result instanceof Error) {
+    if (result instanceof DbError && result.statusCode !== 500) return result;
+    return new DbError({ message: "いいねの操作に失敗しました。", cause: result });
   }
 
-  // いいね数取得
-  const likeCount = await countPostLikes(db, postId);
-  if (likeCount instanceof Error) return likeCount;
-
-  return {
-    liked: toggleResult.liked,
-    likeCount,
-  };
+  return result;
 };

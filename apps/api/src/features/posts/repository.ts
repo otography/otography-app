@@ -90,7 +90,6 @@ export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) 
   return rows[0] ?? null;
 };
 
-// 投稿の存在確認（soft-deleted除外）
 export const findActivePostById = async (db: DatabaseOrTransaction, id: string) => {
   const rows = await db
     .select({ id: posts.id })
