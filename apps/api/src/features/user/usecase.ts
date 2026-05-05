@@ -5,6 +5,8 @@ import type {
   SetupProfileValues,
   UpdateUserValues,
 } from "../../shared/db/schema";
+import { createDb } from "../../shared/db";
+import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 import {
   isPostgresCheckViolation,
   isPostgresUniqueViolation,
@@ -61,7 +63,8 @@ const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
 export const createUserRecord = async (values: InsertUserValues) => {
   console.info("Creating user record.", { firebaseId: maskIdentifier(values.firebaseId) });
 
-  const result = await insertUser(values).catch(
+  const db = createDb();
+  const result = await withAuthenticatedRole(db, (tx) => insertUser(tx, values)).catch(
     (e) =>
       new AuthError({
         message: "Failed to create user record.",
@@ -108,7 +111,8 @@ export const createUserRecord = async (values: InsertUserValues) => {
 export const getProfile = async (session: DecodedIdToken) => {
   console.info("Fetching current user profile.", { firebaseId: maskIdentifier(session.sub) });
 
-  const initialResult = await selectCurrentUser(session);
+  const db = createDb();
+  const initialResult = await withRls(db, session, (tx, userId) => selectCurrentUser(tx, userId));
   if (initialResult instanceof Error && !isMissingDatabaseUser(initialResult)) {
     console.error("Initial profile fetch failed.", errorLogFields(initialResult));
     return new AuthError({
@@ -193,7 +197,8 @@ export const getProfile = async (session: DecodedIdToken) => {
 
 // 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
 export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const result = await setupProfileRepo(session, values);
+  const db = createDb();
+  const result = await withRls(db, session, (tx, userId) => setupProfileRepo(tx, userId, values));
   if (result instanceof Error) {
     return toProfileDbAuthError(result, "Failed to create profile.");
   }
@@ -217,7 +222,8 @@ export const setupProfile = async (session: DecodedIdToken, values: SetupProfile
 
 // プロフィール詳細を更新（bio, birthplace, birthyear, gender, name）
 export const updateProfile = async (session: DecodedIdToken, values: UpdateUserValues) => {
-  const result = await updateUserDetails(session, values);
+  const db = createDb();
+  const result = await withRls(db, session, (tx, userId) => updateUserDetails(tx, userId, values));
   if (result instanceof Error) {
     return toProfileDbAuthError(result, "Failed to update profile.");
   }
@@ -245,7 +251,8 @@ export const updateProfile = async (session: DecodedIdToken, values: UpdateUserV
 
 // アカウントを論理削除
 export const deleteAccount = async (session: DecodedIdToken) => {
-  const result = await softDeleteUser(session);
+  const db = createDb();
+  const result = await withRls(db, session, (tx, userId) => softDeleteUser(tx, userId));
   if (result instanceof Error) {
     return new AuthError({
       message: "Failed to delete account.",
@@ -269,7 +276,8 @@ export const deleteAccount = async (session: DecodedIdToken) => {
 
 // 公開プロフィールを取得（username で検索）
 export const getPublicProfile = async (username: string) => {
-  const result = await selectUserByUsername(username).catch(
+  const db = createDb();
+  const result = await withAnonymousRole(db, (tx) => selectUserByUsername(tx, username)).catch(
     (e) =>
       new AuthError({
         message: "Failed to fetch public profile.",
