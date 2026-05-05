@@ -1,18 +1,11 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import type { FavoriteSongValues } from "./model";
 
-const favoriteSongColumns = {
-  userId: favoriteSongs.userId,
-  songId: favoriteSongs.songId,
-  comment: favoriteSongs.comment,
-  emoji: favoriteSongs.emoji,
-  color: favoriteSongs.color,
-  createdAt: favoriteSongs.createdAt,
-} as const;
+const favoriteSongColumns = getColumns(favoriteSongs);
 
 const songColumns = {
   id: songs.id,
