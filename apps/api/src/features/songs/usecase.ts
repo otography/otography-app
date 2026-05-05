@@ -1,6 +1,7 @@
-import { DbError } from "@repo/errors";
+import { DbError, RlsError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong } from "../../shared/apple-music";
 import type { SongCreateBody } from "./model";
 import {
@@ -57,22 +58,32 @@ const resolveArtistIds = async (
   );
 };
 
+// withAuthenticatedRole / withAnonymousRole はエラーを RlsError として返す（throw しない）。
+// 結果を DbError に変換するヘルパー。cause チェーンから unique violation を検出する。
+const toDbError = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof DbError) return error;
+  if (error instanceof RlsError) {
+    return toSongAppleMusicIdError(error.cause, fallbackMessage);
+  }
+  return new DbError({ message: fallbackMessage, cause: error });
+};
+
 export const getSongs = async () => {
   const db = createDb();
-  const rows = await listSongs(db).catch(
-    (e) => new DbError({ message: "Failed to fetch songs.", cause: e }),
-  );
-  if (rows instanceof Error) return rows;
+  const rows = await withAnonymousRole(db, (tx) => listSongs(tx));
+  if (rows instanceof Error) {
+    return new DbError({ message: "Failed to fetch songs.", cause: rows });
+  }
 
   return { songs: rows };
 };
 
 export const getSong = async (id: string) => {
   const db = createDb();
-  const song = await findSongById(db, id).catch(
-    (e) => new DbError({ message: "Failed to fetch song.", cause: e }),
-  );
-  if (song instanceof Error) return song;
+  const song = await withAnonymousRole(db, (tx) => findSongById(tx, id));
+  if (song instanceof Error) {
+    return new DbError({ message: "Failed to fetch song.", cause: song });
+  }
   if (song === null) {
     return new DbError({ message: "Song not found.", statusCode: 404 });
   }
@@ -88,34 +99,27 @@ export const registerSong = async (payload: SongCreateBody) => {
   if (dbValues instanceof Error) return dbValues;
 
   const db = createDb();
+  const result = await withAuthenticatedRole(db, async (tx) => {
+    const artistIds = await resolveArtistIds(tx, dbValues.artists);
+    if (artistIds instanceof Error) return artistIds;
 
-  const song = await db
-    .transaction(async (tx) => {
-      const artistIds = await resolveArtistIds(tx, dbValues.artists);
-      if (artistIds instanceof Error) throw artistIds;
-
-      return createSongFull(tx, { values: dbValues, artistIds });
-    })
-    .catch((e) => {
-      if (e instanceof DbError) return e;
-      return toSongAppleMusicIdError(e, "Failed to create song.");
-    });
-  if (song instanceof Error) return song;
-  if (!song) {
+    return createSongFull(tx, { values: dbValues, artistIds });
+  });
+  if (result instanceof Error) return toDbError(result, "Failed to create song.");
+  if (!result) {
     return new DbError({ message: "Failed to create song." });
   }
 
-  return { song };
+  return { song: result };
 };
 
 export const syncSong = async (id: string) => {
+  // 既存曲を取得（anon で可）
   const db = createDb();
-
-  // 既存曲を取得
-  const existing = await findSongById(db, id).catch(
-    (e) => new DbError({ message: "Failed to fetch song.", cause: e }),
-  );
-  if (existing instanceof Error) return existing;
+  const existing = await withAnonymousRole(db, (tx) => findSongById(tx, id));
+  if (existing instanceof Error) {
+    return new DbError({ message: "Failed to fetch song.", cause: existing });
+  }
   if (existing === null) {
     return new DbError({ message: "Song not found.", statusCode: 404 });
   }
@@ -127,22 +131,17 @@ export const syncSong = async (id: string) => {
   const dbValues = toSongDbValues(apiResponse);
   if (dbValues instanceof Error) return dbValues;
 
-  const song = await db
-    .transaction(async (tx) => {
-      const artistIds = await resolveArtistIds(tx, dbValues.artists);
-      if (artistIds instanceof Error) throw artistIds;
+  const result = await withAuthenticatedRole(db, async (tx) => {
+    const artistIds = await resolveArtistIds(tx, dbValues.artists);
+    if (artistIds instanceof Error) return artistIds;
 
-      return updateSongFull(tx, { id, values: dbValues, artistIds });
-    })
-    .catch((e) => {
-      if (e instanceof DbError) return e;
-      return toSongAppleMusicIdError(e, "Failed to sync song.");
-    });
+    return updateSongFull(tx, { id, values: dbValues, artistIds });
+  });
 
-  if (song instanceof Error) return song;
-  if (song === null) {
+  if (result instanceof Error) return toDbError(result, "Failed to sync song.");
+  if (result === null) {
     return new DbError({ message: "Song not found.", statusCode: 404 });
   }
 
-  return { song };
+  return { song: result };
 };

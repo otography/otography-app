@@ -5,12 +5,16 @@ import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { findOrCreateArtists } from "../../../features/songs/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db";
 import { isPostgresCheckViolation } from "../../../shared/db/postgres-error";
+import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
 import {
   artists,
+  favoriteArtists,
   favoriteSongs,
   genres,
+  songArtists,
   songGenres,
   songs,
+  posts,
   users,
 } from "../../../shared/db/schema";
 
@@ -359,6 +363,173 @@ describe("database schema", () => {
         .where(eq(songGenres.songId, song!.id));
 
       expect(result).toEqual([{ name: "Pop" }]);
+    });
+  });
+
+  describe("RLS policies (withAuthenticatedRole / withAnonymousRole)", () => {
+    it("anon can read active songs and artists but not insert", async () => {
+      await db.insert(songs).values({ title: "Public Song", appleMusicId: "am-rls-song-1" });
+      await db.insert(artists).values({ name: "Public Artist", appleMusicId: "am-rls-artist-1" });
+
+      // anon で SELECT（ポリシー: deleted_at IS NULL）
+      const songRows = await withAnonymousRole(db, (tx) =>
+        tx.select({ title: songs.title }).from(songs),
+      );
+      expect(songRows).toEqual([{ title: "Public Song" }]);
+
+      const artistRows = await withAnonymousRole(db, (tx) =>
+        tx.select({ name: artists.name }).from(artists),
+      );
+      expect(artistRows).toEqual([{ name: "Public Artist" }]);
+
+      // anon で INSERT（ポリシーなし → エラー）
+      const insertResult = await withAnonymousRole(db, (tx) =>
+        tx
+          .insert(songs)
+          .values({ title: "Anon Song", appleMusicId: "am-anon-song" })
+          .returning({ id: songs.id }),
+      );
+      expect(insertResult).toBeInstanceOf(Error);
+    });
+
+    it("authenticated can insert songs with song_artists and song_genres", async () => {
+      const [artist] = await db
+        .insert(artists)
+        .values({ name: "RLS Artist", appleMusicId: "am-rls-artist-2" })
+        .returning({ id: artists.id });
+
+      const songResult = await withAuthenticatedRole(db, async (tx) => {
+        const [s] = await tx
+          .insert(songs)
+          .values({ title: "RLS Song", appleMusicId: "am-rls-song-2" })
+          .returning({ id: songs.id, title: songs.title });
+        return s;
+      });
+
+      expect(songResult).not.toBeInstanceOf(Error);
+      const songId = (songResult as { id: string }).id;
+
+      // song_artists INSERT（authenticated ロール）
+      await withAuthenticatedRole(db, async (tx) => {
+        await tx.insert(songArtists).values({ songId, artistId: artist!.id, isGuest: false });
+      });
+
+      // song_genres INSERT（authenticated ロール）
+      await withAuthenticatedRole(db, async (tx) => {
+        await tx
+          .insert(genres)
+          .values({ name: "RLS Genre" })
+          .onConflictDoNothing({ target: genres.name });
+        const [g] = await tx
+          .select({ id: genres.id })
+          .from(genres)
+          .where(eq(genres.name, "RLS Genre"));
+        await tx.insert(songGenres).values({ songId, genreId: g!.id });
+      });
+
+      // 検証: anon でも song_artists / song_genres 経由で読める
+      const artistLinks = await withAnonymousRole(db, (tx) =>
+        tx
+          .select({ name: artists.name })
+          .from(songArtists)
+          .innerJoin(artists, eq(songArtists.artistId, artists.id))
+          .where(eq(songArtists.songId, songId)),
+      );
+      expect(artistLinks).not.toBeInstanceOf(Error);
+      expect(artistLinks).toEqual([{ name: "RLS Artist" }]);
+
+      const genreLinks = await withAnonymousRole(db, (tx) =>
+        tx
+          .select({ name: genres.name })
+          .from(songGenres)
+          .innerJoin(genres, eq(songGenres.genreId, genres.id))
+          .where(eq(songGenres.songId, songId)),
+      );
+      expect(genreLinks).not.toBeInstanceOf(Error);
+      expect(genreLinks).toEqual([{ name: "RLS Genre" }]);
+    });
+
+    it("genres SELECT hides soft-deleted rows", async () => {
+      await db
+        .insert(genres)
+        .values([{ name: "Active Genre" }, { name: "Deleted Genre", deletedAt: new Date() }]);
+
+      const rows = await withAnonymousRole(db, (tx) =>
+        tx.select({ name: genres.name }).from(genres),
+      );
+
+      expect(rows).toEqual([{ name: "Active Genre" }]);
+    });
+
+    it("favorite_artists / favorite_songs are scoped to requesting user", async () => {
+      const [user1] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-rls-user-1" })
+        .returning({ id: users.id });
+      const [user2] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-rls-user-2" })
+        .returning({ id: users.id });
+      const [artist] = await db
+        .insert(artists)
+        .values({ name: "RLS Fav Artist", appleMusicId: "am-rls-fav-artist" })
+        .returning({ id: artists.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "RLS Fav Song", appleMusicId: "am-rls-fav-song" })
+        .returning({ id: songs.id });
+
+      // postgres 権限で両ユーザーのお気に入りを作成
+      await db.insert(favoriteArtists).values({ userId: user1!.id, artistId: artist!.id });
+      await db.insert(favoriteArtists).values({ userId: user2!.id, artistId: artist!.id });
+      await db.insert(favoriteSongs).values({ userId: user1!.id, songId: song!.id });
+      await db.insert(favoriteSongs).values({ userId: user2!.id, songId: song!.id });
+
+      // user1 として SELECT → 自分のだけ取得
+      const favArtists = await db.transaction(async (tx) => {
+        await tx.execute(
+          drizzleSql`select set_config('request.jwt.claims', ${JSON.stringify({ sub: user1!.id })}, true)`,
+        );
+        await tx.execute(drizzleSql.raw("set local role authenticated"));
+        return tx.select({ userId: favoriteArtists.userId }).from(favoriteArtists);
+      });
+      expect(favArtists).toEqual([{ userId: user1!.id }]);
+
+      const favSongs = await db.transaction(async (tx) => {
+        await tx.execute(
+          drizzleSql`select set_config('request.jwt.claims', ${JSON.stringify({ sub: user1!.id })}, true)`,
+        );
+        await tx.execute(drizzleSql.raw("set local role authenticated"));
+        return tx.select({ userId: favoriteSongs.userId }).from(favoriteSongs);
+      });
+      expect(favSongs).toEqual([{ userId: user1!.id }]);
+    });
+
+    it("posts SELECT policy: anon sees active, authenticated sees own", async () => {
+      const [user] = await db
+        .insert(users)
+        .values({ firebaseId: "firebase-rls-post-user" })
+        .returning({ id: users.id });
+      const [song] = await db
+        .insert(songs)
+        .values({ title: "RLS Post Song", appleMusicId: "am-rls-post-song" })
+        .returning({ id: songs.id });
+
+      // postgres 権限で投稿作成 + 論理削除投稿
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content)
+        VALUES (${user!.id}, ${song!.id}, 'active post')
+      `);
+      await db.execute(drizzleSql`
+        INSERT INTO posts (user_id, song_id, content, deleted_at)
+        VALUES (${user!.id}, ${song!.id}, 'deleted post', now())
+      `);
+
+      // anon: deleted_at IS NULL のみ見える
+      const anonPosts = await withAnonymousRole(db, (tx) =>
+        tx.select({ content: posts.content }).from(posts),
+      );
+      expect(anonPosts).toEqual([{ content: "active post" }]);
     });
   });
 });

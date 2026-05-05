@@ -17,7 +17,8 @@ import type { AddFavoriteSongInput } from "./model";
 
 // お気に入り楽曲一覧取得
 export const getFavoriteSongs = async (session: DecodedIdToken) => {
-  const result = await withRls(session, async (tx, userId) => {
+  const db = createDb();
+  const result = await withRls(db, session, async (tx, userId) => {
     return listFavoriteSongs(tx, userId);
   });
 
@@ -85,7 +86,7 @@ export const registerFavoriteSong = async (
   if (songData instanceof Error) return songData;
 
   // トランザクション内では DB 操作のみ
-  const result = await withRls(session, async (tx, userId) => {
+  const result = await withRls(db, session, async (tx, userId) => {
     const found = await findSongByAppleMusicId(tx, input.appleMusicId);
     if (found) {
       const rows = await addFavoriteSong(tx, userId, found.id, {
@@ -142,7 +143,8 @@ export const registerFavoriteSong = async (
 
 // お気に入り楽曲削除（appleMusicId 指定）
 export const deleteFavoriteSong = async (session: DecodedIdToken, appleMusicId: string) => {
-  const result = await withRls(session, async (tx, userId) => {
+  const db = createDb();
+  const result = await withRls(db, session, async (tx, userId) => {
     return removeFavoriteSongByAppleMusicId(tx, userId, appleMusicId);
   });
 
