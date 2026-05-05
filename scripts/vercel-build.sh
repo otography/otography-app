@@ -13,13 +13,8 @@ if [[ -z "${VERCEL:-}" ]]; then
   exit 0
 fi
 
-# PRがないプレビューデプロイはここに到達しないはず
-# （VercelのIgnored Build Stepでスキップされる前提）
-# 念のためガード: 到達したら明示的にエラーにする
-if [[ "${VERCEL_ENV:-}" == "preview" && -z "${VERCEL_GIT_PULL_REQUEST_ID:-}" ]]; then
-  echo "Error: preview deployment without PR ID. Configure Vercel Ignored Build Step to skip these." >&2
-  exit 1
-fi
+# PRがないプレビューデプロイも許容する
+# （PR作成前のpushでは VERCEL_GIT_PULL_REQUEST_ID が空文字列になるため）
 
 # Production は API URL が Vercel 環境変数で設定されている前提
 if [[ "${VERCEL_ENV:-}" == "production" ]]; then
@@ -42,7 +37,8 @@ for name in "${required_preview_env[@]}"; do
 done
 
 worker_name="api-preview"
-api_alias="pr-${VERCEL_GIT_PULL_REQUEST_ID}"
+api_alias="${VERCEL_GIT_COMMIT_SHA:0:7}"
+deploy_message="Preview deploy ${VERCEL_GIT_COMMIT_SHA:0:7}"
 workers_subdomain="${CLOUDFLARE_WORKERS_SUBDOMAIN%.workers.dev}"
 api_url="https://${api_alias}-${worker_name}.${workers_subdomain}.workers.dev"
 web_url="https://${VERCEL_URL}"
@@ -56,7 +52,7 @@ bunx wrangler versions upload \
   --cwd "$repo_root/apps/api" \
   --env preview \
   --preview-alias "$api_alias" \
-  --message "PR #${VERCEL_GIT_PULL_REQUEST_ID} preview" \
+  --message "$deploy_message" \
   --var "APP_FRONTEND_URL:${web_url}" \
   --var "AUTH_COOKIE_DOMAIN:" \
   --var "GOOGLE_OAUTH_REDIRECT_URI:${web_url}/api/auth/google/callback"
