@@ -1,33 +1,30 @@
 import { env } from "cloudflare:workers";
 import { SignJWT, importPKCS8 } from "jose";
 
-// キャッシュ済み developer token（24h 有効）
-let cachedToken: string | null = null;
-let cachedTokenExp: number = 0;
+const TOKEN_TTL_SECONDS = 60 * 60 * 24; // 24h
 
-// Apple Music API 用の developer token を生成（キャッシュ付き）
-// 環境変数の \\n を実際の改行に変換してから importPKCS8 に渡す
-export const generateDeveloperToken = async (): Promise<string> => {
-  const now = Math.floor(Date.now() / 1000);
+// 秘密鍵は初回のみパース（不変なためモジュール変数に保持して問題ない）
+// Promise 自体をキャッシュして同時リクエストでの二重パースを防ぐ
+let privateKeyPromise: ReturnType<typeof importPKCS8> | null = null;
 
-  // 1時間以上残っている場合はキャッシュを再利用
-  if (cachedToken && cachedTokenExp > now + 3600) {
-    return cachedToken;
+const getPrivateKey = () => {
+  if (!privateKeyPromise) {
+    const rawKey = env.APPLE_MUSIC_PRIVATE_KEY;
+    const pemKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
+    privateKeyPromise = importPKCS8(pemKey, "ES256");
   }
+  return privateKeyPromise;
+};
 
-  const rawKey = env.APPLE_MUSIC_PRIVATE_KEY;
-  const pemKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey;
-  const privateKey = await importPKCS8(pemKey, "ES256");
-
-  const exp = now + 60 * 60 * 24;
-  cachedToken = await new SignJWT({
-    iss: env.APPLE_TEAM_ID,
-    iat: now,
-    exp,
-  })
-    .setProtectedHeader({ alg: "ES256", kid: env.APPLE_KEY_ID })
-    .sign(privateKey);
-
-  cachedTokenExp = exp;
-  return cachedToken;
+// キャッシュなし: 毎リクエスト生成。レスポンスのキャッシュはroute側でHono/cacheに任せる
+export const generateDeveloperToken = () => {
+  const now = Math.floor(Date.now() / 1000);
+  return getPrivateKey().then((key) =>
+    new SignJWT({})
+      .setProtectedHeader({ alg: "ES256", kid: env.APPLE_KEY_ID })
+      .setIssuer(env.APPLE_TEAM_ID)
+      .setIssuedAt(now)
+      .setExpirationTime(now + TOKEN_TTL_SECONDS)
+      .sign(key),
+  );
 };

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
 import { artists } from "./features/artists";
 import { favoriteArtists } from "./features/favorite-artists";
@@ -31,6 +32,7 @@ const app = new Hono<{ Bindings: Bindings }>()
     console.error("Unhandled error:", err);
     return c.json({ message: "Internal server error." }, 500);
   })
+  .route("/", appleMusic)
   .route("/", auth)
   .route("/", artists)
   .route("/", songs)
