@@ -20,7 +20,7 @@ declare namespace Cloudflare {
     AUTH_ENCRYPTION_KEY: string;
     APPLE_KEY_ID: string;
     APPLE_TEAM_ID: string;
-    APPLE_MUSIC_PRIVATE_KEY: string;
+    APPLE_PRIVATE_KEY: string;
     LIKE_RATE_LIMITER: RateLimit;
   }
 }
@@ -46,7 +46,7 @@ declare namespace NodeJS {
       | "AUTH_ENCRYPTION_KEY"
       | "APPLE_KEY_ID"
       | "APPLE_TEAM_ID"
-      | "APPLE_MUSIC_PRIVATE_KEY"
+      | "APPLE_PRIVATE_KEY"
     >
   > {}
 }
