@@ -52,18 +52,21 @@ describe("posts endpoints", () => {
   it("GET /api/posts returns posts list", async () => {
     const select = vi.fn().mockReturnValue({
       from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue([
-            {
-              id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
-              userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
-              songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
-              content: "Sample post",
-              createdAt: "2026-01-01T00:00:00.000Z",
-              updatedAt: "2026-01-01T00:00:00.000Z",
-            },
-          ]),
-          limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222221" }]),
+        innerJoin: vi.fn(() => ({
+          where: vi.fn(() => ({
+            orderBy: vi.fn().mockResolvedValue([
+              {
+                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
+                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
+                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
+                content: "Sample post",
+                author: { username: "testuser", name: "Test User" },
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+            limit: vi.fn().mockResolvedValue([{ id: "7f648f36-5be1-4af1-bf5d-cf8ebf222221" }]),
+          })),
         })),
       })),
     });
@@ -80,6 +83,7 @@ describe("posts endpoints", () => {
           userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222221",
           songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
           content: "Sample post",
+          author: { username: "testuser", name: "Test User" },
           createdAt: "2026-01-01T00:00:00.000Z",
           updatedAt: "2026-01-01T00:00:00.000Z",
           likeCount: 0,
@@ -93,17 +97,20 @@ describe("posts endpoints", () => {
     mockDbWithTransaction({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
-          where: vi.fn(() => ({
-            limit: vi.fn().mockResolvedValue([
-              {
-                id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                content: "Detail post",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
+          innerJoin: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue([
+                {
+                  id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
+                  userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
+                  songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
+                  content: "Detail post",
+                  author: { username: "testuser", name: "Test User" },
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                  updatedAt: "2026-01-01T00:00:00.000Z",
+                },
+              ]),
+            })),
           })),
         })),
       })),
@@ -118,6 +125,7 @@ describe("posts endpoints", () => {
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
         songId: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
         content: "Detail post",
+        author: { username: "testuser", name: "Test User" },
         createdAt: "2026-01-01T00:00:00.000Z",
         updatedAt: "2026-01-01T00:00:00.000Z",
         likeCount: 0,

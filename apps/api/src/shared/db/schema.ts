@@ -126,7 +126,6 @@ export const userProfiles = pgView("user_profiles", {
   createdAt: timestamp("created_at", { withTimezone: true }),
 })
   .with({
-    securityInvoker: true,
     securityBarrier: true,
   })
   .as(sql`SELECT id, username, name, bio, created_at FROM users WHERE deleted_at IS NULL`);

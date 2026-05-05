@@ -99,7 +99,7 @@ describe("database schema", () => {
         AND relname = 'user_profiles'
     `;
 
-    expect(views).toEqual([{ security_invoker: "true" }]);
+    expect(views).toEqual([{ security_invoker: null }]);
   });
 
   it("resolves Firebase IDs only for active users", async () => {

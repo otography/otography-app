@@ -37,7 +37,7 @@ for name in "${required_preview_env[@]}"; do
 done
 
 worker_name="api-preview"
-api_alias="${VERCEL_GIT_COMMIT_SHA:0:7}"
+api_alias="sha-${VERCEL_GIT_COMMIT_SHA:0:7}"
 deploy_message="Preview deploy ${VERCEL_GIT_COMMIT_SHA:0:7}"
 workers_subdomain="${CLOUDFLARE_WORKERS_SUBDOMAIN%.workers.dev}"
 api_url="https://${api_alias}-${worker_name}.${workers_subdomain}.workers.dev"
