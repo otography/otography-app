@@ -107,8 +107,8 @@ SELECT
 FROM pg_catalog.pg_policies pb
 WHERE pb.schemaname = 'public'
     AND (
-        (pb.qual LIKE '%current\_setting(%)%' AND lower(pb.qual) NOT LIKE '%select current\_setting(%)%')
-        OR (pb.with_check LIKE '%current\_setting(%)%' AND lower(pb.with_check) NOT LIKE '%select current\_setting(%)%')
+        (lower(pb.qual) LIKE '%current\_setting(%)%' AND lower(pb.qual) NOT LIKE '%select current\_setting(%)%')
+        OR (lower(pb.with_check) LIKE '%current\_setting(%)%' AND lower(pb.with_check) NOT LIKE '%select current\_setting(%)%')
     )
 )
 
