@@ -2,7 +2,12 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { DbError } from "@repo/errors";
-import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
+import {
+  csrfProtection,
+  requireAuthMiddleware,
+  getAuthSession,
+  rateLimitByUser,
+} from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
 import { addFavoriteArtistSchema } from "./model";
@@ -77,6 +82,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     "/api/me/favorites/artists",
     csrfProtection(),
     requireAuthMiddleware(),
+    rateLimitByUser("CONTENT_RATE_LIMITER"),
     arktypeValidator("json", addFavoriteArtistSchema, (result, c) => {
       if (!result.success) {
         return c.json({ message: "リクエストが不正です。" }, 400);
