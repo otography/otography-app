@@ -75,6 +75,7 @@ describe("Favorite Songs endpoints", () => {
     it("returns 200 with favorites list", async () => {
       vi.mocked(getFavoriteSongs).mockResolvedValue({
         favorites: [expectedFavoriteItem],
+        pagination: { hasNext: false, nextCursor: null },
       });
 
       const res = await testRequest("/api/me/favorites/songs");
@@ -119,6 +120,7 @@ describe("Favorite Songs endpoints", () => {
     it("returns 200 with public favorites", async () => {
       vi.mocked(getPublicFavoriteSongs).mockResolvedValue({
         favorites: [expectedFavoriteItem],
+        pagination: { hasNext: false, nextCursor: null },
       });
 
       const res = await testRequest(

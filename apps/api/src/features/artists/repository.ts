@@ -1,16 +1,32 @@
 import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
+import { cursorWhereClause, withPagination } from "../../shared/pagination";
+import type { InternalCursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
 
 const { deletedAt: _, ...artistColumns } = getColumns(artists);
 
-export const listArtists = async (db: DatabaseOrTransaction) => {
-  return db
-    .select(artistColumns)
-    .from(artists)
-    .where(isNull(artists.deletedAt))
-    .orderBy(desc(artists.createdAt));
+export const listArtists = async (
+  db: DatabaseOrTransaction,
+  pagination?: { limit?: number; cursor?: InternalCursor | null },
+) => {
+  const { cursor } = pagination ?? {};
+  const conditions = [isNull(artists.deletedAt)];
+
+  if (cursor) {
+    conditions.push(cursorWhereClause(artists.createdAt, artists.id, cursor));
+  }
+
+  return withPagination(
+    db
+      .select(artistColumns)
+      .from(artists)
+      .where(and(...conditions))
+      .orderBy(desc(artists.createdAt), desc(artists.id))
+      .$dynamic(),
+    pagination,
+  );
 };
 
 export const createArtist = async (db: DatabaseOrTransaction, values: ArtistCreateDbValues) => {

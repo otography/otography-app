@@ -5,6 +5,7 @@ import type { Context } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
+import type { Cursor } from "../../shared/pagination";
 import { songCreateBodySchema } from "./model";
 import { getSong, getSongs, registerSong, syncSong } from "./usecase";
 
@@ -30,7 +31,17 @@ const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (resul
 
 const songs = new Hono<{ Bindings: Bindings }>()
   .get("/api/songs", async (c) => {
-    const result = await getSongs();
+    const limitParam = c.req.query("limit");
+    const cursorCreatedAt = c.req.query("cursor[createdAt]");
+    const cursorId = c.req.query("cursor[id]");
+
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    let cursor: Cursor | undefined;
+    if (cursorCreatedAt && cursorId) {
+      cursor = { createdAt: cursorCreatedAt, id: cursorId };
+    }
+
+    const result = await getSongs({ limit, cursor });
     if (result instanceof DbError) return handleSongError(result, c);
     return c.json(result);
   })

@@ -41,7 +41,7 @@ const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
 
 // サブクエリ + innerJoin パターンのモックビルダー
 // .select() → .from() はサブクエリ (.where().as()/.limit().as()) と
-// メインクエリ (.innerJoin().where().orderBy/limit()) の両方チェーンを返す
+// メインクエリ (.innerJoin().where().orderBy().$dynamic().limit()) の両方チェーンを返す
 const createSelectChainWithLikes = (resolvedValue: unknown) =>
   vi.fn().mockReturnValue({
     from: vi.fn(() => ({
@@ -53,7 +53,11 @@ const createSelectChainWithLikes = (resolvedValue: unknown) =>
       })),
       innerJoin: vi.fn(() => ({
         where: vi.fn(() => ({
-          orderBy: vi.fn().mockResolvedValue(resolvedValue),
+          orderBy: vi.fn(() => ({
+            $dynamic: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue(resolvedValue),
+            })),
+          })),
           limit: vi.fn().mockResolvedValue(resolvedValue),
         })),
       })),
@@ -65,7 +69,7 @@ describe("posts endpoints", () => {
     vi.clearAllMocks();
   });
 
-  it("GET /api/posts returns posts list with like info", async () => {
+  it("GET /api/posts returns posts list with like info and pagination", async () => {
     mockDbWithTransaction({
       select: createSelectChainWithLikes([
         {
@@ -85,7 +89,8 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    const body = await res.json();
+    expect(body).toMatchObject({
       posts: [
         {
           id: "6f648f36-5be1-4af1-bf5d-cf8ebf222221",
@@ -99,6 +104,10 @@ describe("posts endpoints", () => {
           isLiked: false,
         },
       ],
+      pagination: {
+        hasNext: false,
+        nextCursor: null,
+      },
     });
   });
 

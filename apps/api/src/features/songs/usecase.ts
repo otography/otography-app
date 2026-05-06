@@ -1,5 +1,7 @@
 import { DbError, RlsError } from "@repo/errors";
 import { createDb } from "../../shared/db";
+import type { Cursor } from "../../shared/pagination";
+import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
@@ -41,14 +43,20 @@ const toDbError = (error: unknown, fallbackMessage: string) => {
   return new DbError({ message: fallbackMessage, cause: error });
 };
 
-export const getSongs = async () => {
+export const getSongs = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
   const db = createDb();
-  const rows = await withAnonymousRole(db, (tx) => listSongs(tx));
+  const limit = normalizeLimit(pagination?.limit);
+  const rows = await withAnonymousRole(db, (tx) =>
+    listSongs(tx, { limit, cursor: pagination?.cursor }),
+  );
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to fetch songs.", cause: rows });
   }
 
-  return { songs: rows };
+  const paginationMeta = buildPaginationMeta(rows, limit);
+  const trimmed = trimItems(rows, limit);
+
+  return { songs: trimmed, pagination: paginationMeta };
 };
 
 export const getSong = async (id: string) => {

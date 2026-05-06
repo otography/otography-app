@@ -1,16 +1,32 @@
 import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
+import { cursorWhereClause, withPagination } from "../../shared/pagination";
+import type { InternalCursor } from "../../shared/pagination";
 import { genres, songArtists, songGenres, songs } from "../../shared/db/schema";
 import type { SongDbValues } from "./model";
 
 const { deletedAt: _, ...songColumns } = getColumns(songs);
 
-export const listSongs = async (db: DatabaseOrTransaction) => {
-  return db
-    .select(songColumns)
-    .from(songs)
-    .where(isNull(songs.deletedAt))
-    .orderBy(desc(songs.createdAt));
+export const listSongs = async (
+  db: DatabaseOrTransaction,
+  pagination?: { limit?: number; cursor?: InternalCursor | null },
+) => {
+  const { cursor } = pagination ?? {};
+  const conditions = [isNull(songs.deletedAt)];
+
+  if (cursor) {
+    conditions.push(cursorWhereClause(songs.createdAt, songs.id, cursor));
+  }
+
+  return withPagination(
+    db
+      .select(songColumns)
+      .from(songs)
+      .where(and(...conditions))
+      .orderBy(desc(songs.createdAt), desc(songs.id))
+      .$dynamic(),
+    pagination,
+  );
 };
 
 // ジャンル名の配列から genres テーブルに find-or-create し、ID の配列を返す

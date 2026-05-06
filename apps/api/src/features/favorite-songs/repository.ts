@@ -1,5 +1,7 @@
-import { and, eq, getColumns, isNull } from "drizzle-orm";
+import { and, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
+import { cursorWhereClause, withPagination } from "../../shared/pagination";
+import type { InternalCursor } from "../../shared/pagination";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
@@ -28,16 +30,32 @@ const toAddFavoriteSongError = (error: unknown) => {
   return new DbError({ message: "お気に入り楽曲の登録に失敗しました。", cause: error });
 };
 
-// お気に入り楽曲一覧取得
-export const listFavoriteSongs = async (tx: DatabaseTransaction, userId: string) => {
-  return tx
-    .select({
-      favorite: favoriteSongColumns,
-      song: songColumns,
-    })
-    .from(favoriteSongs)
-    .innerJoin(songs, and(eq(favoriteSongs.songId, songs.id), isNull(songs.deletedAt)))
-    .where(eq(favoriteSongs.userId, userId));
+// お気に入り楽曲一覧取得（ページネーション対応）
+export const listFavoriteSongs = async (
+  tx: DatabaseTransaction,
+  userId: string,
+  pagination?: { limit?: number; cursor?: InternalCursor | null },
+) => {
+  const { cursor } = pagination ?? {};
+  const conditions = [eq(favoriteSongs.userId, userId)];
+
+  if (cursor) {
+    conditions.push(cursorWhereClause(favoriteSongs.createdAt, favoriteSongs.songId, cursor));
+  }
+
+  return withPagination(
+    tx
+      .select({
+        favorite: favoriteSongColumns,
+        song: songColumns,
+      })
+      .from(favoriteSongs)
+      .innerJoin(songs, and(eq(favoriteSongs.songId, songs.id), isNull(songs.deletedAt)))
+      .where(and(...conditions))
+      .orderBy(desc(favoriteSongs.createdAt), desc(favoriteSongs.songId))
+      .$dynamic(),
+    pagination,
+  );
 };
 
 // お気に入り楽曲登録
@@ -79,14 +97,30 @@ export const removeFavoriteSong = async (
     .returning({ songId: favoriteSongs.songId });
 };
 
-// 他人のお気に入り楽曲一覧取得（RLS 不要、読み取り専用）
-export const listFavoriteSongsPublic = async (db: DatabaseOrTransaction, userId: string) => {
-  return db
-    .select({
-      favorite: favoriteSongColumns,
-      song: songColumns,
-    })
-    .from(favoriteSongs)
-    .innerJoin(songs, and(eq(favoriteSongs.songId, songs.id), isNull(songs.deletedAt)))
-    .where(eq(favoriteSongs.userId, userId));
+// 他人のお気に入り楽曲一覧取得（RLS 不要、読み取り専用、ページネーション対応）
+export const listFavoriteSongsPublic = async (
+  db: DatabaseOrTransaction,
+  userId: string,
+  pagination?: { limit?: number; cursor?: InternalCursor | null },
+) => {
+  const { cursor } = pagination ?? {};
+  const conditions = [eq(favoriteSongs.userId, userId)];
+
+  if (cursor) {
+    conditions.push(cursorWhereClause(favoriteSongs.createdAt, favoriteSongs.songId, cursor));
+  }
+
+  return withPagination(
+    db
+      .select({
+        favorite: favoriteSongColumns,
+        song: songColumns,
+      })
+      .from(favoriteSongs)
+      .innerJoin(songs, and(eq(favoriteSongs.songId, songs.id), isNull(songs.deletedAt)))
+      .where(and(...conditions))
+      .orderBy(desc(favoriteSongs.createdAt), desc(favoriteSongs.songId))
+      .$dynamic(),
+    pagination,
+  );
 };

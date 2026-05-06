@@ -1,5 +1,7 @@
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
+import type { Cursor } from "../../shared/pagination";
+import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { fetchArtist } from "../../shared/apple-music";
 import {
@@ -29,14 +31,18 @@ const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   return new DbError({ message: fallbackMessage, cause: error });
 };
 
-export const getArtists = async () => {
+export const getArtists = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
   const db = createDb();
-  const rows = await listArtists(db).catch(
+  const limit = normalizeLimit(pagination?.limit);
+  const rows = await listArtists(db, { limit, cursor: pagination?.cursor }).catch(
     (e) => new DbError({ message: "Failed to fetch artists.", cause: e }),
   );
   if (rows instanceof Error) return rows;
 
-  return { artists: rows };
+  const paginationMeta = buildPaginationMeta(rows, limit);
+  const trimmed = trimItems(rows, limit);
+
+  return { artists: trimmed, pagination: paginationMeta };
 };
 
 export const getArtist = async (id: string) => {
