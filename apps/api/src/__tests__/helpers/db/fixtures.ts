@@ -45,7 +45,7 @@ export const createSong = async (
       title: overrides.title ?? `Song ${id}`,
       appleMusicId: overrides.appleMusicId ?? `am-${id}`,
     })
-    .returning({ id: songs.id });
+    .returning({ id: songs.id, createdAt: songs.createdAt });
   return row!;
 };
 
@@ -79,7 +79,7 @@ export const createPost = async (
       content: overrides.content ?? `Post content ${id}`,
       deletedAt: overrides.deletedAt,
     })
-    .returning({ id: posts.id });
+    .returning({ id: posts.id, createdAt: posts.createdAt });
   return row!;
 };
 

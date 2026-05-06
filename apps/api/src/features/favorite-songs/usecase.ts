@@ -3,6 +3,8 @@ import { DbError } from "@repo/errors";
 import { and, eq, isNull } from "drizzle-orm";
 import { fetchSong } from "../../shared/apple-music";
 import { createDb } from "../../shared/db";
+import type { Cursor } from "../../shared/pagination";
+import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { songs } from "../../shared/db/schema";
 import { withRls } from "../../shared/db/rls";
 import { findSongByAppleMusicId, createSongFromAppleMusic } from "../songs/repository";
@@ -15,43 +17,72 @@ import {
 import type { AddFavoriteSongInput } from "./model";
 
 // お気に入り楽曲一覧取得
-export const getFavoriteSongs = async (session: DecodedIdToken) => {
+export const getFavoriteSongs = async (
+  session: DecodedIdToken,
+  pagination?: { limit?: number; cursor?: Cursor | null },
+) => {
   const db = createDb();
+  const limit = normalizeLimit(pagination?.limit);
   const result = await withRls(db, session, async (tx, userId) => {
-    return listFavoriteSongs(tx, userId);
+    return listFavoriteSongs(tx, userId, { limit, cursor: pagination?.cursor });
   });
 
   if (result instanceof Error) {
     return new DbError({ message: "お気に入り楽曲の取得に失敗しました。", cause: result });
   }
 
+  const paginationMeta = buildPaginationMeta(
+    result.map((row) => ({
+      id: row.favorite.songId,
+      createdAt: row.favorite.createdAt,
+    })),
+    limit,
+  );
+  const trimmed = trimItems(result, limit);
+
   return {
-    favorites: result.map((row) => ({
+    favorites: trimmed.map((row) => ({
       song: row.song,
       comment: row.favorite.comment,
       emoji: row.favorite.emoji,
       color: row.favorite.color,
       addedAt: row.favorite.createdAt,
     })),
+    pagination: paginationMeta,
   };
 };
 
 // 他人のお気に入り楽曲一覧取得（RLS 不要）
-export const getPublicFavoriteSongs = async (userId: string) => {
+export const getPublicFavoriteSongs = async (
+  userId: string,
+  pagination?: { limit?: number; cursor?: Cursor | null },
+) => {
   const db = createDb();
-  const result = await listFavoriteSongsPublic(db, userId).catch(
-    (e) => new DbError({ message: "お気に入り楽曲の取得に失敗しました。", cause: e }),
-  );
+  const limit = normalizeLimit(pagination?.limit);
+  const result = await listFavoriteSongsPublic(db, userId, {
+    limit,
+    cursor: pagination?.cursor,
+  }).catch((e) => new DbError({ message: "お気に入り楽曲の取得に失敗しました。", cause: e }));
   if (result instanceof Error) return result;
 
+  const paginationMeta = buildPaginationMeta(
+    result.map((row) => ({
+      id: row.favorite.songId,
+      createdAt: row.favorite.createdAt,
+    })),
+    limit,
+  );
+  const trimmed = trimItems(result, limit);
+
   return {
-    favorites: result.map((row) => ({
+    favorites: trimmed.map((row) => ({
       song: row.song,
       comment: row.favorite.comment,
       emoji: row.favorite.emoji,
       color: row.favorite.color,
       addedAt: row.favorite.createdAt,
     })),
+    pagination: paginationMeta,
   };
 };
 

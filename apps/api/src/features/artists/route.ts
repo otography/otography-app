@@ -5,6 +5,7 @@ import type { Context } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
+import type { Cursor } from "../../shared/pagination";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
 import { artistCreateBodySchema, artistUpdateSchema } from "./model";
 
@@ -36,7 +37,17 @@ const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (
 
 const artists = new Hono<{ Bindings: Bindings }>()
   .get("/api/artists", async (c) => {
-    const result = await getArtists();
+    const limitParam = c.req.query("limit");
+    const cursorCreatedAt = c.req.query("cursor[createdAt]");
+    const cursorId = c.req.query("cursor[id]");
+
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    let cursor: Cursor | undefined;
+    if (cursorCreatedAt && cursorId) {
+      cursor = { createdAt: cursorCreatedAt, id: cursorId };
+    }
+
+    const result = await getArtists({ limit, cursor });
     if (result instanceof DbError) return handleArtistError(result, c);
     return c.json(result);
   })

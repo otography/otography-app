@@ -38,24 +38,28 @@ describe("artists endpoints", () => {
     vi.clearAllMocks();
   });
 
-  it("GET /api/artists returns artists list", async () => {
+  it("GET /api/artists returns artists list with pagination", async () => {
     mockDbWithTransaction({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            orderBy: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
-                name: "Sample Artist",
-                ipiCode: null,
-                type: "person",
-                gender: null,
-                birthplace: null,
-                birthdate: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
+            orderBy: vi.fn(() => ({
+              $dynamic: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
+                    name: "Sample Artist",
+                    ipiCode: null,
+                    type: "person",
+                    gender: null,
+                    birthplace: null,
+                    birthdate: null,
+                    createdAt: "2026-01-01T00:00:00.000Z",
+                    updatedAt: "2026-01-01T00:00:00.000Z",
+                  },
+                ]),
+              })),
+            })),
           })),
         })),
       })),
@@ -64,7 +68,8 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    const body = await res.json();
+    expect(body).toMatchObject({
       artists: [
         {
           id: "8f648f36-5be1-4af1-bf5d-cf8ebf211111",
@@ -78,6 +83,10 @@ describe("artists endpoints", () => {
           updatedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
+      pagination: {
+        hasNext: false,
+        nextCursor: null,
+      },
     });
   });
 

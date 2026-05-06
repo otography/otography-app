@@ -4,6 +4,8 @@ import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
+import type { Cursor, PaginationMeta } from "../../shared/pagination";
+import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
 import { findOrCreateArtists } from "../artists/repository";
 import {
@@ -38,7 +40,10 @@ const resolveUserId = async (
   return userId;
 };
 
-export const getPosts = async (session?: DecodedIdToken | null) => {
+export const getPosts = async (
+  session?: DecodedIdToken | null,
+  pagination?: { limit?: number; cursor?: Cursor | null },
+) => {
   const db = createDb();
 
   let userId: string | null = null;
@@ -48,12 +53,19 @@ export const getPosts = async (session?: DecodedIdToken | null) => {
     userId = resolved;
   }
 
-  const rows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, userId));
+  const limit = normalizeLimit(pagination?.limit);
+
+  const rows = await withAnonymousRole(db, (tx) =>
+    listPostsWithLikes(tx, userId, { limit, cursor: pagination?.cursor }),
+  );
   if (rows instanceof Error) {
     return new DbError({ message: "Failed to fetch posts.", cause: rows });
   }
 
-  return { posts: rows };
+  const paginationMeta = buildPaginationMeta(rows, limit);
+  const trimmed = trimItems(rows, limit);
+
+  return { posts: trimmed, pagination: paginationMeta };
 };
 
 export const getPost = async (id: string, session?: DecodedIdToken | null) => {

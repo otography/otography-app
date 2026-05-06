@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
+import type { Cursor } from "../../shared/pagination";
 import { addFavoriteSongSchema } from "./model";
 import {
   getFavoriteSongs,
@@ -25,6 +26,19 @@ const userIdParamSchema = type({
   userId: "string.uuid",
 });
 
+const parsePaginationQuery = (c: { req: { query: (key: string) => string | undefined } }) => {
+  const limitParam = c.req.query("limit");
+  const cursorCreatedAt = c.req.query("cursor[createdAt]");
+  const cursorId = c.req.query("cursor[id]");
+
+  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+  let cursor: Cursor | undefined;
+  if (cursorCreatedAt && cursorId) {
+    cursor = { createdAt: cursorCreatedAt, id: cursorId };
+  }
+  return { limit, cursor };
+};
+
 const favoriteSongs = new Hono<{ Bindings: Bindings }>()
   // 自分のお気に入り楽曲一覧取得
   .get("/api/me/favorites/songs", requireAuthMiddleware(), async (c) => {
@@ -33,7 +47,8 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
       return c.json({ message: "ログインしていません。" }, 401);
     }
 
-    const result = await getFavoriteSongs(session);
+    const { limit, cursor } = parsePaginationQuery(c);
+    const result = await getFavoriteSongs(session, { limit, cursor });
     if (result instanceof Error) return handleError(result, c);
 
     return c.json(result);
@@ -49,7 +64,8 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
     }),
     async (c) => {
       const { userId } = c.req.valid("param");
-      const result = await getPublicFavoriteSongs(userId);
+      const { limit, cursor } = parsePaginationQuery(c);
+      const result = await getPublicFavoriteSongs(userId, { limit, cursor });
       if (result instanceof Error) return handleError(result, c);
 
       return c.json(result);

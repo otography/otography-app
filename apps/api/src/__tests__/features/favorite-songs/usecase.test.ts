@@ -97,7 +97,7 @@ describe("favorite songs usecase", () => {
 
       const result = await getFavoriteSongs(session);
 
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         favorites: [
           {
             song: {
@@ -111,8 +111,15 @@ describe("favorite songs usecase", () => {
             addedAt,
           },
         ],
+        pagination: {
+          hasNext: false,
+          nextCursor: null,
+        },
       });
-      expect(mocks.listFavoriteSongs).toHaveBeenCalledWith(tx, "user-id");
+      expect(mocks.listFavoriteSongs).toHaveBeenCalledWith(tx, "user-id", {
+        limit: 20,
+        cursor: undefined,
+      });
     });
 
     it("wraps RLS failures as the favorite-song list error", async () => {

@@ -56,21 +56,25 @@ describe("songs endpoints", () => {
     vi.clearAllMocks();
   });
 
-  it("GET /api/songs returns songs list", async () => {
+  it("GET /api/songs returns songs list with pagination", async () => {
     mockDbWithTransaction({
       select: vi.fn(() => ({
         from: vi.fn(() => ({
           where: vi.fn(() => ({
-            orderBy: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
-                title: "Sample Song",
-                length: 180,
-                isrcs: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
+            orderBy: vi.fn(() => ({
+              $dynamic: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([
+                  {
+                    id: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
+                    title: "Sample Song",
+                    length: 180,
+                    isrcs: null,
+                    createdAt: "2026-01-01T00:00:00.000Z",
+                    updatedAt: "2026-01-01T00:00:00.000Z",
+                  },
+                ]),
+              })),
+            })),
           })),
         })),
       })),
@@ -79,7 +83,8 @@ describe("songs endpoints", () => {
     const res = await testRequest("/api/songs");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    const body = await res.json();
+    expect(body).toMatchObject({
       songs: [
         {
           id: "8f648f36-5be1-4af1-bf5d-cf8ebf222221",
@@ -90,6 +95,10 @@ describe("songs endpoints", () => {
           updatedAt: "2026-01-01T00:00:00.000Z",
         },
       ],
+      pagination: {
+        hasNext: false,
+        nextCursor: null,
+      },
     });
   });
 

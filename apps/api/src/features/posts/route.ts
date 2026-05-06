@@ -5,6 +5,7 @@ import type { Context } from "hono";
 import { DbError } from "@repo/errors";
 import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
+import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
 
@@ -38,7 +39,18 @@ const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (resu
 const posts = new Hono<{ Bindings: Bindings }>()
   .get("/api/posts", async (c) => {
     const session = getAuthSession(c);
-    const result = await getPosts(session);
+
+    const limitParam = c.req.query("limit");
+    const cursorCreatedAt = c.req.query("cursor[createdAt]");
+    const cursorId = c.req.query("cursor[id]");
+
+    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
+    let cursor: Cursor | undefined;
+    if (cursorCreatedAt && cursorId) {
+      cursor = { createdAt: cursorCreatedAt, id: cursorId };
+    }
+
+    const result = await getPosts(session, { limit, cursor });
     if (result instanceof Error) return handlePostError(result, c);
 
     return c.json(result);

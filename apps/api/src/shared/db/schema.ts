@@ -151,6 +151,9 @@ export const artists = pgTable.withRLS(
     index("idx_artists_not_deleted")
       .on(table.id)
       .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_artists_created_at_id_active")
+      .on(table.createdAt, table.id)
+      .where(sql`${table.deletedAt} IS NULL`),
     pgPolicy("artists_select_active", {
       for: "select",
       to: [anonRole, authenticatedRole],
@@ -188,6 +191,7 @@ export const favoriteArtists = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.userId, table.artistId] }),
     index("idx_favorite_artists_artist_id").on(table.artistId),
+    index("idx_favorite_artists_user_created").on(table.userId, table.createdAt.desc()),
     pgPolicy("favorite_artists_select_own", {
       for: "select",
       to: authenticatedRole,
@@ -223,6 +227,9 @@ export const songs = pgTable.withRLS(
     index("idx_songs_title").on(table.title),
     index("idx_songs_not_deleted")
       .on(table.id)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_songs_created_at_id_active")
+      .on(table.createdAt, table.id)
       .where(sql`${table.deletedAt} IS NULL`),
     pgPolicy("songs_select_active", {
       for: "select",
@@ -400,6 +407,7 @@ export const favoriteSongs = pgTable.withRLS(
   (table) => [
     primaryKey({ columns: [table.userId, table.songId] }),
     index("idx_favorite_songs_song_id").on(table.songId),
+    index("idx_favorite_songs_user_created").on(table.userId, table.createdAt.desc()),
     pgPolicy("favorite_songs_select_own", {
       for: "select",
       to: authenticatedRole,
@@ -438,6 +446,9 @@ export const posts = pgTable.withRLS(
     index("idx_posts_song_id").on(table.songId),
     index("idx_posts_not_deleted")
       .on(table.id)
+      .where(sql`${table.deletedAt} IS NULL`),
+    index("idx_posts_created_at_id_active")
+      .on(table.createdAt, table.id)
       .where(sql`${table.deletedAt} IS NULL`),
     pgPolicy("posts_insert_own", {
       for: "insert",
