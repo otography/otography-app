@@ -166,7 +166,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
     clearRefreshTokenCookie(c);
     return c.body(null, 204);
   })
-  .get("/api/auth/google", googleOAuthRedirect)
+  .get("/api/auth/google", rateLimitByIp("AUTH_GOOGLE_RATE_LIMITER"), googleOAuthRedirect)
   .get("/api/auth/google/callback", googleOAuthCallback);
 
 export { auth };
