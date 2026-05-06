@@ -91,49 +91,57 @@ const auth = new Hono<{ Bindings: Bindings }>()
       return c.json({ message: "Signed in successfully." }, 200);
     },
   )
-  .post("/api/auth/sign-up", csrfProtection(), credentialsValidator, async (c) => {
-    const { email, password } = c.req.valid("json");
-    console.info("Email sign-up started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
+  .post(
+    "/api/auth/sign-up",
+    csrfProtection(),
+    rateLimitByIp("AUTH_SIGNUP_RATE_LIMITER"),
+    credentialsValidator,
+    async (c) => {
+      const { email, password } = c.req.valid("json");
+      console.info("Email sign-up started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
 
-    const signUpResult = await signUpWithPassword(c.env.FIREBASE_API_KEY, email, password);
-    if (signUpResult instanceof Error) {
-      console.warn("Email sign-up failed before session creation.", {
-        statusCode: signUpResult.statusCode,
-        message: signUpResult.message,
-      });
-      return handleAuthError(
-        new AuthError({
-          message: signUpResult.message,
-          code: "sign-up-failed",
+      const signUpResult = await signUpWithPassword(c.env.FIREBASE_API_KEY, email, password);
+      if (signUpResult instanceof Error) {
+        console.warn("Email sign-up failed before session creation.", {
           statusCode: signUpResult.statusCode,
-          cause: signUpResult,
-        }),
-        c,
-      );
-    }
-    console.info("Email sign-up created Firebase account.", {
-      firebaseId: maskIdentifier(signUpResult.localId),
-    });
+          message: signUpResult.message,
+        });
+        return handleAuthError(
+          new AuthError({
+            message: signUpResult.message,
+            code: "sign-up-failed",
+            statusCode: signUpResult.statusCode,
+            cause: signUpResult,
+          }),
+          c,
+        );
+      }
+      console.info("Email sign-up created Firebase account.", {
+        firebaseId: maskIdentifier(signUpResult.localId),
+      });
 
-    const sessionCookie = await createSessionCookie(signUpResult.idToken);
-    if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
-    console.info("Email sign-up session cookie created.", {
-      firebaseId: maskIdentifier(signUpResult.localId),
-    });
+      const sessionCookie = await createSessionCookie(signUpResult.idToken);
+      if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
+      console.info("Email sign-up session cookie created.", {
+        firebaseId: maskIdentifier(signUpResult.localId),
+      });
 
-    // DB にユーザーレコード作成（firebase_id のみ、username は null）
-    const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
-    if (userRecord instanceof Error) return handleAuthError(userRecord, c);
-    console.info("Email sign-up user record created.", {
-      firebaseId: maskIdentifier(signUpResult.localId),
-    });
+      // DB にユーザーレコード作成（firebase_id のみ、username は null）
+      const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
+      if (userRecord instanceof Error) return handleAuthError(userRecord, c);
+      console.info("Email sign-up user record created.", {
+        firebaseId: maskIdentifier(signUpResult.localId),
+      });
 
-    setSessionCookie(c, sessionCookie);
-    const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
-    if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
-    console.info("Email sign-up completed.", { firebaseId: maskIdentifier(signUpResult.localId) });
-    return c.json({ message: "Account created successfully." }, 201);
-  })
+      setSessionCookie(c, sessionCookie);
+      const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
+      if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
+      console.info("Email sign-up completed.", {
+        firebaseId: maskIdentifier(signUpResult.localId),
+      });
+      return c.json({ message: "Account created successfully." }, 201);
+    },
+  )
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {
     const session = getAuthSession(c);
     const userId = session?.sub;
