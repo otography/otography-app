@@ -11,6 +11,12 @@ vi.mock("../../../shared/db", () => ({
   createDb: vi.fn(),
 }));
 
+// レートリミットミドルウェアをバイパス（レートリミットテストは別ファイルで実施）
+vi.mock("../../../shared/middleware/rate-limit.middleware", () => ({
+  rateLimitByIp: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+  rateLimitByUser: () => async (_c: unknown, next: () => Promise<void>) => await next(),
+}));
+
 import { signInWithPassword } from "../../../shared/firebase/firebase-rest";
 import { createDb } from "../../../shared/db";
 
