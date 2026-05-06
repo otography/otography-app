@@ -71,18 +71,28 @@ import { app } from "../../index";
 const RATE_LIMIT = 30;
 
 /**
+ * モック用の共通env型
+ * CONTENT_RATE_LIMITER.limit は { key: string } を受け取る
+ */
+type MockRateLimitEnv = typeof env & {
+  CONTENT_RATE_LIMITER: {
+    limit: ReturnType<typeof vi.fn<(opts: { key: string }) => Promise<{ success: boolean }>>>;
+  };
+};
+
+/**
  * 共有カウンター付きレートリミットモックenvを作成
  *
  * posts, artists, songs 全て同じ CONTENT_RATE_LIMITER を参照するため、
  * 複数エンドポイントにまたがるリクエストでも単一のカウンターで追跡される。
  * RATE_LIMIT回まではsuccess=true、それ以降はsuccess=falseを返す
  */
-const createSharedCounterMockEnv = () => {
+const createSharedCounterMockEnv = (): MockRateLimitEnv => {
   let callCount = 0;
   return {
     ...env,
     CONTENT_RATE_LIMITER: {
-      limit: vi.fn(async () => {
+      limit: vi.fn(async (_opts: { key: string }) => {
         callCount++;
         return { success: callCount <= RATE_LIMIT };
       }),
@@ -94,14 +104,14 @@ const createSharedCounterMockEnv = () => {
  * ユーザーごとに独立したカウンターを持つレートリミットモックenvを作成
  * key ごとに独立して呼び出し回数を追跡し、RATE_LIMIT回まではsuccess=true
  */
-const createPerUserCounterMockEnv = () => {
+const createPerUserCounterMockEnv = (): MockRateLimitEnv => {
   const counters = new Map<string, number>();
   return {
     ...env,
     CONTENT_RATE_LIMITER: {
-      limit: vi.fn(async ({ key }: { key: string }) => {
-        const count = (counters.get(key) ?? 0) + 1;
-        counters.set(key, count);
+      limit: vi.fn(async (opts: { key: string }) => {
+        const count = (counters.get(opts.key) ?? 0) + 1;
+        counters.set(opts.key, count);
         return { success: count <= RATE_LIMIT };
       }),
     },
