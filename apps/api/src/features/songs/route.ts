@@ -3,7 +3,7 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { DbError } from "@repo/errors";
-import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
+import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
 import { songCreateBodySchema } from "./model";
@@ -53,14 +53,21 @@ const songs = new Hono<{ Bindings: Bindings }>()
 
     return c.json(result);
   })
-  .post("/api/songs", csrfProtection(), requireAuthMiddleware(), songCreateValidator, async (c) => {
-    const payload = c.req.valid("json");
-    const result = await registerSong(payload);
+  .post(
+    "/api/songs",
+    csrfProtection(),
+    requireAuthMiddleware(),
+    rateLimitByUser("CONTENT_RATE_LIMITER"),
+    songCreateValidator,
+    async (c) => {
+      const payload = c.req.valid("json");
+      const result = await registerSong(payload);
 
-    if (result instanceof DbError) return handleSongError(result, c);
+      if (result instanceof DbError) return handleSongError(result, c);
 
-    return c.json(result, 201);
-  })
+      return c.json(result, 201);
+    },
+  )
   .patch(
     "/api/songs/:id",
     csrfProtection(),
