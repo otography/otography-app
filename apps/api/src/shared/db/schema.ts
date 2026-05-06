@@ -90,9 +90,14 @@ export const users = pgTable(
     birthplace: prefectureEnum("birthplace"),
     birthyear: integer("birthyear"),
     gender: varchar("gender", { length: 20 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     check(
@@ -123,7 +128,7 @@ export const userProfiles = pgView("user_profiles", {
   username: varchar("username", { length: 50 }),
   name: varchar("name", { length: 100 }),
   bio: text("bio"),
-  createdAt: timestamp("created_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" }),
 })
   .with({
     securityBarrier: true,
@@ -141,9 +146,14 @@ export const artists = pgTable.withRLS(
     gender: varchar("gender", { length: 20 }),
     birthplace: prefectureEnum("birthplace"),
     birthdate: date("birthdate", { mode: "string" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     index("idx_artists_name").on(table.name),
@@ -185,8 +195,13 @@ export const favoriteArtists = pgTable.withRLS(
     comment: text("comment"),
     emoji: varchar("emoji", { length: 20 }),
     color: varchar("color", { length: 20 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.artistId] }),
@@ -218,9 +233,14 @@ export const songs = pgTable.withRLS(
     appleMusicId: varchar("apple_music_id", { length: 100 }).notNull().unique(),
     length: integer("length"),
     isrcs: varchar("isrcs", { length: 50 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     check("songs_length_check", sql`${table.length} >= 0`),
@@ -260,7 +280,9 @@ export const songArtists = pgTable.withRLS(
       .notNull()
       .references(() => artists.id, { onDelete: "cascade" }),
     isGuest: boolean("is_guest").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.songId, table.artistId] }),
@@ -291,9 +313,14 @@ export const groups = pgTable.withRLS(
     name: varchar("name", { length: 255 }).notNull(),
     type: varchar("type", { length: 50 }),
     description: varchar("description", { length: 255 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     check(
@@ -317,7 +344,9 @@ export const groupSongs = pgTable.withRLS(
     songId: uuid("song_id")
       .notNull()
       .references(() => songs.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.groupId, table.songId] }),
@@ -331,9 +360,14 @@ export const genres = pgTable.withRLS(
     id: uuidV7("id").primaryKey(),
     name: varchar("name", { length: 100 }).notNull().unique(),
     description: varchar("description", { length: 255 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     index("idx_genres_not_deleted")
@@ -367,7 +401,9 @@ export const songGenres = pgTable.withRLS(
     genreId: uuid("genre_id")
       .notNull()
       .references(() => genres.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.songId, table.genreId] }),
@@ -402,7 +438,9 @@ export const favoriteSongs = pgTable.withRLS(
     comment: text("comment"),
     emoji: varchar("emoji", { length: 20 }),
     color: varchar("color", { length: 20 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.songId] }),
@@ -437,9 +475,14 @@ export const posts = pgTable.withRLS(
       .notNull()
       .references(() => songs.id, { onDelete: "cascade" }),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
   },
   (table) => [
     index("idx_posts_user_id").on(table.userId),
@@ -484,7 +527,9 @@ export const postLikes = pgTable.withRLS(
     postId: uuid("post_id")
       .notNull()
       .references(() => posts.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.postId] }),

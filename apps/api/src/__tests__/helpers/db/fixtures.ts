@@ -68,7 +68,7 @@ export const createPost = async (
   db: Db,
   userId: string,
   songId: string,
-  overrides: { content?: string; deletedAt?: Date } = {},
+  overrides: { content?: string; deletedAt?: string } = {},
 ) => {
   const id = uniqueId();
   const [row] = await db
@@ -91,7 +91,10 @@ export const addFavorite = async (db: Db, userId: string, songId: string) => {
   await db.insert(favoriteSongs).values({ userId, songId });
 };
 
-export const createGenre = async (db: Db, overrides: { name?: string; deletedAt?: Date } = {}) => {
+export const createGenre = async (
+  db: Db,
+  overrides: { name?: string; deletedAt?: string } = {},
+) => {
   const id = uniqueId();
   const [row] = await db
     .insert(genres)

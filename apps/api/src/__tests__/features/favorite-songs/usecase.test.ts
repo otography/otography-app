@@ -56,7 +56,7 @@ const favoriteRow = {
   comment: "great",
   emoji: "star",
   color: "#ff0000",
-  createdAt: new Date("2026-05-02T00:00:00.000Z"),
+  createdAt: "2026-05-02T00:00:00.000Z",
 };
 
 const createExistingSongQuery = (rows: unknown[]) => ({
@@ -78,7 +78,7 @@ describe("favorite songs usecase", () => {
 
   describe("getFavoriteSongs", () => {
     it("maps repository rows into the public response shape", async () => {
-      const addedAt = new Date("2026-05-02T00:00:00.000Z");
+      const addedAt = "2026-05-02T00:00:00.000Z";
       mocks.listFavoriteSongs.mockResolvedValue([
         {
           favorite: {

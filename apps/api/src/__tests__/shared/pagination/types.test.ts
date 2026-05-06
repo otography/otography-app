@@ -37,10 +37,13 @@ describe("normalizeLimit", () => {
 });
 
 describe("buildPaginationMeta", () => {
-  const makeItem = (id: string, createdAt: Date) => ({ id, createdAt, content: "test" });
+  const makeItem = (id: string, createdAt: string) => ({ id, createdAt, content: "test" });
 
   it("items が requestedLimit 以下なら hasNext=false", () => {
-    const items = [makeItem("a", new Date()), makeItem("b", new Date())];
+    const items = [
+      makeItem("a", new Date().toISOString()),
+      makeItem("b", new Date().toISOString()),
+    ];
 
     const meta = buildPaginationMeta(items, 2);
 
@@ -49,9 +52,9 @@ describe("buildPaginationMeta", () => {
   });
 
   it("items が requestedLimit + 1 件なら hasNext=true、カーソルは最後から2番目", () => {
-    const date1 = new Date("2026-01-01T00:00:00Z");
-    const date2 = new Date("2026-01-02T00:00:00Z");
-    const date3 = new Date("2026-01-03T00:00:00Z");
+    const date1 = "2026-01-01T00:00:00.000Z";
+    const date2 = "2026-01-02T00:00:00.000Z";
+    const date3 = "2026-01-03T00:00:00.000Z";
     const items = [makeItem("a", date1), makeItem("b", date2), makeItem("c", date3)];
 
     // limit=2 → 3件取得 → hasNext=true, cursor = items[1]
@@ -59,7 +62,7 @@ describe("buildPaginationMeta", () => {
 
     expect(meta.hasNext).toBe(true);
     expect(meta.nextCursor).toEqual({
-      createdAt: date2.toISOString(),
+      createdAt: date2,
       id: "b",
     });
   });

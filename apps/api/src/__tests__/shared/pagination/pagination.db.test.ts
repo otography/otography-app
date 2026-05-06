@@ -21,16 +21,17 @@ afterAll(async () => {
 // createdAt を1秒ずつずらして INSERT するヘルパー
 const insertPostsWithStaggeredCreatedAt = async (
   count: number,
-  baseTime = new Date("2026-03-01T00:00:00.000Z"),
+  baseTime = "2026-03-01T00:00:00.000Z",
 ) => {
   const author = await createUser(db);
   const song = await createSong(db);
+  const base = new Date(baseTime).getTime();
   for (let i = 0; i < count; i++) {
     await db.insert(posts).values({
       userId: author.id,
       songId: song.id,
       content: `post-${i}`,
-      createdAt: new Date(baseTime.getTime() + i * 1000),
+      createdAt: new Date(base + i * 1000).toISOString(),
     });
   }
   return { author, song };
@@ -172,7 +173,7 @@ describe("pagination (real DB)", () => {
     // Given: 同じ時刻の投稿を6件作成
     const author = await createUser(db);
     const song = await createSong(db);
-    const fixedTime = new Date("2026-01-15T12:00:00.000Z");
+    const fixedTime = "2026-01-15T12:00:00.000Z";
 
     for (let i = 0; i < 6; i++) {
       await db.insert(posts).values({

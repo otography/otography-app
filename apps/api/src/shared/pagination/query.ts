@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import type { PgAsyncSelect } from "drizzle-orm/pg-core/async/select";
-import type { InternalCursor } from "./types";
+import type { Cursor } from "./types";
 
 /**
  * cursor-based pagination の WHERE 条件を生成する。
@@ -13,13 +13,8 @@ import type { InternalCursor } from "./types";
  * ソート順: created_at DESC, id DESC
  * → カーソル条件: (created_at, id) < (cursor.createdAt, cursor.id)
  */
-export const cursorWhereClause = (
-  createdAtCol: PgColumn,
-  idCol: PgColumn,
-  cursor: InternalCursor,
-) => {
-  const createdAt =
-    typeof cursor.createdAt === "string" ? cursor.createdAt : cursor.createdAt.toISOString();
+export const cursorWhereClause = (createdAtCol: PgColumn, idCol: PgColumn, cursor: Cursor) => {
+  const createdAt = cursor.createdAt;
 
   return sql`(${createdAtCol}, ${idCol}) < (${createdAt}::timestamptz, ${cursor.id})`;
 };
@@ -36,7 +31,7 @@ export const cursorWhereClause = (
  */
 export const withPagination = <T extends PgAsyncSelect>(
   qb: T,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   if (pagination?.limit !== undefined) {
     return qb.limit(pagination.limit + 1);

@@ -73,7 +73,7 @@ describe("DB関数: resolve_firebase_id", () => {
     // Given
     await db.insert(users).values({
       firebaseId: "firebase-deleted",
-      deletedAt: new Date("2026-01-01T00:00:00.000Z"),
+      deletedAt: "2026-01-01T00:00:00.000Z",
     });
 
     // When

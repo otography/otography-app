@@ -1,7 +1,7 @@
 import { and, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
-import type { InternalCursor } from "../../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
@@ -34,7 +34,7 @@ const toAddFavoriteSongError = (error: unknown) => {
 export const listFavoriteSongs = async (
   tx: DatabaseTransaction,
   userId: string,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   const { cursor } = pagination ?? {};
   const conditions = [eq(favoriteSongs.userId, userId)];
@@ -101,7 +101,7 @@ export const removeFavoriteSong = async (
 export const listFavoriteSongsPublic = async (
   db: DatabaseOrTransaction,
   userId: string,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   const { cursor } = pagination ?? {};
   const conditions = [eq(favoriteSongs.userId, userId)];
