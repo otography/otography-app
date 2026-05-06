@@ -3,7 +3,7 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { DbError } from "@repo/errors";
-import { csrfProtection, requireAuthMiddleware } from "../../shared/middleware";
+import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
@@ -63,6 +63,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     "/api/artists",
     csrfProtection(),
     requireAuthMiddleware(),
+    rateLimitByUser("CONTENT_RATE_LIMITER"),
     artistCreateValidator,
     async (c) => {
       const payload = c.req.valid("json");
