@@ -1,3 +1,4 @@
+import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
@@ -6,11 +7,24 @@ vi.mock("../../../shared/middleware", async () => {
     "../../../shared/middleware",
   );
 
+  // モック内で共有する getAuthSession モック
+  // rateLimitByUser モックがセッション状態を参照できるように、
+  // vi.fn() のクロージャでミュータブルなオブジェクトとして定義
+  const mockGetAuthSession = vi.fn((_c: unknown) => ({ sub: "firebase-user-1" }));
+
   return {
     ...actual,
     csrfProtection: () => async (_c: unknown, next: () => Promise<void>) => await next(),
     requireAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => await next(),
-    getAuthSession: vi.fn(() => ({ sub: "firebase-user-1" })),
+    // rateLimitByUser をモック: セッションがあれば next()、なければ 401
+    rateLimitByUser: () => async (c: Context, next: () => Promise<void>) => {
+      const session = mockGetAuthSession(c);
+      if (!session) {
+        return c.json({ message: "You are not logged in." }, 401);
+      }
+      await next();
+    },
+    getAuthSession: mockGetAuthSession,
   };
 });
 
