@@ -122,10 +122,7 @@ const POSTS_URL = new URL("/api/posts", "http://localhost:3001");
 const ARTISTS_URL = new URL("/api/artists", "http://localhost:3001");
 const SONGS_URL = new URL("/api/songs", "http://localhost:3001");
 
-const makePostRequest = (
-  mockEnv: ReturnType<typeof createSharedCounterMockEnv>,
-  sessionCookie = "valid-session-cookie",
-) =>
+const makePostRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
   app.request(
     POSTS_URL,
     {
@@ -139,10 +136,7 @@ const makePostRequest = (
     mockEnv,
   );
 
-const makeArtistRequest = (
-  mockEnv: ReturnType<typeof createSharedCounterMockEnv>,
-  sessionCookie = "valid-session-cookie",
-) =>
+const makeArtistRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
   app.request(
     ARTISTS_URL,
     {
@@ -156,10 +150,7 @@ const makeArtistRequest = (
     mockEnv,
   );
 
-const makeSongRequest = (
-  mockEnv: ReturnType<typeof createSharedCounterMockEnv | typeof createPerUserCounterMockEnv>,
-  sessionCookie = "valid-session-cookie",
-) =>
+const makeSongRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
   app.request(
     SONGS_URL,
     {
