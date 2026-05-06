@@ -9,7 +9,7 @@ const favoriteSongRow = {
   comment: "great",
   emoji: "star",
   color: "#ff0000",
-  createdAt: new Date("2026-05-02T00:00:00.000Z"),
+  createdAt: "2026-05-02T00:00:00.000Z",
 };
 
 const createInsertTx = ({ rows, error }: { rows?: unknown[]; error?: unknown }) => {

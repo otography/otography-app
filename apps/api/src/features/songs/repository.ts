@@ -1,7 +1,7 @@
-import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, inArray, isNull } from "drizzle-orm";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
-import type { InternalCursor } from "../../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 import { genres, songArtists, songGenres, songs } from "../../shared/db/schema";
 import type { SongDbValues } from "./model";
 
@@ -9,7 +9,7 @@ const { deletedAt: _, ...songColumns } = getColumns(songs);
 
 export const listSongs = async (
   db: DatabaseOrTransaction,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   const { cursor } = pagination ?? {};
   const conditions = [isNull(songs.deletedAt)];
@@ -145,7 +145,6 @@ export const updateSongFull = async (
       title: songValues.title,
       length: songValues.length,
       isrcs: songValues.isrcs,
-      updatedAt: sql`now()`,
     })
     .where(and(eq(songs.id, id), isNull(songs.deletedAt)))
     .returning(songColumns);
@@ -208,7 +207,6 @@ export const createSongFromAppleMusic = async (
       set: {
         title,
         deletedAt: null,
-        updatedAt: sql`now()`,
       },
     })
     .returning(songColumns);

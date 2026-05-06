@@ -42,8 +42,8 @@ const mockFavoriteArtist = {
   comment: "最高!",
   emoji: "🎸",
   color: "#0000ff",
-  createdAt: new Date("2026-04-30T00:00:00.000Z"),
-  updatedAt: new Date("2026-04-30T00:00:00.000Z"),
+  createdAt: "2026-04-30T00:00:00.000Z",
+  updatedAt: "2026-04-30T00:00:00.000Z",
 };
 
 const mockArtist = {
@@ -53,7 +53,7 @@ const mockArtist = {
 };
 
 // usecase が返す変換後の期待フォーマット
-// addedAt は Date 型だが JSON レスポンスでは ISO 文字列になる
+// addedAt は timestamp カラム（mode: "string"）のため ISO 文字列
 const expectedFavoriteItem = {
   artist: mockArtist,
   comment: mockFavoriteArtist.comment as string | null,

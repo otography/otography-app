@@ -1,7 +1,7 @@
 import { and, desc, eq, exists, getColumns, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
-import type { InternalCursor } from "../../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 import { postLikes, posts, userProfiles } from "../../shared/db/schema";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
@@ -29,7 +29,7 @@ const likeFields = (db: DatabaseOrTransaction, userId: string | null) => ({
 export const listPostsWithLikes = async (
   db: DatabaseOrTransaction,
   userId: string | null,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   const { cursor } = pagination ?? {};
 
@@ -87,7 +87,6 @@ export const updatePostById = async (
     .update(posts)
     .set({
       ...values,
-      updatedAt: sql`now()`,
     })
     .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .returning(postColumns);
@@ -100,7 +99,6 @@ export const softDeletePostById = async (db: DatabaseOrTransaction, id: string) 
     .update(posts)
     .set({
       deletedAt: sql`now()`,
-      updatedAt: sql`now()`,
     })
     .where(and(eq(posts.id, id), isNull(posts.deletedAt)))
     .returning({ id: posts.id });

@@ -60,7 +60,7 @@ describe("listPostsWithLikes", () => {
     // Given
     const author = await createUser(db);
     const song = await createSong(db);
-    await createPost(db, author.id, song.id, { deletedAt: new Date() });
+    await createPost(db, author.id, song.id, { deletedAt: new Date().toISOString() });
 
     // When
     const rows = await withAnonymousRole(db, (tx) => listPostsWithLikes(tx, null));
@@ -115,7 +115,7 @@ describe("findPostByIdWithLikes", () => {
     // Given
     const author = await createUser(db);
     const song = await createSong(db);
-    const post = await createPost(db, author.id, song.id, { deletedAt: new Date() });
+    const post = await createPost(db, author.id, song.id, { deletedAt: new Date().toISOString() });
 
     // When
     const result = await withAnonymousRole(db, (tx) => findPostByIdWithLikes(tx, post.id, null));

@@ -56,7 +56,7 @@ describe("anon ロールのSELECTポリシー", () => {
   it("論理削除されたジャンルは anon に見えない", async () => {
     // Given
     await createGenre(db, { name: "Active" });
-    await createGenre(db, { name: "Deleted", deletedAt: new Date() });
+    await createGenre(db, { name: "Deleted", deletedAt: new Date().toISOString() });
 
     // When
     const rows = await withAnonymousRole(db, (tx) => tx.select({ name: genres.name }).from(genres));
@@ -188,7 +188,7 @@ describe("投稿RLS: 論理削除フィルタ", () => {
     const song = await createSong(db);
     await db.insert(posts).values([
       { userId: user.id, songId: song.id, content: "active" },
-      { userId: user.id, songId: song.id, content: "deleted", deletedAt: new Date() },
+      { userId: user.id, songId: song.id, content: "deleted", deletedAt: new Date().toISOString() },
     ]);
 
     // When

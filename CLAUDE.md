@@ -24,6 +24,9 @@ bun run test --filter=api      # API tests only
 bun run test --filter=web      # web tests only
 bun run test --filter=api -- src/__tests__/features/auth/sign-in.test.ts  # single test file
 
+# Database integration tests (resets test DB, applies migrations, verifies schema/RLS)
+bun run test:db --filter=api
+
 # Type checking
 bun run check-types
 
@@ -52,23 +55,33 @@ cd apps/api && bun run db:studio     # open Drizzle Studio
 
 - `apps/web` — Next.js 16 (App Router) + React 19 with React Compiler enabled. Runs on port 3000.
 - `apps/api` — Hono API server on Bun runtime. Runs on port 3001.
-- `packages/errors` — Shared error classes (errore-based, `createTaggedError`).
+- `packages/errors` — Shared error classes (errore-based, `createTaggedError`). Has a `./server` subpath export for server-only errors.
+- `packages/firebase-auth-rest` — Firebase Auth REST implementation for Workers-compatible session cookies. Subpath exports: `./app` (client-side) and `./auth` (server-side).
 - `packages/eslint-config` — Shared ESLint configs (legacy, oxlint is primary).
 - `packages/typescript-config` — Shared tsconfig bases (`base.json`, `nextjs.json`, `react-library.json`).
 
 ### Type-Safe RPC (Hono RPC)
 
-The API exports `AppType` from `apps/api/src/index.ts`. The web app imports it via path alias (`api`) and creates a type-safe client with `hc<AppType>()` in `apps/web/src/lib/api.ts`. Use this client for all API calls from client components. Server components use direct `fetch` with forwarded cookies via `getCurrentUser()` in `apps/web/src/lib/current-user.ts`.
+The API exports `AppType` from `apps/api/src/index.ts`. The web app imports it via path alias (`api`) and creates type-safe clients:
+
+- **Client components:** `hc<AppType>("")` in `apps/web/src/features/lib/api.ts` — same-origin (Next.js rewrites), browser sends cookies automatically.
+- **Server components:** `getServerApi()` in `apps/web/src/features/lib/server-api.ts` — creates `hc<AppType>(NEXT_PUBLIC_API_URL)` with cookies forwarded from `next/headers`, wrapped in React `cache()` to deduplicate within a render.
 
 ### Authentication
 
 Firebase Authentication with session cookies (`otography_session`, 5-day expiry). The API uses Firebase Admin SDK; client-facing auth operations use the Firebase REST API. OAuth (Google, Apple) via Firebase Identity Platform with `jose` for OAuth state JWT signing.
 
-Next.js middleware (`apps/web/proxy.ts`) guards authenticated routes — unauthenticated users are redirected to `/login`.
+Next.js middleware (`apps/web/proxy.ts`) guards authenticated routes. It redirects to `/login` only when both the session cookie and refresh token cookie are absent — if a refresh token exists, the request passes through so the API can auto-refresh the session.
 
 ### Database
 
-PostgreSQL with Drizzle ORM and `postgres.js` driver. Row-Level Security (RLS) is enforced on all tables via a `requesting_user_id()` PostgreSQL function. The `withRls()` helper in `apps/api/src/shared/db/rls.ts` wraps transactions that set JWT claims and switch to the `authenticated` role. Prepared statements are disabled (`prepare: false`) due to Supabase Transaction pool mode.
+PostgreSQL with Drizzle ORM and `postgres.js` driver. Row-Level Security (RLS) is enforced on all tables. Three RLS helpers in `apps/api/src/shared/db/rls.ts`:
+
+- `withRls(db, fn)` — sets JWT claims via `requesting_user_id()` and switches to `authenticated` role. Uses a `SECURITY DEFINER` function `resolve_firebase_id()` to map Firebase ID to user UUID.
+- `withAuthenticatedRole(db, fn)` — sets `authenticated` role without JWT claims.
+- `withAnonymousRole(db, fn)` — sets `anon` role.
+
+Prepared statements are disabled (`prepare: false`) due to Supabase Transaction pool mode. Insert/update schemas use `drizzle-orm/arktype` (`createInsertSchema`/`createUpdateSchema`).
 
 Database connection uses a `globalThis` singleton pattern to avoid connection pool exhaustion in development.
 
@@ -82,7 +95,7 @@ Test behavior, not implementation. Mock only at boundaries (Firebase, database, 
 
 ### Validation
 
-Arktype (`arktype`) for all runtime type validation — env vars, request bodies, and DB insert schemas. Do not use Zod.
+Arktype (`arktype`) for runtime type validation in the API — request bodies and DB insert schemas. The web app uses `valibot` via `@t3-oss/env-nextjs` for env vars. Do not use Zod.
 
 ### UI & Component Architecture
 
@@ -92,9 +105,9 @@ Compound component pattern with React Context and `use()` (React 19 API). Prefer
 
 - **Formatter:** oxfmt — 100 char width, spaces (width 2), semicolons, double quotes, trailing commas
 - **Linter:** oxlint (replaces ESLint) — type-aware linting available via `--type-aware` flag
-- **Git hooks:** Lefthook runs oxfmt and oxlint --fix on staged files at pre-commit
+- **Git hooks:** Lefthook runs `oxfmt --write` and `oxlint --fix` on staged files at pre-commit. Excludes `.agents/` and `.claude/`.
 - Source code comments are in Japanese
 
 ## Environment
 
-The API uses Wrangler for environment variable management. Non-secret vars are defined in `wrangler.jsonc` (`vars` field); secrets are provided via `.dev.vars` in local development (read by `wrangler dev`) and via Cloudflare dashboard/secrets in production. Drizzle has a separate `env.drizzle.ts` that reads `DATABASE_URL` / `DATABASE_DIRECT_URL` from `process.env` (set inline in `db:*` npm scripts), so migration commands don't need all app env vars. The web app uses `@t3-oss/env-nextjs` for type-safe env access.
+The API uses Wrangler for environment variable management. Non-secret vars are defined in `wrangler.jsonc` (`vars` field); secrets are provided via `.dev.vars` in local development (read by `wrangler dev`) and via Cloudflare dashboard/secrets in production. Wrangler also manages rate limiting (e.g., `LIKE_RATE_LIMITER`: 30 req/60s). Drizzle has a separate `env.drizzle.ts` that reads `DATABASE_URL` / `DATABASE_DIRECT_URL` from `process.env` (set inline in `db:*` npm scripts), so migration commands don't need all app env vars. The web app uses `@t3-oss/env-nextjs` with `valibot` for type-safe env access, and `dotenvx` in the `dev` script.

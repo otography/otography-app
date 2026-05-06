@@ -49,7 +49,7 @@ export const setupProfile = async (
 ) => {
   return tx
     .update(users)
-    .set({ ...values, updatedAt: sql`now()` })
+    .set({ ...values })
     .where(eq(users.id, userId))
     .returning();
 };
@@ -62,7 +62,7 @@ export const updateUserDetails = async (
 ) => {
   return tx
     .update(users)
-    .set({ ...values, updatedAt: sql`now()` })
+    .set({ ...values })
     .where(eq(users.id, userId))
     .returning();
 };
@@ -71,7 +71,7 @@ export const updateUserDetails = async (
 export const softDeleteUser = async (tx: DatabaseOrTransaction, userId: string) => {
   return tx
     .update(users)
-    .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+    .set({ deletedAt: sql`now()` })
     .where(eq(users.id, userId))
     .returning();
 };

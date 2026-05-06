@@ -1,7 +1,7 @@
 import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
-import type { InternalCursor } from "../../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
 
@@ -9,7 +9,7 @@ const { deletedAt: _, ...artistColumns } = getColumns(artists);
 
 export const listArtists = async (
   db: DatabaseOrTransaction,
-  pagination?: { limit?: number; cursor?: InternalCursor | null },
+  pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
   const { cursor } = pagination ?? {};
   const conditions = [isNull(artists.deletedAt)];
@@ -50,7 +50,6 @@ export const updateArtistById = async (
     .update(artists)
     .set({
       ...values,
-      updatedAt: sql`now()`,
     })
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
     .returning(artistColumns);
@@ -63,7 +62,6 @@ export const softDeleteArtistById = async (db: DatabaseOrTransaction, id: string
     .update(artists)
     .set({
       deletedAt: sql`now()`,
-      updatedAt: sql`now()`,
     })
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
     .returning({ id: artists.id });
@@ -101,7 +99,6 @@ export const createArtistFromAppleMusic = async (
       set: {
         name,
         deletedAt: null,
-        updatedAt: sql`now()`,
       },
     })
     .returning(artistLookupColumns);

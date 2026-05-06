@@ -42,7 +42,7 @@ const mockFavoriteSong = {
   comment: "好き!",
   emoji: "🎵",
   color: "#ff0000",
-  createdAt: new Date("2026-04-30T00:00:00.000Z"),
+  createdAt: "2026-04-30T00:00:00.000Z",
 };
 
 const mockSong = {
@@ -52,7 +52,7 @@ const mockSong = {
 };
 
 // usecase が返す変換後の期待フォーマット
-// addedAt は Date 型だが JSON レスポンスでは ISO 文字列になる
+// addedAt は文字列型（Drizzle の mode: "string" 設定により）
 const expectedFavoriteItem = {
   song: mockSong,
   comment: mockFavoriteSong.comment as string | null,
