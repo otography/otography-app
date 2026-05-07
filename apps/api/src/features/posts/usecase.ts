@@ -4,7 +4,7 @@ import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
-import type { Cursor, PaginationMeta } from "../../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
 import { findOrCreateArtists } from "../artists/repository";

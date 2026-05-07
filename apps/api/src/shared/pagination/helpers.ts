@@ -1,4 +1,4 @@
-import type { Cursor, PaginationMeta } from "./types";
+import type { PaginationMeta } from "./types";
 import { DEFAULT_LIMIT, MAX_LIMIT } from "./schema";
 
 /** limit を正規化（未指定時はデフォルト、上限クリップ） */

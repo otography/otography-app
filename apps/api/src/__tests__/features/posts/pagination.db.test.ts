@@ -39,10 +39,10 @@ describe("listPostsWithLikes — ページネーション", () => {
     // Given: 4件の投稿
     const author = await createUser(db);
     const song = await createSong(db);
-    const p1 = await createPost(db, author.id, song.id, { content: "post1" });
+    const _p1 = await createPost(db, author.id, song.id, { content: "post1" });
     const p2 = await createPost(db, author.id, song.id, { content: "post2" });
-    const p3 = await createPost(db, author.id, song.id, { content: "post3" });
-    const p4 = await createPost(db, author.id, song.id, { content: "post4" });
+    const _p3 = await createPost(db, author.id, song.id, { content: "post3" });
+    const _p4 = await createPost(db, author.id, song.id, { content: "post4" });
 
     // When: cursor = p2 の位置（p2 より古いもの）
     const rows = await withAnonymousRole(db, (tx) =>

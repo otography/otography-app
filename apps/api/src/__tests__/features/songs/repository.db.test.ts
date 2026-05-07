@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createSong, createGenre, linkSongGenre } from "../../helpers/db/fixtures";
-import { genres, songGenres, songs } from "../../../shared/db/schema";
+import { genres, songGenres } from "../../../shared/db/schema";
 
 const sql = createTestSql();
 const db = createTestDb(sql);

@@ -1,7 +1,6 @@
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   artists,
-  favoriteSongs,
   genres,
   postLikes,
   posts,
@@ -85,10 +84,6 @@ export const createPost = async (
 
 export const likePost = async (db: Db, userId: string, postId: string) => {
   await db.insert(postLikes).values({ userId, postId });
-};
-
-export const addFavorite = async (db: Db, userId: string, songId: string) => {
-  await db.insert(favoriteSongs).values({ userId, songId });
 };
 
 export const createGenre = async (

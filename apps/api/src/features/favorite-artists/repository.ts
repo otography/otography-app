@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, isNull } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import { artists, favoriteArtists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
