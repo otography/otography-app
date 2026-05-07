@@ -3,7 +3,12 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { DbError } from "@repo/errors";
-import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
+import {
+  csrfProtection,
+  getAuthSession,
+  rateLimitByUser,
+  requireAuthMiddleware,
+} from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
@@ -64,18 +69,23 @@ const posts = new Hono<{ Bindings: Bindings }>()
 
     return c.json(result);
   })
-  .post("/api/posts", csrfProtection(), requireAuthMiddleware(), postBodyValidator, async (c) => {
-    const session = getAuthSession(c);
-    if (!session) {
-      return c.json({ message: "You are not logged in." }, 401);
-    }
-    const payload = c.req.valid("json");
+  .post(
+    "/api/posts",
+    csrfProtection(),
+    requireAuthMiddleware(),
+    rateLimitByUser("CONTENT_RATE_LIMITER"),
+    postBodyValidator,
+    async (c) => {
+      // rateLimitByUser が未認証(401)を処理するため、ここでは session は非 null
+      const session = getAuthSession(c)!;
+      const payload = c.req.valid("json");
 
-    const result = await registerPost(payload, session);
-    if (result instanceof Error) return handlePostError(result, c);
+      const result = await registerPost(payload, session);
+      if (result instanceof Error) return handlePostError(result, c);
 
-    return c.json(result, 201);
-  })
+      return c.json(result, 201);
+    },
+  )
   .patch(
     "/api/posts/:id",
     csrfProtection(),

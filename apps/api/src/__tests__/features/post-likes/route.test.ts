@@ -19,13 +19,22 @@ vi.mock("../../../shared/middleware", async () => {
   };
 });
 
+// auth-sessionもモック - rateLimitByUserミドルウェアが直接インポートするため
+vi.mock("../../../shared/auth/auth-session", () => ({
+  getAuthSession: vi.fn(() => ({
+    sub: "firebase-uid-123",
+    uid: "firebase-uid-123",
+    email: "test@example.com",
+  })),
+}));
+
 // usecaseをモック
 vi.mock("../../../features/post-likes/usecase", () => ({
   toggleLike: vi.fn(),
 }));
 
 import { toggleLike } from "../../../features/post-likes/usecase";
-import { getAuthSession } from "../../../shared/middleware";
+import { getAuthSession } from "../../../shared/auth/auth-session";
 
 const postId = "6f648f36-5be1-4af1-bf5d-cf8ebf222221";
 

@@ -24,6 +24,38 @@
         "period": 60,
       },
     },
+    {
+      "name": "AUTH_SIGNIN_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 5,
+        "period": 60,
+      },
+    },
+    {
+      "name": "AUTH_SIGNUP_RATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 3,
+        "period": 60,
+      },
+    },
+    {
+      "name": "AUTH_GOOGLE_RATE_LIMITER",
+      "namespace_id": "1004",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
+    {
+      "name": "CONTENT_RATE_LIMITER",
+      "namespace_id": "1005",
+      "simple": {
+        "limit": 30,
+        "period": 60,
+      },
+    },
   ],
   "env": {
     "dev": {
@@ -38,6 +70,38 @@
         {
           "name": "LIKE_RATE_LIMITER",
           "namespace_id": "1001",
+          "simple": {
+            "limit": 30,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_SIGNIN_RATE_LIMITER",
+          "namespace_id": "1002",
+          "simple": {
+            "limit": 5,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_SIGNUP_RATE_LIMITER",
+          "namespace_id": "1003",
+          "simple": {
+            "limit": 3,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_GOOGLE_RATE_LIMITER",
+          "namespace_id": "1004",
+          "simple": {
+            "limit": 10,
+            "period": 60,
+          },
+        },
+        {
+          "name": "CONTENT_RATE_LIMITER",
+          "namespace_id": "1005",
           "simple": {
             "limit": 30,
             "period": 60,
@@ -60,6 +124,38 @@
         {
           "name": "LIKE_RATE_LIMITER",
           "namespace_id": "1001",
+          "simple": {
+            "limit": 30,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_SIGNIN_RATE_LIMITER",
+          "namespace_id": "1002",
+          "simple": {
+            "limit": 5,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_SIGNUP_RATE_LIMITER",
+          "namespace_id": "1003",
+          "simple": {
+            "limit": 3,
+            "period": 60,
+          },
+        },
+        {
+          "name": "AUTH_GOOGLE_RATE_LIMITER",
+          "namespace_id": "1004",
+          "simple": {
+            "limit": 10,
+            "period": 60,
+          },
+        },
+        {
+          "name": "CONTENT_RATE_LIMITER",
+          "namespace_id": "1005",
           "simple": {
             "limit": 30,
             "period": 60,

@@ -2,7 +2,12 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { DbError } from "@repo/errors";
-import { csrfProtection, getAuthSession, requireAuthMiddleware } from "../../shared/middleware";
+import {
+  csrfProtection,
+  getAuthSession,
+  rateLimitByUser,
+  requireAuthMiddleware,
+} from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import { toggleLike } from "./usecase";
 
@@ -20,19 +25,11 @@ const postLikes = new Hono<{ Bindings: Bindings }>().post(
   "/api/posts/:id/like",
   csrfProtection(),
   requireAuthMiddleware(),
+  rateLimitByUser("LIKE_RATE_LIMITER"),
   postIdParamValidator,
   async (c) => {
-    // レートリミット: ユーザーごとに30回/分
-    const session = getAuthSession(c);
-    if (!session) {
-      return c.json({ message: "You are not logged in." }, 401);
-    }
-
-    const { success } = await c.env.LIKE_RATE_LIMITER.limit({ key: session.sub });
-    if (!success) {
-      return c.json({ message: "Too many requests. Please try again later." }, 429);
-    }
-
+    // rateLimitByUser が未認証を弾くため、ここではsessionは必ず存在する
+    const session = getAuthSession(c)!;
     const { id } = c.req.valid("param");
     const result = await toggleLike(session, id);
     if (result instanceof Error) {
