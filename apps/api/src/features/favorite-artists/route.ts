@@ -1,7 +1,9 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { DbError } from "@repo/errors";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { formatErrorResponse } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   requireAuthMiddleware,
@@ -18,9 +20,26 @@ import {
   deleteFavoriteArtist,
 } from "./usecase";
 
-const handleError = (error: Error, c: { json: (body: unknown, status: number) => Response }) => {
-  const statusCode = error instanceof DbError ? error.statusCode : 500;
-  return c.json({ message: error.message }, statusCode);
+/**
+ * RFC 7807 Problem Details 形式のエラーレスポンスを返すヘルパー
+ */
+const problemResponse = (
+  c: Context,
+  statusCode: ContentfulStatusCode,
+  typeSlug: string,
+  title: string,
+  detail: string,
+) => {
+  return c.body(
+    JSON.stringify({
+      type: `https://api.otography.com/errors/${typeSlug}`,
+      title,
+      status: statusCode,
+      detail,
+    }),
+    statusCode,
+    { "Content-Type": "application/problem+json" },
+  );
 };
 
 const appleMusicIdParamSchema = type({
@@ -49,12 +68,17 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
   .get("/api/me/favorites/artists", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
     if (!session) {
-      return c.json({ message: "ログインしていません。" }, 401);
+      return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
     }
 
     const { limit, cursor } = parsePaginationQuery(c);
     const result = await getFavoriteArtists(session, { limit, cursor });
-    if (result instanceof Error) return handleError(result, c);
+    if (result instanceof Error) {
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
+    }
 
     return c.json(result);
   })
@@ -64,14 +88,19 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     "/api/users/:userId/favorites/artists",
     arktypeValidator("param", userIdParamSchema, (result, c) => {
       if (!result.success) {
-        return c.json({ message: "無効なユーザーIDです。" }, 400);
+        return problemResponse(c, 400, "bad-request", "Bad Request", "無効なユーザーIDです。");
       }
     }),
     async (c) => {
       const { userId } = c.req.valid("param");
       const { limit, cursor } = parsePaginationQuery(c);
       const result = await getPublicFavoriteArtists(userId, { limit, cursor });
-      if (result instanceof Error) return handleError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result);
     },
@@ -85,18 +114,23 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     rateLimitByUser("CONTENT_RATE_LIMITER"),
     arktypeValidator("json", addFavoriteArtistSchema, (result, c) => {
       if (!result.success) {
-        return c.json({ message: "リクエストが不正です。" }, 400);
+        return problemResponse(c, 400, "bad-request", "Bad Request", "リクエストが不正です。");
       }
     }),
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "ログインしていません。" }, 401);
+        return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
       }
 
       const input = c.req.valid("json");
       const result = await registerFavoriteArtist(session, input);
-      if (result instanceof Error) return handleError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result, 201);
     },
@@ -109,18 +143,29 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     requireAuthMiddleware(),
     arktypeValidator("param", appleMusicIdParamSchema, (result, c) => {
       if (!result.success) {
-        return c.json({ message: "無効な Apple Music ID です。" }, 400);
+        return problemResponse(
+          c,
+          400,
+          "bad-request",
+          "Bad Request",
+          "無効な Apple Music ID です。",
+        );
       }
     }),
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "ログインしていません。" }, 401);
+        return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
       }
 
       const { appleMusicId } = c.req.valid("param");
       const result = await deleteFavoriteArtist(session, appleMusicId);
-      if (result instanceof Error) return handleError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.body(null, 204);
     },
