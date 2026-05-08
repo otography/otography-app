@@ -13,13 +13,35 @@ import {
 import type { Bindings } from "../../shared/types/bindings";
 import { toggleLike } from "./usecase";
 
+/**
+ * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
+ */
+const problemResponse = (
+  c: Context,
+  statusCode: ContentfulStatusCode,
+  typeSlug: string,
+  title: string,
+  detail: string,
+) => {
+  return c.body(
+    JSON.stringify({
+      type: `https://api.otography.com/errors/${typeSlug}`,
+      title,
+      status: statusCode,
+      detail,
+    }),
+    statusCode,
+    { "Content-Type": "application/problem+json" },
+  );
+};
+
 const postIdParamSchema = type({
   id: "string.uuid",
 });
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post id." }, 400);
+    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid post id.");
   }
 });
 
@@ -35,8 +57,10 @@ const postLikes = new Hono<{ Bindings: Bindings }>().post(
     const { id } = c.req.valid("param");
     const result = await toggleLike(session, id);
     if (result instanceof Error) {
-      const statusCode = result instanceof DbError ? result.statusCode : 500;
-      return c.json({ message: result.message }, statusCode);
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
     }
 
     return c.json(result);

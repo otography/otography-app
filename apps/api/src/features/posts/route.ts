@@ -55,13 +55,19 @@ const postIdParamSchema = type({
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post id." }, 400);
+    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid post id.");
   }
 });
 
 const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post payload." }, 400);
+    return problemResponse(
+      c,
+      400,
+      "bad-request",
+      "Bad Request",
+      "Please provide a valid post payload.",
+    );
   }
 });
 
@@ -80,7 +86,12 @@ const posts = new Hono<{ Bindings: Bindings }>()
     }
 
     const result = await getPosts(session, { limit, cursor });
-    if (result instanceof Error) return handlePostError(result, c);
+    if (result instanceof Error) {
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
+    }
 
     return c.json(result);
   })
@@ -89,7 +100,12 @@ const posts = new Hono<{ Bindings: Bindings }>()
     const session = getAuthSession(c);
 
     const result = await getPost(id, session);
-    if (result instanceof Error) return handlePostError(result, c);
+    if (result instanceof Error) {
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
+    }
 
     return c.json(result);
   })
@@ -105,7 +121,12 @@ const posts = new Hono<{ Bindings: Bindings }>()
       const payload = c.req.valid("json");
 
       const result = await registerPost(payload, session);
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result, 201);
     },
@@ -119,16 +140,27 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
       if (Object.keys(payload).length === 0) {
-        return c.json({ message: "Please provide at least one field to update." }, 400);
+        return problemResponse(
+          c,
+          400,
+          "bad-request",
+          "Bad Request",
+          "Please provide at least one field to update.",
+        );
       }
 
       const result = await modifyPost({ id, session, payload });
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result);
     },
@@ -141,11 +173,16 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const result = await removePost(id, session);
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.body(null, 204);
     },
