@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
-import { createSong, createUser, addFavorite } from "../../helpers/db/fixtures";
+import { createSong, createUser } from "../../helpers/db/fixtures";
 import { favoriteSongs } from "../../../shared/db/schema";
 
 const sql = createTestSql();

@@ -1,13 +1,7 @@
 import { eq, sql as drizzleSql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
-import {
-  createArtist,
-  createGenre,
-  createSong,
-  createUser,
-  addFavorite,
-} from "../../helpers/db/fixtures";
+import { createArtist, createGenre, createSong, createUser } from "../../helpers/db/fixtures";
 import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
 import {
   artists,

@@ -6,6 +6,7 @@ import { auth } from "./features/auth";
 import { artists } from "./features/artists";
 import { favoriteArtists } from "./features/favorite-artists";
 import { favoriteSongs } from "./features/favorite-songs";
+import { health } from "./features/health";
 import { songs } from "./features/songs";
 import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
@@ -27,7 +28,14 @@ const app = new Hono<{ Bindings: Bindings }>()
     return middleware(c, next);
   })
   .use("*", secureHeaders())
-  .use("*", authSessionMiddleware())
+  // authSessionMiddlewareは認証セッションを解決するミドルウェア
+  // health, apple-music等の公開ルートでは不要なため、必要なパスのみに適用
+  .use("/api/auth/*", authSessionMiddleware())
+  .use("/api/posts/*", authSessionMiddleware())
+  .use("/api/user/*", authSessionMiddleware())
+  .use("/api/artists/*", authSessionMiddleware())
+  .use("/api/songs/*", authSessionMiddleware())
+  .use("/api/me/*", authSessionMiddleware())
   .onError((err, c) => {
     console.error("Unhandled error:", err);
     return c.json({ message: "Internal server error." }, 500);
@@ -41,7 +49,7 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/", user)
   .route("/", favoriteArtists)
   .route("/", favoriteSongs)
-  .get("/", (c) => c.text("Hello Hono!"));
+  .route("/api/health", health);
 
 export default app;
 
