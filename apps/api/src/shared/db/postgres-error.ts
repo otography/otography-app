@@ -1,10 +1,20 @@
 import { DrizzleQueryError } from "drizzle-orm/errors";
+import { DbError } from "@repo/errors";
+import type { ErrorStatusCode } from "@repo/errors";
 import postgres from "postgres";
 
 const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
 const FOREIGN_KEY_VIOLATION = "23503";
 const NOT_NULL_VIOLATION = "23502";
+
+/** PostgresError のコードからマッピングする HTTP ステータスコード */
+const CODE_TO_STATUS: Record<string, ErrorStatusCode> = {
+  [UNIQUE_VIOLATION]: 409 as ErrorStatusCode,
+  [FOREIGN_KEY_VIOLATION]: 400 as ErrorStatusCode,
+  [NOT_NULL_VIOLATION]: 400 as ErrorStatusCode,
+  [CHECK_VIOLATION]: 400 as ErrorStatusCode,
+};
 
 const findPostgresError = (error: unknown): postgres.PostgresError | null => {
   if (error instanceof postgres.PostgresError) return error;
@@ -54,4 +64,22 @@ export const isPostgresNotNullViolation = (error: unknown): boolean => {
   const postgresError = findPostgresError(error);
   if (!postgresError) return false;
   return postgresError.code === NOT_NULL_VIOLATION;
+};
+
+/**
+ * PostgresError のコードから適切な DbError へのマッピングを行う。
+ * 認識不能なコードや非 PostgresError の場合は null を返す。
+ */
+export const mapPostgresToDbError = (error: unknown, fallbackMessage: string): DbError | null => {
+  const postgresError = findPostgresError(error);
+  if (!postgresError) return null;
+
+  const statusCode = CODE_TO_STATUS[postgresError.code];
+  if (!statusCode) return null;
+
+  return new DbError({
+    message: fallbackMessage,
+    statusCode,
+    cause: error,
+  });
 };

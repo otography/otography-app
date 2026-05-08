@@ -14,14 +14,27 @@
  * 8. 非 PostgresError (プレーン Error) に対して false を返す
  * 9. DrizzleQueryError でラップされた 23502 エラーを透過的に検出する
  * 10. Error でラップされた DrizzleQueryError 内の 23502 エラーを透過的に検出する
+ *
+ * mapPostgresToDbError:
+ * 11. 23505 (unique violation) → DbError(statusCode: 409) を返す
+ * 12. 23503 (foreign key violation) → DbError(statusCode: 400) を返す
+ * 13. 23502 (not-null violation) → DbError(statusCode: 400) を返す
+ * 14. 23514 (check violation) → DbError(statusCode: 400) を返す
+ * 15. 認識不能なコード (08001) → null を返す
+ * 16. 非 PostgresError (プレーン Error) → null を返す
+ * 17. 非 PostgresError (文字列) → null を返す
+ * 18. 元のエラーが cause として保持される
+ * 19. DrizzleQueryError でラップされた PostgresError を透過的に処理する
  */
 import { describe, expect, it } from "vitest";
 import { DrizzleQueryError } from "drizzle-orm/errors";
+import { DbError } from "@repo/errors";
 import {
   isPostgresCheckViolation,
   isPostgresForeignKeyViolation,
   isPostgresNotNullViolation,
   isPostgresUniqueViolation,
+  mapPostgresToDbError,
 } from "../../../shared/db/postgres-error";
 import { createPostgresError } from "../../helpers/postgres-error";
 
@@ -212,5 +225,131 @@ describe("isPostgresNotNullViolation", () => {
     });
 
     expect(isPostgresNotNullViolation(error)).toBe(true);
+  });
+});
+
+describe("mapPostgresToDbError", () => {
+  // テスト11: 23505 (unique violation) → DbError(statusCode: 409) を返す
+  it("maps unique violation (23505) to DbError with statusCode 409", () => {
+    const error = createPostgresError({
+      code: "23505",
+      constraintName: "favorite_songs_pkey",
+      message: "duplicate key value violates unique constraint",
+    });
+
+    const result = mapPostgresToDbError(error, "既に登録されています");
+
+    expect(result).not.toBeNull();
+    expect(result!).toBeInstanceOf(DbError);
+    expect(result!.statusCode).toBe(409);
+    expect(result!.message).toBe("既に登録されています");
+  });
+
+  // テスト12: 23503 (foreign key violation) → DbError(statusCode: 400) を返す
+  it("maps foreign key violation (23503) to DbError with statusCode 400", () => {
+    const error = createPostgresError({
+      code: "23503",
+      constraintName: "favorite_songs_song_id_fkey",
+      message: "insert or update on table violates foreign key constraint",
+    });
+
+    const result = mapPostgresToDbError(error, "指定された楽曲が見つかりません");
+
+    expect(result).not.toBeNull();
+    expect(result!).toBeInstanceOf(DbError);
+    expect(result!.statusCode).toBe(400);
+    expect(result!.message).toBe("指定された楽曲が見つかりません");
+  });
+
+  // テスト13: 23502 (not-null violation) → DbError(statusCode: 400) を返す
+  it("maps not-null violation (23502) to DbError with statusCode 400", () => {
+    const error = createPostgresError({
+      code: "23502",
+      constraintName: "songs_title_not_null",
+      message: "null value in column violates not-null constraint",
+    });
+
+    const result = mapPostgresToDbError(error, "必須項目が入力されていません");
+
+    expect(result).not.toBeNull();
+    expect(result!).toBeInstanceOf(DbError);
+    expect(result!.statusCode).toBe(400);
+    expect(result!.message).toBe("必須項目が入力されていません");
+  });
+
+  // テスト14: 23514 (check violation) → DbError(statusCode: 400) を返す
+  it("maps check violation (23514) to DbError with statusCode 400", () => {
+    const error = createPostgresError({
+      code: "23514",
+      constraintName: "users_birthyear_check",
+      message: "new row for relation violates check constraint",
+    });
+
+    const result = mapPostgresToDbError(error, "入力値が不正です");
+
+    expect(result).not.toBeNull();
+    expect(result!).toBeInstanceOf(DbError);
+    expect(result!.statusCode).toBe(400);
+    expect(result!.message).toBe("入力値が不正です");
+  });
+
+  // テスト15: 認識不能なコード (08001) → null を返す
+  it("returns null for unrecognized PostgresError code", () => {
+    const error = createPostgresError({
+      code: "08001",
+      constraintName: "some_constraint",
+      message: "connection failed",
+    });
+
+    const result = mapPostgresToDbError(error, "フォールバックメッセージ");
+
+    expect(result).toBeNull();
+  });
+
+  // テスト16: 非 PostgresError (プレーン Error) → null を返す
+  it("returns null for plain Error", () => {
+    const error = new Error("Something went wrong");
+
+    const result = mapPostgresToDbError(error, "フォールバックメッセージ");
+
+    expect(result).toBeNull();
+  });
+
+  // テスト17: 非 PostgresError (文字列) → null を返す
+  it("returns null for string input", () => {
+    const result = mapPostgresToDbError("some error string", "フォールバックメッセージ");
+
+    expect(result).toBeNull();
+  });
+
+  // テスト18: 元のエラーが cause として保持される
+  it("preserves original error as cause", () => {
+    const error = createPostgresError({
+      code: "23505",
+      constraintName: "favorite_songs_pkey",
+      message: "duplicate key value violates unique constraint",
+    });
+
+    const result = mapPostgresToDbError(error, "既に登録されています");
+
+    expect(result).not.toBeNull();
+    expect(result!.cause).toBe(error);
+  });
+
+  // テスト19: DrizzleQueryError でラップされた PostgresError を透過的に処理する
+  it("unwraps DrizzleQueryError to map PostgresError code", () => {
+    const pgError = createPostgresError({
+      code: "23505",
+      constraintName: "favorite_songs_pkey",
+      message: "duplicate key value violates unique constraint",
+    });
+    const error = new DrizzleQueryError('insert into "favorite_songs"', [], pgError);
+
+    const result = mapPostgresToDbError(error, "既に登録されています");
+
+    expect(result).not.toBeNull();
+    expect(result!).toBeInstanceOf(DbError);
+    expect(result!.statusCode).toBe(409);
+    expect(result!.cause).toBe(error);
   });
 });
