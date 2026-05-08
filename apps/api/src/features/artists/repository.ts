@@ -117,7 +117,13 @@ export const findOrCreateArtists = async (
     await db
       .insert(artists)
       .values(newArtists.map((a) => ({ name: a.name, appleMusicId: a.appleMusicId })))
-      .onConflictDoNothing({ target: artists.appleMusicId });
+      .onConflictDoUpdate({
+        target: artists.appleMusicId,
+        set: {
+          name: sql`EXCLUDED.name`,
+          deletedAt: null,
+        },
+      });
   }
 
   // 全アーティストの Apple Music ID で一括 SELECT

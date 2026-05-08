@@ -1,4 +1,5 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
 import { findOrCreateArtists } from "../../../features/artists/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createArtist } from "../../helpers/db/fixtures";
@@ -54,5 +55,30 @@ describe("findOrCreateArtists", () => {
 
     // Then
     expect(ids).toHaveLength(1);
+  });
+
+  it("soft-delete 済み artist と同じ appleMusicId で呼ぶと復活させる", async () => {
+    // Given: artist 作成 → soft-delete
+    const deleted = await createArtist(db, { appleMusicId: "am-deleted" });
+    await db
+      .update(artists)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(artists.id, deleted.id));
+
+    // When: 同じ appleMusicId で findOrCreateArtists
+    const ids = await findOrCreateArtists(db, [
+      { appleMusicId: "am-deleted", name: "Resurrected Artist" },
+    ]);
+
+    // Then: 復活した artist の ID が返る
+    expect(ids).toHaveLength(1);
+    expect(ids).toContain(deleted.id);
+
+    // deletedAt がクリアされている
+    const rows = await db
+      .select({ deletedAt: artists.deletedAt })
+      .from(artists)
+      .where(eq(artists.id, deleted.id));
+    expect(rows[0]?.deletedAt).toBeNull();
   });
 });

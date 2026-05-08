@@ -120,7 +120,19 @@ export const createSongFull = async (
     genreNames,
   }: { songValues: SongDbValues; artistIds: string[]; genreNames: string[] },
 ) => {
-  const rows = await tx.insert(songs).values(songValues).returning(songColumns);
+  const rows = await tx
+    .insert(songs)
+    .values(songValues)
+    .onConflictDoUpdate({
+      target: songs.appleMusicId,
+      set: {
+        title: songValues.title,
+        length: songValues.length,
+        isrcs: songValues.isrcs,
+        deletedAt: null,
+      },
+    })
+    .returning(songColumns);
   const [song] = rows;
   if (!song) return null;
 
