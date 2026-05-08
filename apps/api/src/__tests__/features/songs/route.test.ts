@@ -205,26 +205,28 @@ describe("songs endpoints", () => {
       })),
       insert: vi
         .fn()
-        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
+        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO UPDATE
         .mockReturnValueOnce({
           values: vi.fn(() => ({
-            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+            onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
           })),
         })
-        // 2. songs INSERT
+        // 2. songs INSERT (createSongFull - onConflictDoUpdate)
         .mockReturnValueOnce({
           values: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
-                title: "New Song",
-                appleMusicId: "am-new-song-1",
-                length: 240,
-                isrcs: "JPABC2400001",
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-              },
-            ]),
+            onConflictDoUpdate: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue([
+                {
+                  id: "8f648f36-5be1-4af1-bf5d-cf8ebf222222",
+                  title: "New Song",
+                  appleMusicId: "am-new-song-1",
+                  length: 240,
+                  isrcs: "JPABC2400001",
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                  updatedAt: "2026-01-01T00:00:00.000Z",
+                },
+              ]),
+            }),
           })),
         })
         // 3. songArtists INSERT (syncSongArtists)
@@ -283,26 +285,28 @@ describe("songs endpoints", () => {
 
     const insert = vi
       .fn()
-      // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
+      // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO UPDATE
       .mockReturnValueOnce({
         values: vi.fn(() => ({
-          onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+          onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
         })),
       })
-      // 2. songs INSERT
+      // 2. songs INSERT (createSongFull - onConflictDoUpdate)
       .mockReturnValueOnce({
         values: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([
-            {
-              id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
-              title: "New Song with New Artist",
-              appleMusicId: "am-new-song-2",
-              length: 200,
-              isrcs: null,
-              createdAt: "2026-01-01T00:00:00.000Z",
-              updatedAt: "2026-01-01T00:00:00.000Z",
-            },
-          ]),
+          onConflictDoUpdate: vi.fn().mockReturnValue({
+            returning: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf222230",
+                title: "New Song with New Artist",
+                appleMusicId: "am-new-song-2",
+                length: 200,
+                isrcs: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          }),
         })),
       })
       // 3. songArtists INSERT
@@ -476,10 +480,10 @@ describe("songs endpoints", () => {
       })),
       insert: vi
         .fn()
-        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO NOTHING
+        // 1. artists INSERT (findOrCreateArtists) - ON CONFLICT DO UPDATE
         .mockReturnValueOnce({
           values: vi.fn(() => ({
-            onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
+            onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
           })),
         })
         // 2. songArtists INSERT (syncSongArtists)

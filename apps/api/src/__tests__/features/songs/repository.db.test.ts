@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createSong, createGenre, linkSongGenre } from "../../helpers/db/fixtures";
-import { genres, songGenres } from "../../../shared/db/schema";
+import { genres, songGenres, songs } from "../../../shared/db/schema";
+import { createSongFull } from "../../../features/songs/repository";
 
 const sql = createTestSql();
 const db = createTestDb(sql);
@@ -10,10 +11,6 @@ const db = createTestDb(sql);
 describe("genres と song_genres の同期", () => {
   beforeEach(async () => {
     await resetPublicTables(sql);
-  });
-
-  afterAll(async () => {
-    await sql.end();
   });
 
   it("ジャンルを作成して楽曲に紐付けられる", async () => {
@@ -55,5 +52,43 @@ describe("genres と song_genres の同期", () => {
       .where(eq(songGenres.songId, song.id));
 
     expect(result).toEqual([{ name: "Pop" }]);
+  });
+
+  it("soft-delete 済み song と同じ appleMusicId で createSongFull を呼ぶと復活させる", async () => {
+    // Given: song 作成 → soft-delete
+    const { id: deletedSongId } = await createSong(db, { appleMusicId: "am-deleted-song" });
+    await db
+      .update(songs)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(songs.id, deletedSongId));
+
+    // When: 同じ appleMusicId で createSongFull を呼ぶ
+    const result = await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues: {
+          title: "Revived Song",
+          appleMusicId: "am-deleted-song",
+          length: null,
+          isrcs: null,
+        },
+        artistIds: [],
+        genreNames: [],
+      }),
+    );
+
+    // Then: 復活した song が返る（constraint error ではなく）
+    expect(result).not.toBeNull();
+    expect(result!.id).toBe(deletedSongId);
+
+    // deletedAt が null に戻っている
+    const rows = await db
+      .select({ deletedAt: songs.deletedAt })
+      .from(songs)
+      .where(eq(songs.id, deletedSongId));
+    expect(rows[0]?.deletedAt).toBeNull();
+  });
+
+  afterAll(async () => {
+    await sql.end();
   });
 });
