@@ -1,7 +1,9 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { DbError } from "@repo/errors";
+import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { formatErrorResponse } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,

@@ -2,6 +2,17 @@ import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
+/*
+ * テストリスト: posts ルート RFC 7807 移行
+ *
+ * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
+ * 1. PATCH /api/posts/:id → 404 (RLS でフィルタ) → not-found
+ * 2. DELETE /api/posts/:id → 404 (RLS でフィルタ) → not-found
+ * 3. GET /api/posts/:id → 400 (不正な id) → bad-request
+ * 4. POST /api/posts → 400 (不正な payload) → bad-request
+ * 5. 成功レスポンスの形式は変更なし
+ */
+
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
     "../../../shared/middleware",
@@ -326,7 +337,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Post not found or access denied.",
+    });
     expect(update).toHaveBeenCalled();
   });
 
@@ -353,7 +369,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Post not found or access denied.",
+    });
     expect(update).toHaveBeenCalled();
   });
 
@@ -361,7 +382,12 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post id.",
+    });
   });
 
   it("returns 400 for invalid payload", async () => {
@@ -374,7 +400,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post payload.",
+    });
   });
 
   it("POST /api/posts returns 401 when session is missing", async () => {

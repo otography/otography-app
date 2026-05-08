@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
+/*
+ * テストリスト: post-likes ルート RFC 7807 移行
+ *
+ * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
+ * 1. POST /api/posts/:id/like → 404 (投稿なし) → not-found
+ * 2. POST /api/posts/:id/like → 400 (不正な id) → bad-request
+ * 3. POST /api/posts/:id/like → 500 (DB エラー) → internal-error
+ * 4. 成功レスポンスの形式は変更なし
+ */
+
 // ミドルウェアをモック（CSRF・認証をバイパス）
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
@@ -75,14 +85,24 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "投稿が見つかりません。" });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "投稿が見つかりません。",
+    });
   });
 
   it("returns 400 for invalid post id", async () => {
     const res = await testRequest("/api/posts/not-uuid/like", { method: "POST" });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post id.",
+    });
   });
 
   it("returns 401 when session is missing", async () => {
@@ -103,6 +123,11 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "いいねの操作に失敗しました。" });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "いいねの操作に失敗しました。",
+    });
   });
 });

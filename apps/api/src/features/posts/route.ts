@@ -2,7 +2,8 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
-import { DbError } from "@repo/errors";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { formatErrorResponse } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -14,14 +15,37 @@ import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
 
-const handlePostError = (error: Error, c: Context<{ Bindings: Bindings }>) => {
-  const statusCode = error instanceof DbError ? error.statusCode : 500;
-  return c.json({ message: error.message }, statusCode);
+/**
+ * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
+ */
+const problemResponse = (
+  c: Context,
+  statusCode: ContentfulStatusCode,
+  typeSlug: string,
+  title: string,
+  detail: string,
+) => {
+  return c.body(
+    JSON.stringify({
+      type: `https://api.otography.com/errors/${typeSlug}`,
+      title,
+      status: statusCode,
+      detail,
+    }),
+    statusCode,
+    { "Content-Type": "application/problem+json" },
+  );
 };
 
 const postBodyValidator = arktypeValidator("json", postInsertSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post payload." }, 400);
+    return problemResponse(
+      c,
+      400,
+      "bad-request",
+      "Bad Request",
+      "Please provide a valid post payload.",
+    );
   }
 });
 
