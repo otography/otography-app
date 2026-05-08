@@ -2,20 +2,46 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
+import { formatErrorResponse } from "../../shared/errors/error-response";
 import { songCreateBodySchema } from "./model";
 import { getSong, getSongs, registerSong, syncSong } from "./usecase";
 
-const handleSongError = (error: DbError, c: Context<{ Bindings: Bindings }>) => {
-  return c.json({ message: error.message }, error.statusCode);
+/**
+ * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
+ */
+const problemResponse = (
+  c: Context,
+  statusCode: ContentfulStatusCode,
+  typeSlug: string,
+  title: string,
+  detail: string,
+) => {
+  return c.body(
+    JSON.stringify({
+      type: `https://api.otography.com/errors/${typeSlug}`,
+      title,
+      status: statusCode,
+      detail,
+    }),
+    statusCode,
+    { "Content-Type": "application/problem+json" },
+  );
 };
 
 const songCreateValidator = arktypeValidator("json", songCreateBodySchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid song payload." }, 400);
+    return problemResponse(
+      c,
+      400,
+      "bad-request",
+      "Bad Request",
+      "Please provide a valid song payload.",
+    );
   }
 });
 
@@ -25,7 +51,7 @@ const songIdParamSchema = type({
 
 const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid song id." }, 400);
+    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid song id.");
   }
 });
 
@@ -42,14 +68,24 @@ const songs = new Hono<{ Bindings: Bindings }>()
     }
 
     const result = await getSongs({ limit, cursor });
-    if (result instanceof DbError) return handleSongError(result, c);
+    if (result instanceof DbError) {
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
+    }
     return c.json(result);
   })
   .get("/api/songs/:id", songIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
     const result = await getSong(id);
-    if (result instanceof DbError) return handleSongError(result, c);
+    if (result instanceof DbError) {
+      const { body, statusCode } = formatErrorResponse(result);
+      return c.body(JSON.stringify(body), statusCode, {
+        "Content-Type": "application/problem+json",
+      });
+    }
 
     return c.json(result);
   })
@@ -63,7 +99,12 @@ const songs = new Hono<{ Bindings: Bindings }>()
       const payload = c.req.valid("json");
       const result = await registerSong(payload);
 
-      if (result instanceof DbError) return handleSongError(result, c);
+      if (result instanceof DbError) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result, 201);
     },
@@ -77,7 +118,12 @@ const songs = new Hono<{ Bindings: Bindings }>()
       const { id } = c.req.valid("param");
       const result = await syncSong(id);
 
-      if (result instanceof DbError) return handleSongError(result, c);
+      if (result instanceof DbError) {
+        const { body, statusCode } = formatErrorResponse(result);
+        return c.body(JSON.stringify(body), statusCode, {
+          "Content-Type": "application/problem+json",
+        });
+      }
 
       return c.json(result);
     },
