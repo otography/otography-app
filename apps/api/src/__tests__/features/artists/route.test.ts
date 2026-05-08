@@ -4,6 +4,26 @@ import { DbError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
+/*
+ * テストリスト: artists ルート RFC 7807 移行
+ *
+ * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
+ * 1. GET /api/artists/:id → 400 (不正な id) → bad-request
+ * 2. GET /api/artists/:id → 404 (not found) → not-found
+ * 3. POST /api/artists → 409 (appleMusicId 重複) → conflict
+ * 4. POST /api/artists → 500 (DB エラー) → internal-error
+ * 5. POST /api/artists → 400 (不正な payload) → bad-request
+ * 6. POST /api/artists → 400 (空の appleMusicId) → bad-request
+ * 7. POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
+ * 8. PATCH /api/artists/:id → 400 (不正な id) → bad-request
+ * 9. PATCH /api/artists/:id → 409 (appleMusicId 重複) → conflict
+ * 10. PATCH /api/artists/:id → 400 (空の payload) → bad-request
+ * 11. PATCH /api/artists/:id → 400 (不正な payload) → bad-request
+ * 12. PATCH /api/artists/:id → 404 (not found) → not-found
+ * 13. DELETE /api/artists/:id → 404 (not found) → not-found
+ * 14. 成功レスポンスの形式は変更なし
+ */
+
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
     "../../../shared/middleware",
@@ -150,7 +170,12 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid artist id.",
+    });
   });
 
   it("GET /api/artists/:id returns 404 when not found", async () => {
@@ -167,7 +192,12 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211116");
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Artist not found." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Artist not found.",
+    });
   });
 
   it("POST /api/artists creates artist from appleMusicId", async () => {
@@ -250,7 +280,10 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      message: "Apple Music ID is already registered for another artist.",
+      type: "https://api.otography.com/errors/conflict",
+      title: "Conflict",
+      status: 409,
+      detail: "Apple Music ID is already registered for another artist.",
     });
   });
 
@@ -274,7 +307,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to create artist." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Failed to create artist.",
+    });
   });
 
   it("POST /api/artists returns 400 for invalid payload", async () => {
@@ -284,7 +322,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid artist payload.",
+    });
   });
 
   it("POST /api/artists returns 400 when appleMusicId is empty", async () => {
@@ -294,7 +337,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid artist payload.",
+    });
   });
 
   it("POST /api/artists returns 502 when Apple Music API fails", async () => {
@@ -312,7 +360,10 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({
-      message: "Apple Music API からアーティスト情報を取得できませんでした。",
+      type: "https://api.otography.com/errors/bad-gateway",
+      title: "Bad Gateway",
+      status: 502,
+      detail: "Apple Music API からアーティスト情報を取得できませんでした。",
     });
   });
 
@@ -373,7 +424,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid artist id.",
+    });
   });
 
   it("PATCH /api/artists/:id returns 409 when appleMusicId is already registered", async () => {
@@ -401,7 +457,10 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      message: "Apple Music ID is already registered for another artist.",
+      type: "https://api.otography.com/errors/conflict",
+      title: "Conflict",
+      status: 409,
+      detail: "Apple Music ID is already registered for another artist.",
     });
   });
 
@@ -412,7 +471,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide at least one field to update." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide at least one field to update.",
+    });
   });
 
   it("PATCH /api/artists/:id returns 400 for invalid payload", async () => {
@@ -424,7 +488,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid artist payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid artist payload.",
+    });
   });
 
   it("PATCH /api/artists/:id returns 404 when not found", async () => {
@@ -446,7 +515,12 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Artist not found." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Artist not found.",
+    });
   });
 
   it("PATCH /api/artists/:id allows clearing nullable fields with null", async () => {
@@ -535,6 +609,11 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Artist not found." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Artist not found.",
+    });
   });
 });

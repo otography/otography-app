@@ -4,6 +4,22 @@ import { DbError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
+/*
+ * テストリスト: songs ルート RFC 7807 移行
+ *
+ * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
+ * 1. GET /api/songs/:id → 400 (不正な id) → bad-request
+ * 2. GET /api/songs/:id → 404 (not found) → not-found
+ * 3. POST /api/songs → 409 (appleMusicId 重複) → conflict
+ * 4. POST /api/songs → 500 (DB エラー) → internal-error
+ * 5. POST /api/songs → 400 (不正な payload) → bad-request
+ * 6. POST /api/songs → 400 (空の appleMusicId) → bad-request
+ * 7. POST /api/songs → 502 (Apple Music API エラー) → bad-gateway
+ * 8. PATCH /api/songs/:id → 404 (not found) → not-found
+ * 9. PATCH /api/songs/:id → 400 (不正な id) → bad-request
+ * 10. 成功レスポンスの形式は変更なし
+ */
+
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
     "../../../shared/middleware",
@@ -156,7 +172,12 @@ describe("songs endpoints", () => {
     const res = await testRequest("/api/songs/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid song id.",
+    });
   });
 
   it("GET /api/songs/:id returns 404 when not found", async () => {
@@ -173,7 +194,12 @@ describe("songs endpoints", () => {
     const res = await testRequest("/api/songs/8f648f36-5be1-4af1-bf5d-cf8ebf222224");
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Song not found." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Song not found.",
+    });
   });
 
   it("POST /api/songs creates song from appleMusicId", async () => {
@@ -357,7 +383,10 @@ describe("songs endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      message: "Apple Music ID is already registered for another song.",
+      type: "https://api.otography.com/errors/conflict",
+      title: "Conflict",
+      status: 409,
+      detail: "Apple Music ID is already registered for another song.",
     });
   });
 
@@ -378,7 +407,12 @@ describe("songs endpoints", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to create song." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Failed to create song.",
+    });
   });
 
   it("POST /api/songs returns 400 for invalid payload", async () => {
@@ -388,7 +422,12 @@ describe("songs endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid song payload.",
+    });
   });
 
   it("POST /api/songs returns 400 when appleMusicId is empty", async () => {
@@ -398,7 +437,12 @@ describe("songs endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid song payload." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid song payload.",
+    });
   });
 
   it("POST /api/songs returns 502 when Apple Music API fails", async () => {
@@ -416,7 +460,10 @@ describe("songs endpoints", () => {
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({
-      message: "Apple Music API から楽曲情報を取得できませんでした。",
+      type: "https://api.otography.com/errors/bad-gateway",
+      title: "Bad Gateway",
+      status: 502,
+      detail: "Apple Music API から楽曲情報を取得できませんでした。",
     });
   });
 
@@ -531,7 +578,12 @@ describe("songs endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Song not found." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Song not found.",
+    });
   });
 
   it("PATCH /api/songs/:id returns 400 for invalid id", async () => {
@@ -541,6 +593,11 @@ describe("songs endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid song id." });
+    expect(await res.json()).toEqual({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid song id.",
+    });
   });
 });
