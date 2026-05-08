@@ -93,6 +93,34 @@ Uses the **errore** convention: functions return error objects instead of throwi
 
 Test behavior, not implementation. Mock only at boundaries (Firebase, database, third-party APIs), not internal modules. Prefer fewer, higher-impact tests — every test must be able to fail for a real defect. Failure messages must be actionable (`toMatchObject` over `toEqual` for large objects). See `.claude/skills/agentic-testing/SKILL.md` for the full guidelines.
 
+#### t-wada TDD（Kent Beck の定義に基づく）
+
+バグ修正や機能追加では以下の 5 ステップを繰り返す。**例外なし。** 「小さな変更」も例外ではない。
+
+1. **テストリストを書く** — 新しい振る舞いで期待される動作を網羅的にリストアップ。実装の設計判断は混ぜない（インターフェースの設計のみ）
+2. **テストをひとつだけ書く** — リストから 1 つ選び、準備・実行・検証が揃ったテストを書き、**失敗（Red）を確認する**
+3. **テストを通す** — 最小限のプロダクトコード変更でテストを成功（Green）させる。この過程で気づいたことはテストリストに追加
+4. **リファクタリング** — 必要に応じて実装の設計を改善。ただし必要以上にリファクタリングしない。早すぎる抽象化は避ける（重複はヒントであって指令ではない）
+5. **テストリストが空になるまで 2 に戻る**
+
+**よくある過ち（禁止事項）:**
+
+- 実装の設計判断をテストリストの段階で混ぜる
+- レッド → グリーンの過程にリファクタリングを混ぜる（まず動かし、それから正しくする）
+- テスト対象の実際の出力値をコピーして期待値にペーストする（ダブルチェックにならない）
+- アサーションを削除してテストが成功したふりをする
+
+**Definition of Done:**
+
+- タスクは、新たな振る舞いに対応するテストが無ければ完了ではない
+- タスクは、lint が通らなければ完了ではない
+
+#### テスト実行コマンド
+
+- **Unit tests:** `bun run test --filter=api`（DB 不要、vitest）
+- **DB integration tests:** `just db-start` で PostgreSQL を起動してから `bun run test:db --filter=api`（`*.db.test.ts`、実DB 使用）
+- **単一テストファイル:** `bun run test --filter=api -- src/__tests__/features/auth/sign-in.test.ts`
+
 ### Validation
 
 Arktype (`arktype`) for runtime type validation in the API — request bodies and DB insert schemas. The web app uses `valibot` via `@t3-oss/env-nextjs` for env vars. Do not use Zod.
