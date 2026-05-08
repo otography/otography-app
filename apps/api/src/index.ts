@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { deleteCookie } from "hono/cookie";
 import { secureHeaders } from "hono/secure-headers";
 import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
@@ -11,6 +12,9 @@ import { songs } from "./features/songs";
 import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
+import { SESSION_COOKIE_NAME } from "./shared/auth/cookies";
+import { formatErrorResponse } from "./shared/errors/error-response";
+import { logError } from "./shared/logging/structured-log";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
 
@@ -37,8 +41,29 @@ const app = new Hono<{ Bindings: Bindings }>()
   .use("/api/songs/*", authSessionMiddleware())
   .use("/api/me/*", authSessionMiddleware())
   .onError((err, c) => {
-    console.error("Unhandled error:", err);
-    return c.json({ message: "Internal server error." }, 500);
+    logError(err, c.req.path);
+    const { body, statusCode, clearCookie } = formatErrorResponse(err);
+
+    if (clearCookie) {
+      deleteCookie(c, SESSION_COOKIE_NAME, {
+        path: "/",
+      });
+    }
+
+    return c.body(JSON.stringify(body), statusCode, {
+      "Content-Type": "application/problem+json",
+    });
+  })
+  .notFound((c) => {
+    const body = {
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "Not found.",
+    };
+    return c.body(JSON.stringify(body), 404, {
+      "Content-Type": "application/problem+json",
+    });
   })
   .route("/", appleMusic)
   .route("/", auth)
