@@ -3,6 +3,8 @@ import postgres from "postgres";
 
 const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
+const FOREIGN_KEY_VIOLATION = "23503";
+const NOT_NULL_VIOLATION = "23502";
 
 const findPostgresError = (error: unknown): postgres.PostgresError | null => {
   if (error instanceof postgres.PostgresError) return error;
@@ -40,4 +42,16 @@ export const isPostgresUniqueViolation = (error: unknown, constraintName: string
 
 export const isPostgresCheckViolation = (error: unknown, constraintName: string): boolean => {
   return isPostgresConstraintViolation(error, { code: CHECK_VIOLATION, constraintName });
+};
+
+export const isPostgresForeignKeyViolation = (error: unknown): boolean => {
+  const postgresError = findPostgresError(error);
+  if (!postgresError) return false;
+  return postgresError.code === FOREIGN_KEY_VIOLATION;
+};
+
+export const isPostgresNotNullViolation = (error: unknown): boolean => {
+  const postgresError = findPostgresError(error);
+  if (!postgresError) return false;
+  return postgresError.code === NOT_NULL_VIOLATION;
 };
