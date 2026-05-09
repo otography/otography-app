@@ -88,8 +88,11 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
     // 31リクエスト目: レートリミット超過で429
     const res = await makeLikeRequest(mockEnv);
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/too-many-requests",
+      title: "Too Many Requests",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 
@@ -104,7 +107,11 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
     const res = await makeLikeRequest(mockEnv);
     expect(res.status).toBe(429);
     const body = await res.json();
-    expect(body).toMatchObject({ message: expect.any(String) });
+    expect(body).toMatchObject({
+      type: "https://api.otography.com/errors/too-many-requests",
+      title: "Too Many Requests",
+      status: 429,
+    });
   });
 
   it("異なるユーザーは独立したレートリミットを持つ (VAL-REFACTOR-002)", async () => {

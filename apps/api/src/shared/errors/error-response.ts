@@ -1,6 +1,6 @@
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { HTTPException } from "hono/http-exception";
-import { DbError, RlsError } from "@repo/errors";
+import { AuthRestError, DbError, RlsError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 
 /**
@@ -46,6 +46,10 @@ const STATUS_MAPPING: Record<number, { typeUri: string; title: string }> = {
   409: {
     typeUri: "https://api.otography.com/errors/conflict",
     title: "Conflict",
+  },
+  429: {
+    typeUri: "https://api.otography.com/errors/too-many-requests",
+    title: "Too Many Requests",
   },
   500: {
     typeUri: "https://api.otography.com/errors/internal-error",
@@ -98,6 +102,14 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
       result.clearCookie = true;
     }
     return result;
+  }
+
+  // AuthRestError（Firebase REST API エラー、ユーザー向けメッセージ）
+  if (error instanceof AuthRestError) {
+    return {
+      body: toProblemDetails(error.statusCode, error.message),
+      statusCode: error.statusCode as ContentfulStatusCode,
+    };
   }
 
   // DbError（ユーザー向けメッセージ）

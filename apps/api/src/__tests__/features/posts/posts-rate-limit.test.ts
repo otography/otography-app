@@ -84,8 +84,11 @@ describe("POST /api/posts レートリミット", () => {
     // 31リクエスト目: レートリミット超過で429
     const res = await makePostRequest(mockEnv);
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/too-many-requests",
+      title: "Too Many Requests",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 

@@ -111,7 +111,12 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
   });
 
   it("returns 500 when usecase returns DbError with 500", async () => {

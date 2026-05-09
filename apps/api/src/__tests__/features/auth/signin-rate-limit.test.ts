@@ -123,8 +123,11 @@ describe("POST /api/auth/sign-in レートリミット", () => {
     // 6リクエスト目: レートリミット超過で429
     const res = await makeSignInRequest(mockEnv);
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/too-many-requests",
+      title: "Too Many Requests",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 
@@ -146,8 +149,11 @@ describe("POST /api/auth/sign-in レートリミット", () => {
     // 6リクエスト目: レートリミット超過で429 (401ではない)
     const res = await makeSignInRequest(mockEnv);
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/too-many-requests",
+      title: "Too Many Requests",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 });

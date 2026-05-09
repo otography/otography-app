@@ -31,7 +31,16 @@ vi.mock("../../../shared/middleware", async () => {
     rateLimitByUser: () => async (c: Context, next: () => Promise<void>) => {
       const session = mockGetAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return c.body(
+          JSON.stringify({
+            type: "https://api.otography.com/errors/unauthorized",
+            title: "Unauthorized",
+            status: 401,
+            detail: "You are not logged in.",
+          }),
+          401,
+          { "Content-Type": "application/problem+json" },
+        );
       }
       await next();
     },
@@ -420,6 +429,11 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
   });
 });
