@@ -5,6 +5,7 @@ import { secureHeaders } from "hono/secure-headers";
 import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
 import { artists } from "./features/artists";
+import { errors } from "./features/errors";
 import { favoriteArtists } from "./features/favorite-artists";
 import { favoriteSongs } from "./features/favorite-songs";
 import { health } from "./features/health";
@@ -68,6 +69,7 @@ const app = new Hono<{ Bindings: Bindings }>()
   .route("/", appleMusic)
   .route("/", auth)
   .route("/", artists)
+  .route("/errors", errors)
   .route("/", songs)
   .route("/", posts)
   .route("/", postLikes)
