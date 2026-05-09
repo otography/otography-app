@@ -16,11 +16,88 @@ type ErrorTypeDefinition = {
   statusCode: ErrorStatusCode;
 };
 
+type StatusTypeDefinition = {
+  slug: string;
+  typeUri: string;
+  title: string;
+  statusCode: ErrorStatusCode;
+};
+
+type ConstraintDefinition = {
+  constraintName: string;
+  message: string;
+  statusCode?: ErrorStatusCode;
+  errorSlug?: ErrorSlug;
+};
+
+/**
+ * 汎用 Problem Details 型のレジストリ。
+ * domain 固有の説明文を持たない、HTTP ステータスに紐づく標準的なエラー型を扱う。
+ */
+export const STATUS_ERROR_TYPES = [
+  {
+    slug: "bad-request",
+    typeUri: "https://api.otography.com/errors/bad-request",
+    title: "Bad Request",
+    statusCode: 400 as ErrorStatusCode,
+  },
+  {
+    slug: "unauthorized",
+    typeUri: "https://api.otography.com/errors/unauthorized",
+    title: "Unauthorized",
+    statusCode: 401 as ErrorStatusCode,
+  },
+  {
+    slug: "forbidden",
+    typeUri: "https://api.otography.com/errors/forbidden",
+    title: "Forbidden",
+    statusCode: 403 as ErrorStatusCode,
+  },
+  {
+    slug: "not-found",
+    typeUri: "https://api.otography.com/errors/not-found",
+    title: "Not Found",
+    statusCode: 404 as ErrorStatusCode,
+  },
+  {
+    slug: "conflict",
+    typeUri: "https://api.otography.com/errors/conflict",
+    title: "Conflict",
+    statusCode: 409 as ErrorStatusCode,
+  },
+  {
+    slug: "too-many-requests",
+    typeUri: "https://api.otography.com/errors/too-many-requests",
+    title: "Too Many Requests",
+    statusCode: 429 as ErrorStatusCode,
+  },
+  {
+    slug: "internal-error",
+    typeUri: "https://api.otography.com/errors/internal-error",
+    title: "Internal Server Error",
+    statusCode: 500 as ErrorStatusCode,
+  },
+  {
+    slug: "bad-gateway",
+    typeUri: "https://api.otography.com/errors/bad-gateway",
+    title: "Bad Gateway",
+    statusCode: 502 as ErrorStatusCode,
+  },
+  {
+    slug: "service-unavailable",
+    typeUri: "https://api.otography.com/errors/service-unavailable",
+    title: "Service Unavailable",
+    statusCode: 503 as ErrorStatusCode,
+  },
+] as const satisfies readonly StatusTypeDefinition[];
+
+export type StatusErrorSlug = (typeof STATUS_ERROR_TYPES)[number]["slug"];
+
 /**
  * 全ドメイン固有エラー型のレジストリ。
- * 汎用型（bad-request, internal-error, not-found 等）は STATUS_MAPPING に残す。
+ * 汎用型（bad-request, internal-error, not-found 等）は STATUS_ERROR_TYPES で扱う。
  */
-export const ERROR_TYPES: readonly ErrorTypeDefinition[] = [
+export const ERROR_TYPES = [
   // 409 Conflict
   {
     slug: "email-already-registered",
@@ -173,13 +250,59 @@ export const ERROR_TYPES: readonly ErrorTypeDefinition[] = [
     description: "認証サービスが一時的に利用できません。しばらく待ってから再試行してください。",
     statusCode: 503 as ErrorStatusCode,
   },
-] as const;
+] as const satisfies readonly ErrorTypeDefinition[];
+
+export type ErrorSlug = (typeof ERROR_TYPES)[number]["slug"];
+
+export type ProblemSlug = ErrorSlug | StatusErrorSlug;
+
+export const POSTGRES_CONSTRAINTS = [
+  {
+    constraintName: "artists_apple_music_id_key",
+    message: "Apple Music ID is already registered for another artist.",
+    errorSlug: "artist-already-exists",
+  },
+  {
+    constraintName: "songs_apple_music_id_key",
+    message: "Apple Music ID is already registered for another song.",
+    errorSlug: "song-already-exists",
+  },
+  {
+    constraintName: "favorite_artists_pkey",
+    message: "このアーティストは既にお気に入りに登録されています。",
+    errorSlug: "favorite-artist-already-exists",
+  },
+  {
+    constraintName: "favorite_songs_pkey",
+    message: "この楽曲は既にお気に入りに登録されています。",
+    errorSlug: "favorite-song-already-exists",
+  },
+  {
+    constraintName: "users_username_key",
+    message: "Username is already taken.",
+    errorSlug: "username-already-taken",
+  },
+  {
+    constraintName: "users_birthyear_check",
+    message: "Invalid birthyear.",
+  },
+] as const satisfies readonly ConstraintDefinition[];
+
+export type PostgresConstraintName = (typeof POSTGRES_CONSTRAINTS)[number]["constraintName"];
 
 /**
  * slug からエントリを検索するインデックス
  */
 const slugIndex = new Map<string, ErrorTypeDefinition>(
   ERROR_TYPES.map((entry) => [entry.slug, entry]),
+);
+
+const statusSlugIndex = new Map<string, StatusTypeDefinition>(
+  STATUS_ERROR_TYPES.map((entry) => [entry.slug, entry]),
+);
+
+const constraintIndex = new Map<string, ConstraintDefinition>(
+  POSTGRES_CONSTRAINTS.map((entry) => [entry.constraintName, entry]),
 );
 
 /**
@@ -189,17 +312,29 @@ export const getBySlug = (slug: string): ErrorTypeDefinition | undefined => {
   return slugIndex.get(slug);
 };
 
-/**
- * 全 slug の配列を返す
- */
-export const getAllSlugs = (): string[] => {
-  return ERROR_TYPES.map((entry) => entry.slug);
+export const getProblemType = (slug: ProblemSlug): ErrorTypeDefinition | StatusTypeDefinition => {
+  return slugIndex.get(slug) ?? statusSlugIndex.get(slug)!;
 };
 
 /**
- * slug から typeUri 文字列を取得する。
- * 未知の slug の場合は undefined を返す。
+ * 全 slug の配列を返す
  */
-export const getTypeUri = (slug: string): string | undefined => {
-  return slugIndex.get(slug)?.typeUri;
+export const getAllSlugs = (): ErrorSlug[] => {
+  return ERROR_TYPES.map((entry) => entry.slug);
+};
+
+export const getProblemTypeUri = (slug: ProblemSlug): string => {
+  return getProblemType(slug).typeUri;
+};
+
+export const getPostgresConstraint = (
+  constraintName: PostgresConstraintName,
+): ConstraintDefinition => {
+  return constraintIndex.get(constraintName)!;
+};
+
+export const findPostgresConstraint = (
+  constraintName: string,
+): ConstraintDefinition | undefined => {
+  return constraintIndex.get(constraintName);
 };

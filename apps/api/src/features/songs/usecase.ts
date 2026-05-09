@@ -2,10 +2,10 @@ import { DbError, RlsError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
-import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
-import { getTypeUri } from "../../shared/errors/error-registry";
+import { domainDbError } from "../../shared/errors/domain-error";
 import { findOrCreateArtists } from "../artists/repository";
 import type { SongCreateBody } from "./model";
 import { createSongFull, findSongById, listSongs, updateSongFull } from "./repository";
@@ -13,16 +13,9 @@ import { createSongFull, findSongById, listSongs, updateSongFull } from "./repos
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
 
 const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
-  if (isPostgresUniqueViolation(error, SONG_APPLE_MUSIC_ID_KEY)) {
-    return new DbError({
-      message: "Apple Music ID is already registered for another song.",
-      statusCode: 409,
-      typeUri: getTypeUri("song-already-exists"),
-      cause: error,
-    });
-  }
-
-  return new DbError({ message: fallbackMessage, cause: error });
+  return toDbError(error, fallbackMessage, {
+    constraints: [SONG_APPLE_MUSIC_ID_KEY],
+  });
 };
 
 // アーティストをバッチで find-or-create
@@ -30,19 +23,17 @@ const resolveArtistIds = async (
   db: import("../../shared/db").DatabaseOrTransaction,
   artists: { appleMusicId: string; name: string }[],
 ): Promise<string[] | DbError> => {
-  return findOrCreateArtists(db, artists).catch(
-    (e) => new DbError({ message: "Failed to resolve artists.", cause: e }),
-  );
+  return findOrCreateArtists(db, artists).catch((e) => toDbError(e, "Failed to resolve artists."));
 };
 
 // withAuthenticatedRole / withAnonymousRole はエラーを RlsError として返す（throw しない）。
 // 結果を DbError に変換するヘルパー。cause チェーンから unique violation を検出する。
-const toDbError = (error: unknown, fallbackMessage: string) => {
+const normalizeSongDbError = (error: unknown, fallbackMessage: string) => {
   if (error instanceof DbError) return error;
   if (error instanceof RlsError) {
     return toSongAppleMusicIdError(error.cause, fallbackMessage);
   }
-  return new DbError({ message: fallbackMessage, cause: error });
+  return toSongAppleMusicIdError(error, fallbackMessage);
 };
 
 export const getSongs = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
@@ -52,7 +43,7 @@ export const getSongs = async (pagination?: { limit?: number; cursor?: Cursor | 
     listSongs(tx, { limit, cursor: pagination?.cursor }),
   );
   if (rows instanceof Error) {
-    return new DbError({ message: "Failed to fetch songs.", cause: rows });
+    return toDbError(rows, "Failed to fetch songs.");
   }
 
   const paginationMeta = buildPaginationMeta(rows, limit);
@@ -65,13 +56,12 @@ export const getSong = async (id: string) => {
   const db = createDb();
   const song = await withAnonymousRole(db, (tx) => findSongById(tx, id));
   if (song instanceof Error) {
-    return new DbError({ message: "Failed to fetch song.", cause: song });
+    return toDbError(song, "Failed to fetch song.");
   }
   if (song === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "song-not-found",
       message: "Song not found.",
-      statusCode: 404,
-      typeUri: getTypeUri("song-not-found"),
     });
   }
 
@@ -96,7 +86,7 @@ export const registerSong = async (payload: SongCreateBody) => {
       genreNames: input.genreNames,
     });
   });
-  if (result instanceof Error) return toDbError(result, "Failed to create song.");
+  if (result instanceof Error) return normalizeSongDbError(result, "Failed to create song.");
   if (!result) {
     return new DbError({ message: "Failed to create song." });
   }
@@ -109,13 +99,12 @@ export const syncSong = async (id: string) => {
   const db = createDb();
   const existing = await withAnonymousRole(db, (tx) => findSongById(tx, id));
   if (existing instanceof Error) {
-    return new DbError({ message: "Failed to fetch song.", cause: existing });
+    return toDbError(existing, "Failed to fetch song.");
   }
   if (existing === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "song-not-found",
       message: "Song not found.",
-      statusCode: 404,
-      typeUri: getTypeUri("song-not-found"),
     });
   }
 
@@ -138,12 +127,11 @@ export const syncSong = async (id: string) => {
     });
   });
 
-  if (result instanceof Error) return toDbError(result, "Failed to sync song.");
+  if (result instanceof Error) return normalizeSongDbError(result, "Failed to sync song.");
   if (result === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "song-not-found",
       message: "Song not found.",
-      statusCode: 404,
-      typeUri: getTypeUri("song-not-found"),
     });
   }
 

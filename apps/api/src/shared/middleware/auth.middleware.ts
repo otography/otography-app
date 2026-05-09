@@ -2,7 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import { verifySessionCookie } from "../firebase/firebase-admin";
 import { clearSessionCookie, getSessionCookie } from "../auth/session-cookie";
 import { handleRefreshResult, refreshSession } from "../auth/session-refresh";
-import { problemResponse, respondWithError } from "../errors/error-response";
+import { respondWithError, unauthorizedResponse } from "../errors/error-response";
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
@@ -57,7 +57,7 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
         return;
       }
 
-      return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+      return unauthorizedResponse(c, "You are not logged in.");
     }
 
     const claims = await verifySessionCookie(sessionCookie);

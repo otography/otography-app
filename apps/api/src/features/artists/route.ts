@@ -4,19 +4,13 @@ import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
-import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
 import { artistCreateBodySchema, artistUpdateSchema } from "./model";
 
 const artistCreateValidator = arktypeValidator("json", artistCreateBodySchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid artist payload.",
-    );
+    return badRequestResponse(c, "Please provide a valid artist payload.");
   }
 });
 
@@ -26,25 +20,13 @@ const artistIdParamSchema = type({
 
 const artistIdParamValidator = arktypeValidator("param", artistIdParamSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid artist id.",
-    );
+    return badRequestResponse(c, "Please provide a valid artist id.");
   }
 });
 
 const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid artist payload.",
-    );
+    return badRequestResponse(c, "Please provide a valid artist payload.");
   }
 });
 
@@ -96,13 +78,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
       if (Object.keys(payload).length === 0) {
-        return problemResponse(
-          c,
-          400,
-          "bad-request",
-          "Bad Request",
-          "Please provide at least one field to update.",
-        );
+        return badRequestResponse(c, "Please provide at least one field to update.");
       }
       const result = await modifyArtist({
         id,

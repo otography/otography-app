@@ -1,7 +1,11 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import {
+  badRequestResponse,
+  respondWithError,
+  unauthorizedResponse,
+} from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -15,13 +19,7 @@ import { getPost, getPosts, modifyPost, registerPost, removePost } from "./useca
 
 const postBodyValidator = arktypeValidator("json", postInsertSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid post payload.",
-    );
+    return badRequestResponse(c, "Please provide a valid post payload.");
   }
 });
 
@@ -31,19 +29,13 @@ const postIdParamSchema = type({
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid post id.");
+    return badRequestResponse(c, "Please provide a valid post id.");
   }
 });
 
 const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid post payload.",
-    );
+    return badRequestResponse(c, "Please provide a valid post payload.");
   }
 });
 
@@ -101,18 +93,12 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+        return unauthorizedResponse(c, "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
       if (Object.keys(payload).length === 0) {
-        return problemResponse(
-          c,
-          400,
-          "bad-request",
-          "Bad Request",
-          "Please provide at least one field to update.",
-        );
+        return badRequestResponse(c, "Please provide at least one field to update.");
       }
 
       const result = await modifyPost({ id, session, payload });
@@ -129,7 +115,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+        return unauthorizedResponse(c, "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const result = await removePost(id, session);

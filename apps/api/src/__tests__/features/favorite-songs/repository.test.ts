@@ -85,8 +85,9 @@ describe("favorite songs repository", () => {
     });
   });
 
-  it("returns a generic DbError for unrelated insert failures", async () => {
+  it("returns a generic 400 DbError for unrelated foreign-key insert failures", async () => {
     const error = createDrizzleConstraintError({
+      code: "23503",
       constraintName: "favorite_songs_song_id_songs_id_fkey",
       query: 'insert into "favorite_songs"',
     });
@@ -101,7 +102,7 @@ describe("favorite songs repository", () => {
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({
       message: "お気に入り楽曲の登録に失敗しました。",
-      statusCode: 500,
+      statusCode: 400,
       cause: error,
     });
   });

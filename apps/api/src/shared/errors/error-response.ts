@@ -11,6 +11,8 @@ import {
   type ErrorStatusCode,
 } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
+import { getProblemType, STATUS_ERROR_TYPES } from "./error-registry";
+import type { ProblemSlug } from "./error-registry";
 
 /**
  * RFC 7807 Problem Details 形式のエラーレスポンス型
@@ -35,44 +37,9 @@ type ErrorMapping = {
 /**
  * ステータスコード → type URI / title のマッピングテーブル
  */
-const STATUS_MAPPING: Record<number, { typeUri: string; title: string }> = {
-  400: {
-    typeUri: "https://api.otography.com/errors/bad-request",
-    title: "Bad Request",
-  },
-  401: {
-    typeUri: "https://api.otography.com/errors/unauthorized",
-    title: "Unauthorized",
-  },
-  403: {
-    typeUri: "https://api.otography.com/errors/forbidden",
-    title: "Forbidden",
-  },
-  404: {
-    typeUri: "https://api.otography.com/errors/not-found",
-    title: "Not Found",
-  },
-  409: {
-    typeUri: "https://api.otography.com/errors/conflict",
-    title: "Conflict",
-  },
-  429: {
-    typeUri: "https://api.otography.com/errors/too-many-requests",
-    title: "Too Many Requests",
-  },
-  500: {
-    typeUri: "https://api.otography.com/errors/internal-error",
-    title: "Internal Server Error",
-  },
-  502: {
-    typeUri: "https://api.otography.com/errors/bad-gateway",
-    title: "Bad Gateway",
-  },
-  503: {
-    typeUri: "https://api.otography.com/errors/service-unavailable",
-    title: "Service Unavailable",
-  },
-};
+const STATUS_MAPPING: Record<number, { typeUri: string; title: string }> = Object.fromEntries(
+  STATUS_ERROR_TYPES.map(({ statusCode, typeUri, title }) => [statusCode, { typeUri, title }]),
+);
 
 /**
  * ステータスコードから ProblemDetails を生成するヘルパー。
@@ -166,27 +133,33 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   };
 };
 
+const problemBody = (slug: ProblemSlug, detail: string): ProblemDetails => {
+  const definition = getProblemType(slug);
+  return {
+    type: definition.typeUri,
+    title: definition.title,
+    status: definition.statusCode,
+    detail,
+  };
+};
+
 /**
- * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー。
- * arktypeValidator の onFailure コールバックや、手動での 401/400 応答に使用する。
+ * registry の slug から Problem Details レスポンスを返す。
+ * route 側では title/status/type URI を手書きせず、detail だけを渡す。
  */
-export const problemResponse = (
-  c: Context,
-  statusCode: ErrorStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
+export const problemResponse = (c: Context, slug: ProblemSlug, detail: string) => {
+  const body = problemBody(slug, detail);
+  return c.body(JSON.stringify(body), body.status as ErrorStatusCode, {
+    "Content-Type": "application/problem+json",
+  });
+};
+
+export const badRequestResponse = (c: Context, detail: string) => {
+  return problemResponse(c, "bad-request", detail);
+};
+
+export const unauthorizedResponse = (c: Context, detail: string) => {
+  return problemResponse(c, "unauthorized", detail);
 };
 
 /**

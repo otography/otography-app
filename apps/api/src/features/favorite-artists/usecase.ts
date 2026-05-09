@@ -6,6 +6,7 @@ import { createDb } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { artists } from "../../shared/db/schema";
+import { toDbError } from "../../shared/db/postgres-error";
 import { withRls } from "../../shared/db/rls";
 import { findArtistByAppleMusicId, createArtistFromAppleMusic } from "../artists/repository";
 import {
@@ -28,7 +29,7 @@ export const getFavoriteArtists = async (
   });
 
   if (result instanceof Error) {
-    return new DbError({ message: "お気に入りアーティストの取得に失敗しました。", cause: result });
+    return toDbError(result, "お気に入りアーティストの取得に失敗しました。");
   }
 
   const paginationMeta = buildPaginationMeta(
@@ -62,9 +63,7 @@ export const getPublicFavoriteArtists = async (
   const result = await listFavoriteArtistsPublic(db, userId, {
     limit,
     cursor: pagination?.cursor,
-  }).catch(
-    (e) => new DbError({ message: "お気に入りアーティストの取得に失敗しました。", cause: e }),
-  );
+  }).catch((e) => toDbError(e, "お気に入りアーティストの取得に失敗しました。"));
   if (result instanceof Error) return result;
 
   const paginationMeta = buildPaginationMeta(
@@ -100,7 +99,7 @@ export const registerFavoriteArtist = async (
     .from(artists)
     .where(and(eq(artists.appleMusicId, input.appleMusicId), isNull(artists.deletedAt)))
     .limit(1)
-    .catch((e) => new DbError({ message: "アーティストの検索に失敗しました。", cause: e }));
+    .catch((e) => toDbError(e, "アーティストの検索に失敗しました。"));
   if (existing instanceof Error) return existing;
 
   let artistName: string | undefined;
@@ -141,10 +140,7 @@ export const registerFavoriteArtist = async (
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;
-    return new DbError({
-      message: "お気に入りアーティストの登録に失敗しました。",
-      cause: result,
-    });
+    return toDbError(result, "お気に入りアーティストの登録に失敗しました。");
   }
 
   if (!result) {
@@ -165,10 +161,7 @@ export const deleteFavoriteArtist = async (session: DecodedIdToken, appleMusicId
   });
 
   if (result instanceof Error) {
-    return new DbError({
-      message: "お気に入りアーティストの削除に失敗しました。",
-      cause: result,
-    });
+    return toDbError(result, "お気に入りアーティストの削除に失敗しました。");
   }
 
   if (result.length === 0) {

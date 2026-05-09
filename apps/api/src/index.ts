@@ -56,7 +56,7 @@ const app = new Hono<{ Bindings: Bindings }>()
     });
   })
   .notFound((c) => {
-    return problemResponse(c, 404, "not-found", "Not Found", "Not found.");
+    return problemResponse(c, "not-found", "Not found.");
   })
   .route("/", appleMusic)
   .route("/", auth)

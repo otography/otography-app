@@ -4,19 +4,13 @@ import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
-import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { songCreateBodySchema } from "./model";
 import { getSong, getSongs, registerSong, syncSong } from "./usecase";
 
 const songCreateValidator = arktypeValidator("json", songCreateBodySchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(
-      c,
-      400,
-      "bad-request",
-      "Bad Request",
-      "Please provide a valid song payload.",
-    );
+    return badRequestResponse(c, "Please provide a valid song payload.");
   }
 });
 
@@ -26,7 +20,7 @@ const songIdParamSchema = type({
 
 const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid song id.");
+    return badRequestResponse(c, "Please provide a valid song id.");
   }
 });
 

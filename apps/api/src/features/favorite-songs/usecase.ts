@@ -6,6 +6,7 @@ import { createDb } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { songs } from "../../shared/db/schema";
+import { toDbError } from "../../shared/db/postgres-error";
 import { withRls } from "../../shared/db/rls";
 import { findSongByAppleMusicId, createSongFromAppleMusic } from "../songs/repository";
 import {
@@ -28,7 +29,7 @@ export const getFavoriteSongs = async (
   });
 
   if (result instanceof Error) {
-    return new DbError({ message: "お気に入り楽曲の取得に失敗しました。", cause: result });
+    return toDbError(result, "お気に入り楽曲の取得に失敗しました。");
   }
 
   const paginationMeta = buildPaginationMeta(
@@ -62,7 +63,7 @@ export const getPublicFavoriteSongs = async (
   const result = await listFavoriteSongsPublic(db, userId, {
     limit,
     cursor: pagination?.cursor,
-  }).catch((e) => new DbError({ message: "お気に入り楽曲の取得に失敗しました。", cause: e }));
+  }).catch((e) => toDbError(e, "お気に入り楽曲の取得に失敗しました。"));
   if (result instanceof Error) return result;
 
   const paginationMeta = buildPaginationMeta(
@@ -98,7 +99,7 @@ export const registerFavoriteSong = async (
     .from(songs)
     .where(and(eq(songs.appleMusicId, input.appleMusicId), isNull(songs.deletedAt)))
     .limit(1)
-    .catch((e) => new DbError({ message: "楽曲の検索に失敗しました。", cause: e }));
+    .catch((e) => toDbError(e, "楽曲の検索に失敗しました。"));
   if (existing instanceof Error) return existing;
 
   const songData = await (async () => {
@@ -158,10 +159,7 @@ export const registerFavoriteSong = async (
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;
-    return new DbError({
-      message: "お気に入り楽曲の登録に失敗しました。",
-      cause: result,
-    });
+    return toDbError(result, "お気に入り楽曲の登録に失敗しました。");
   }
 
   if (!result) {
@@ -182,10 +180,7 @@ export const deleteFavoriteSong = async (session: DecodedIdToken, appleMusicId: 
   });
 
   if (result instanceof Error) {
-    return new DbError({
-      message: "お気に入り楽曲の削除に失敗しました。",
-      cause: result,
-    });
+    return toDbError(result, "お気に入り楽曲の削除に失敗しました。");
   }
 
   if (result.length === 0) {

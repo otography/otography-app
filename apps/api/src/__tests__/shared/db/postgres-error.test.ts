@@ -35,8 +35,9 @@ import {
   isPostgresNotNullViolation,
   isPostgresUniqueViolation,
   mapPostgresToDbError,
+  toDbError,
 } from "../../../shared/db/postgres-error";
-import { createPostgresError } from "../../helpers/postgres-error";
+import { createDrizzleConstraintError, createPostgresError } from "../../helpers/postgres-error";
 
 describe("isPostgresUniqueViolation", () => {
   it("detects unique violations by code property even when String(error) omits the code", () => {
@@ -351,5 +352,82 @@ describe("mapPostgresToDbError", () => {
     expect(result!).toBeInstanceOf(DbError);
     expect(result!.statusCode).toBe(409);
     expect(result!.cause).toBe(error);
+  });
+});
+
+describe("toDbError", () => {
+  it("maps recognized Postgres errors to DbError instead of falling back to 500", () => {
+    const error = createDrizzleConstraintError({
+      code: "23503",
+      constraintName: "posts_song_id_fkey",
+    });
+
+    const result = toDbError(error, "Failed to create post.");
+
+    expect(result).toBeInstanceOf(DbError);
+    expect(result).toMatchObject({
+      message: "Failed to create post.",
+      statusCode: 400,
+      cause: error,
+    });
+  });
+
+  it("uses registered constraint message and typeUri", () => {
+    const error = createDrizzleConstraintError({
+      code: "23505",
+      constraintName: "songs_apple_music_id_key",
+    });
+
+    const result = toDbError(error, "Failed to create song.", {
+      constraints: ["songs_apple_music_id_key"],
+    });
+
+    expect(result).toMatchObject({
+      message: "Apple Music ID is already registered for another song.",
+      statusCode: 409,
+      typeUri: "https://api.otography.com/errors/song-already-exists",
+      cause: error,
+    });
+  });
+
+  it("does not use registry entries unless the constraint is opted in", () => {
+    const error = createDrizzleConstraintError({
+      code: "23505",
+      constraintName: "songs_apple_music_id_key",
+    });
+
+    const result = toDbError(error, "Failed to create song.");
+
+    expect(result).toMatchObject({
+      message: "Failed to create song.",
+      statusCode: 409,
+      cause: error,
+    });
+    expect(result.typeUri).toBeUndefined();
+  });
+
+  it("falls back to a 500 DbError for unknown SQLSTATEs", () => {
+    const error = createDrizzleConstraintError({
+      code: "08001",
+      constraintName: "connection_failure",
+    });
+
+    const result = toDbError(error, "Failed to fetch songs.");
+
+    expect(result).toMatchObject({
+      message: "Failed to fetch songs.",
+      statusCode: 500,
+      cause: error,
+    });
+  });
+
+  it("returns existing DbError unchanged", () => {
+    const error = new DbError({
+      message: "Domain failure.",
+      statusCode: 404,
+      typeUri: "https://api.otography.com/errors/post-not-found",
+    });
+
+    expect(toDbError(error, "Fallback.")).toBe(error);
   });
 });

@@ -3,11 +3,12 @@ import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { createDb } from "../../shared/db";
+import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
-import { getTypeUri } from "../../shared/errors/error-registry";
+import { domainDbError } from "../../shared/errors/domain-error";
 import { findOrCreateArtists } from "../artists/repository";
 import {
   createSongFull,
@@ -30,7 +31,7 @@ const resolveUserId = async (
 ): Promise<string | DbError> => {
   const rows = await db
     .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
-    .catch((e) => new DbError({ message: "Failed to resolve user ID.", cause: e }));
+    .catch((e) => toDbError(e, "Failed to resolve user ID."));
 
   if (rows instanceof Error) return rows;
   const userId = rows[0]?.resolve_firebase_id;
@@ -60,7 +61,7 @@ export const getPosts = async (
     listPostsWithLikes(tx, userId, { limit, cursor: pagination?.cursor }),
   );
   if (rows instanceof Error) {
-    return new DbError({ message: "Failed to fetch posts.", cause: rows });
+    return toDbError(rows, "Failed to fetch posts.");
   }
 
   const paginationMeta = buildPaginationMeta(rows, limit);
@@ -81,13 +82,12 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
 
   const post = await withAnonymousRole(db, (tx) => findPostByIdWithLikes(tx, id, userId));
   if (post instanceof Error) {
-    return new DbError({ message: "Failed to fetch post.", cause: post });
+    return toDbError(post, "Failed to fetch post.");
   }
   if (post === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "post-not-found",
       message: "Post not found.",
-      statusCode: 404,
-      typeUri: getTypeUri("post-not-found"),
     });
   }
 
@@ -98,8 +98,8 @@ export const registerPost = async (payload: PostCreateDbModel, session: DecodedI
   const db = createDb();
 
   // トランザクション外で曲存在チェック（最適化: 不要なAPI呼び出しを回避）
-  const songExists = await songExistsByAppleMusicId(db, payload.appleMusicId).catch(
-    (e) => new DbError({ message: "Failed to check song existence.", cause: e }),
+  const songExists = await songExistsByAppleMusicId(db, payload.appleMusicId).catch((e) =>
+    toDbError(e, "Failed to check song existence."),
   );
   if (songExists instanceof Error) return songExists;
 
@@ -122,8 +122,8 @@ export const registerPost = async (payload: PostCreateDbModel, session: DecodedI
       if (!songInput) {
         return new DbError({ message: "Failed to resolve song information." });
       }
-      const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch(
-        (e) => new DbError({ message: "Failed to resolve artists.", cause: e }),
+      const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
+        toDbError(e, "Failed to resolve artists."),
       );
       if (artistIds instanceof Error) return artistIds;
 
@@ -143,7 +143,7 @@ export const registerPost = async (payload: PostCreateDbModel, session: DecodedI
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;
-    return new DbError({ message: "Failed to create post.", cause: result });
+    return toDbError(result, "Failed to create post.");
   }
 
   const [post] = result;
@@ -164,13 +164,12 @@ export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
   const db = createDb();
   const post = await withRls(db, session, (tx) => updatePostById(tx, { id, values: payload }));
   if (post instanceof Error) {
-    return new DbError({ message: "Failed to update post.", cause: post });
+    return toDbError(post, "Failed to update post.");
   }
   if (post === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "post-not-found",
       message: "Post not found or access denied.",
-      statusCode: 404,
-      typeUri: getTypeUri("post-not-found"),
     });
   }
 
@@ -181,13 +180,12 @@ export const removePost = async (id: string, session: DecodedIdToken) => {
   const db = createDb();
   const deletedPost = await withRls(db, session, (tx) => softDeletePostById(tx, id));
   if (deletedPost instanceof Error) {
-    return new DbError({ message: "Failed to delete post.", cause: deletedPost });
+    return toDbError(deletedPost, "Failed to delete post.");
   }
   if (deletedPost === null) {
-    return new DbError({
+    return domainDbError({
+      slug: "post-not-found",
       message: "Post not found or access denied.",
-      statusCode: 404,
-      typeUri: getTypeUri("post-not-found"),
     });
   }
 

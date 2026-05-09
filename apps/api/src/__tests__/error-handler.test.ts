@@ -81,9 +81,9 @@ const createTestApp = () => {
     });
   });
 
-  // notFound: problemResponse で RFC 7807 404 を返す
+  // notFound: registry 経由で RFC 7807 404 を返す
   app.notFound((c) => {
-    return problemResponse(c, 404, "not-found", "Not Found", "Not found.");
+    return problemResponse(c, "not-found", "Not found.");
   });
 
   return app;

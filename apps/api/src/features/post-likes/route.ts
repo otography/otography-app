@@ -1,7 +1,7 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -17,7 +17,7 @@ const postIdParamSchema = type({
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return problemResponse(c, 400, "bad-request", "Bad Request", "Please provide a valid post id.");
+    return badRequestResponse(c, "Please provide a valid post id.");
   }
 });
 

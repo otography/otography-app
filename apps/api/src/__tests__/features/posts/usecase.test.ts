@@ -1,6 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { describe, expect, it, vi } from "vitest";
 import { DbError, RlsError } from "@repo/errors";
+import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 const mocks = vi.hoisted(() => ({
   createDb: vi.fn(),
@@ -228,6 +229,77 @@ describe("posts usecase — registerPost", () => {
     expect(result).toMatchObject({
       message: "Failed to create post.",
       statusCode: 500,
+      cause,
+    });
+  });
+
+  it("maps FK violations from the production transaction path to 400", async () => {
+    mocks.songExistsByAppleMusicId.mockResolvedValue(true);
+    const cause = createDrizzleConstraintError({
+      code: "23503",
+      constraintName: "posts_song_id_fkey",
+    });
+    mocks.withRls.mockResolvedValue(cause);
+
+    const result = await registerPost({ appleMusicId, content }, session);
+
+    expect(result).toBeInstanceOf(DbError);
+    expect(result).toMatchObject({
+      message: "Failed to create post.",
+      statusCode: 400,
+      cause,
+    });
+  });
+
+  it("maps NOT NULL violations from a DB boundary to 400", async () => {
+    const cause = createDrizzleConstraintError({
+      code: "23502",
+      constraintName: "posts_content_not_null",
+    });
+    mocks.songExistsByAppleMusicId.mockRejectedValue(cause);
+
+    const result = await registerPost({ appleMusicId, content }, session);
+
+    expect(result).toBeInstanceOf(DbError);
+    expect(result).toMatchObject({
+      message: "Failed to check song existence.",
+      statusCode: 400,
+      cause,
+    });
+  });
+
+  it("maps CHECK violations from the production transaction path to 400", async () => {
+    mocks.songExistsByAppleMusicId.mockResolvedValue(true);
+    const cause = createDrizzleConstraintError({
+      code: "23514",
+      constraintName: "posts_content_length_check",
+    });
+    mocks.withRls.mockResolvedValue(cause);
+
+    const result = await registerPost({ appleMusicId, content }, session);
+
+    expect(result).toBeInstanceOf(DbError);
+    expect(result).toMatchObject({
+      message: "Failed to create post.",
+      statusCode: 400,
+      cause,
+    });
+  });
+
+  it("maps generic UNIQUE violations from the production transaction path to 409", async () => {
+    mocks.songExistsByAppleMusicId.mockResolvedValue(true);
+    const cause = createDrizzleConstraintError({
+      code: "23505",
+      constraintName: "posts_some_unique_key",
+    });
+    mocks.withRls.mockResolvedValue(cause);
+
+    const result = await registerPost({ appleMusicId, content }, session);
+
+    expect(result).toBeInstanceOf(DbError);
+    expect(result).toMatchObject({
+      message: "Failed to create post.",
+      statusCode: 409,
       cause,
     });
   });

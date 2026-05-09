@@ -1,6 +1,10 @@
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import {
+  badRequestResponse,
+  respondWithError,
+  unauthorizedResponse,
+} from "../../shared/errors/error-response";
 import {
   csrfProtection,
   requireAuthMiddleware,
@@ -26,7 +30,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
   .get("/api/me/favorites/artists", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
     if (!session) {
-      return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
+      return unauthorizedResponse(c, "ログインしていません。");
     }
 
     const { limit, cursor } = parsePaginationQuery(c);
@@ -41,7 +45,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     "/api/users/:userId/favorites/artists",
     arktypeValidator("param", userIdParamSchema, (result, c) => {
       if (!result.success) {
-        return problemResponse(c, 400, "bad-request", "Bad Request", "無効なユーザーIDです。");
+        return badRequestResponse(c, "無効なユーザーIDです。");
       }
     }),
     async (c) => {
@@ -62,13 +66,13 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     rateLimitByUser("CONTENT_RATE_LIMITER"),
     arktypeValidator("json", addFavoriteArtistSchema, (result, c) => {
       if (!result.success) {
-        return problemResponse(c, 400, "bad-request", "Bad Request", "リクエストが不正です。");
+        return badRequestResponse(c, "リクエストが不正です。");
       }
     }),
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
+        return unauthorizedResponse(c, "ログインしていません。");
       }
 
       const input = c.req.valid("json");
@@ -86,19 +90,13 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
     requireAuthMiddleware(),
     arktypeValidator("param", appleMusicIdParamSchema, (result, c) => {
       if (!result.success) {
-        return problemResponse(
-          c,
-          400,
-          "bad-request",
-          "Bad Request",
-          "無効な Apple Music ID です。",
-        );
+        return badRequestResponse(c, "無効な Apple Music ID です。");
       }
     }),
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return problemResponse(c, 401, "unauthorized", "Unauthorized", "ログインしていません。");
+        return unauthorizedResponse(c, "ログインしていません。");
       }
 
       const { appleMusicId } = c.req.valid("param");

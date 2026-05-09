@@ -39,16 +39,19 @@
  * typeUri の一意性:
  * 28. 全 typeUri が一意である
  *
- * getTypeUri の検証:
+ * getProblemTypeUri の検証:
  * 29. 既知の slug で正しい typeUri 文字列を返す
- * 30. 未知の slug で undefined を返す
+ * 30. getProblemTypeUri は既知 slug のみを受け取り、typo は型エラーにする
  */
 import { describe, expect, it } from "vitest";
 import {
   ERROR_TYPES,
+  POSTGRES_CONSTRAINTS,
   getBySlug,
   getAllSlugs,
-  getTypeUri,
+  getPostgresConstraint,
+  getProblemType,
+  getProblemTypeUri,
 } from "../../../shared/errors/error-registry";
 
 const ALL_SLUGS = [
@@ -166,19 +169,43 @@ describe("error-registry", () => {
     });
   });
 
-  describe("getTypeUri の検証", () => {
+  describe("getProblemTypeUri の検証", () => {
     it("既知の slug で正しい typeUri 文字列を返す", () => {
-      expect(getTypeUri("artist-already-exists")).toBe(
+      expect(getProblemTypeUri("artist-already-exists")).toBe(
         "https://api.otography.com/errors/artist-already-exists",
       );
-      expect(getTypeUri("post-not-found")).toBe("https://api.otography.com/errors/post-not-found");
-      expect(getTypeUri("session-expired")).toBe(
+      expect(getProblemTypeUri("post-not-found")).toBe(
+        "https://api.otography.com/errors/post-not-found",
+      );
+      expect(getProblemTypeUri("session-expired")).toBe(
         "https://api.otography.com/errors/session-expired",
       );
     });
+  });
 
-    it("未知の slug で undefined を返す", () => {
-      expect(getTypeUri("nonexistent-error")).toBeUndefined();
+  describe("汎用 Problem Details 型", () => {
+    it("bad-request の status/title/typeUri を registry から取得できる", () => {
+      expect(getProblemType("bad-request")).toMatchObject({
+        slug: "bad-request",
+        statusCode: 400,
+        title: "Bad Request",
+        typeUri: "https://api.otography.com/errors/bad-request",
+      });
+    });
+  });
+
+  describe("Postgres constraint registry", () => {
+    it("constraint 名から domain error type を取得できる", () => {
+      expect(getPostgresConstraint("songs_apple_music_id_key")).toMatchObject({
+        constraintName: "songs_apple_music_id_key",
+        message: "Apple Music ID is already registered for another song.",
+        errorSlug: "song-already-exists",
+      });
+    });
+
+    it("全 constraint 名が一意である", () => {
+      const names = POSTGRES_CONSTRAINTS.map((entry) => entry.constraintName);
+      expect(new Set(names).size).toBe(names.length);
     });
   });
 });

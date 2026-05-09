@@ -1,7 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { getAuthSession } from "../auth/auth-session";
-import { problemResponse } from "../errors/error-response";
+import { problemResponse, unauthorizedResponse } from "../errors/error-response";
 
 /** レートリミットバインディングの呼び出しインターフェース */
 interface RateLimiterBinding {
@@ -21,9 +21,7 @@ export const rateLimitByIp = (limiterName: string): MiddlewareHandler => {
     if (!success) {
       return problemResponse(
         c,
-        429,
         "rate-limit-exceeded",
-        "Rate Limit Exceeded",
         "Too many requests. Please try again later.",
       );
     }
@@ -41,7 +39,7 @@ export const rateLimitByUser = (limiterName: string): MiddlewareHandler => {
     const session = getAuthSession(c) as { sub: string } | null;
 
     if (!session) {
-      return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+      return unauthorizedResponse(c, "You are not logged in.");
     }
 
     const limiter = c.env[limiterName] as unknown as RateLimiterBinding;
@@ -50,9 +48,7 @@ export const rateLimitByUser = (limiterName: string): MiddlewareHandler => {
     if (!success) {
       return problemResponse(
         c,
-        429,
         "rate-limit-exceeded",
-        "Rate Limit Exceeded",
         "Too many requests. Please try again later.",
       );
     }
