@@ -6,7 +6,7 @@ import { AuthError } from "@repo/errors/server";
 /**
  * RFC 7807 Problem Details 形式のエラーレスポンス型
  */
-export type ProblemDetails = {
+type ProblemDetails = {
   type: string;
   title: string;
   status: number;
@@ -17,7 +17,7 @@ export type ProblemDetails = {
 /**
  * formatErrorResponse の戻り値の型
  */
-export type ErrorMapping = {
+type ErrorMapping = {
   body: ProblemDetails;
   statusCode: ContentfulStatusCode;
   clearCookie?: boolean;

@@ -3,7 +3,7 @@ import { NoProfileError, UnauthenticatedError } from "@repo/errors";
 import { getCurrentUser } from "./current-user";
 
 /** API の GET /api/user が返すプロフィールの型 */
-export type UserProfile = {
+type UserProfile = {
   username: string;
   name: string;
   email: string | null;
@@ -17,7 +17,7 @@ export type UserProfile = {
 };
 
 /** requireAuth() の戻り値の型 */
-export type AuthenticatedUser = {
+type AuthenticatedUser = {
   message: string;
   profile: UserProfile;
 };
