@@ -73,8 +73,8 @@ describe("rateLimitByIp", () => {
 
     expect(res.status).toBe(429);
     expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/too-many-requests",
-      title: "Too Many Requests",
+      type: "https://api.otography.com/errors/rate-limit-exceeded",
+      title: "Rate Limit Exceeded",
       status: 429,
       detail: "Too many requests. Please try again later.",
     });
@@ -181,8 +181,8 @@ describe("rateLimitByUser", () => {
 
     expect(res.status).toBe(429);
     expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/too-many-requests",
-      title: "Too Many Requests",
+      type: "https://api.otography.com/errors/rate-limit-exceeded",
+      title: "Rate Limit Exceeded",
       status: 429,
       detail: "Too many requests. Please try again later.",
     });

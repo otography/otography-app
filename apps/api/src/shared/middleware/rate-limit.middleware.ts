@@ -44,8 +44,8 @@ export const rateLimitByIp = (limiterName: string): MiddlewareHandler => {
       return problemJson(
         c,
         429,
-        "too-many-requests",
-        "Too Many Requests",
+        "rate-limit-exceeded",
+        "Rate Limit Exceeded",
         "Too many requests. Please try again later.",
       );
     }
@@ -73,8 +73,8 @@ export const rateLimitByUser = (limiterName: string): MiddlewareHandler => {
       return problemJson(
         c,
         429,
-        "too-many-requests",
-        "Too Many Requests",
+        "rate-limit-exceeded",
+        "Rate Limit Exceeded",
         "Too many requests. Please try again later.",
       );
     }
