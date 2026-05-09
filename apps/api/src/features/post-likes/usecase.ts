@@ -6,6 +6,8 @@ import { findActivePostById } from "../posts/repository";
 import { countPostLikes, togglePostLike } from "./repository";
 import type { ToggleLikeResponse } from "./model";
 
+const POST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/post-not-found";
+
 export const toggleLike = async (
   session: DecodedIdToken,
   postId: string,
@@ -14,7 +16,11 @@ export const toggleLike = async (
   const result = await withRls(db, session, async (tx, userId) => {
     const post = await findActivePostById(tx, postId);
     if (!post) {
-      return new DbError({ message: "投稿が見つかりません。", statusCode: 404 });
+      return new DbError({
+        message: "投稿が見つかりません。",
+        statusCode: 404,
+        typeUri: POST_NOT_FOUND_TYPE_URI,
+      });
     }
 
     const toggleResult = await togglePostLike(tx, userId, postId);

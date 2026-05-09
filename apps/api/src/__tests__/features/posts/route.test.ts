@@ -3,13 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: posts ルート RFC 7807 移行
+ * テストリスト: posts ルート ドメイン固有 typeUri 移行
  *
- * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
- * 1. PATCH /api/posts/:id → 404 (RLS でフィルタ) → not-found
- * 2. DELETE /api/posts/:id → 404 (RLS でフィルタ) → not-found
- * 3. GET /api/posts/:id → 400 (不正な id) → bad-request
- * 4. POST /api/posts → 400 (不正な payload) → bad-request
+ * 以下のテスト期待値を更新してドメイン固有 typeUri を検証:
+ * 1. PATCH /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
+ * 2. DELETE /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
+ * 3. GET /api/posts/:id → 400 (不正な id) → bad-request（変更なし）
+ * 4. POST /api/posts → 400 (不正な payload) → bad-request（変更なし）
  * 5. 成功レスポンスの形式は変更なし
  */
 
@@ -347,7 +347,7 @@ describe("posts endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/post-not-found",
       title: "Not Found",
       status: 404,
       detail: "Post not found or access denied.",
@@ -379,7 +379,7 @@ describe("posts endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/post-not-found",
       title: "Not Found",
       status: 404,
       detail: "Post not found or access denied.",

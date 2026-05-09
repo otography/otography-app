@@ -2,12 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: post-likes ルート RFC 7807 移行
+ * テストリスト: post-likes ルート ドメイン固有 typeUri 移行
  *
- * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
- * 1. POST /api/posts/:id/like → 404 (投稿なし) → not-found
- * 2. POST /api/posts/:id/like → 400 (不正な id) → bad-request
- * 3. POST /api/posts/:id/like → 500 (DB エラー) → internal-error
+ * 以下のテスト期待値を更新してドメイン固有 typeUri を検証:
+ * 1. POST /api/posts/:id/like → 404 (投稿なし) → type: .../post-not-found
+ * 2. POST /api/posts/:id/like → 400 (不正な id) → bad-request（変更なし）
+ * 3. POST /api/posts/:id/like → 500 (DB エラー) → internal-error（変更なし）
  * 4. 成功レスポンスの形式は変更なし
  */
 
@@ -79,14 +79,18 @@ describe("POST /api/posts/:id/like", () => {
   it("returns 404 when post not found", async () => {
     const { DbError } = await import("@repo/errors");
     vi.mocked(toggleLike).mockResolvedValue(
-      new DbError({ message: "投稿が見つかりません。", statusCode: 404 }),
+      new DbError({
+        message: "投稿が見つかりません。",
+        statusCode: 404,
+        typeUri: "https://api.otography.com/errors/post-not-found",
+      }),
     );
 
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/post-not-found",
       title: "Not Found",
       status: 404,
       detail: "投稿が見つかりません。",

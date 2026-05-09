@@ -22,6 +22,8 @@ import {
 } from "./repository";
 import type { PostCreateDbModel, PostInsertDbModel, PostUpdateDbModel } from "./model";
 
+const POST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/post-not-found";
+
 // Firebase ID → UUID 解決
 const resolveUserId = async (
   db: DatabaseOrTransaction,
@@ -83,7 +85,11 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
     return new DbError({ message: "Failed to fetch post.", cause: post });
   }
   if (post === null) {
-    return new DbError({ message: "Post not found.", statusCode: 404 });
+    return new DbError({
+      message: "Post not found.",
+      statusCode: 404,
+      typeUri: POST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { post };
@@ -162,7 +168,11 @@ export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
     return new DbError({ message: "Failed to update post.", cause: post });
   }
   if (post === null) {
-    return new DbError({ message: "Post not found or access denied.", statusCode: 404 });
+    return new DbError({
+      message: "Post not found or access denied.",
+      statusCode: 404,
+      typeUri: POST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { post };
@@ -175,7 +185,11 @@ export const removePost = async (id: string, session: DecodedIdToken) => {
     return new DbError({ message: "Failed to delete post.", cause: deletedPost });
   }
   if (deletedPost === null) {
-    return new DbError({ message: "Post not found or access denied.", statusCode: 404 });
+    return new DbError({
+      message: "Post not found or access denied.",
+      statusCode: 404,
+      typeUri: POST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { deleted: true };
