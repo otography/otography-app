@@ -23,18 +23,21 @@ class AuthError extends errore.createTaggedError({
   readonly code: string;
   statusCode: ErrorStatusCode = 401;
   readonly clearCookie: boolean = false;
+  readonly typeUri?: string;
 
   constructor(args: {
     message: string;
     code: string;
     statusCode?: ErrorStatusCode;
     clearCookie?: boolean;
+    typeUri?: string;
     cause?: unknown;
   }) {
     super(args);
     this.code = args.code;
     if (args.statusCode !== undefined) this.statusCode = args.statusCode;
     if (args.clearCookie) this.clearCookie = true;
+    this.typeUri = args.typeUri;
   }
 
   static fromFirebase(

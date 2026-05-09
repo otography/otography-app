@@ -1,6 +1,15 @@
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { AuthRestError, DbError, RlsError, type ErrorStatusCode } from "@repo/errors";
+import {
+  AuthRestError,
+  DbError,
+  RlsError,
+  OAuthExchangeError,
+  GoogleTokenExchangeError,
+  FirebaseIdpSigninError,
+  AccountConflictError,
+  type ErrorStatusCode,
+} from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 
 /**
@@ -66,12 +75,13 @@ const STATUS_MAPPING: Record<number, { typeUri: string; title: string }> = {
 };
 
 /**
- * ステータスコードから ProblemDetails を生成するヘルパー
+ * ステータスコードから ProblemDetails を生成するヘルパー。
+ * typeUri が指定された場合はそれを優先し、なければ STATUS_MAPPING にフォールバックする。
  */
-const toProblemDetails = (statusCode: number, detail: string): ProblemDetails => {
+const toProblemDetails = (statusCode: number, detail: string, typeUri?: string): ProblemDetails => {
   const mapping = STATUS_MAPPING[statusCode] ?? STATUS_MAPPING[500]!;
   return {
-    type: mapping.typeUri,
+    type: typeUri ?? mapping.typeUri,
     title: mapping.title,
     status: statusCode,
     detail,
@@ -88,14 +98,14 @@ const toInternalError = (): ProblemDetails => {
 /**
  * 全エラータイプを RFC 7807 Problem Details に変換する。
  *
- * - AuthError / DbError → 実際のメッセージを使用（ユーザー向け）
+ * - AuthError / DbError / OAuth 系エラー → typeUri があれば使用、なければ STATUS_MAPPING にフォールバック
  * - RlsError / unknown → detail を "Internal server error." に固定（内部情報漏洩防止）
  */
 export const formatErrorResponse = (error: unknown): ErrorMapping => {
   // AuthError（clearCookie 伝播あり）
   if (error instanceof AuthError) {
     const result: ErrorMapping = {
-      body: toProblemDetails(error.statusCode, error.message),
+      body: toProblemDetails(error.statusCode, error.message, error.typeUri),
       statusCode: error.statusCode,
     };
     if (error.clearCookie) {
@@ -107,7 +117,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   // AuthRestError（Firebase REST API エラー、ユーザー向けメッセージ）
   if (error instanceof AuthRestError) {
     return {
-      body: toProblemDetails(error.statusCode, error.message),
+      body: toProblemDetails(error.statusCode, error.message, error.typeUri),
       statusCode: error.statusCode,
     };
   }
@@ -115,12 +125,25 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   // DbError（ユーザー向けメッセージ）
   if (error instanceof DbError) {
     return {
-      body: toProblemDetails(error.statusCode, error.message),
+      body: toProblemDetails(error.statusCode, error.message, error.typeUri),
       statusCode: error.statusCode,
     };
   }
 
-  // RlsError（内部情報隠蔽）
+  // OAuth 系エラー（ユーザー向けメッセージ + typeUri 対応）
+  if (
+    error instanceof OAuthExchangeError ||
+    error instanceof GoogleTokenExchangeError ||
+    error instanceof FirebaseIdpSigninError ||
+    error instanceof AccountConflictError
+  ) {
+    return {
+      body: toProblemDetails(error.statusCode, error.message, error.typeUri),
+      statusCode: error.statusCode as ErrorStatusCode,
+    };
+  }
+
+  // RlsError（内部情報隠蔽、typeUri も無視）
   if (error instanceof RlsError) {
     return {
       body: toInternalError(),

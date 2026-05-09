@@ -6,6 +6,12 @@ class OAuthConfigError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 500;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 class OAuthStateError extends errore.createTaggedError({
@@ -13,6 +19,12 @@ class OAuthStateError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 400;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 class OAuthExchangeError extends errore.createTaggedError({
@@ -20,6 +32,12 @@ class OAuthExchangeError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 // Google OAuth トークン交換失敗（oauth2.googleapis.com/token）
@@ -28,6 +46,12 @@ class GoogleTokenExchangeError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 // Firebase signInWithIdp 失敗
@@ -36,6 +60,12 @@ class FirebaseIdpSigninError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 // 同一メールアドレスが別プロバイダーで既に登録済み（needConfirmation）
@@ -44,6 +74,12 @@ class AccountConflictError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 409;
+  readonly typeUri?: string;
+
+  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+    super(args);
+    this.typeUri = args.typeUri;
+  }
 }
 
 export {
