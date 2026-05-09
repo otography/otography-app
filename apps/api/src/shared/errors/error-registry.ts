@@ -3,7 +3,7 @@ import type { ErrorStatusCode } from "@repo/errors";
 /**
  * ドメイン固有エラー型の定義
  */
-export type ErrorTypeDefinition = {
+type ErrorTypeDefinition = {
   /** kebab-case のエラー識別子（例: artist-already-exists） */
   slug: string;
   /** RFC 7807 type URI（例: https://api.otography.com/errors/artist-already-exists） */
