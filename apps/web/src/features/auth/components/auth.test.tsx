@@ -44,8 +44,22 @@ function mockOkResponse() {
   return { ok: true as const, json: () => Promise.resolve({ message: "ok" }) };
 }
 
-function mockErrorResponse(message?: string) {
-  return { ok: false as const, json: () => Promise.resolve(message ? { message } : null) };
+// RFC 7807 Problem Details 形式のエラーレスポンス
+function mockErrorResponse(detail?: string) {
+  return {
+    ok: false as const,
+    json: () =>
+      Promise.resolve(
+        detail
+          ? {
+              type: "https://api.otography.com/errors/unauthorized",
+              title: "Unauthorized",
+              status: 401,
+              detail,
+            }
+          : null,
+      ),
+  };
 }
 
 describe("SignInForm", () => {
@@ -91,7 +105,7 @@ describe("SignInForm", () => {
     });
   });
 
-  it("shows server error message on auth failure", async () => {
+  it("shows server error detail from RFC 7807 response on auth failure", async () => {
     mockSignInPost.mockResolvedValue(mockErrorResponse("Invalid email or password."));
     const user = userEvent.setup();
 
@@ -197,7 +211,7 @@ describe("SignUpForm", () => {
     });
   });
 
-  it("shows server error on sign-up failure", async () => {
+  it("shows server error detail from RFC 7807 response on sign-up failure", async () => {
     mockSignUpPost.mockResolvedValue(mockErrorResponse("Email already exists."));
     const user = userEvent.setup();
 
