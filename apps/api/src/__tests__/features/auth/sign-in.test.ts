@@ -71,7 +71,13 @@ describe("POST /api/auth/sign-in", () => {
       });
 
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({ message: "Invalid email address or password." });
+      const body = await res.json();
+      expect(body).toMatchObject({
+        type: "https://api.otography.com/errors/unauthorized",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Invalid email address or password.",
+      });
     });
 
     it("returns 409 when email already exists", async () => {
@@ -115,7 +121,12 @@ describe("POST /api/auth/sign-in", () => {
       });
 
       expect(res.status).toBe(502);
-      expect(await res.json()).toEqual({ message: "Session creation failed." });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/bad-gateway",
+        title: "Bad Gateway",
+        status: 502,
+        detail: "Session creation failed.",
+      });
     });
 
     it("returns 500 when user record creation fails", async () => {
@@ -147,7 +158,12 @@ describe("POST /api/auth/sign-in", () => {
       });
 
       expect(res.status).toBe(500);
-      expect(await res.json()).toEqual({ message: "Failed to create user record." });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/internal-error",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "Failed to create user record.",
+      });
       expect(res.getCookie("otography_session")).toBeUndefined();
     });
   });
@@ -184,7 +200,10 @@ describe("POST /api/auth/sign-in", () => {
 
       expect(res.status).toBe(400);
       expect(await res.json()).toMatchObject({
-        message: "Please provide a valid email address and a password with at least 6 characters.",
+        type: "https://api.otography.com/errors/bad-request",
+        title: "Bad Request",
+        status: 400,
+        detail: "Please provide a valid email address and a password with at least 6 characters.",
       });
     });
   });

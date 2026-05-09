@@ -120,7 +120,12 @@ describe("Session refresh on protected route (GET /api/user)", () => {
       const res = await testRequest("/api/user");
 
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({ message: "You are not logged in." });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/unauthorized",
+        title: "Unauthorized",
+        status: 401,
+        detail: "You are not logged in.",
+      });
       expect(mockExchangeRefreshToken).not.toHaveBeenCalled();
     });
   });
@@ -183,7 +188,12 @@ describe("Session refresh on protected route (GET /api/user)", () => {
 
       // リフレッシュのエラーが優先して返される
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({ message: "Token expired." });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/unauthorized",
+        title: "Unauthorized",
+        status: 401,
+        detail: "Token expired.",
+      });
       // リフレッシュ失敗時は両方のcookieをクリア
       expect(mockClearRefreshTokenCookie).toHaveBeenCalled();
     });

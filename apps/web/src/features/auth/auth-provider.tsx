@@ -66,14 +66,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               message: "Failed to parse authentication error response.",
               cause: e,
             }),
-        )) as WebAuthClientError | { message?: string } | null;
+        )) as WebAuthClientError | { detail?: string } | null;
         if (payload instanceof Error) {
           console.warn("Failed to parse authentication error response:", payload.message);
         }
         setError(
           payload instanceof Error
             ? "Authentication failed."
-            : (payload?.message ?? "Authentication failed."),
+            : (payload?.detail ?? "Authentication failed."),
         );
         setIsPending(false);
         return;
@@ -112,14 +112,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               message: "Failed to parse authentication error response.",
               cause: e,
             }),
-        )) as WebAuthClientError | { message?: string } | null;
+        )) as WebAuthClientError | { detail?: string } | null;
         if (payload instanceof Error) {
           console.warn("Failed to parse authentication error response:", payload.message);
         }
         setError(
           payload instanceof Error
             ? "Authentication failed."
-            : (payload?.message ?? "Authentication failed."),
+            : (payload?.detail ?? "Authentication failed."),
         );
         setIsPending(false);
         return;

@@ -67,14 +67,14 @@ function SetupProfileProvider({ children }: { children: ReactNode }) {
               message: "Failed to parse profile error response.",
               cause: e,
             }),
-        )) as WebAuthClientError | { message?: string } | null;
+        )) as WebAuthClientError | { detail?: string } | null;
         if (payload instanceof Error) {
           console.warn("Failed to parse profile error response:", payload.message);
         }
         setError(
           payload instanceof Error
             ? "Failed to set up profile."
-            : (payload?.message ?? "Failed to set up profile."),
+            : (payload?.detail ?? "Failed to set up profile."),
         );
         return;
       }

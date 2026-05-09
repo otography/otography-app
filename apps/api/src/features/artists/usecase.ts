@@ -2,8 +2,9 @@ import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
-import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { toDbError } from "../../shared/db/postgres-error";
 import { fetchArtist } from "../../shared/apple-music";
+import { domainDbError } from "../../shared/errors/domain-error";
 import {
   type ArtistCreateBody,
   type ArtistCreateDbValues,
@@ -20,22 +21,16 @@ import {
 const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
 
 const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
-  if (isPostgresUniqueViolation(error, ARTIST_APPLE_MUSIC_ID_KEY)) {
-    return new DbError({
-      message: "Apple Music ID is already registered for another artist.",
-      statusCode: 409,
-      cause: error,
-    });
-  }
-
-  return new DbError({ message: fallbackMessage, cause: error });
+  return toDbError(error, fallbackMessage, {
+    constraints: [ARTIST_APPLE_MUSIC_ID_KEY],
+  });
 };
 
 export const getArtists = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
   const db = createDb();
   const limit = normalizeLimit(pagination?.limit);
-  const rows = await listArtists(db, { limit, cursor: pagination?.cursor }).catch(
-    (e) => new DbError({ message: "Failed to fetch artists.", cause: e }),
+  const rows = await listArtists(db, { limit, cursor: pagination?.cursor }).catch((e) =>
+    toDbError(e, "Failed to fetch artists."),
   );
   if (rows instanceof Error) return rows;
 
@@ -47,12 +42,13 @@ export const getArtists = async (pagination?: { limit?: number; cursor?: Cursor 
 
 export const getArtist = async (id: string) => {
   const db = createDb();
-  const artist = await findArtistById(db, id).catch(
-    (e) => new DbError({ message: "Failed to fetch artist.", cause: e }),
-  );
+  const artist = await findArtistById(db, id).catch((e) => toDbError(e, "Failed to fetch artist."));
   if (artist instanceof Error) return artist;
   if (artist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return domainDbError({
+      slug: "artist-not-found",
+      message: "Artist not found.",
+    });
   }
 
   return { artist };
@@ -96,7 +92,10 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   );
   if (updatedArtist instanceof Error) return updatedArtist;
   if (updatedArtist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return domainDbError({
+      slug: "artist-not-found",
+      message: "Artist not found.",
+    });
   }
 
   return { artist: updatedArtist };
@@ -104,12 +103,15 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
 
 export const removeArtist = async (id: string) => {
   const db = createDb();
-  const deletedArtist = await softDeleteArtistById(db, id).catch(
-    (e) => new DbError({ message: "Failed to delete artist.", cause: e }),
+  const deletedArtist = await softDeleteArtistById(db, id).catch((e) =>
+    toDbError(e, "Failed to delete artist."),
   );
   if (deletedArtist instanceof Error) return deletedArtist;
   if (deletedArtist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return domainDbError({
+      slug: "artist-not-found",
+      message: "Artist not found.",
+    });
   }
 
   return { deleted: true };

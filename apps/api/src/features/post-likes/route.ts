@@ -1,7 +1,7 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import { DbError } from "@repo/errors";
+import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -17,7 +17,7 @@ const postIdParamSchema = type({
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post id." }, 400);
+    return badRequestResponse(c, "Please provide a valid post id.");
   }
 });
 
@@ -32,10 +32,7 @@ const postLikes = new Hono<{ Bindings: Bindings }>().post(
     const session = getAuthSession(c)!;
     const { id } = c.req.valid("param");
     const result = await toggleLike(session, id);
-    if (result instanceof Error) {
-      const statusCode = result instanceof DbError ? result.statusCode : 500;
-      return c.json({ message: result.message }, statusCode);
-    }
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   },

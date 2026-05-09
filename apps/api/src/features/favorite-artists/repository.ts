@@ -1,10 +1,9 @@
 import { and, desc, eq, getColumns, isNull } from "drizzle-orm";
-import { DbError } from "@repo/errors";
 import { artists, favoriteArtists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
-import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { toDbError } from "../../shared/db/postgres-error";
 import type { FavoriteArtistValues } from "./model";
 
 const favoriteArtistColumns = getColumns(favoriteArtists);
@@ -16,15 +15,9 @@ const artistColumns = {
 } as const;
 
 const toAddFavoriteArtistError = (error: unknown) => {
-  if (isPostgresUniqueViolation(error, "favorite_artists_pkey")) {
-    return new DbError({
-      message: "このアーティストは既にお気に入りに登録されています。",
-      statusCode: 409,
-      cause: error,
-    });
-  }
-
-  return new DbError({ message: "お気に入りアーティストの登録に失敗しました。", cause: error });
+  return toDbError(error, "お気に入りアーティストの登録に失敗しました。", {
+    constraints: ["favorite_artists_pkey"],
+  });
 };
 
 // お気に入りアーティスト一覧取得（ページネーション対応）

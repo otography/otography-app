@@ -38,6 +38,16 @@ describe("AuthError", () => {
       expect(error.statusCode).toBe(403);
       expect(error.clearCookie).toBe(true);
     });
+
+    it("accepts registered problem slugs instead of arbitrary type URIs", () => {
+      const error = new AuthError({
+        message: "Session expired.",
+        code: "auth/session-cookie-expired",
+        problemSlug: "session-expired",
+      });
+      expect(error.problemSlug).toBe("session-expired");
+      expect("typeUri" in error).toBe(false);
+    });
   });
 
   describe("fromFirebase", () => {
@@ -74,6 +84,7 @@ describe("AuthError", () => {
         expect(result.message).toBe("Authentication service unavailable.");
         expect(result.statusCode).toBe(503);
         expect(result.clearCookie).toBe(false);
+        expect(result.problemSlug).toBe("auth-service-unavailable");
       });
 
       it("auth/invalid-session-cookie-duration → 500 without clearCookie", () => {

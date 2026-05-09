@@ -34,8 +34,22 @@ function mockOkResponse() {
   return { ok: true as const, json: () => Promise.resolve({ message: "Signed out." }) };
 }
 
-function mockErrorResponse(message?: string) {
-  return { ok: false as const, json: () => Promise.resolve(message ? { message } : null) };
+// RFC 9457 Problem Details 形式のエラーレスポンス
+function mockErrorResponse(detail?: string) {
+  return {
+    ok: false as const,
+    json: () =>
+      Promise.resolve(
+        detail
+          ? {
+              type: "https://api.otography.com/errors/internal-error",
+              title: "Internal Server Error",
+              status: 500,
+              detail,
+            }
+          : null,
+      ),
+  };
 }
 
 describe("SignOutButton", () => {
@@ -79,7 +93,7 @@ describe("SignOutButton", () => {
   });
 
   describe("error display", () => {
-    it("shows server error message", async () => {
+    it("shows server error detail from RFC 9457 response", async () => {
       mockSignOutPost.mockResolvedValue(mockErrorResponse("Failed to sign you out."));
       const user = userEvent.setup();
 
@@ -91,7 +105,7 @@ describe("SignOutButton", () => {
       });
     });
 
-    it("shows fallback error when server returns no usable message", async () => {
+    it("shows fallback error when server returns no usable detail", async () => {
       mockSignOutPost.mockResolvedValue(mockErrorResponse());
       const user = userEvent.setup();
 

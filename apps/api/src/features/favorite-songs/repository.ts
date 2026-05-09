@@ -1,10 +1,10 @@
 import { and, desc, eq, getColumns, isNull } from "drizzle-orm";
-import { DbError } from "@repo/errors";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
-import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { toDbError } from "../../shared/db/postgres-error";
+import { domainDbError } from "../../shared/errors/domain-error";
 import type { FavoriteSongValues } from "./model";
 
 const favoriteSongColumns = getColumns(favoriteSongs);
@@ -16,18 +16,16 @@ const songColumns = {
 } as const;
 
 const createDuplicateFavoriteSongError = (cause?: unknown) =>
-  new DbError({
+  domainDbError({
+    slug: "favorite-song-already-exists",
     message: "この楽曲は既にお気に入りに登録されています。",
-    statusCode: 409,
     cause,
   });
 
 const toAddFavoriteSongError = (error: unknown) => {
-  if (isPostgresUniqueViolation(error, "favorite_songs_pkey")) {
-    return createDuplicateFavoriteSongError(error);
-  }
-
-  return new DbError({ message: "お気に入り楽曲の登録に失敗しました。", cause: error });
+  return toDbError(error, "お気に入り楽曲の登録に失敗しました。", {
+    constraints: ["favorite_songs_pkey"],
+  });
 };
 
 // お気に入り楽曲一覧取得（ページネーション対応）

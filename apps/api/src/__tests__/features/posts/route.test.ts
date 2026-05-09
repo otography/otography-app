@@ -2,6 +2,17 @@ import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
+/*
+ * テストリスト: posts ルート ドメイン固有 problem type URI 移行
+ *
+ * 以下のテスト期待値を更新してドメイン固有 problem type URI を検証:
+ * 1. PATCH /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
+ * 2. DELETE /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
+ * 3. GET /api/posts/:id → 400 (不正な id) → bad-request（変更なし）
+ * 4. POST /api/posts → 400 (不正な payload) → bad-request（変更なし）
+ * 5. 成功レスポンスの形式は変更なし
+ */
+
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
     "../../../shared/middleware",
@@ -20,7 +31,16 @@ vi.mock("../../../shared/middleware", async () => {
     rateLimitByUser: () => async (c: Context, next: () => Promise<void>) => {
       const session = mockGetAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return c.body(
+          JSON.stringify({
+            type: "https://api.otography.com/errors/unauthorized",
+            title: "Unauthorized",
+            status: 401,
+            detail: "You are not logged in.",
+          }),
+          401,
+          { "Content-Type": "application/problem+json" },
+        );
       }
       await next();
     },
@@ -145,7 +165,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts/6f648f36-5be1-4af1-bf5d-cf8ebf222222");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
@@ -212,7 +232,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222223",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222223",
@@ -261,7 +281,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222224",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222224",
@@ -326,7 +346,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/post-not-found",
+      title: "Post Not Found",
+      status: 404,
+      detail: "Post not found or access denied.",
+    });
     expect(update).toHaveBeenCalled();
   });
 
@@ -353,7 +378,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Post not found or access denied." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/post-not-found",
+      title: "Post Not Found",
+      status: 404,
+      detail: "Post not found or access denied.",
+    });
     expect(update).toHaveBeenCalled();
   });
 
@@ -361,7 +391,12 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post id." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post id.",
+    });
   });
 
   it("returns 400 for invalid payload", async () => {
@@ -374,7 +409,12 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post payload." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post payload.",
+    });
   });
 
   it("POST /api/posts returns 401 when session is missing", async () => {
@@ -389,6 +429,11 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
   });
 });

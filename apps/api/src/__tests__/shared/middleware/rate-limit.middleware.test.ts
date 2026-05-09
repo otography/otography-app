@@ -72,8 +72,11 @@ describe("rateLimitByIp", () => {
     const res = await app.request("http://localhost/test", {}, mockEnv);
 
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/rate-limit-exceeded",
+      title: "Rate Limit Exceeded",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 
@@ -146,7 +149,12 @@ describe("rateLimitByUser", () => {
     const res = await app.request("http://localhost/test", {}, mockEnv);
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
     // セッションがない場合、limit()は呼び出されない
     expect(limitSpy).not.toHaveBeenCalled();
   });
@@ -172,8 +180,11 @@ describe("rateLimitByUser", () => {
     const res = await app.request("http://localhost/test", {}, mockEnv);
 
     expect(res.status).toBe(429);
-    expect(await res.json()).toEqual({
-      message: "Too many requests. Please try again later.",
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/rate-limit-exceeded",
+      title: "Rate Limit Exceeded",
+      status: 429,
+      detail: "Too many requests. Please try again later.",
     });
   });
 

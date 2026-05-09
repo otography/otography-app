@@ -63,6 +63,11 @@ describe("POST /api/auth/sign-out", () => {
     });
 
     expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({ message: "Failed to sign you out." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-gateway",
+      title: "Bad Gateway",
+      status: 502,
+      detail: "Failed to sign you out.",
+    });
   });
 });

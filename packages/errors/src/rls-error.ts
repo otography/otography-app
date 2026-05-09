@@ -6,6 +6,10 @@ class RlsError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 500;
+
+  constructor(args: { message: string; cause?: unknown }) {
+    super(args);
+  }
 }
 
 export { RlsError };

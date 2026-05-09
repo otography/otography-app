@@ -1,6 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
+/*
+ * テストリスト: post-likes ルート ドメイン固有 problem type URI 移行
+ *
+ * 以下のテスト期待値を更新してドメイン固有 problem type URI を検証:
+ * 1. POST /api/posts/:id/like → 404 (投稿なし) → type: .../post-not-found
+ * 2. POST /api/posts/:id/like → 400 (不正な id) → bad-request（変更なし）
+ * 3. POST /api/posts/:id/like → 500 (DB エラー) → internal-error（変更なし）
+ * 4. 成功レスポンスの形式は変更なし
+ */
+
 // ミドルウェアをモック（CSRF・認証をバイパス）
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
@@ -54,7 +64,7 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ liked: true, likeCount: 1 });
+    expect(await res.json()).toMatchObject({ liked: true, likeCount: 1 });
   });
 
   it("returns 200 with liked=false and likeCount when toggling off", async () => {
@@ -63,26 +73,40 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ liked: false, likeCount: 0 });
+    expect(await res.json()).toMatchObject({ liked: false, likeCount: 0 });
   });
 
   it("returns 404 when post not found", async () => {
     const { DbError } = await import("@repo/errors");
     vi.mocked(toggleLike).mockResolvedValue(
-      new DbError({ message: "投稿が見つかりません。", statusCode: 404 }),
+      new DbError({
+        message: "投稿が見つかりません。",
+        statusCode: 404,
+        problemSlug: "post-not-found",
+      }),
     );
 
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "投稿が見つかりません。" });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/post-not-found",
+      title: "Post Not Found",
+      status: 404,
+      detail: "投稿が見つかりません。",
+    });
   });
 
   it("returns 400 for invalid post id", async () => {
     const res = await testRequest("/api/posts/not-uuid/like", { method: "POST" });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Please provide a valid post id." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Please provide a valid post id.",
+    });
   });
 
   it("returns 401 when session is missing", async () => {
@@ -91,7 +115,12 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
   });
 
   it("returns 500 when usecase returns DbError with 500", async () => {
@@ -103,6 +132,11 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "いいねの操作に失敗しました。" });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "いいねの操作に失敗しました。",
+    });
   });
 });

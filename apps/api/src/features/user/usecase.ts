@@ -7,10 +7,8 @@ import type {
 } from "../../shared/db/schema";
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
-import {
-  isPostgresCheckViolation,
-  isPostgresUniqueViolation,
-} from "../../shared/db/postgres-error";
+import { toDbError } from "../../shared/db/postgres-error";
+import { domainAuthError } from "../../shared/errors/domain-error";
 import {
   insertUser,
   selectCurrentUser,
@@ -32,30 +30,30 @@ const isMissingDatabaseUser = (error: Error) => {
   );
 };
 
-const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
-  if (isPostgresUniqueViolation(error, USERS_USERNAME_KEY)) {
-    return new AuthError({
-      message: "Username is already taken.",
-      code: "username-taken",
-      statusCode: 409,
-      cause: error,
-    });
-  }
+const toAuthDbError = (error: unknown, fallbackMessage: string, code = "db-error") => {
+  const dbError = toDbError(error, fallbackMessage);
+  return new AuthError({
+    message: dbError.message,
+    code,
+    statusCode: dbError.statusCode,
+    problemSlug: dbError.problemSlug,
+    cause: dbError,
+  });
+};
 
-  if (isPostgresCheckViolation(error, USERS_BIRTHYEAR_CHECK)) {
-    return new AuthError({
-      message: "Invalid birthyear.",
-      code: "invalid-birthyear",
-      statusCode: 400,
-      cause: error,
-    });
-  }
+const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
+  const dbError = toDbError(error, fallbackMessage, {
+    constraints: [USERS_USERNAME_KEY, USERS_BIRTHYEAR_CHECK],
+  });
+
+  const code = dbError.problemSlug === "username-already-taken" ? "username-taken" : "db-error";
 
   return new AuthError({
-    message: fallbackMessage,
-    code: "db-error",
-    statusCode: 500,
-    cause: error,
+    message: dbError.message,
+    code,
+    statusCode: dbError.statusCode,
+    problemSlug: dbError.problemSlug,
+    cause: dbError,
   });
 };
 
@@ -64,26 +62,15 @@ export const createUserRecord = async (values: InsertUserValues) => {
   console.info("Creating user record.", { firebaseId: maskIdentifier(values.firebaseId) });
 
   const db = createDb();
-  const result = await withAuthenticatedRole(db, (tx) => insertUser(tx, values)).catch(
-    (e) =>
-      new AuthError({
-        message: "Failed to create user record.",
-        code: "db-error",
-        statusCode: 500,
-        cause: e,
-      }),
+  const result = await withAuthenticatedRole(db, (tx) => insertUser(tx, values)).catch((e) =>
+    toAuthDbError(e, "Failed to create user record."),
   );
   if (result instanceof AuthError) {
     console.error("User record creation failed.", errorLogFields(result));
     return result;
   }
   if (result instanceof Error) {
-    const error = new AuthError({
-      message: "Failed to create user record.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    const error = toAuthDbError(result, "Failed to create user record.");
     console.error("User record creation failed.", errorLogFields(error));
     return error;
   }
@@ -115,12 +102,7 @@ export const getProfile = async (session: DecodedIdToken) => {
   const initialResult = await withRls(db, session, (tx, userId) => selectCurrentUser(tx, userId));
   if (initialResult instanceof Error && !isMissingDatabaseUser(initialResult)) {
     console.error("Initial profile fetch failed.", errorLogFields(initialResult));
-    return new AuthError({
-      message: "Failed to fetch user profile.",
-      code: "db-error",
-      statusCode: 500,
-      cause: initialResult,
-    });
+    return toAuthDbError(initialResult, "Failed to fetch user profile.");
   }
 
   const result =
@@ -145,12 +127,7 @@ export const getProfile = async (session: DecodedIdToken) => {
 
   if (result instanceof Error) {
     console.error("Profile fetch failed after self-heal.", errorLogFields(result));
-    return new AuthError({
-      message: "Failed to fetch user profile.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    return toAuthDbError(result, "Failed to fetch user profile.");
   }
 
   const [user] = result;
@@ -172,10 +149,10 @@ export const getProfile = async (session: DecodedIdToken) => {
       hasUsername: Boolean(user.username),
       hasName: Boolean(user.name),
     });
-    return new AuthError({
+    return domainAuthError({
+      slug: "profile-not-set-up",
       message: "Profile is not set up.",
       code: "profile-not-set-up",
-      statusCode: 404,
     });
   }
 
@@ -254,12 +231,7 @@ export const deleteAccount = async (session: DecodedIdToken) => {
   const db = createDb();
   const result = await withRls(db, session, (tx, userId) => softDeleteUser(tx, userId));
   if (result instanceof Error) {
-    return new AuthError({
-      message: "Failed to delete account.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    return toAuthDbError(result, "Failed to delete account.");
   }
 
   const [user] = result;
@@ -278,22 +250,11 @@ export const deleteAccount = async (session: DecodedIdToken) => {
 export const getPublicProfile = async (username: string) => {
   const db = createDb();
   const result = await withAnonymousRole(db, (tx) => selectUserByUsername(tx, username)).catch(
-    (e) =>
-      new AuthError({
-        message: "Failed to fetch public profile.",
-        code: "db-error",
-        statusCode: 500,
-        cause: e,
-      }),
+    (e) => toAuthDbError(e, "Failed to fetch public profile."),
   );
   if (result instanceof AuthError) return result;
   if (result instanceof Error) {
-    return new AuthError({
-      message: "Failed to fetch public profile.",
-      code: "db-error",
-      statusCode: 500,
-      cause: result,
-    });
+    return toAuthDbError(result, "Failed to fetch public profile.");
   }
 
   const [user] = result;

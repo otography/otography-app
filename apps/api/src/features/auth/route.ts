@@ -10,6 +10,8 @@ import { csrfProtection, getAuthSession, rateLimitByIp } from "../../shared/midd
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
+import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
+import { domainAuthError } from "../../shared/errors/domain-error";
 import type { Bindings } from "../../shared/types/bindings";
 import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
@@ -21,11 +23,9 @@ const credentialsBodySchema = type({
 
 const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (result, c) => {
   if (!result.success) {
-    return c.json(
-      {
-        message: "Please provide a valid email address and a password with at least 6 characters.",
-      },
-      400,
+    return badRequestResponse(
+      c,
+      "Please provide a valid email address and a password with at least 6 characters.",
     );
   }
 });
@@ -39,7 +39,8 @@ const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings
     clearSessionCookie(c);
     clearRefreshTokenCookie(c);
   }
-  return c.json({ message: error.message }, error.statusCode);
+
+  return respondWithError(error, c);
 };
 
 const auth = new Hono<{ Bindings: Bindings }>()
@@ -106,15 +107,21 @@ const auth = new Hono<{ Bindings: Bindings }>()
           statusCode: signUpResult.statusCode,
           message: signUpResult.message,
         });
-        return handleAuthError(
-          new AuthError({
-            message: signUpResult.message,
-            code: "sign-up-failed",
-            statusCode: signUpResult.statusCode,
-            cause: signUpResult,
-          }),
-          c,
-        );
+        const error =
+          signUpResult.statusCode === 409
+            ? domainAuthError({
+                slug: "email-already-registered",
+                message: signUpResult.message,
+                code: "sign-up-failed",
+                cause: signUpResult,
+              })
+            : new AuthError({
+                message: signUpResult.message,
+                code: "sign-up-failed",
+                statusCode: signUpResult.statusCode,
+                cause: signUpResult,
+              });
+        return handleAuthError(error, c);
       }
       console.info("Email sign-up created Firebase account.", {
         firebaseId: maskIdentifier(signUpResult.localId),

@@ -2,6 +2,21 @@ import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
+/*
+ * テストリスト: favorite-songs ルート ドメイン固有 problem type URI 設定
+ *
+ * 以下のテスト期待値の type をドメイン固有 URI に更新:
+ * 1. POST /api/me/favorites/songs → 409 (duplicate) → favorite-song-already-exists
+ *
+ * 変更なし（汎用 URI のまま）:
+ * - GET /api/me/favorites/songs → 500 (DbError) → internal-error
+ * - GET /api/me/favorites/songs → 401 (null session) → unauthorized
+ * - GET /api/users/:userId/favorites/songs → 400 (invalid userId) → bad-request
+ * - POST /api/me/favorites/songs → 400 (invalid payload) → bad-request
+ * - DELETE /api/me/favorites/songs/:appleMusicId → 404 (not found) → not-found
+ * - 成功レスポンスの形式は変更なし
+ */
+
 // ミドルウェアをモック（CSRF・認証をバイパス）
 vi.mock("../../../shared/middleware", async () => {
   const actual = await vi.importActual<typeof import("../../../shared/middleware")>(
@@ -25,7 +40,16 @@ vi.mock("../../../shared/middleware", async () => {
     rateLimitByUser: () => async (c: Context, next: () => Promise<void>) => {
       const session = mockGetAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return c.body(
+          JSON.stringify({
+            type: "https://api.otography.com/errors/unauthorized",
+            title: "Unauthorized",
+            status: 401,
+            detail: "You are not logged in.",
+          }),
+          401,
+          { "Content-Type": "application/problem+json" },
+        );
       }
       await next();
     },
@@ -115,8 +139,11 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/me/favorites/songs");
 
       expect(res.status).toBe(500);
-      expect(await res.json()).toEqual({
-        message: "お気に入り楽曲の取得に失敗しました。",
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/internal-error",
+        title: "Internal Server Error",
+        status: 500,
+        detail: "お気に入り楽曲の取得に失敗しました。",
       });
     });
 
@@ -126,7 +153,12 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/me/favorites/songs");
 
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({ message: "ログインしていません。" });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/unauthorized",
+        title: "Unauthorized",
+        status: 401,
+        detail: "ログインしていません。",
+      });
     });
   });
 
@@ -157,7 +189,12 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/users/not-uuid/favorites/songs");
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({ message: "無効なユーザーIDです。" });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/bad-request",
+        title: "Bad Request",
+        status: 400,
+        detail: "無効なユーザーIDです。",
+      });
     });
 
     it("returns 500 when usecase returns DbError", async () => {
@@ -206,6 +243,7 @@ describe("Favorite Songs endpoints", () => {
         new DbError({
           message: "この楽曲は既にお気に入りに登録されています。",
           statusCode: 409,
+          problemSlug: "favorite-song-already-exists",
         }),
       );
 
@@ -217,8 +255,11 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(409);
-      expect(await res.json()).toEqual({
-        message: "この楽曲は既にお気に入りに登録されています。",
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/favorite-song-already-exists",
+        title: "Favorite Song Already Exists",
+        status: 409,
+        detail: "この楽曲は既にお気に入りに登録されています。",
       });
     });
 
@@ -248,7 +289,12 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({ message: "リクエストが不正です。" });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/bad-request",
+        title: "Bad Request",
+        status: 400,
+        detail: "リクエストが不正です。",
+      });
     });
 
     it("returns 401 when session is null", async () => {
@@ -288,7 +334,12 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({ message: "お気に入り楽曲が見つかりません。" });
+      expect(await res.json()).toMatchObject({
+        type: "https://api.otography.com/errors/not-found",
+        title: "Not Found",
+        status: 404,
+        detail: "お気に入り楽曲が見つかりません。",
+      });
     });
 
     it("returns 404 for invalid appleMusicId", async () => {

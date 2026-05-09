@@ -102,9 +102,16 @@ describe("SetupProfileForm", () => {
   });
 
   describe("error handling", () => {
-    it("displays error message from API response", async () => {
+    it("displays error detail from RFC 9457 API response", async () => {
       const user = userEvent.setup();
-      mockPatch.mockResolvedValue(createPatchResponse(400, { message: "Username already taken." }));
+      mockPatch.mockResolvedValue(
+        createPatchResponse(400, {
+          type: "https://api.otography.com/errors/bad-request",
+          title: "Bad Request",
+          status: 400,
+          detail: "Username already taken.",
+        }),
+      );
 
       render(<SetupProfileForm />);
 
@@ -117,7 +124,7 @@ describe("SetupProfileForm", () => {
       });
     });
 
-    it("displays fallback message when API response has no message", async () => {
+    it("displays fallback message when API response has no detail", async () => {
       const user = userEvent.setup();
       mockPatch.mockResolvedValue(createPatchResponse(500, {}));
 
@@ -171,7 +178,14 @@ describe("SetupProfileForm", () => {
 
     it("does not redirect on error", async () => {
       const user = userEvent.setup();
-      mockPatch.mockResolvedValue(createPatchResponse(400, { message: "Validation failed." }));
+      mockPatch.mockResolvedValue(
+        createPatchResponse(400, {
+          type: "https://api.otography.com/errors/bad-request",
+          title: "Bad Request",
+          status: 400,
+          detail: "Validation failed.",
+        }),
+      );
 
       render(<SetupProfileForm />);
 
@@ -208,7 +222,14 @@ describe("SetupProfileForm", () => {
     it("allows retry after error", async () => {
       const user = userEvent.setup();
       mockPatch
-        .mockResolvedValueOnce(createPatchResponse(400, { message: "Username taken." }))
+        .mockResolvedValueOnce(
+          createPatchResponse(400, {
+            type: "https://api.otography.com/errors/bad-request",
+            title: "Bad Request",
+            status: 400,
+            detail: "Username taken.",
+          }),
+        )
         .mockResolvedValueOnce(createPatchResponse(200, { message: "Profile updated." }));
 
       render(<SetupProfileForm />);

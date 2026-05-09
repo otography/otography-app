@@ -1,8 +1,11 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import { DbError } from "@repo/errors";
+import {
+  badRequestResponse,
+  respondWithError,
+  unauthorizedResponse,
+} from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -14,14 +17,9 @@ import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
 
-const handlePostError = (error: Error, c: Context<{ Bindings: Bindings }>) => {
-  const statusCode = error instanceof DbError ? error.statusCode : 500;
-  return c.json({ message: error.message }, statusCode);
-};
-
 const postBodyValidator = arktypeValidator("json", postInsertSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post payload." }, 400);
+    return badRequestResponse(c, "Please provide a valid post payload.");
   }
 });
 
@@ -31,13 +29,13 @@ const postIdParamSchema = type({
 
 const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post id." }, 400);
+    return badRequestResponse(c, "Please provide a valid post id.");
   }
 });
 
 const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (result, c) => {
   if (!result.success) {
-    return c.json({ message: "Please provide a valid post payload." }, 400);
+    return badRequestResponse(c, "Please provide a valid post payload.");
   }
 });
 
@@ -56,7 +54,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     }
 
     const result = await getPosts(session, { limit, cursor });
-    if (result instanceof Error) return handlePostError(result, c);
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -65,7 +63,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     const session = getAuthSession(c);
 
     const result = await getPost(id, session);
-    if (result instanceof Error) return handlePostError(result, c);
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -81,7 +79,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       const payload = c.req.valid("json");
 
       const result = await registerPost(payload, session);
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
     },
@@ -95,16 +93,16 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return unauthorizedResponse(c, "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const payload = c.req.valid("json");
       if (Object.keys(payload).length === 0) {
-        return c.json({ message: "Please provide at least one field to update." }, 400);
+        return badRequestResponse(c, "Please provide at least one field to update.");
       }
 
       const result = await modifyPost({ id, session, payload });
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
     },
@@ -117,11 +115,11 @@ const posts = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const session = getAuthSession(c);
       if (!session) {
-        return c.json({ message: "You are not logged in." }, 401);
+        return unauthorizedResponse(c, "You are not logged in.");
       }
       const { id } = c.req.valid("param");
       const result = await removePost(id, session);
-      if (result instanceof Error) return handlePostError(result, c);
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);
     },

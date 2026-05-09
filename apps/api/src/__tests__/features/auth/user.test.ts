@@ -63,7 +63,12 @@ describe("GET /api/user", () => {
     const res = await testRequest("/api/user");
 
     expect(res.status).toBe(401);
-    expect(await res.json()).toEqual({ message: "You are not logged in." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/unauthorized",
+      title: "Unauthorized",
+      status: 401,
+      detail: "You are not logged in.",
+    });
   });
 
   it("returns 401 when session cookie is invalid", async () => {
@@ -193,7 +198,12 @@ describe("GET /api/user", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "Profile is not set up." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/profile-not-set-up",
+      title: "Profile Not Set Up",
+      status: 404,
+      detail: "Profile is not set up.",
+    });
   });
 });
 
@@ -224,7 +234,12 @@ describe("PATCH /api/user/profile", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Invalid profile data." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Invalid profile data.",
+    });
   });
 
   it("returns 200 with profile on success", async () => {
@@ -293,7 +308,12 @@ describe("PATCH /api/user/profile", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to create profile." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Failed to create profile.",
+    });
   });
 
   it("returns 409 when username is already taken", async () => {
@@ -324,7 +344,12 @@ describe("PATCH /api/user/profile", () => {
     });
 
     expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ message: "Username is already taken." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/username-already-taken",
+      title: "Username Already Taken",
+      status: 409,
+      detail: "Username is already taken.",
+    });
   });
 });
 
@@ -408,7 +433,12 @@ describe("PATCH /api/user", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to update profile." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Failed to update profile.",
+    });
   });
 
   it("returns 400 when DB rejects birthyear check constraint", async () => {
@@ -440,7 +470,12 @@ describe("PATCH /api/user", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ message: "Invalid birthyear." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-request",
+      title: "Bad Request",
+      status: 400,
+      detail: "Invalid birthyear.",
+    });
   });
 
   it("returns 409 when updating username to a taken value", async () => {
@@ -471,7 +506,12 @@ describe("PATCH /api/user", () => {
     });
 
     expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({ message: "Username is already taken." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/username-already-taken",
+      title: "Username Already Taken",
+      status: 409,
+      detail: "Username is already taken.",
+    });
   });
 });
 
@@ -547,7 +587,12 @@ describe("DELETE /api/user", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ message: "Failed to delete account." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/internal-error",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Failed to delete account.",
+    });
   });
 });
 
@@ -586,6 +631,11 @@ describe("GET /api/users/:username", () => {
     const res = await testRequest("/api/users/nonexistent");
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ message: "User not found." });
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/not-found",
+      title: "Not Found",
+      status: 404,
+      detail: "User not found.",
+    });
   });
 });

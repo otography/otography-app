@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
+import { toDbError } from "../../shared/db/postgres-error";
 import { postLikes } from "../../shared/db/schema";
 
 // いいねトグル（1クエリ: 同一user/postを直列化し、DELETE 0件ならINSERT）
@@ -38,7 +39,7 @@ export const countPostLikes = async (
 ): Promise<number | DbError> => {
   const result = await db
     .$count(postLikes, eq(postLikes.postId, postId))
-    .catch((e) => new DbError({ message: "いいね数の取得に失敗しました。", cause: e }));
+    .catch((e) => toDbError(e, "いいね数の取得に失敗しました。"));
 
   if (result instanceof Error) return result;
 

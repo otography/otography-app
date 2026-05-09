@@ -1,6 +1,7 @@
 import type { MiddlewareHandler } from "hono";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { getAuthSession } from "../auth/auth-session";
+import { problemResponse, unauthorizedResponse } from "../errors/error-response";
 
 /** レートリミットバインディングの呼び出しインターフェース */
 interface RateLimiterBinding {
@@ -18,7 +19,11 @@ export const rateLimitByIp = (limiterName: string): MiddlewareHandler => {
     const { success } = await limiter.limit({ key: ip });
 
     if (!success) {
-      return c.json({ message: "Too many requests. Please try again later." }, 429);
+      return problemResponse(
+        c,
+        "rate-limit-exceeded",
+        "Too many requests. Please try again later.",
+      );
     }
 
     await next();
@@ -34,14 +39,18 @@ export const rateLimitByUser = (limiterName: string): MiddlewareHandler => {
     const session = getAuthSession(c) as { sub: string } | null;
 
     if (!session) {
-      return c.json({ message: "You are not logged in." }, 401);
+      return unauthorizedResponse(c, "You are not logged in.");
     }
 
     const limiter = c.env[limiterName] as unknown as RateLimiterBinding;
     const { success } = await limiter.limit({ key: session.sub });
 
     if (!success) {
-      return c.json({ message: "Too many requests. Please try again later." }, 429);
+      return problemResponse(
+        c,
+        "rate-limit-exceeded",
+        "Too many requests. Please try again later.",
+      );
     }
 
     await next();

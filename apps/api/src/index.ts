@@ -1,9 +1,11 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { deleteCookie } from "hono/cookie";
 import { secureHeaders } from "hono/secure-headers";
 import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
 import { artists } from "./features/artists";
+import { errors } from "./features/errors";
 import { favoriteArtists } from "./features/favorite-artists";
 import { favoriteSongs } from "./features/favorite-songs";
 import { health } from "./features/health";
@@ -11,6 +13,13 @@ import { songs } from "./features/songs";
 import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
+import { SESSION_COOKIE_NAME } from "./shared/auth/cookies";
+import {
+  createProblemInstance,
+  formatErrorResponse,
+  problemResponse,
+} from "./shared/errors/error-response";
+import { logError } from "./shared/logging/structured-log";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
 
@@ -37,12 +46,28 @@ const app = new Hono<{ Bindings: Bindings }>()
   .use("/api/songs/*", authSessionMiddleware())
   .use("/api/me/*", authSessionMiddleware())
   .onError((err, c) => {
-    console.error("Unhandled error:", err);
-    return c.json({ message: "Internal server error." }, 500);
+    logError(err, c.req.path);
+    const { body, statusCode, clearCookie } = formatErrorResponse(err, {
+      instance: createProblemInstance(),
+    });
+
+    if (clearCookie) {
+      deleteCookie(c, SESSION_COOKIE_NAME, {
+        path: "/",
+      });
+    }
+
+    return c.body(JSON.stringify(body), statusCode, {
+      "Content-Type": "application/problem+json",
+    });
+  })
+  .notFound((c) => {
+    return problemResponse(c, "not-found", "Not found.");
   })
   .route("/", appleMusic)
   .route("/", auth)
   .route("/", artists)
+  .route("/errors", errors)
   .route("/", songs)
   .route("/", posts)
   .route("/", postLikes)

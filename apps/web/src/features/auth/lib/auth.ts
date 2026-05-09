@@ -2,6 +2,26 @@ import { redirect } from "next/navigation";
 import { NoProfileError, UnauthenticatedError } from "@repo/errors";
 import { getCurrentUser } from "./current-user";
 
+/** API の GET /api/user が返すプロフィールの型 */
+type UserProfile = {
+  username: string;
+  name: string;
+  email: string | null;
+  photoUrl: string | null;
+  bio: string | null;
+  birthplace: string | null;
+  birthyear: number | null;
+  gender: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** requireAuth() の戻り値の型 */
+type AuthenticatedUser = {
+  message: string;
+  profile: UserProfile;
+};
+
 /**
  * 認証済み＋プロフィール設定済みを要求する。
  * 未認証 → /login、プロフィール未設定 → /setup-profile へリダイレクト。
@@ -10,7 +30,7 @@ import { getCurrentUser } from "./current-user";
  * ※ React.cache() により、同一レンダー内でレイアウトとページの両方から
  *    呼び出してもAPI呼び出しは1回のみ。
  */
-export async function requireAuth() {
+export async function requireAuth(): Promise<AuthenticatedUser> {
   const result = await getCurrentUser();
 
   if (result instanceof UnauthenticatedError) {
@@ -23,7 +43,8 @@ export async function requireAuth() {
     throw result;
   }
 
-  return result;
+  // 全エラーケースはリダイレクト・throw で処理済み。残りは成功レスポンスのみ。
+  return result as AuthenticatedUser;
 }
 
 /**

@@ -2,6 +2,7 @@ import type { MiddlewareHandler } from "hono";
 import { verifySessionCookie } from "../firebase/firebase-admin";
 import { clearSessionCookie, getSessionCookie } from "../auth/session-cookie";
 import { handleRefreshResult, refreshSession } from "../auth/session-refresh";
+import { respondWithError, unauthorizedResponse } from "../errors/error-response";
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
@@ -56,7 +57,7 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
         return;
       }
 
-      return c.json({ message: "You are not logged in." }, 401);
+      return unauthorizedResponse(c, "You are not logged in.");
     }
 
     const claims = await verifySessionCookie(sessionCookie);
@@ -70,12 +71,12 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
 
       // リフレッシュも失敗した場合、リフレッシュのエラーを優先して返す
       if (refreshedClaims instanceof Error) {
-        return c.json({ message: refreshedClaims.message }, refreshedClaims.statusCode);
+        return respondWithError(refreshedClaims, c);
       }
 
       if (claims.clearCookie) clearSessionCookie(c);
 
-      return c.json({ message: claims.message }, claims.statusCode);
+      return respondWithError(claims, c);
     }
 
     c.set("authSession", claims);

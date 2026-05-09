@@ -48,7 +48,7 @@ function SignOutProvider({ children }: { children: ReactNode }) {
             message: "Failed to parse sign-out error response.",
             cause: e,
           }),
-      )) as WebAuthClientError | { message?: string } | null;
+      )) as WebAuthClientError | { detail?: string } | null;
       if (payload instanceof Error) {
         console.warn("Failed to parse sign-out error response:", payload.message);
       }
@@ -56,7 +56,7 @@ function SignOutProvider({ children }: { children: ReactNode }) {
         error:
           payload instanceof Error
             ? "Failed to sign out."
-            : (payload?.message ?? "Failed to sign out."),
+            : (payload?.detail ?? "Failed to sign out."),
         isPending: false,
       });
       return;
