@@ -1,6 +1,5 @@
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { HTTPException } from "hono/http-exception";
-import { AuthRestError, DbError, RlsError } from "@repo/errors";
+import { AuthRestError, DbError, RlsError, type ErrorStatusCode } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 
 /**
@@ -19,7 +18,7 @@ type ProblemDetails = {
  */
 type ErrorMapping = {
   body: ProblemDetails;
-  statusCode: ContentfulStatusCode;
+  statusCode: ErrorStatusCode;
   clearCookie?: boolean;
 };
 
@@ -96,7 +95,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof AuthError) {
     const result: ErrorMapping = {
       body: toProblemDetails(error.statusCode, error.message),
-      statusCode: error.statusCode as ContentfulStatusCode,
+      statusCode: error.statusCode,
     };
     if (error.clearCookie) {
       result.clearCookie = true;
@@ -108,7 +107,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof AuthRestError) {
     return {
       body: toProblemDetails(error.statusCode, error.message),
-      statusCode: error.statusCode as ContentfulStatusCode,
+      statusCode: error.statusCode,
     };
   }
 
@@ -116,7 +115,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof DbError) {
     return {
       body: toProblemDetails(error.statusCode, error.message),
-      statusCode: error.statusCode as ContentfulStatusCode,
+      statusCode: error.statusCode,
     };
   }
 
@@ -124,7 +123,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof RlsError) {
     return {
       body: toInternalError(),
-      statusCode: 500 as ContentfulStatusCode,
+      statusCode: 500 as ErrorStatusCode,
     };
   }
 
@@ -132,13 +131,13 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof HTTPException) {
     return {
       body: toProblemDetails(error.status, error.message),
-      statusCode: error.status as ContentfulStatusCode,
+      statusCode: error.status as ErrorStatusCode,
     };
   }
 
   // unknown Error（内部情報隠蔽）
   return {
     body: toInternalError(),
-    statusCode: 500 as ContentfulStatusCode,
+    statusCode: 500 as ErrorStatusCode,
   };
 };
