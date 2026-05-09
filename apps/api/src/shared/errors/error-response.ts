@@ -124,7 +124,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   if (error instanceof RlsError) {
     return {
       body: toInternalError(),
-      statusCode: 500 as ErrorStatusCode,
+      statusCode: 500,
     };
   }
 
@@ -139,7 +139,7 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
   // unknown Error（内部情報隠蔽）
   return {
     body: toInternalError(),
-    statusCode: 500 as ErrorStatusCode,
+    statusCode: 500,
   };
 };
 
