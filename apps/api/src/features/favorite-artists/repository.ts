@@ -5,6 +5,7 @@ import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import type { FavoriteArtistValues } from "./model";
 
 const favoriteArtistColumns = getColumns(favoriteArtists);
@@ -15,15 +16,12 @@ const artistColumns = {
   appleMusicId: artists.appleMusicId,
 } as const;
 
-const FAVORITE_ARTIST_ALREADY_EXISTS_TYPE_URI =
-  "https://api.otography.com/errors/favorite-artist-already-exists";
-
 const toAddFavoriteArtistError = (error: unknown) => {
   if (isPostgresUniqueViolation(error, "favorite_artists_pkey")) {
     return new DbError({
       message: "このアーティストは既にお気に入りに登録されています。",
       statusCode: 409,
-      typeUri: FAVORITE_ARTIST_ALREADY_EXISTS_TYPE_URI,
+      typeUri: getTypeUri("favorite-artist-already-exists"),
       cause: error,
     });
   }

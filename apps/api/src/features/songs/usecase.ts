@@ -5,21 +5,19 @@ import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pag
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import { findOrCreateArtists } from "../artists/repository";
 import type { SongCreateBody } from "./model";
 import { createSongFull, findSongById, listSongs, updateSongFull } from "./repository";
 
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
 
-const SONG_ALREADY_EXISTS_TYPE_URI = "https://api.otography.com/errors/song-already-exists";
-const SONG_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/song-not-found";
-
 const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   if (isPostgresUniqueViolation(error, SONG_APPLE_MUSIC_ID_KEY)) {
     return new DbError({
       message: "Apple Music ID is already registered for another song.",
       statusCode: 409,
-      typeUri: SONG_ALREADY_EXISTS_TYPE_URI,
+      typeUri: getTypeUri("song-already-exists"),
       cause: error,
     });
   }
@@ -73,7 +71,7 @@ export const getSong = async (id: string) => {
     return new DbError({
       message: "Song not found.",
       statusCode: 404,
-      typeUri: SONG_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("song-not-found"),
     });
   }
 
@@ -117,7 +115,7 @@ export const syncSong = async (id: string) => {
     return new DbError({
       message: "Song not found.",
       statusCode: 404,
-      typeUri: SONG_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("song-not-found"),
     });
   }
 
@@ -145,7 +143,7 @@ export const syncSong = async (id: string) => {
     return new DbError({
       message: "Song not found.",
       statusCode: 404,
-      typeUri: SONG_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("song-not-found"),
     });
   }
 

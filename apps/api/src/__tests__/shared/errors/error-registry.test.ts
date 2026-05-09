@@ -38,9 +38,18 @@
  *
  * typeUri の一意性:
  * 28. 全 typeUri が一意である
+ *
+ * getTypeUri の検証:
+ * 29. 既知の slug で正しい typeUri 文字列を返す
+ * 30. 未知の slug で undefined を返す
  */
 import { describe, expect, it } from "vitest";
-import { ERROR_TYPES, getBySlug, getAllSlugs } from "../../../shared/errors/error-registry";
+import {
+  ERROR_TYPES,
+  getBySlug,
+  getAllSlugs,
+  getTypeUri,
+} from "../../../shared/errors/error-registry";
 
 const ALL_SLUGS = [
   "email-already-registered",
@@ -154,6 +163,22 @@ describe("error-registry", () => {
     it("全 typeUri が一意である", () => {
       const typeUris = ERROR_TYPES.map((e) => e.typeUri);
       expect(new Set(typeUris).size).toBe(typeUris.length);
+    });
+  });
+
+  describe("getTypeUri の検証", () => {
+    it("既知の slug で正しい typeUri 文字列を返す", () => {
+      expect(getTypeUri("artist-already-exists")).toBe(
+        "https://api.otography.com/errors/artist-already-exists",
+      );
+      expect(getTypeUri("post-not-found")).toBe("https://api.otography.com/errors/post-not-found");
+      expect(getTypeUri("session-expired")).toBe(
+        "https://api.otography.com/errors/session-expired",
+      );
+    });
+
+    it("未知の slug で undefined を返す", () => {
+      expect(getTypeUri("nonexistent-error")).toBeUndefined();
     });
   });
 });

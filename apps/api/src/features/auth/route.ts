@@ -11,6 +11,7 @@ import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
 import { problemResponse, respondWithError } from "../../shared/errors/error-response";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import type { Bindings } from "../../shared/types/bindings";
 import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
@@ -115,9 +116,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
             code: "sign-up-failed",
             statusCode: signUpResult.statusCode,
             typeUri:
-              signUpResult.statusCode === 409
-                ? "https://api.otography.com/errors/email-already-registered"
-                : undefined,
+              signUpResult.statusCode === 409 ? getTypeUri("email-already-registered") : undefined,
             cause: signUpResult,
           }),
           c,

@@ -7,6 +7,7 @@ import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import { findOrCreateArtists } from "../artists/repository";
 import {
   createSongFull,
@@ -21,8 +22,6 @@ import {
   updatePostById,
 } from "./repository";
 import type { PostCreateDbModel, PostInsertDbModel, PostUpdateDbModel } from "./model";
-
-const POST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/post-not-found";
 
 // Firebase ID → UUID 解決
 const resolveUserId = async (
@@ -88,7 +87,7 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
     return new DbError({
       message: "Post not found.",
       statusCode: 404,
-      typeUri: POST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("post-not-found"),
     });
   }
 
@@ -171,7 +170,7 @@ export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
     return new DbError({
       message: "Post not found or access denied.",
       statusCode: 404,
-      typeUri: POST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("post-not-found"),
     });
   }
 
@@ -188,7 +187,7 @@ export const removePost = async (id: string, session: DecodedIdToken) => {
     return new DbError({
       message: "Post not found or access denied.",
       statusCode: 404,
-      typeUri: POST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("post-not-found"),
     });
   }
 

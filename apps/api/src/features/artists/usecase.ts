@@ -4,6 +4,7 @@ import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
 import { fetchArtist } from "../../shared/apple-music";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import {
   type ArtistCreateBody,
   type ArtistCreateDbValues,
@@ -19,15 +20,12 @@ import {
 
 const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
 
-const ARTIST_ALREADY_EXISTS_TYPE_URI = "https://api.otography.com/errors/artist-already-exists";
-const ARTIST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/artist-not-found";
-
 const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   if (isPostgresUniqueViolation(error, ARTIST_APPLE_MUSIC_ID_KEY)) {
     return new DbError({
       message: "Apple Music ID is already registered for another artist.",
       statusCode: 409,
-      typeUri: ARTIST_ALREADY_EXISTS_TYPE_URI,
+      typeUri: getTypeUri("artist-already-exists"),
       cause: error,
     });
   }
@@ -59,7 +57,7 @@ export const getArtist = async (id: string) => {
     return new DbError({
       message: "Artist not found.",
       statusCode: 404,
-      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("artist-not-found"),
     });
   }
 
@@ -107,7 +105,7 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
     return new DbError({
       message: "Artist not found.",
       statusCode: 404,
-      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("artist-not-found"),
     });
   }
 
@@ -124,7 +122,7 @@ export const removeArtist = async (id: string) => {
     return new DbError({
       message: "Artist not found.",
       statusCode: 404,
-      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+      typeUri: getTypeUri("artist-not-found"),
     });
   }
 

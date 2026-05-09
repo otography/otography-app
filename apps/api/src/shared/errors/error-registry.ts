@@ -195,3 +195,11 @@ export const getBySlug = (slug: string): ErrorTypeDefinition | undefined => {
 export const getAllSlugs = (): string[] => {
   return ERROR_TYPES.map((entry) => entry.slug);
 };
+
+/**
+ * slug から typeUri 文字列を取得する。
+ * 未知の slug の場合は undefined を返す。
+ */
+export const getTypeUri = (slug: string): string | undefined => {
+  return slugIndex.get(slug)?.typeUri;
+};

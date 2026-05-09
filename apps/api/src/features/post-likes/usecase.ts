@@ -2,11 +2,10 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
 import { createDb } from "../../shared/db";
 import { withRls } from "../../shared/db/rls";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import { findActivePostById } from "../posts/repository";
 import { countPostLikes, togglePostLike } from "./repository";
 import type { ToggleLikeResponse } from "./model";
-
-const POST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/post-not-found";
 
 export const toggleLike = async (
   session: DecodedIdToken,
@@ -19,7 +18,7 @@ export const toggleLike = async (
       return new DbError({
         message: "投稿が見つかりません。",
         statusCode: 404,
-        typeUri: POST_NOT_FOUND_TYPE_URI,
+        typeUri: getTypeUri("post-not-found"),
       });
     }
 

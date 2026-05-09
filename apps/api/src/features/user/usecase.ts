@@ -11,6 +11,7 @@ import {
   isPostgresCheckViolation,
   isPostgresUniqueViolation,
 } from "../../shared/db/postgres-error";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import {
   insertUser,
   selectCurrentUser,
@@ -25,9 +26,6 @@ const USERS_USERNAME_KEY = "users_username_key";
 const USERS_BIRTHYEAR_CHECK = "users_birthyear_check";
 const USER_NOT_FOUND_IN_DATABASE = "User not found in database.";
 
-const USERNAME_ALREADY_TAKEN_TYPE_URI = "https://api.otography.com/errors/username-already-taken";
-const PROFILE_NOT_SET_UP_TYPE_URI = "https://api.otography.com/errors/profile-not-set-up";
-
 const isMissingDatabaseUser = (error: Error) => {
   return (
     (error as Error & { _tag?: string })._tag === "RlsError" &&
@@ -41,7 +39,7 @@ const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
       message: "Username is already taken.",
       code: "username-taken",
       statusCode: 409,
-      typeUri: USERNAME_ALREADY_TAKEN_TYPE_URI,
+      typeUri: getTypeUri("username-already-taken"),
       cause: error,
     });
   }
@@ -180,7 +178,7 @@ export const getProfile = async (session: DecodedIdToken) => {
       message: "Profile is not set up.",
       code: "profile-not-set-up",
       statusCode: 404,
-      typeUri: PROFILE_NOT_SET_UP_TYPE_URI,
+      typeUri: getTypeUri("profile-not-set-up"),
     });
   }
 

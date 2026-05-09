@@ -5,6 +5,7 @@ import type { Cursor } from "../../shared/pagination";
 import { songs, favoriteSongs } from "../../shared/db/schema";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { isPostgresUniqueViolation } from "../../shared/db/postgres-error";
+import { getTypeUri } from "../../shared/errors/error-registry";
 import type { FavoriteSongValues } from "./model";
 
 const favoriteSongColumns = getColumns(favoriteSongs);
@@ -15,14 +16,11 @@ const songColumns = {
   appleMusicId: songs.appleMusicId,
 } as const;
 
-const FAVORITE_SONG_ALREADY_EXISTS_TYPE_URI =
-  "https://api.otography.com/errors/favorite-song-already-exists";
-
 const createDuplicateFavoriteSongError = (cause?: unknown) =>
   new DbError({
     message: "この楽曲は既にお気に入りに登録されています。",
     statusCode: 409,
-    typeUri: FAVORITE_SONG_ALREADY_EXISTS_TYPE_URI,
+    typeUri: getTypeUri("favorite-song-already-exists"),
     cause,
   });
 
