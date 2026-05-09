@@ -1,34 +1,12 @@
 import type { MiddlewareHandler } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { getAuthSession } from "../auth/auth-session";
+import { problemResponse } from "../errors/error-response";
 
 /** レートリミットバインディングの呼び出しインターフェース */
 interface RateLimiterBinding {
   limit: (opts: { key: string }) => Promise<{ success: boolean }>;
 }
-
-/**
- * RFC 7807 Problem Details 形式のエラーレスポンスを返すヘルパー
- */
-const problemJson = (
-  c: Parameters<MiddlewareHandler>[0],
-  status: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status,
-      detail,
-    }),
-    status,
-    { "Content-Type": "application/problem+json" },
-  );
-};
 
 /**
  * IPアドレスをキーとしたレートリミットミドルウェアファクトリ
@@ -41,7 +19,7 @@ export const rateLimitByIp = (limiterName: string): MiddlewareHandler => {
     const { success } = await limiter.limit({ key: ip });
 
     if (!success) {
-      return problemJson(
+      return problemResponse(
         c,
         429,
         "rate-limit-exceeded",
@@ -63,14 +41,14 @@ export const rateLimitByUser = (limiterName: string): MiddlewareHandler => {
     const session = getAuthSession(c) as { sub: string } | null;
 
     if (!session) {
-      return problemJson(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+      return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
     }
 
     const limiter = c.env[limiterName] as unknown as RateLimiterBinding;
     const { success } = await limiter.limit({ key: session.sub });
 
     if (!success) {
-      return problemJson(
+      return problemResponse(
         c,
         429,
         "rate-limit-exceeded",

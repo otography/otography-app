@@ -1,31 +1,8 @@
 import type { MiddlewareHandler } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { verifySessionCookie } from "../firebase/firebase-admin";
 import { clearSessionCookie, getSessionCookie } from "../auth/session-cookie";
 import { handleRefreshResult, refreshSession } from "../auth/session-refresh";
-import { formatErrorResponse } from "../errors/error-response";
-
-/**
- * RFC 7807 Problem Details 形式のエラーレスポンスを返すヘルパー
- */
-const problemJson = (
-  c: Parameters<MiddlewareHandler>[0],
-  status: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status,
-      detail,
-    }),
-    status,
-    { "Content-Type": "application/problem+json" },
-  );
-};
+import { problemResponse, respondWithError } from "../errors/error-response";
 
 export const authSessionMiddleware = (): MiddlewareHandler => {
   return async (c, next) => {
@@ -80,7 +57,7 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
         return;
       }
 
-      return problemJson(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
+      return problemResponse(c, 401, "unauthorized", "Unauthorized", "You are not logged in.");
     }
 
     const claims = await verifySessionCookie(sessionCookie);
@@ -94,18 +71,12 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
 
       // リフレッシュも失敗した場合、リフレッシュのエラーを優先して返す
       if (refreshedClaims instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(refreshedClaims);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
+        return respondWithError(refreshedClaims, c);
       }
 
       if (claims.clearCookie) clearSessionCookie(c);
 
-      const { body, statusCode } = formatErrorResponse(claims);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
+      return respondWithError(claims, c);
     }
 
     c.set("authSession", claims);
