@@ -5,23 +5,25 @@ import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 /*
- * テストリスト: artists ルート RFC 7807 移行
+ * テストリスト: artists ルート ドメイン固有 typeUri 設定
  *
- * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
- * 1. GET /api/artists/:id → 400 (不正な id) → bad-request
- * 2. GET /api/artists/:id → 404 (not found) → not-found
- * 3. POST /api/artists → 409 (appleMusicId 重複) → conflict
- * 4. POST /api/artists → 500 (DB エラー) → internal-error
- * 5. POST /api/artists → 400 (不正な payload) → bad-request
- * 6. POST /api/artists → 400 (空の appleMusicId) → bad-request
- * 7. POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
- * 8. PATCH /api/artists/:id → 400 (不正な id) → bad-request
- * 9. PATCH /api/artists/:id → 409 (appleMusicId 重複) → conflict
- * 10. PATCH /api/artists/:id → 400 (空の payload) → bad-request
- * 11. PATCH /api/artists/:id → 400 (不正な payload) → bad-request
- * 12. PATCH /api/artists/:id → 404 (not found) → not-found
- * 13. DELETE /api/artists/:id → 404 (not found) → not-found
- * 14. 成功レスポンスの形式は変更なし
+ * 以下のテスト期待値の type をドメイン固有 URI に更新:
+ * 1. GET /api/artists/:id → 404 (not found) → artist-not-found
+ * 2. POST /api/artists → 409 (appleMusicId 重複) → artist-already-exists
+ * 3. PATCH /api/artists/:id → 409 (appleMusicId 重複) → artist-already-exists
+ * 4. PATCH /api/artists/:id → 404 (not found) → artist-not-found
+ * 5. DELETE /api/artists/:id → 404 (not found) → artist-not-found
+ *
+ * 変更なし（汎用 URI のまま）:
+ * - GET /api/artists/:id → 400 (不正な id) → bad-request
+ * - POST /api/artists → 500 (DB エラー) → internal-error
+ * - POST /api/artists → 400 (不正な payload) → bad-request
+ * - POST /api/artists → 400 (空の appleMusicId) → bad-request
+ * - POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
+ * - PATCH /api/artists/:id → 400 (不正な id) → bad-request
+ * - PATCH /api/artists/:id → 400 (空の payload) → bad-request
+ * - PATCH /api/artists/:id → 400 (不正な payload) → bad-request
+ * - 成功レスポンスの形式は変更なし
  */
 
 vi.mock("../../../shared/middleware", async () => {
@@ -193,7 +195,7 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/artist-not-found",
       title: "Not Found",
       status: 404,
       detail: "Artist not found.",
@@ -280,7 +282,7 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/conflict",
+      type: "https://api.otography.com/errors/artist-already-exists",
       title: "Conflict",
       status: 409,
       detail: "Apple Music ID is already registered for another artist.",
@@ -457,7 +459,7 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/conflict",
+      type: "https://api.otography.com/errors/artist-already-exists",
       title: "Conflict",
       status: 409,
       detail: "Apple Music ID is already registered for another artist.",
@@ -516,7 +518,7 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/artist-not-found",
       title: "Not Found",
       status: 404,
       detail: "Artist not found.",
@@ -610,7 +612,7 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/artist-not-found",
       title: "Not Found",
       status: 404,
       detail: "Artist not found.",

@@ -5,19 +5,21 @@ import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 /*
- * テストリスト: songs ルート RFC 7807 移行
+ * テストリスト: songs ルート ドメイン固有 typeUri 設定
  *
- * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
- * 1. GET /api/songs/:id → 400 (不正な id) → bad-request
- * 2. GET /api/songs/:id → 404 (not found) → not-found
- * 3. POST /api/songs → 409 (appleMusicId 重複) → conflict
- * 4. POST /api/songs → 500 (DB エラー) → internal-error
- * 5. POST /api/songs → 400 (不正な payload) → bad-request
- * 6. POST /api/songs → 400 (空の appleMusicId) → bad-request
- * 7. POST /api/songs → 502 (Apple Music API エラー) → bad-gateway
- * 8. PATCH /api/songs/:id → 404 (not found) → not-found
- * 9. PATCH /api/songs/:id → 400 (不正な id) → bad-request
- * 10. 成功レスポンスの形式は変更なし
+ * 以下のテスト期待値の type をドメイン固有 URI に更新:
+ * 1. GET /api/songs/:id → 404 (not found) → song-not-found
+ * 2. POST /api/songs → 409 (appleMusicId 重複) → song-already-exists
+ * 3. PATCH /api/songs/:id → 404 (not found) → song-not-found
+ *
+ * 変更なし（汎用 URI のまま）:
+ * - GET /api/songs/:id → 400 (不正な id) → bad-request
+ * - POST /api/songs → 500 (DB エラー) → internal-error
+ * - POST /api/songs → 400 (不正な payload) → bad-request
+ * - POST /api/songs → 400 (空の appleMusicId) → bad-request
+ * - POST /api/songs → 502 (Apple Music API エラー) → bad-gateway
+ * - PATCH /api/songs/:id → 400 (不正な id) → bad-request
+ * - 成功レスポンスの形式は変更なし
  */
 
 vi.mock("../../../shared/middleware", async () => {
@@ -195,7 +197,7 @@ describe("songs endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/song-not-found",
       title: "Not Found",
       status: 404,
       detail: "Song not found.",
@@ -383,7 +385,7 @@ describe("songs endpoints", () => {
 
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/conflict",
+      type: "https://api.otography.com/errors/song-already-exists",
       title: "Conflict",
       status: 409,
       detail: "Apple Music ID is already registered for another song.",
@@ -579,7 +581,7 @@ describe("songs endpoints", () => {
 
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
-      type: "https://api.otography.com/errors/not-found",
+      type: "https://api.otography.com/errors/song-not-found",
       title: "Not Found",
       status: 404,
       detail: "Song not found.",

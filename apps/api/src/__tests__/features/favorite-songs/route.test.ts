@@ -3,16 +3,18 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: favorite-songs ルート RFC 7807 移行
+ * テストリスト: favorite-songs ルート ドメイン固有 typeUri 設定
  *
- * 以下の既存テスト期待値を { message } から RFC 7807 ProblemDetails に更新:
- * 1. GET /api/me/favorites/songs → 500 (DbError) → internal-error
- * 2. GET /api/me/favorites/songs → 401 (null session) → unauthorized
- * 3. GET /api/users/:userId/favorites/songs → 400 (invalid userId) → bad-request
- * 4. POST /api/me/favorites/songs → 409 (duplicate) → conflict
- * 5. POST /api/me/favorites/songs → 400 (invalid payload) → bad-request
- * 6. DELETE /api/me/favorites/songs/:appleMusicId → 404 (not found) → not-found
- * 7. 成功レスポンスの形式は変更なし
+ * 以下のテスト期待値の type をドメイン固有 URI に更新:
+ * 1. POST /api/me/favorites/songs → 409 (duplicate) → favorite-song-already-exists
+ *
+ * 変更なし（汎用 URI のまま）:
+ * - GET /api/me/favorites/songs → 500 (DbError) → internal-error
+ * - GET /api/me/favorites/songs → 401 (null session) → unauthorized
+ * - GET /api/users/:userId/favorites/songs → 400 (invalid userId) → bad-request
+ * - POST /api/me/favorites/songs → 400 (invalid payload) → bad-request
+ * - DELETE /api/me/favorites/songs/:appleMusicId → 404 (not found) → not-found
+ * - 成功レスポンスの形式は変更なし
  */
 
 // ミドルウェアをモック（CSRF・認証をバイパス）
@@ -241,6 +243,7 @@ describe("Favorite Songs endpoints", () => {
         new DbError({
           message: "この楽曲は既にお気に入りに登録されています。",
           statusCode: 409,
+          typeUri: "https://api.otography.com/errors/favorite-song-already-exists",
         }),
       );
 
@@ -253,7 +256,7 @@ describe("Favorite Songs endpoints", () => {
 
       expect(res.status).toBe(409);
       expect(await res.json()).toEqual({
-        type: "https://api.otography.com/errors/conflict",
+        type: "https://api.otography.com/errors/favorite-song-already-exists",
         title: "Conflict",
         status: 409,
         detail: "この楽曲は既にお気に入りに登録されています。",

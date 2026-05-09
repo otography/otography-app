@@ -11,11 +11,15 @@ import { createSongFull, findSongById, listSongs, updateSongFull } from "./repos
 
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
 
+const SONG_ALREADY_EXISTS_TYPE_URI = "https://api.otography.com/errors/song-already-exists";
+const SONG_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/song-not-found";
+
 const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   if (isPostgresUniqueViolation(error, SONG_APPLE_MUSIC_ID_KEY)) {
     return new DbError({
       message: "Apple Music ID is already registered for another song.",
       statusCode: 409,
+      typeUri: SONG_ALREADY_EXISTS_TYPE_URI,
       cause: error,
     });
   }
@@ -66,7 +70,11 @@ export const getSong = async (id: string) => {
     return new DbError({ message: "Failed to fetch song.", cause: song });
   }
   if (song === null) {
-    return new DbError({ message: "Song not found.", statusCode: 404 });
+    return new DbError({
+      message: "Song not found.",
+      statusCode: 404,
+      typeUri: SONG_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { song };
@@ -106,7 +114,11 @@ export const syncSong = async (id: string) => {
     return new DbError({ message: "Failed to fetch song.", cause: existing });
   }
   if (existing === null) {
-    return new DbError({ message: "Song not found.", statusCode: 404 });
+    return new DbError({
+      message: "Song not found.",
+      statusCode: 404,
+      typeUri: SONG_NOT_FOUND_TYPE_URI,
+    });
   }
 
   // Apple Music API から再フェッチ
@@ -130,7 +142,11 @@ export const syncSong = async (id: string) => {
 
   if (result instanceof Error) return toDbError(result, "Failed to sync song.");
   if (result === null) {
-    return new DbError({ message: "Song not found.", statusCode: 404 });
+    return new DbError({
+      message: "Song not found.",
+      statusCode: 404,
+      typeUri: SONG_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { song: result };

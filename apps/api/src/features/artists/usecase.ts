@@ -19,11 +19,15 @@ import {
 
 const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
 
+const ARTIST_ALREADY_EXISTS_TYPE_URI = "https://api.otography.com/errors/artist-already-exists";
+const ARTIST_NOT_FOUND_TYPE_URI = "https://api.otography.com/errors/artist-not-found";
+
 const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   if (isPostgresUniqueViolation(error, ARTIST_APPLE_MUSIC_ID_KEY)) {
     return new DbError({
       message: "Apple Music ID is already registered for another artist.",
       statusCode: 409,
+      typeUri: ARTIST_ALREADY_EXISTS_TYPE_URI,
       cause: error,
     });
   }
@@ -52,7 +56,11 @@ export const getArtist = async (id: string) => {
   );
   if (artist instanceof Error) return artist;
   if (artist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return new DbError({
+      message: "Artist not found.",
+      statusCode: 404,
+      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { artist };
@@ -96,7 +104,11 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   );
   if (updatedArtist instanceof Error) return updatedArtist;
   if (updatedArtist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return new DbError({
+      message: "Artist not found.",
+      statusCode: 404,
+      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { artist: updatedArtist };
@@ -109,7 +121,11 @@ export const removeArtist = async (id: string) => {
   );
   if (deletedArtist instanceof Error) return deletedArtist;
   if (deletedArtist === null) {
-    return new DbError({ message: "Artist not found.", statusCode: 404 });
+    return new DbError({
+      message: "Artist not found.",
+      statusCode: 404,
+      typeUri: ARTIST_NOT_FOUND_TYPE_URI,
+    });
   }
 
   return { deleted: true };

@@ -15,10 +15,14 @@ const songColumns = {
   appleMusicId: songs.appleMusicId,
 } as const;
 
+const FAVORITE_SONG_ALREADY_EXISTS_TYPE_URI =
+  "https://api.otography.com/errors/favorite-song-already-exists";
+
 const createDuplicateFavoriteSongError = (cause?: unknown) =>
   new DbError({
     message: "この楽曲は既にお気に入りに登録されています。",
     statusCode: 409,
+    typeUri: FAVORITE_SONG_ALREADY_EXISTS_TYPE_URI,
     cause,
   });
 
