@@ -1,4 +1,5 @@
 import type { ErrorStatusCode } from "./http-status";
+import type { ProblemSlug } from "./problem-slug";
 import * as errore from "errore";
 
 class AuthRestError extends errore.createTaggedError({
@@ -6,17 +7,17 @@ class AuthRestError extends errore.createTaggedError({
   message: "$message",
 }) {
   readonly statusCode: ErrorStatusCode;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
   constructor(args: {
     message: string;
     statusCode: ErrorStatusCode;
-    typeUri?: string;
+    problemSlug?: ProblemSlug;
     cause?: unknown;
   }) {
     super(args);
     this.statusCode = args.statusCode;
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 

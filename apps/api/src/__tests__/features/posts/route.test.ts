@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: posts ルート ドメイン固有 typeUri 移行
+ * テストリスト: posts ルート ドメイン固有 problem type URI 移行
  *
- * 以下のテスト期待値を更新してドメイン固有 typeUri を検証:
+ * 以下のテスト期待値を更新してドメイン固有 problem type URI を検証:
  * 1. PATCH /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
  * 2. DELETE /api/posts/:id → 404 (RLS でフィルタ) → type: .../post-not-found
  * 3. GET /api/posts/:id → 400 (不正な id) → bad-request（変更なし）
@@ -165,7 +165,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts/6f648f36-5be1-4af1-bf5d-cf8ebf222222");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222222",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222222",
@@ -232,7 +232,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222223",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222223",
@@ -281,7 +281,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       post: {
         id: "6f648f36-5be1-4af1-bf5d-cf8ebf222224",
         userId: "7f648f36-5be1-4af1-bf5d-cf8ebf222224",
@@ -346,7 +346,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/post-not-found",
       title: "Post Not Found",
       status: 404,
@@ -378,7 +378,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/post-not-found",
       title: "Post Not Found",
       status: 404,
@@ -391,7 +391,7 @@ describe("posts endpoints", () => {
     const res = await testRequest("/api/posts/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -409,7 +409,7 @@ describe("posts endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,

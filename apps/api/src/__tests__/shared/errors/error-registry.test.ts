@@ -49,7 +49,6 @@ import {
   POSTGRES_CONSTRAINTS,
   STATUS_ERROR_TYPES,
   findProblemType,
-  findProblemTypeByUri,
   getBySlug,
   getAllSlugs,
   getPostgresConstraint,
@@ -210,18 +209,6 @@ describe("error-registry", () => {
         title: "Bad Request",
       });
       expect(findProblemType("nonexistent-error")).toBeUndefined();
-    });
-
-    it("type URI から problem type の title を検索できる", () => {
-      expect(
-        findProblemTypeByUri("https://api.otography.com/errors/profile-not-set-up"),
-      ).toMatchObject({
-        title: "Profile Not Set Up",
-      });
-      expect(findProblemTypeByUri("https://api.otography.com/errors/not-found")).toMatchObject({
-        title: "Not Found",
-      });
-      expect(findProblemTypeByUri("https://api.otography.com/errors/unknown")).toBeUndefined();
     });
   });
 

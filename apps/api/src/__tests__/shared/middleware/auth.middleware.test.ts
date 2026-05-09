@@ -1,5 +1,5 @@
 /**
- * テストリスト: Auth ミドルウェアのドメイン固有 typeUri（VAL-MW-001）
+ * テストリスト: Auth ミドルウェアのドメイン固有 problem type URI（VAL-MW-001）
  *
  * - session-expired: verifySessionCookie が auth/session-cookie-expired を返す → type: .../session-expired
  * - session-revoked: verifySessionCookie が auth/session-cookie-revoked を返す → type: .../session-revoked
@@ -77,7 +77,7 @@ const firebaseCodeToExpectedType: Array<{
   },
 ];
 
-describe("Auth ミドルウェアのドメイン固有 typeUri（VAL-MW-001）", () => {
+describe("Auth ミドルウェアのドメイン固有 problem type URI（VAL-MW-001）", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSessionCookie.value = "valid-session-cookie";
@@ -87,7 +87,7 @@ describe("Auth ミドルウェアのドメイン固有 typeUri（VAL-MW-001）",
     "$firebaseCode → type: $expectedTypeUri, status: $expectedStatus",
     async ({ firebaseCode, expectedTypeUri, expectedStatus }) => {
       // setup.ts の FirebaseAuthError モックは "auth/" プレフィックスを付与するので、
-      // code 部分のみを渡す。AuthError.fromFirebase() が typeUri を設定する。
+      // code 部分のみを渡す。AuthError.fromFirebase() が problemSlug を設定する。
       const firebaseError = new FirebaseAuthError({
         code: firebaseCode,
         message: `Firebase error: ${firebaseCode}`,

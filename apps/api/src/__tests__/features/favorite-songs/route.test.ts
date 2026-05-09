@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: favorite-songs ルート ドメイン固有 typeUri 設定
+ * テストリスト: favorite-songs ルート ドメイン固有 problem type URI 設定
  *
  * 以下のテスト期待値の type をドメイン固有 URI に更新:
  * 1. POST /api/me/favorites/songs → 409 (duplicate) → favorite-song-already-exists
@@ -139,7 +139,7 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/me/favorites/songs");
 
       expect(res.status).toBe(500);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/internal-error",
         title: "Internal Server Error",
         status: 500,
@@ -153,7 +153,7 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/me/favorites/songs");
 
       expect(res.status).toBe(401);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/unauthorized",
         title: "Unauthorized",
         status: 401,
@@ -189,7 +189,7 @@ describe("Favorite Songs endpoints", () => {
       const res = await testRequest("/api/users/not-uuid/favorites/songs");
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/bad-request",
         title: "Bad Request",
         status: 400,
@@ -243,7 +243,7 @@ describe("Favorite Songs endpoints", () => {
         new DbError({
           message: "この楽曲は既にお気に入りに登録されています。",
           statusCode: 409,
-          typeUri: "https://api.otography.com/errors/favorite-song-already-exists",
+          problemSlug: "favorite-song-already-exists",
         }),
       );
 
@@ -255,7 +255,7 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(409);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/favorite-song-already-exists",
         title: "Favorite Song Already Exists",
         status: 409,
@@ -289,7 +289,7 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(400);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/bad-request",
         title: "Bad Request",
         status: 400,
@@ -334,7 +334,7 @@ describe("Favorite Songs endpoints", () => {
       });
 
       expect(res.status).toBe(404);
-      expect(await res.json()).toEqual({
+      expect(await res.json()).toMatchObject({
         type: "https://api.otography.com/errors/not-found",
         title: "Not Found",
         status: 404,

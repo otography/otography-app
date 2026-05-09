@@ -14,7 +14,11 @@ import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
 import { SESSION_COOKIE_NAME } from "./shared/auth/cookies";
-import { formatErrorResponse, problemResponse } from "./shared/errors/error-response";
+import {
+  createProblemInstance,
+  formatErrorResponse,
+  problemResponse,
+} from "./shared/errors/error-response";
 import { logError } from "./shared/logging/structured-log";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
@@ -43,7 +47,9 @@ const app = new Hono<{ Bindings: Bindings }>()
   .use("/api/me/*", authSessionMiddleware())
   .onError((err, c) => {
     logError(err, c.req.path);
-    const { body, statusCode, clearCookie } = formatErrorResponse(err);
+    const { body, statusCode, clearCookie } = formatErrorResponse(err, {
+      instance: createProblemInstance(),
+    });
 
     if (clearCookie) {
       deleteCookie(c, SESSION_COOKIE_NAME, {

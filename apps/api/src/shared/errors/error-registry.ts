@@ -1,11 +1,16 @@
-import type { ErrorStatusCode } from "@repo/errors";
+import type {
+  DomainProblemSlug,
+  ErrorStatusCode,
+  ProblemSlug,
+  StatusProblemSlug,
+} from "@repo/errors";
 
 /**
  * ドメイン固有エラー型の定義
  */
 type ErrorTypeDefinition = {
   /** kebab-case のエラー識別子（例: artist-already-exists） */
-  slug: string;
+  slug: DomainProblemSlug;
   /** RFC 9457 type URI（例: https://api.otography.com/errors/artist-already-exists） */
   typeUri: string;
   /** ヒューマンリーダブルなタイトル */
@@ -17,7 +22,7 @@ type ErrorTypeDefinition = {
 };
 
 type StatusTypeDefinition = {
-  slug: string;
+  slug: StatusProblemSlug;
   typeUri: string;
   title: string;
   description: string;
@@ -100,8 +105,6 @@ export const STATUS_ERROR_TYPES = [
     statusCode: 503 as ErrorStatusCode,
   },
 ] as const satisfies readonly StatusTypeDefinition[];
-
-export type StatusErrorSlug = (typeof STATUS_ERROR_TYPES)[number]["slug"];
 
 /**
  * 全ドメイン固有エラー型のレジストリ。
@@ -262,9 +265,7 @@ export const ERROR_TYPES = [
   },
 ] as const satisfies readonly ErrorTypeDefinition[];
 
-export type ErrorSlug = (typeof ERROR_TYPES)[number]["slug"];
-
-export type ProblemSlug = ErrorSlug | StatusErrorSlug;
+export type ErrorSlug = DomainProblemSlug;
 
 export const POSTGRES_CONSTRAINTS = [
   {
@@ -311,10 +312,6 @@ const statusSlugIndex = new Map<string, StatusTypeDefinition>(
   STATUS_ERROR_TYPES.map((entry) => [entry.slug, entry]),
 );
 
-const typeUriIndex = new Map<string, ErrorTypeDefinition | StatusTypeDefinition>(
-  [...ERROR_TYPES, ...STATUS_ERROR_TYPES].map((entry) => [entry.typeUri, entry]),
-);
-
 const constraintIndex = new Map<string, ConstraintDefinition>(
   POSTGRES_CONSTRAINTS.map((entry) => [entry.constraintName, entry]),
 );
@@ -334,12 +331,6 @@ export const findProblemType = (
   slug: string,
 ): ErrorTypeDefinition | StatusTypeDefinition | undefined => {
   return slugIndex.get(slug) ?? statusSlugIndex.get(slug);
-};
-
-export const findProblemTypeByUri = (
-  typeUri: string,
-): ErrorTypeDefinition | StatusTypeDefinition | undefined => {
-  return typeUriIndex.get(typeUri);
 };
 
 /**

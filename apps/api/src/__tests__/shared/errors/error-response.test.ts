@@ -1,7 +1,7 @@
 /**
  * テストリスト: formatErrorResponse (RFC 9457 Problem Details)
  *
- * AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007):
+ * AuthError.fromFirebase() problemSlug マッピング (VAL-AUTH-002〜007):
  * F1. auth/session-cookie-expired → formatErrorResponse type: .../session-expired
  * F2. auth/session-cookie-revoked → formatErrorResponse type: .../session-revoked
  * F3. auth/user-disabled → formatErrorResponse type: .../account-disabled
@@ -10,26 +10,26 @@
  * F6. auth/invalid-session-cookie-duration → formatErrorResponse type: .../session-invalid
  * F7. auth/user-not-found → formatErrorResponse type: .../session-invalid
  * F8. auth/internal-error → formatErrorResponse type: .../auth-service-unavailable
- * F9. 未知の Firebase エラーコード → typeUri: undefined（STATUS_MAPPING フォールバック）
+ * F9. 未知の Firebase エラーコード → problemSlug: undefined（STATUS_MAPPING フォールバック）
  *
  * DbError:
  * 1. DbError(409) → ProblemDetails{type: '...conflict', title: 'Conflict', status: 409, detail: error.message}
  * 2. DbError(400) → ProblemDetails{type: '...bad-request', title: 'Bad Request', status: 400, detail: error.message}
- * 3. DbError(409, typeUri) → body.type = typeUri（ドメイン固有 URI）
+ * 3. DbError(409, problemSlug) → body.type = problemSlug URI（ドメイン固有 URI）
  *
  * AuthError:
  * 4. AuthError(401, clearCookie:true) → body + clearCookie: true
  * 5. AuthError(401, clearCookie:false) → clearCookie なし
- * 6. AuthError(401, typeUri, clearCookie:true) → body.type = typeUri + clearCookie: true
+ * 6. AuthError(401, problemSlug, clearCookie:true) → body.type = problemSlug URI + clearCookie: true
  *
  * AuthRestError:
- * 7. AuthRestError(401, typeUri) → body.type = typeUri
+ * 7. AuthRestError(401, problemSlug) → body.type = problemSlug URI
  *
  * OAuth 系エラー:
- * 8. OAuthExchangeError(typeUri) → body.type = typeUri
- * 9. GoogleTokenExchangeError(typeUri) → body.type = typeUri
- * 10. FirebaseIdpSigninError(typeUri) → body.type = typeUri
- * 11. AccountConflictError(typeUri) → body.type = typeUri
+ * 8. OAuthExchangeError(problemSlug) → body.type = problemSlug URI
+ * 9. GoogleTokenExchangeError(problemSlug) → body.type = problemSlug URI
+ * 10. FirebaseIdpSigninError(problemSlug) → body.type = problemSlug URI
+ * 11. AccountConflictError(problemSlug) → body.type = problemSlug URI
  *
  * RlsError:
  * 12. RlsError → ProblemDetails{detail: 'Internal server error.'}（元メッセージ非公開）
@@ -41,10 +41,10 @@
  * 14. unknown Error → ProblemDetails{detail: 'Internal server error.'}（スタックトレースなし）
  * 15. 非 Error 値（文字列） → ProblemDetails{detail: 'Internal server error.'}
  *
- * セキュリティ（typeUri 無視）:
- * 16. RlsError(typeUri) → 常に internal-error（セキュリティ上 typeUri を無視）
- * 17. unknown Error(typeUri-like) → 常に internal-error（セキュリティ上 typeUri を無視）
- * 18. registry 外 typeUri → typeUri を採用せず statusCode の汎用 problem type にフォールバック
+ * セキュリティ（problemSlug 無視）:
+ * 16. RlsError() → 常に internal-error（セキュリティ上 problemSlug を無視）
+ * 17. unknown Error(problemSlug-like) → 常に internal-error（セキュリティ上 problemSlug を無視）
+ * 18. registry 外 problemSlug を採用せず statusCode の汎用 problem type にフォールバック
  *
  * マッピングテーブル:
  * 19. 全8ステータスコードの type/title マッピングが正しい
@@ -66,6 +66,15 @@ import { formatErrorResponse } from "../../../shared/errors/error-response";
 
 describe("formatErrorResponse", () => {
   describe("DbError", () => {
+    it("instance を指定すると ProblemDetails に含める", () => {
+      const error = new DbError({ message: "Artist already exists.", statusCode: 409 });
+      const result = formatErrorResponse(error, {
+        instance: "urn:otography:problem:test-instance",
+      });
+
+      expect(result.body.instance).toBe("urn:otography:problem:test-instance");
+    });
+
     it("DbError(409) を正しい RFC 9457 形式に変換する", () => {
       const error = new DbError({ message: "Artist already exists.", statusCode: 409 });
       const result = formatErrorResponse(error);
@@ -211,12 +220,31 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("typeUri あり: DbError", () => {
-    it("DbError(409, typeUri) の body.type に typeUri を使用する (VAL-ERR-001)", () => {
+  describe("problemSlug あり: DbError", () => {
+    it("DbError(409, problemSlug) の body.type に problemSlug を使用する (VAL-ERR-001)", () => {
       const error = new DbError({
         message: "Artist already exists.",
         statusCode: 409,
-        typeUri: "https://api.otography.com/errors/artist-already-exists",
+        problemSlug: "artist-already-exists",
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result).toMatchObject({
+        body: {
+          type: "https://api.otography.com/errors/artist-already-exists",
+          title: "Artist Already Exists",
+          status: 409,
+          detail: "Artist already exists.",
+        },
+        statusCode: 409,
+      });
+    });
+
+    it("problemSlug がある場合は registry の statusCode を HTTP status と body.status に使う", () => {
+      const error = new DbError({
+        message: "Artist already exists.",
+        statusCode: 500,
+        problemSlug: "artist-already-exists",
       });
       const result = formatErrorResponse(error);
 
@@ -232,8 +260,8 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("typeUri なし: DbError フォールバック (VAL-ERR-002)", () => {
-    it("DbError(409) typeUri なし → STATUS_MAPPING の typeUri を使用する", () => {
+  describe("problemSlug なし: DbError フォールバック (VAL-ERR-002)", () => {
+    it("DbError(409) problemSlug なし → STATUS_MAPPING の problemSlug を使用する", () => {
       const error = new DbError({ message: "Artist already exists.", statusCode: 409 });
       const result = formatErrorResponse(error);
 
@@ -241,14 +269,14 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("typeUri あり: AuthError (VAL-ERR-003)", () => {
-    it("AuthError(401, typeUri, clearCookie:true) → body.type = typeUri, clearCookie: true", () => {
+  describe("problemSlug あり: AuthError (VAL-ERR-003)", () => {
+    it("AuthError(401, problemSlug, clearCookie:true) → body.type = problemSlug URI, clearCookie: true", () => {
       const error = new AuthError({
         message: "Session expired.",
         code: "auth/session-cookie-expired",
         statusCode: 401,
         clearCookie: true,
-        typeUri: "https://api.otography.com/errors/session-expired",
+        problemSlug: "session-expired",
       });
       const result = formatErrorResponse(error);
 
@@ -265,12 +293,11 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("typeUri あり: AuthRestError (VAL-ERR-004)", () => {
-    it("registry 外 typeUri は採用せず statusCode の汎用 problem type にフォールバックする", () => {
+  describe("problemSlug あり: AuthRestError (VAL-ERR-004)", () => {
+    it("problemSlug なしでは statusCode の汎用 problem type にフォールバックする", () => {
       const error = new AuthRestError({
         message: "Invalid email or password.",
         statusCode: 401,
-        typeUri: "https://api.otography.com/errors/invalid-credentials",
       });
       const result = formatErrorResponse(error);
 
@@ -286,11 +313,11 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("typeUri あり: OAuth 系エラー", () => {
-    it("OAuthExchangeError(typeUri) → body.type = typeUri", () => {
+  describe("problemSlug あり: OAuth 系エラー", () => {
+    it("OAuthExchangeError(problemSlug) → body.type = problemSlug URI", () => {
       const error = new OAuthExchangeError({
         message: "OAuth provider unreachable.",
-        typeUri: "https://api.otography.com/errors/oauth-exchange-failed",
+        problemSlug: "oauth-exchange-failed",
       });
       const result = formatErrorResponse(error);
 
@@ -305,10 +332,10 @@ describe("formatErrorResponse", () => {
       });
     });
 
-    it("GoogleTokenExchangeError(typeUri) → body.type = typeUri", () => {
+    it("GoogleTokenExchangeError(problemSlug) → body.type = problemSlug URI", () => {
       const error = new GoogleTokenExchangeError({
         message: "Google token exchange failed.",
-        typeUri: "https://api.otography.com/errors/google-token-exchange-failed",
+        problemSlug: "google-token-exchange-failed",
       });
       const result = formatErrorResponse(error);
 
@@ -323,10 +350,10 @@ describe("formatErrorResponse", () => {
       });
     });
 
-    it("FirebaseIdpSigninError(typeUri) → body.type = typeUri", () => {
+    it("FirebaseIdpSigninError(problemSlug) → body.type = problemSlug URI", () => {
       const error = new FirebaseIdpSigninError({
         message: "Firebase IDP sign-in failed.",
-        typeUri: "https://api.otography.com/errors/firebase-idp-signin-failed",
+        problemSlug: "firebase-idp-signin-failed",
       });
       const result = formatErrorResponse(error);
 
@@ -341,10 +368,10 @@ describe("formatErrorResponse", () => {
       });
     });
 
-    it("AccountConflictError(typeUri) → body.type = typeUri", () => {
+    it("AccountConflictError(problemSlug) → body.type = problemSlug URI", () => {
       const error = new AccountConflictError({
         message: "Account conflict.",
-        typeUri: "https://api.otography.com/errors/account-conflict",
+        problemSlug: "account-conflict",
       });
       const result = formatErrorResponse(error);
 
@@ -360,11 +387,10 @@ describe("formatErrorResponse", () => {
     });
   });
 
-  describe("セキュリティ: typeUri を持つエラーの internal-error マッピング", () => {
-    it("RlsError(typeUri) は typeUri を無視して internal-error にマッピング", () => {
-      const error = new RlsError({
-        message: "RLS violation",
-        typeUri: "https://api.otography.com/errors/some-sensitive-error",
+  describe("セキュリティ: problemSlug を持つエラーの internal-error マッピング", () => {
+    it("unknown Error の problemSlug-like プロパティは無視して internal-error にマッピング", () => {
+      const error = Object.assign(new Error("RLS violation"), {
+        problemSlug: "post-not-found",
       });
       const result = formatErrorResponse(error);
 
@@ -395,7 +421,7 @@ describe("formatErrorResponse", () => {
   });
 });
 
-describe("AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007)", () => {
+describe("AuthError.fromFirebase() problemSlug マッピング (VAL-AUTH-002〜007)", () => {
   it("auth/session-cookie-expired → type: .../session-expired (VAL-AUTH-002)", () => {
     const firebaseError = new FirebaseAuthError({
       code: "session-cookie-expired",
@@ -473,7 +499,8 @@ describe("AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007)"
     const result = formatErrorResponse(authError);
 
     expect(result.body.type).toBe("https://api.otography.com/errors/session-invalid");
-    expect(result.body.status).toBe(500);
+    expect(result.body.status).toBe(401);
+    expect(result.statusCode).toBe(401);
   });
 
   it("auth/user-not-found → type: .../session-invalid", () => {
@@ -502,7 +529,7 @@ describe("AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007)"
     expect(result.body.detail).toBe("Authentication service unavailable.");
   });
 
-  it("未知の Firebase エラーコード → typeUri なし（STATUS_MAPPING フォールバック）", () => {
+  it("未知の Firebase エラーコード → problemSlug なし（STATUS_MAPPING フォールバック）", () => {
     const firebaseError = new FirebaseAuthError({
       code: "some-unknown-code",
       message: "SOMETHING_UNKNOWN",

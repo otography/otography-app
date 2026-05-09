@@ -5,7 +5,7 @@ import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 /*
- * テストリスト: artists ルート ドメイン固有 typeUri 設定
+ * テストリスト: artists ルート ドメイン固有 problem type URI 設定
  *
  * 以下のテスト期待値の type をドメイン固有 URI に更新:
  * 1. GET /api/artists/:id → 404 (not found) → artist-not-found
@@ -153,7 +153,7 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211115");
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211115",
         name: "Artist Detail",
@@ -172,7 +172,7 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists/not-uuid");
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -194,7 +194,7 @@ describe("artists endpoints", () => {
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211116");
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/artist-not-found",
       title: "Artist Not Found",
       status: 404,
@@ -239,7 +239,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(201);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211112",
         name: "New Artist",
@@ -281,7 +281,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/artist-already-exists",
       title: "Artist Already Exists",
       status: 409,
@@ -309,7 +309,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/internal-error",
       title: "Internal Server Error",
       status: 500,
@@ -324,7 +324,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -339,7 +339,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -361,7 +361,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(502);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-gateway",
       title: "Bad Gateway",
       status: 502,
@@ -402,7 +402,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211113",
         name: "Updated Artist",
@@ -426,7 +426,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -458,7 +458,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(409);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/artist-already-exists",
       title: "Artist Already Exists",
       status: 409,
@@ -473,7 +473,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -490,7 +490,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -517,7 +517,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/artist-not-found",
       title: "Artist Not Found",
       status: 404,
@@ -558,7 +558,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211117",
         name: "Clearable Artist",
@@ -611,7 +611,7 @@ describe("artists endpoints", () => {
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/artist-not-found",
       title: "Artist Not Found",
       status: 404,

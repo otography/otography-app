@@ -27,7 +27,11 @@ import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 import { DbError, RlsError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
-import { formatErrorResponse, problemResponse } from "../shared/errors/error-response";
+import {
+  createProblemInstance,
+  formatErrorResponse,
+  problemResponse,
+} from "../shared/errors/error-response";
 import { logError } from "../shared/logging/structured-log";
 import { SESSION_COOKIE_NAME } from "../shared/auth/cookies";
 import { deleteCookie } from "hono/cookie";
@@ -70,7 +74,9 @@ const createTestApp = () => {
   // onError: formatErrorResponse + logError
   app.onError((err, c) => {
     logError(err, c.req.path);
-    const { body, statusCode, clearCookie } = formatErrorResponse(err);
+    const { body, statusCode, clearCookie } = formatErrorResponse(err, {
+      instance: createProblemInstance(),
+    });
 
     if (clearCookie) {
       deleteCookie(c, SESSION_COOKIE_NAME, { path: "/" });
@@ -115,6 +121,15 @@ describe("グローバルエラーハンドラー", () => {
         status: 409,
         detail: "Artist already exists.",
       });
+    });
+
+    it("ProblemDetails に発生単位の instance を含める", async () => {
+      const app = createTestApp();
+
+      const res = await app.request("/test/db-error");
+      const body = (await res.json()) as Record<string, unknown>;
+
+      expect(body.instance).toMatch(/^urn:otography:problem:[0-9a-f-]{36}$/);
     });
   });
 
@@ -214,6 +229,7 @@ describe("グローバルエラーハンドラー", () => {
         status: 404,
         detail: "Not found.",
       });
+      expect(body.instance).toMatch(/^urn:otography:problem:[0-9a-f-]{36}$/);
     });
   });
 });

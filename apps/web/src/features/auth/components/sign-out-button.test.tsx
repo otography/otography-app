@@ -34,7 +34,7 @@ function mockOkResponse() {
   return { ok: true as const, json: () => Promise.resolve({ message: "Signed out." }) };
 }
 
-// RFC 7807 Problem Details 形式のエラーレスポンス
+// RFC 9457 Problem Details 形式のエラーレスポンス
 function mockErrorResponse(detail?: string) {
   return {
     ok: false as const,
@@ -93,7 +93,7 @@ describe("SignOutButton", () => {
   });
 
   describe("error display", () => {
-    it("shows server error detail from RFC 7807 response", async () => {
+    it("shows server error detail from RFC 9457 response", async () => {
       mockSignOutPost.mockResolvedValue(mockErrorResponse("Failed to sign you out."));
       const user = userEvent.setup();
 

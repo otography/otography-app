@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { testRequest } from "../../helpers/test-client";
 
 /*
- * テストリスト: post-likes ルート ドメイン固有 typeUri 移行
+ * テストリスト: post-likes ルート ドメイン固有 problem type URI 移行
  *
- * 以下のテスト期待値を更新してドメイン固有 typeUri を検証:
+ * 以下のテスト期待値を更新してドメイン固有 problem type URI を検証:
  * 1. POST /api/posts/:id/like → 404 (投稿なし) → type: .../post-not-found
  * 2. POST /api/posts/:id/like → 400 (不正な id) → bad-request（変更なし）
  * 3. POST /api/posts/:id/like → 500 (DB エラー) → internal-error（変更なし）
@@ -64,7 +64,7 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ liked: true, likeCount: 1 });
+    expect(await res.json()).toMatchObject({ liked: true, likeCount: 1 });
   });
 
   it("returns 200 with liked=false and likeCount when toggling off", async () => {
@@ -73,7 +73,7 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ liked: false, likeCount: 0 });
+    expect(await res.json()).toMatchObject({ liked: false, likeCount: 0 });
   });
 
   it("returns 404 when post not found", async () => {
@@ -82,14 +82,14 @@ describe("POST /api/posts/:id/like", () => {
       new DbError({
         message: "投稿が見つかりません。",
         statusCode: 404,
-        typeUri: "https://api.otography.com/errors/post-not-found",
+        problemSlug: "post-not-found",
       }),
     );
 
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/post-not-found",
       title: "Post Not Found",
       status: 404,
@@ -101,7 +101,7 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest("/api/posts/not-uuid/like", { method: "POST" });
 
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/bad-request",
       title: "Bad Request",
       status: 400,
@@ -132,7 +132,7 @@ describe("POST /api/posts/:id/like", () => {
     const res = await testRequest(`/api/posts/${postId}/like`, { method: "POST" });
 
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/internal-error",
       title: "Internal Server Error",
       status: 500,

@@ -1,4 +1,5 @@
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { ProblemSlug } from "./problem-slug";
 import * as errore from "errore";
 
 class OAuthConfigError extends errore.createTaggedError({
@@ -6,11 +7,11 @@ class OAuthConfigError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 500;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 
@@ -19,11 +20,11 @@ class OAuthStateError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 400;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 
@@ -32,11 +33,11 @@ class OAuthExchangeError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 
@@ -46,11 +47,11 @@ class GoogleTokenExchangeError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 
@@ -60,11 +61,11 @@ class FirebaseIdpSigninError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 502;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 
@@ -74,11 +75,11 @@ class AccountConflictError extends errore.createTaggedError({
   message: "$message",
 }) {
   statusCode: ContentfulStatusCode = 409;
-  readonly typeUri?: string;
+  readonly problemSlug?: ProblemSlug;
 
-  constructor(args: { message: string; typeUri?: string; cause?: unknown }) {
+  constructor(args: { message: string; problemSlug?: ProblemSlug; cause?: unknown }) {
     super(args);
-    this.typeUri = args.typeUri;
+    this.problemSlug = args.problemSlug;
   }
 }
 

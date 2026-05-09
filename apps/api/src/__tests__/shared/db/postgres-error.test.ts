@@ -372,7 +372,7 @@ describe("toDbError", () => {
     });
   });
 
-  it("uses registered constraint message and typeUri", () => {
+  it("uses registered constraint message and problemSlug", () => {
     const error = createDrizzleConstraintError({
       code: "23505",
       constraintName: "songs_apple_music_id_key",
@@ -385,7 +385,7 @@ describe("toDbError", () => {
     expect(result).toMatchObject({
       message: "Apple Music ID is already registered for another song.",
       statusCode: 409,
-      typeUri: "https://api.otography.com/errors/song-already-exists",
+      problemSlug: "song-already-exists",
       cause: error,
     });
   });
@@ -403,7 +403,7 @@ describe("toDbError", () => {
       statusCode: 409,
       cause: error,
     });
-    expect(result.typeUri).toBeUndefined();
+    expect(result.problemSlug).toBeUndefined();
   });
 
   it("falls back to a 500 DbError for unknown SQLSTATEs", () => {
@@ -425,7 +425,7 @@ describe("toDbError", () => {
     const error = new DbError({
       message: "Domain failure.",
       statusCode: 404,
-      typeUri: "https://api.otography.com/errors/post-not-found",
+      problemSlug: "post-not-found",
     });
 
     expect(toDbError(error, "Fallback.")).toBe(error);

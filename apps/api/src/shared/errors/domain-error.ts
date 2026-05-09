@@ -22,7 +22,7 @@ export const domainDbError = ({ slug, message, cause }: DomainDbErrorInput) => {
   return new DbError({
     message,
     statusCode: problem.statusCode,
-    typeUri: problem.typeUri,
+    problemSlug: slug,
     cause,
   });
 };
@@ -33,7 +33,7 @@ export const domainAuthError = ({ slug, message, code, cause }: DomainAuthErrorI
     message,
     code,
     statusCode: problem.statusCode as ErrorStatusCode,
-    typeUri: problem.typeUri,
+    problemSlug: slug,
     cause,
   });
 };

@@ -2,11 +2,7 @@ import { DrizzleQueryError } from "drizzle-orm/errors";
 import { DbError } from "@repo/errors";
 import type { ErrorStatusCode } from "@repo/errors";
 import postgres from "postgres";
-import {
-  findPostgresConstraint,
-  getProblemTypeUri,
-  type PostgresConstraintName,
-} from "../errors/error-registry";
+import { findPostgresConstraint, type PostgresConstraintName } from "../errors/error-registry";
 
 const UNIQUE_VIOLATION = "23505";
 const CHECK_VIOLATION = "23514";
@@ -119,9 +115,7 @@ export const toDbError = (
         mappedConstraint.statusCode ??
         CODE_TO_STATUS[postgresError.code] ??
         (500 as ErrorStatusCode),
-      typeUri: mappedConstraint.errorSlug
-        ? getProblemTypeUri(mappedConstraint.errorSlug)
-        : undefined,
+      problemSlug: mappedConstraint.errorSlug,
       cause: error,
     });
   }

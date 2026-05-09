@@ -102,7 +102,7 @@ describe("SetupProfileForm", () => {
   });
 
   describe("error handling", () => {
-    it("displays error detail from RFC 7807 API response", async () => {
+    it("displays error detail from RFC 9457 API response", async () => {
       const user = userEvent.setup();
       mockPatch.mockResolvedValue(
         createPatchResponse(400, {

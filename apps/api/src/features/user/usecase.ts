@@ -8,7 +8,6 @@ import type {
 import { createDb } from "../../shared/db";
 import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 import { toDbError } from "../../shared/db/postgres-error";
-import { getProblemTypeUri } from "../../shared/errors/error-registry";
 import { domainAuthError } from "../../shared/errors/domain-error";
 import {
   insertUser,
@@ -37,7 +36,7 @@ const toAuthDbError = (error: unknown, fallbackMessage: string, code = "db-error
     message: dbError.message,
     code,
     statusCode: dbError.statusCode,
-    typeUri: dbError.typeUri,
+    problemSlug: dbError.problemSlug,
     cause: dbError,
   });
 };
@@ -47,14 +46,13 @@ const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
     constraints: [USERS_USERNAME_KEY, USERS_BIRTHYEAR_CHECK],
   });
 
-  const code =
-    dbError.typeUri === getProblemTypeUri("username-already-taken") ? "username-taken" : "db-error";
+  const code = dbError.problemSlug === "username-already-taken" ? "username-taken" : "db-error";
 
   return new AuthError({
     message: dbError.message,
     code,
     statusCode: dbError.statusCode,
-    typeUri: dbError.typeUri,
+    problemSlug: dbError.problemSlug,
     cause: dbError,
   });
 };

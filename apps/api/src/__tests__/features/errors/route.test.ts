@@ -4,8 +4,8 @@
  * 1. 既知の slug で GET /errors/artist-already-exists → 200, Content-Type: text/html,
  *    body に title と description を含む (VAL-EPT-001)
  * 2. 未知の slug で GET /errors/nonexistent-error → 404 (VAL-EPT-002)
- * 3. Accept: application/problem+json で GET /errors/artist-already-exists → 200,
- *    Content-Type: application/problem+json, JSON に { type, title, status, description } を含む (VAL-EPT-003)
+ * 3. Accept: application/json で GET /errors/artist-already-exists → 200,
+ *    Content-Type: application/json, JSON に { type, title, status, description } を含む (VAL-EPT-003)
  * 4. ルートが app に .route('/errors', errors) として登録されている —
  *    app.request('/errors/artist-already-exists') が 200 を返す (VAL-EPT-004)
  * 5. 複数の既知 slug（session-expired, rate-limit-exceeded 等）で 200 を返す
@@ -38,14 +38,14 @@ describe("GET /errors/:type ドキュメントエンドポイント", () => {
     });
   });
 
-  describe("Accept: application/problem+json（JSON レスポンス）", () => {
+  describe("Accept: application/json（JSON レスポンス）", () => {
     it("JSON レスポンスに { type, title, status, description } を含む", async () => {
       const res = await testRequest("/errors/artist-already-exists", {
-        headers: { Accept: "application/problem+json" },
+        headers: { Accept: "application/json" },
       });
 
       expect(res.status).toBe(200);
-      expect(res.headers.get("Content-Type")).toBe("application/problem+json");
+      expect(res.headers.get("Content-Type")).toBe("application/json");
 
       const body = await res.json();
       expect(body).toMatchObject({
@@ -91,13 +91,13 @@ describe("GET /errors/:type ドキュメントエンドポイント", () => {
       expect(body).toContain("リクエストの形式または内容が不正です");
     });
 
-    it("Accept: application/problem+json で汎用 slug の説明を返す", async () => {
+    it("Accept: application/json で汎用 slug の説明を返す", async () => {
       const res = await testRequest("/errors/unauthorized", {
-        headers: { Accept: "application/problem+json" },
+        headers: { Accept: "application/json" },
       });
 
       expect(res.status).toBe(200);
-      expect(res.headers.get("Content-Type")).toBe("application/problem+json");
+      expect(res.headers.get("Content-Type")).toBe("application/json");
 
       const body = await res.json();
       expect(body).toMatchObject({

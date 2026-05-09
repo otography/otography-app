@@ -11,8 +11,8 @@ const errors = new Hono().get("/:type", (c) => {
 
   const accept = c.req.header("Accept") ?? "";
 
-  // Accept: application/problem+json → JSON レスポンス
-  if (accept.includes("application/problem+json")) {
+  // エラー型の説明ドキュメントなので ProblemDetails の発生レスポンスではなく JSON として返す
+  if (accept.includes("application/json") || accept.includes("application/problem+json")) {
     return c.json(
       {
         type: entry.typeUri,
@@ -21,7 +21,7 @@ const errors = new Hono().get("/:type", (c) => {
         description: entry.description,
       },
       200,
-      { "Content-Type": "application/problem+json" },
+      { "Content-Type": "application/json" },
     );
   }
 

@@ -44,7 +44,7 @@ function mockOkResponse() {
   return { ok: true as const, json: () => Promise.resolve({ message: "ok" }) };
 }
 
-// RFC 7807 Problem Details 形式のエラーレスポンス
+// RFC 9457 Problem Details 形式のエラーレスポンス
 function mockErrorResponse(detail?: string) {
   return {
     ok: false as const,
@@ -105,7 +105,7 @@ describe("SignInForm", () => {
     });
   });
 
-  it("shows server error detail from RFC 7807 response on auth failure", async () => {
+  it("shows server error detail from RFC 9457 response on auth failure", async () => {
     mockSignInPost.mockResolvedValue(mockErrorResponse("Invalid email or password."));
     const user = userEvent.setup();
 
@@ -211,7 +211,7 @@ describe("SignUpForm", () => {
     });
   });
 
-  it("shows server error detail from RFC 7807 response on sign-up failure", async () => {
+  it("shows server error detail from RFC 9457 response on sign-up failure", async () => {
     mockSignUpPost.mockResolvedValue(mockErrorResponse("Email already exists."));
     const user = userEvent.setup();
 
