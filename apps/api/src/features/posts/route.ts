@@ -1,9 +1,7 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { formatErrorResponse } from "../../shared/errors/error-response";
+import { problemResponse, respondWithError } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   getAuthSession,
@@ -14,28 +12,6 @@ import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
-
-/**
- * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
- */
-const problemResponse = (
-  c: Context,
-  statusCode: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
-};
 
 const postBodyValidator = arktypeValidator("json", postInsertSchema, (result, c) => {
   if (!result.success) {
@@ -86,12 +62,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     }
 
     const result = await getPosts(session, { limit, cursor });
-    if (result instanceof Error) {
-      const { body, statusCode } = formatErrorResponse(result);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
-    }
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -100,12 +71,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     const session = getAuthSession(c);
 
     const result = await getPost(id, session);
-    if (result instanceof Error) {
-      const { body, statusCode } = formatErrorResponse(result);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
-    }
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -121,12 +87,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       const payload = c.req.valid("json");
 
       const result = await registerPost(payload, session);
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
     },
@@ -155,12 +116,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       }
 
       const result = await modifyPost({ id, session, payload });
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
     },
@@ -177,12 +133,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       }
       const { id } = c.req.valid("param");
       const result = await removePost(id, session);
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);
     },

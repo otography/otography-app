@@ -1,9 +1,6 @@
-import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { formatErrorResponse } from "../../shared/errors/error-response";
+import { problemResponse, respondWithError } from "../../shared/errors/error-response";
 import {
   csrfProtection,
   requireAuthMiddleware,
@@ -11,57 +8,18 @@ import {
   rateLimitByUser,
 } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
-import type { Cursor } from "../../shared/pagination";
 import { addFavoriteArtistSchema } from "./model";
+import {
+  appleMusicIdParamSchema,
+  userIdParamSchema,
+  parsePaginationQuery,
+} from "../favorite-shared";
 import {
   getFavoriteArtists,
   getPublicFavoriteArtists,
   registerFavoriteArtist,
   deleteFavoriteArtist,
 } from "./usecase";
-
-/**
- * RFC 7807 Problem Details 形式のエラーレスポンスを返すヘルパー
- */
-const problemResponse = (
-  c: Context,
-  statusCode: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
-};
-
-const appleMusicIdParamSchema = type({
-  appleMusicId: "string >= 1",
-});
-
-const userIdParamSchema = type({
-  userId: "string.uuid",
-});
-
-const parsePaginationQuery = (c: { req: { query: (key: string) => string | undefined } }) => {
-  const limitParam = c.req.query("limit");
-  const cursorCreatedAt = c.req.query("cursor[createdAt]");
-  const cursorId = c.req.query("cursor[id]");
-
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-  let cursor: Cursor | undefined;
-  if (cursorCreatedAt && cursorId) {
-    cursor = { createdAt: cursorCreatedAt, id: cursorId };
-  }
-  return { limit, cursor };
-};
 
 const favoriteArtists = new Hono<{ Bindings: Bindings }>()
   // 自分のお気に入りアーティスト一覧取得
@@ -73,12 +31,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
 
     const { limit, cursor } = parsePaginationQuery(c);
     const result = await getFavoriteArtists(session, { limit, cursor });
-    if (result instanceof Error) {
-      const { body, statusCode } = formatErrorResponse(result);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
-    }
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -95,12 +48,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
       const { userId } = c.req.valid("param");
       const { limit, cursor } = parsePaginationQuery(c);
       const result = await getPublicFavoriteArtists(userId, { limit, cursor });
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
     },
@@ -125,12 +73,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
 
       const input = c.req.valid("json");
       const result = await registerFavoriteArtist(session, input);
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
     },
@@ -160,12 +103,7 @@ const favoriteArtists = new Hono<{ Bindings: Bindings }>()
 
       const { appleMusicId } = c.req.valid("param");
       const result = await deleteFavoriteArtist(session, appleMusicId);
-      if (result instanceof Error) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);
     },

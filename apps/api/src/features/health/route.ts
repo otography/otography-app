@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
+import type { StatusCode } from "hono/utils/http-status";
 import { sql } from "drizzle-orm";
 import { createDb } from "../../shared/db";
 import type { Bindings } from "../../shared/types/bindings";
@@ -92,7 +92,7 @@ const health = new Hono<{ Bindings: Bindings }>()
     const hasDegraded = appleMusic.status === "degraded";
 
     let overallStatus: string;
-    let httpStatus: ContentfulStatusCode;
+    let httpStatus: StatusCode;
     if (criticalDown) {
       overallStatus = "unhealthy";
       httpStatus = 503;

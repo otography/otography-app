@@ -1,3 +1,4 @@
+import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { AuthRestError, DbError, RlsError, type ErrorStatusCode } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
@@ -140,4 +141,38 @@ export const formatErrorResponse = (error: unknown): ErrorMapping => {
     body: toInternalError(),
     statusCode: 500 as ErrorStatusCode,
   };
+};
+
+/**
+ * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー。
+ * arktypeValidator の onFailure コールバックや、手動での 401/400 応答に使用する。
+ */
+export const problemResponse = (
+  c: Context,
+  statusCode: ErrorStatusCode,
+  typeSlug: string,
+  title: string,
+  detail: string,
+) => {
+  return c.body(
+    JSON.stringify({
+      type: `https://api.otography.com/errors/${typeSlug}`,
+      title,
+      status: statusCode,
+      detail,
+    }),
+    statusCode,
+    { "Content-Type": "application/problem+json" },
+  );
+};
+
+/**
+ * エラーオブジェクトを RFC 7807 Problem Details レスポンスに変換して返す。
+ * ルートハンドラ内の `if (result instanceof Error)` パターンを簡潔にする。
+ */
+export const respondWithError = (error: Error, c: Context): Response => {
+  const { body, statusCode } = formatErrorResponse(error);
+  return c.body(JSON.stringify(body), statusCode, {
+    "Content-Type": "application/problem+json",
+  });
 };

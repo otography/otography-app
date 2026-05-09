@@ -10,9 +10,8 @@ import { csrfProtection, getAuthSession, rateLimitByIp } from "../../shared/midd
 import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
 import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
-import { formatErrorResponse } from "../../shared/errors/error-response";
+import { problemResponse, respondWithError } from "../../shared/errors/error-response";
 import type { Bindings } from "../../shared/types/bindings";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
 
@@ -20,28 +19,6 @@ const credentialsBodySchema = type({
   email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
   password: "string >= 6",
 });
-
-/**
- * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
- */
-const problemResponse = (
-  c: Context,
-  statusCode: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
-};
 
 const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (result, c) => {
   if (!result.success) {
@@ -65,10 +42,7 @@ const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings
     clearRefreshTokenCookie(c);
   }
 
-  const { body, statusCode } = formatErrorResponse(error);
-  return c.body(JSON.stringify(body), statusCode, {
-    "Content-Type": "application/problem+json",
-  });
+  return respondWithError(error, c);
 };
 
 const auth = new Hono<{ Bindings: Bindings }>()

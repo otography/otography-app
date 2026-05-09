@@ -1,37 +1,12 @@
 import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-import { DbError } from "@repo/errors";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Bindings } from "../../shared/types/bindings";
 import type { Cursor } from "../../shared/pagination";
-import { formatErrorResponse } from "../../shared/errors/error-response";
+import { problemResponse, respondWithError } from "../../shared/errors/error-response";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
 import { artistCreateBodySchema, artistUpdateSchema } from "./model";
-
-/**
- * RFC 7807 Problem Details 形式のバリデーションエラーレスポンスを返すヘルパー
- */
-const problemResponse = (
-  c: Context,
-  statusCode: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
-};
 
 const artistCreateValidator = arktypeValidator("json", artistCreateBodySchema, (result, c) => {
   if (!result.success) {
@@ -86,24 +61,14 @@ const artists = new Hono<{ Bindings: Bindings }>()
     }
 
     const result = await getArtists({ limit, cursor });
-    if (result instanceof DbError) {
-      const { body, statusCode } = formatErrorResponse(result);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
-    }
+    if (result instanceof Error) return respondWithError(result, c);
     return c.json(result);
   })
   .get("/api/artists/:id", artistIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
     const result = await getArtist(id);
-    if (result instanceof DbError) {
-      const { body, statusCode } = formatErrorResponse(result);
-      return c.body(JSON.stringify(body), statusCode, {
-        "Content-Type": "application/problem+json",
-      });
-    }
+    if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
   })
@@ -116,12 +81,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const payload = c.req.valid("json");
       const result = await registerArtist(payload);
-      if (result instanceof DbError) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
     },
@@ -148,12 +108,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
         id,
         payload,
       });
-      if (result instanceof DbError) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
     },
@@ -167,12 +122,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
       const { id } = c.req.valid("param");
 
       const result = await removeArtist(id);
-      if (result instanceof DbError) {
-        const { body, statusCode } = formatErrorResponse(result);
-        return c.body(JSON.stringify(body), statusCode, {
-          "Content-Type": "application/problem+json",
-        });
-      }
+      if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);
     },

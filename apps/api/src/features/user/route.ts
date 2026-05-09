@@ -1,11 +1,10 @@
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { AuthError } from "@repo/errors/server";
 import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
 import { errorLogFields } from "../../shared/logging/redaction";
-import { formatErrorResponse } from "../../shared/errors/error-response";
+import { problemResponse, respondWithError } from "../../shared/errors/error-response";
 import type { Bindings } from "../../shared/types/bindings";
 import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
 import {
@@ -16,37 +15,12 @@ import {
   getPublicProfile,
 } from "./usecase";
 
-/**
- * RFC 7807 Problem Details 形式のエラーレスポンスを返すヘルパー
- */
-const problemResponse = (
-  c: Context,
-  statusCode: ContentfulStatusCode,
-  typeSlug: string,
-  title: string,
-  detail: string,
-) => {
-  return c.body(
-    JSON.stringify({
-      type: `https://api.otography.com/errors/${typeSlug}`,
-      title,
-      status: statusCode,
-      detail,
-    }),
-    statusCode,
-    { "Content-Type": "application/problem+json" },
-  );
-};
-
 const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
   console.warn("User route returned error.", {
     path: c.req.path,
     ...errorLogFields(error),
   });
-  const { body, statusCode } = formatErrorResponse(error);
-  return c.body(JSON.stringify(body), statusCode, {
-    "Content-Type": "application/problem+json",
-  });
+  return respondWithError(error, c);
 };
 
 const user = new Hono<{ Bindings: Bindings }>()
