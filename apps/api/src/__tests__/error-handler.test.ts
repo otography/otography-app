@@ -27,7 +27,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 import { DbError, RlsError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
-import { formatErrorResponse } from "../shared/errors/error-response";
+import { formatErrorResponse, problemResponse } from "../shared/errors/error-response";
 import { logError } from "../shared/logging/structured-log";
 import { SESSION_COOKIE_NAME } from "../shared/auth/cookies";
 import { deleteCookie } from "hono/cookie";
@@ -81,17 +81,9 @@ const createTestApp = () => {
     });
   });
 
-  // notFound: RFC 7807 404
+  // notFound: problemResponse で RFC 7807 404 を返す
   app.notFound((c) => {
-    const body = {
-      type: "https://api.otography.com/errors/not-found",
-      title: "Not Found",
-      status: 404,
-      detail: "Not found.",
-    };
-    return c.body(JSON.stringify(body), 404, {
-      "Content-Type": "application/problem+json",
-    });
+    return problemResponse(c, 404, "not-found", "Not Found", "Not found.");
   });
 
   return app;

@@ -14,7 +14,7 @@ import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
 import { SESSION_COOKIE_NAME } from "./shared/auth/cookies";
-import { formatErrorResponse } from "./shared/errors/error-response";
+import { formatErrorResponse, problemResponse } from "./shared/errors/error-response";
 import { logError } from "./shared/logging/structured-log";
 import { authSessionMiddleware } from "./shared/middleware";
 import type { Bindings } from "./shared/types/bindings";
@@ -56,15 +56,7 @@ const app = new Hono<{ Bindings: Bindings }>()
     });
   })
   .notFound((c) => {
-    const body = {
-      type: "https://api.otography.com/errors/not-found",
-      title: "Not Found",
-      status: 404,
-      detail: "Not found.",
-    };
-    return c.body(JSON.stringify(body), 404, {
-      "Content-Type": "application/problem+json",
-    });
+    return problemResponse(c, 404, "not-found", "Not Found", "Not found.");
   })
   .route("/", appleMusic)
   .route("/", auth)
