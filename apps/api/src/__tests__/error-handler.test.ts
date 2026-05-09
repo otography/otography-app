@@ -5,7 +5,7 @@
  * 1. 全エラーで Content-Type: application/problem+json が返る
  *
  * DbError:
- * 2. DbError が RFC 7807 形式で返る（type, title, status, detail が正しい）
+ * 2. DbError が RFC 9457 形式で返る（type, title, status, detail が正しい）
  *
  * AuthError (clearCookie):
  * 3. AuthError(clearCookie:true) で Set-Cookie ヘッダーが otography_session をクリア
@@ -21,7 +21,7 @@
  * 7. logError が呼ばれる（構造化ログが出力される）
  *
  * .notFound():
- * 8. .notFound() が RFC 7807 404 を返す
+ * 8. .notFound() が RFC 9457 404 を返す
  */
 import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
@@ -81,7 +81,7 @@ const createTestApp = () => {
     });
   });
 
-  // notFound: registry 経由で RFC 7807 404 を返す
+  // notFound: registry 経由で RFC 9457 404 を返す
   app.notFound((c) => {
     return problemResponse(c, "not-found", "Not found.");
   });
@@ -102,7 +102,7 @@ describe("グローバルエラーハンドラー", () => {
   });
 
   describe("DbError", () => {
-    it("DbError が RFC 7807 形式で返る", async () => {
+    it("DbError が RFC 9457 形式で返る", async () => {
       const app = createTestApp();
 
       const res = await app.request("/test/db-error");
@@ -200,7 +200,7 @@ describe("グローバルエラーハンドラー", () => {
   });
 
   describe(".notFound()", () => {
-    it(".notFound() が RFC 7807 404 を返す", async () => {
+    it(".notFound() が RFC 9457 404 を返す", async () => {
       const app = createTestApp();
 
       const res = await app.request("/api/nonexistent");

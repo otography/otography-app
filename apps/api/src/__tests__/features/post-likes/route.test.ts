@@ -91,7 +91,7 @@ describe("POST /api/posts/:id/like", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/post-not-found",
-      title: "Not Found",
+      title: "Post Not Found",
       status: 404,
       detail: "投稿が見つかりません。",
     });

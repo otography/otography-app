@@ -1,5 +1,5 @@
 /**
- * テストリスト: formatErrorResponse (RFC 7807 Problem Details)
+ * テストリスト: formatErrorResponse (RFC 9457 Problem Details)
  *
  * AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007):
  * F1. auth/session-cookie-expired → formatErrorResponse type: .../session-expired
@@ -35,7 +35,7 @@
  * 12. RlsError → ProblemDetails{detail: 'Internal server error.'}（元メッセージ非公開）
  *
  * HTTPException:
- * 13. HTTPException(404) → 正しい RFC 7807 形式
+ * 13. HTTPException(404) → 正しい RFC 9457 形式
  *
  * unknown:
  * 14. unknown Error → ProblemDetails{detail: 'Internal server error.'}（スタックトレースなし）
@@ -44,9 +44,10 @@
  * セキュリティ（typeUri 無視）:
  * 16. RlsError(typeUri) → 常に internal-error（セキュリティ上 typeUri を無視）
  * 17. unknown Error(typeUri-like) → 常に internal-error（セキュリティ上 typeUri を無視）
+ * 18. registry 外 typeUri → typeUri を採用せず statusCode の汎用 problem type にフォールバック
  *
  * マッピングテーブル:
- * 18. 全8ステータスコードの type/title マッピングが正しい
+ * 19. 全8ステータスコードの type/title マッピングが正しい
  */
 import { describe, expect, it } from "vitest";
 import { HTTPException } from "hono/http-exception";
@@ -65,7 +66,7 @@ import { formatErrorResponse } from "../../../shared/errors/error-response";
 
 describe("formatErrorResponse", () => {
   describe("DbError", () => {
-    it("DbError(409) を正しい RFC 7807 形式に変換する", () => {
+    it("DbError(409) を正しい RFC 9457 形式に変換する", () => {
       const error = new DbError({ message: "Artist already exists.", statusCode: 409 });
       const result = formatErrorResponse(error);
 
@@ -81,7 +82,7 @@ describe("formatErrorResponse", () => {
       expect(result).not.toHaveProperty("clearCookie");
     });
 
-    it("DbError(400) を正しい RFC 7807 形式に変換する", () => {
+    it("DbError(400) を正しい RFC 9457 形式に変換する", () => {
       const error = new DbError({ message: "Missing field.", statusCode: 400 });
       const result = formatErrorResponse(error);
 
@@ -161,7 +162,7 @@ describe("formatErrorResponse", () => {
   });
 
   describe("HTTPException", () => {
-    it("HTTPException(404) を正しい RFC 7807 形式に変換する", () => {
+    it("HTTPException(404) を正しい RFC 9457 形式に変換する", () => {
       const error = new HTTPException(404, { message: "Not Found" });
       const result = formatErrorResponse(error);
 
@@ -222,7 +223,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/artist-already-exists",
-          title: "Conflict",
+          title: "Artist Already Exists",
           status: 409,
           detail: "Artist already exists.",
         },
@@ -254,7 +255,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/session-expired",
-          title: "Unauthorized",
+          title: "Session Expired",
           status: 401,
           detail: "Session expired.",
         },
@@ -265,7 +266,7 @@ describe("formatErrorResponse", () => {
   });
 
   describe("typeUri あり: AuthRestError (VAL-ERR-004)", () => {
-    it("AuthRestError(typeUri) → body.type = typeUri", () => {
+    it("registry 外 typeUri は採用せず statusCode の汎用 problem type にフォールバックする", () => {
       const error = new AuthRestError({
         message: "Invalid email or password.",
         statusCode: 401,
@@ -275,7 +276,7 @@ describe("formatErrorResponse", () => {
 
       expect(result).toMatchObject({
         body: {
-          type: "https://api.otography.com/errors/invalid-credentials",
+          type: "https://api.otography.com/errors/unauthorized",
           title: "Unauthorized",
           status: 401,
           detail: "Invalid email or password.",
@@ -296,7 +297,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/oauth-exchange-failed",
-          title: "Bad Gateway",
+          title: "OAuth Exchange Failed",
           status: 502,
           detail: "OAuth provider unreachable.",
         },
@@ -314,7 +315,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/google-token-exchange-failed",
-          title: "Bad Gateway",
+          title: "Google Token Exchange Failed",
           status: 502,
           detail: "Google token exchange failed.",
         },
@@ -332,7 +333,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/firebase-idp-signin-failed",
-          title: "Bad Gateway",
+          title: "Firebase IDP Sign-In Failed",
           status: 502,
           detail: "Firebase IDP sign-in failed.",
         },
@@ -350,7 +351,7 @@ describe("formatErrorResponse", () => {
       expect(result).toMatchObject({
         body: {
           type: "https://api.otography.com/errors/account-conflict",
-          title: "Conflict",
+          title: "Account Conflict",
           status: 409,
           detail: "Account conflict.",
         },

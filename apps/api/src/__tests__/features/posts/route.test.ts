@@ -348,7 +348,7 @@ describe("posts endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/post-not-found",
-      title: "Not Found",
+      title: "Post Not Found",
       status: 404,
       detail: "Post not found or access denied.",
     });
@@ -380,7 +380,7 @@ describe("posts endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/post-not-found",
-      title: "Not Found",
+      title: "Post Not Found",
       status: 404,
       detail: "Post not found or access denied.",
     });

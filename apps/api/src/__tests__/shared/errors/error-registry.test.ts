@@ -47,6 +47,9 @@ import { describe, expect, it } from "vitest";
 import {
   ERROR_TYPES,
   POSTGRES_CONSTRAINTS,
+  STATUS_ERROR_TYPES,
+  findProblemType,
+  findProblemTypeByUri,
   getBySlug,
   getAllSlugs,
   getPostgresConstraint,
@@ -191,6 +194,34 @@ describe("error-registry", () => {
         title: "Bad Request",
         typeUri: "https://api.otography.com/errors/bad-request",
       });
+    });
+
+    it("汎用型にも type URI 用の説明文が存在する", () => {
+      for (const entry of STATUS_ERROR_TYPES) {
+        expect(entry.description.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("domain 固有 slug と汎用 slug の両方を検索できる", () => {
+      expect(findProblemType("artist-already-exists")).toMatchObject({
+        title: "Artist Already Exists",
+      });
+      expect(findProblemType("bad-request")).toMatchObject({
+        title: "Bad Request",
+      });
+      expect(findProblemType("nonexistent-error")).toBeUndefined();
+    });
+
+    it("type URI から problem type の title を検索できる", () => {
+      expect(
+        findProblemTypeByUri("https://api.otography.com/errors/profile-not-set-up"),
+      ).toMatchObject({
+        title: "Profile Not Set Up",
+      });
+      expect(findProblemTypeByUri("https://api.otography.com/errors/not-found")).toMatchObject({
+        title: "Not Found",
+      });
+      expect(findProblemTypeByUri("https://api.otography.com/errors/unknown")).toBeUndefined();
     });
   });
 

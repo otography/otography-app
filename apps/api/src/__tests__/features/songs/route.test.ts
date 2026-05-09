@@ -198,7 +198,7 @@ describe("songs endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/song-not-found",
-      title: "Not Found",
+      title: "Song Not Found",
       status: 404,
       detail: "Song not found.",
     });
@@ -386,7 +386,7 @@ describe("songs endpoints", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/song-already-exists",
-      title: "Conflict",
+      title: "Song Already Exists",
       status: 409,
       detail: "Apple Music ID is already registered for another song.",
     });
@@ -582,7 +582,7 @@ describe("songs endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/song-not-found",
-      title: "Not Found",
+      title: "Song Not Found",
       status: 404,
       detail: "Song not found.",
     });

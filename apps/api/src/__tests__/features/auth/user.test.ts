@@ -200,7 +200,7 @@ describe("GET /api/user", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/profile-not-set-up",
-      title: "Not Found",
+      title: "Profile Not Set Up",
       status: 404,
       detail: "Profile is not set up.",
     });
@@ -346,7 +346,7 @@ describe("PATCH /api/user/profile", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/username-already-taken",
-      title: "Conflict",
+      title: "Username Already Taken",
       status: 409,
       detail: "Username is already taken.",
     });
@@ -508,7 +508,7 @@ describe("PATCH /api/user", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toMatchObject({
       type: "https://api.otography.com/errors/username-already-taken",
-      title: "Conflict",
+      title: "Username Already Taken",
       status: 409,
       detail: "Username is already taken.",
     });

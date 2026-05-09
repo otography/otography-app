@@ -258,7 +258,7 @@ describe("Favorite Artists endpoints", () => {
       expect(res.status).toBe(409);
       expect(await res.json()).toEqual({
         type: "https://api.otography.com/errors/favorite-artist-already-exists",
-        title: "Conflict",
+        title: "Favorite Artist Already Exists",
         status: 409,
         detail: "このアーティストは既にお気に入りに登録されています。",
       });

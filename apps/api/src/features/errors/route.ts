@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { getBySlug } from "../../shared/errors/error-registry";
+import { findProblemType } from "../../shared/errors/error-registry";
 
 const errors = new Hono().get("/:type", (c) => {
   const slug = c.req.param("type");
-  const entry = getBySlug(slug);
+  const entry = findProblemType(slug);
 
   if (!entry) {
     return c.notFound();

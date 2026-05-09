@@ -196,7 +196,7 @@ describe("artists endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/artist-not-found",
-      title: "Not Found",
+      title: "Artist Not Found",
       status: 404,
       detail: "Artist not found.",
     });
@@ -283,7 +283,7 @@ describe("artists endpoints", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/artist-already-exists",
-      title: "Conflict",
+      title: "Artist Already Exists",
       status: 409,
       detail: "Apple Music ID is already registered for another artist.",
     });
@@ -460,7 +460,7 @@ describe("artists endpoints", () => {
     expect(res.status).toBe(409);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/artist-already-exists",
-      title: "Conflict",
+      title: "Artist Already Exists",
       status: 409,
       detail: "Apple Music ID is already registered for another artist.",
     });
@@ -519,7 +519,7 @@ describe("artists endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/artist-not-found",
-      title: "Not Found",
+      title: "Artist Not Found",
       status: 404,
       detail: "Artist not found.",
     });
@@ -613,7 +613,7 @@ describe("artists endpoints", () => {
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       type: "https://api.otography.com/errors/artist-not-found",
-      title: "Not Found",
+      title: "Artist Not Found",
       status: 404,
       detail: "Artist not found.",
     });

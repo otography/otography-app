@@ -9,6 +9,7 @@
  * 4. ルートが app に .route('/errors', errors) として登録されている —
  *    app.request('/errors/artist-already-exists') が 200 を返す (VAL-EPT-004)
  * 5. 複数の既知 slug（session-expired, rate-limit-exceeded 等）で 200 を返す
+ * 6. 汎用 slug（bad-request 等）も type URI のドキュメントとして 200 を返す
  */
 
 import { describe, expect, it } from "vitest";
@@ -75,6 +76,36 @@ describe("GET /errors/:type ドキュメントエンドポイント", () => {
       const res = await testRequest(`/errors/${slug}`);
 
       expect(res.status).toBe(200);
+    });
+  });
+
+  describe("汎用 Problem Details slug", () => {
+    it("GET /errors/bad-request → 200, text/html, body に title と description を含む", async () => {
+      const res = await testRequest("/errors/bad-request");
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Content-Type")).toContain("text/html");
+
+      const body = await res.text();
+      expect(body).toContain("Bad Request");
+      expect(body).toContain("リクエストの形式または内容が不正です");
+    });
+
+    it("Accept: application/problem+json で汎用 slug の説明を返す", async () => {
+      const res = await testRequest("/errors/unauthorized", {
+        headers: { Accept: "application/problem+json" },
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.headers.get("Content-Type")).toBe("application/problem+json");
+
+      const body = await res.json();
+      expect(body).toMatchObject({
+        type: "https://api.otography.com/errors/unauthorized",
+        title: "Unauthorized",
+        status: 401,
+        description: "認証が必要です。ログインしてから再試行してください。",
+      });
     });
   });
 });

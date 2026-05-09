@@ -11,11 +11,11 @@ import {
   type ErrorStatusCode,
 } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
-import { getProblemType, STATUS_ERROR_TYPES } from "./error-registry";
+import { findProblemTypeByUri, getProblemType, STATUS_ERROR_TYPES } from "./error-registry";
 import type { ProblemSlug } from "./error-registry";
 
 /**
- * RFC 7807 Problem Details 形式のエラーレスポンス型
+ * RFC 9457 Problem Details 形式のエラーレスポンス型
  */
 type ProblemDetails = {
   type: string;
@@ -42,13 +42,14 @@ const STATUS_MAPPING: Record<number, { typeUri: string; title: string }> = Objec
 );
 
 /**
- * ステータスコードから ProblemDetails を生成するヘルパー。
- * typeUri が指定された場合はそれを優先し、なければ STATUS_MAPPING にフォールバックする。
+ * ステータスコードと typeUri から ProblemDetails を生成するヘルパー。
+ * typeUri が registry にある場合は、RFC 9457 の problem type summary としてその title を使う。
  */
 const toProblemDetails = (statusCode: number, detail: string, typeUri?: string): ProblemDetails => {
-  const mapping = STATUS_MAPPING[statusCode] ?? STATUS_MAPPING[500]!;
+  const definition = typeUri ? findProblemTypeByUri(typeUri) : undefined;
+  const mapping = definition ?? STATUS_MAPPING[statusCode] ?? STATUS_MAPPING[500]!;
   return {
-    type: typeUri ?? mapping.typeUri,
+    type: definition?.typeUri ?? mapping.typeUri,
     title: mapping.title,
     status: statusCode,
     detail,
@@ -56,16 +57,16 @@ const toProblemDetails = (statusCode: number, detail: string, typeUri?: string):
 };
 
 /**
- * 未知のエラーを RFC 7807 形式に変換する（内部情報を漏洩しない）
+ * 未知のエラーを RFC 9457 形式に変換する（内部情報を漏洩しない）
  */
 const toInternalError = (): ProblemDetails => {
   return toProblemDetails(500, "Internal server error.");
 };
 
 /**
- * 全エラータイプを RFC 7807 Problem Details に変換する。
+ * 全エラータイプを RFC 9457 Problem Details に変換する。
  *
- * - AuthError / DbError / OAuth 系エラー → typeUri があれば使用、なければ STATUS_MAPPING にフォールバック
+ * - AuthError / DbError / OAuth 系エラー → registry 登録済み typeUri があれば使用
  * - RlsError / unknown → detail を "Internal server error." に固定（内部情報漏洩防止）
  */
 export const formatErrorResponse = (error: unknown): ErrorMapping => {
@@ -163,7 +164,7 @@ export const unauthorizedResponse = (c: Context, detail: string) => {
 };
 
 /**
- * エラーオブジェクトを RFC 7807 Problem Details レスポンスに変換して返す。
+ * エラーオブジェクトを RFC 9457 Problem Details レスポンスに変換して返す。
  * ルートハンドラ内の `if (result instanceof Error)` パターンを簡潔にする。
  */
 export const respondWithError = (error: Error, c: Context): Response => {

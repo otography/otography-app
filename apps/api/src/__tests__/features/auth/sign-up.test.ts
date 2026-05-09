@@ -99,7 +99,7 @@ describe("POST /api/auth/sign-up", () => {
       const body = await res.json();
       expect(body).toMatchObject({
         type: "https://api.otography.com/errors/email-already-registered",
-        title: "Conflict",
+        title: "Email Already Registered",
         status: 409,
         detail: "This email address is already registered.",
       });
