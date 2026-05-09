@@ -6,6 +6,8 @@ import {
   GoogleTokenExchangeError,
 } from "@repo/errors";
 
+const TYPE_URI_BASE = "https://api.otography.com/errors";
+
 // Google OAuth トークンエンドポイント
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -54,6 +56,10 @@ const firebaseErrorResponseSchema = type({
   },
 });
 
+const GOOGLE_TYPE_URI = `${TYPE_URI_BASE}/google-token-exchange-failed`;
+const FIREBASE_IDP_TYPE_URI = `${TYPE_URI_BASE}/firebase-idp-signin-failed`;
+const ACCOUNT_CONFLICT_TYPE_URI = `${TYPE_URI_BASE}/account-conflict`;
+
 /**
  * Google認可コードをトークンと交換する。
  * POST https://oauth2.googleapis.com/token を呼び出し、
@@ -81,21 +87,32 @@ export const exchangeGoogleCode = async ({
       grant_type: "authorization_code",
     }),
   }).catch(
-    (e) => new GoogleTokenExchangeError({ message: "Google token exchange failed.", cause: e }),
+    (e) =>
+      new GoogleTokenExchangeError({
+        message: "Google token exchange failed.",
+        typeUri: GOOGLE_TYPE_URI,
+        cause: e,
+      }),
   );
   if (response instanceof Error) {
     return response;
   }
 
-  const responseText = await response
-    .text()
-    .catch(
-      (e) => new GoogleTokenExchangeError({ message: "Google token exchange failed.", cause: e }),
-    );
+  const responseText = await response.text().catch(
+    (e) =>
+      new GoogleTokenExchangeError({
+        message: "Google token exchange failed.",
+        typeUri: GOOGLE_TYPE_URI,
+        cause: e,
+      }),
+  );
   if (responseText instanceof Error) return responseText;
 
   if (response.ok && responseText.length === 0) {
-    return new GoogleTokenExchangeError({ message: "Empty response from Google token endpoint." });
+    return new GoogleTokenExchangeError({
+      message: "Empty response from Google token endpoint.",
+      typeUri: GOOGLE_TYPE_URI,
+    });
   }
 
   const payload = errore.try({
@@ -103,6 +120,7 @@ export const exchangeGoogleCode = async ({
     catch: (e) =>
       new GoogleTokenExchangeError({
         message: "Invalid response format from Google token endpoint.",
+        typeUri: GOOGLE_TYPE_URI,
         cause: e,
       }),
   });
@@ -111,6 +129,7 @@ export const exchangeGoogleCode = async ({
     if (payload instanceof Error) {
       return new GoogleTokenExchangeError({
         message: "Google token exchange failed.",
+        typeUri: GOOGLE_TYPE_URI,
         cause: payload,
       });
     }
@@ -119,12 +138,13 @@ export const exchangeGoogleCode = async ({
       parsedError instanceof type.errors
         ? "Google token exchange failed."
         : parsedError.error_description || parsedError.error || "Google token exchange failed.";
-    return new GoogleTokenExchangeError({ message: errorDesc });
+    return new GoogleTokenExchangeError({ message: errorDesc, typeUri: GOOGLE_TYPE_URI });
   }
 
   if (payload instanceof Error) {
     return new GoogleTokenExchangeError({
       message: "Invalid response format from Google token endpoint.",
+      typeUri: GOOGLE_TYPE_URI,
       cause: payload,
     });
   }
@@ -133,6 +153,7 @@ export const exchangeGoogleCode = async ({
   if (parsedPayload instanceof type.errors) {
     return new GoogleTokenExchangeError({
       message: "Invalid response format from Google token endpoint.",
+      typeUri: GOOGLE_TYPE_URI,
     });
   }
 
@@ -166,23 +187,32 @@ export const signInWithGoogleIdp = async ({
       returnIdpCredential: true,
     }),
   }).catch(
-    (e) => new FirebaseIdpSigninError({ message: "Firebase IdP sign-in failed.", cause: e }),
+    (e) =>
+      new FirebaseIdpSigninError({
+        message: "Firebase IdP sign-in failed.",
+        typeUri: FIREBASE_IDP_TYPE_URI,
+        cause: e,
+      }),
   );
   if (response instanceof Error) {
     return response;
   }
 
   // レスポンス本文を取得して後続のパースとエラー判定に利用
-  const responseText = await response
-    .text()
-    .catch(
-      (e) => new FirebaseIdpSigninError({ message: "Firebase IdP sign-in failed.", cause: e }),
-    );
+  const responseText = await response.text().catch(
+    (e) =>
+      new FirebaseIdpSigninError({
+        message: "Firebase IdP sign-in failed.",
+        typeUri: FIREBASE_IDP_TYPE_URI,
+        cause: e,
+      }),
+  );
   if (responseText instanceof Error) return responseText;
 
   if (response.ok && responseText.length === 0) {
     return new FirebaseIdpSigninError({
       message: "Empty response from Firebase signInWithIdp.",
+      typeUri: FIREBASE_IDP_TYPE_URI,
     });
   }
 
@@ -191,6 +221,7 @@ export const signInWithGoogleIdp = async ({
     catch: (e) =>
       new FirebaseIdpSigninError({
         message: "Invalid response format from Firebase signInWithIdp.",
+        typeUri: FIREBASE_IDP_TYPE_URI,
         cause: e,
       }),
   });
@@ -199,6 +230,7 @@ export const signInWithGoogleIdp = async ({
     if (payload instanceof Error) {
       return new FirebaseIdpSigninError({
         message: "Firebase IdP sign-in failed.",
+        typeUri: FIREBASE_IDP_TYPE_URI,
         cause: payload,
       });
     }
@@ -206,12 +238,14 @@ export const signInWithGoogleIdp = async ({
     const code = parsedError instanceof type.errors ? undefined : parsedError.error.message;
     return new FirebaseIdpSigninError({
       message: code ?? "Firebase IdP sign-in failed.",
+      typeUri: FIREBASE_IDP_TYPE_URI,
     });
   }
 
   if (payload instanceof Error) {
     return new FirebaseIdpSigninError({
       message: "Invalid response format from Firebase signInWithIdp.",
+      typeUri: FIREBASE_IDP_TYPE_URI,
       cause: payload,
     });
   }
@@ -222,6 +256,7 @@ export const signInWithGoogleIdp = async ({
     return new AccountConflictError({
       message:
         "An account with this email already exists. Please sign in with your original method.",
+      typeUri: ACCOUNT_CONFLICT_TYPE_URI,
     });
   }
 
@@ -229,6 +264,7 @@ export const signInWithGoogleIdp = async ({
   if (parsedPayload instanceof type.errors) {
     return new FirebaseIdpSigninError({
       message: "Invalid response format from Firebase signInWithIdp.",
+      typeUri: FIREBASE_IDP_TYPE_URI,
     });
   }
 

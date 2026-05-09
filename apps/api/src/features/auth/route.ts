@@ -114,6 +114,10 @@ const auth = new Hono<{ Bindings: Bindings }>()
             message: signUpResult.message,
             code: "sign-up-failed",
             statusCode: signUpResult.statusCode,
+            typeUri:
+              signUpResult.statusCode === 409
+                ? "https://api.otography.com/errors/email-already-registered"
+                : undefined,
             cause: signUpResult,
           }),
           c,

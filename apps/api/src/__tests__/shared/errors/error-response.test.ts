@@ -1,6 +1,17 @@
 /**
  * テストリスト: formatErrorResponse (RFC 7807 Problem Details)
  *
+ * AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007):
+ * F1. auth/session-cookie-expired → formatErrorResponse type: .../session-expired
+ * F2. auth/session-cookie-revoked → formatErrorResponse type: .../session-revoked
+ * F3. auth/user-disabled → formatErrorResponse type: .../account-disabled
+ * F4. auth/argument-error → formatErrorResponse type: .../session-invalid
+ * F5. auth/invalid-id-token → formatErrorResponse type: .../session-invalid
+ * F6. auth/invalid-session-cookie-duration → formatErrorResponse type: .../session-invalid
+ * F7. auth/user-not-found → formatErrorResponse type: .../session-invalid
+ * F8. auth/internal-error → formatErrorResponse type: .../auth-service-unavailable
+ * F9. 未知の Firebase エラーコード → typeUri: undefined（STATUS_MAPPING フォールバック）
+ *
  * DbError:
  * 1. DbError(409) → ProblemDetails{type: '...conflict', title: 'Conflict', status: 409, detail: error.message}
  * 2. DbError(400) → ProblemDetails{type: '...bad-request', title: 'Bad Request', status: 400, detail: error.message}
@@ -39,6 +50,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { HTTPException } from "hono/http-exception";
+import { FirebaseAuthError } from "@repo/firebase-auth-rest/auth";
 import {
   DbError,
   RlsError,
@@ -379,5 +391,126 @@ describe("formatErrorResponse", () => {
       expect(result.body.status).toBe(status);
       expect(result.statusCode).toBe(status);
     });
+  });
+});
+
+describe("AuthError.fromFirebase() typeUri マッピング (VAL-AUTH-002〜007)", () => {
+  it("auth/session-cookie-expired → type: .../session-expired (VAL-AUTH-002)", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "session-cookie-expired",
+      message: "SESSION_COOKIE_EXPIRED",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-expired");
+    expect(result.body.status).toBe(401);
+    expect(result.body.detail).toBe("Session expired.");
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/session-cookie-revoked → type: .../session-revoked (VAL-AUTH-003)", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "session-cookie-revoked",
+      message: "SESSION_COOKIE_REVOKED",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-revoked");
+    expect(result.body.status).toBe(401);
+    expect(result.body.detail).toBe("Session revoked.");
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/user-disabled → type: .../account-disabled (VAL-AUTH-004)", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "user-disabled",
+      message: "USER_DISABLED",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/account-disabled");
+    expect(result.body.status).toBe(403);
+    expect(result.body.detail).toBe("Account is disabled.");
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/argument-error → type: .../session-invalid", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "argument-error",
+      message: "INVALID_ARGUMENT",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-invalid");
+    expect(result.body.status).toBe(401);
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/invalid-id-token → type: .../session-invalid", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "invalid-id-token",
+      message: "INVALID_ID_TOKEN",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-invalid");
+    expect(result.body.status).toBe(401);
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/invalid-session-cookie-duration → type: .../session-invalid", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "invalid-session-cookie-duration",
+      message: "INVALID_DURATION",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-invalid");
+    expect(result.body.status).toBe(500);
+  });
+
+  it("auth/user-not-found → type: .../session-invalid", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "user-not-found",
+      message: "USER_NOT_FOUND",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/session-invalid");
+    expect(result.body.status).toBe(401);
+    expect(result.clearCookie).toBe(true);
+  });
+
+  it("auth/internal-error → type: .../auth-service-unavailable (VAL-AUTH-007)", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "internal-error",
+      message: "INTERNAL_ERROR",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/auth-service-unavailable");
+    expect(result.body.status).toBe(503);
+    expect(result.body.detail).toBe("Authentication service unavailable.");
+  });
+
+  it("未知の Firebase エラーコード → typeUri なし（STATUS_MAPPING フォールバック）", () => {
+    const firebaseError = new FirebaseAuthError({
+      code: "some-unknown-code",
+      message: "SOMETHING_UNKNOWN",
+    });
+    const authError = AuthError.fromFirebase(firebaseError, "Session verification failed.");
+    const result = formatErrorResponse(authError);
+
+    expect(result.body.type).toBe("https://api.otography.com/errors/unauthorized");
+    expect(result.body.status).toBe(401);
+    expect(result.body.detail).toBe("Session verification failed.");
   });
 });

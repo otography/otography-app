@@ -21,11 +21,13 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
     revokeRefreshTokens: mockRevokeRefreshTokens,
     verifyIdToken: mockVerifyIdToken,
   })),
+  // FirebaseAuthError のモック — 本物のコンストラクタは ErrorInfo({code, message}) を受け取る。
+  // code プレフィックス "auth/" を再現し、fromFirebase() の code マッピングをテスト可能にする。
   FirebaseAuthError: class extends Error {
     code: string;
-    constructor(message?: string, _options?: ErrorOptions) {
-      super(message);
-      this.code = "";
+    constructor(info: { code: string; message: string } | string, _options?: ErrorOptions) {
+      super(typeof info === "object" ? info.message : (info ?? ""));
+      this.code = typeof info === "object" ? `auth/${info.code}` : "";
       this.name = "FirebaseAuthError";
     }
   },

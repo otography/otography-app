@@ -96,6 +96,13 @@ describe("POST /api/auth/sign-up", () => {
       });
 
       expect(res.status).toBe(409);
+      const body = await res.json();
+      expect(body).toMatchObject({
+        type: "https://api.otography.com/errors/email-already-registered",
+        title: "Conflict",
+        status: 409,
+        detail: "This email address is already registered.",
+      });
     });
   });
 
