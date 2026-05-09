@@ -165,7 +165,10 @@ describe("POST /api/auth/sign-up", () => {
 
       expect(res.status).toBe(400);
       expect(await res.json()).toMatchObject({
-        message: "Please provide a valid email address and a password with at least 6 characters.",
+        type: "https://api.otography.com/errors/bad-request",
+        title: "Bad Request",
+        status: 400,
+        detail: "Please provide a valid email address and a password with at least 6 characters.",
       });
     });
   });
