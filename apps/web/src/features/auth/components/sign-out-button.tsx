@@ -5,7 +5,27 @@ import { useRouter } from "next/navigation";
 import * as stylex from "@stylexjs/stylex";
 import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
-import { shared } from "@/styles/shared.stylex";
+import { uiTokens as ui } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  dangerButton: {
+    padding: "0.75rem 1rem",
+    borderRadius: "0.5rem",
+    borderWidth: 0,
+    borderStyle: "none",
+    borderColor: "transparent",
+    backgroundColor: ui.errorRed,
+    color: ui.white,
+  },
+  errorText: {
+    margin: 0,
+    color: ui.errorRed,
+  },
+  gap: {
+    display: "grid",
+    gap: "0.75rem",
+  },
+});
 
 interface SignOutState {
   error: string | null;
@@ -95,7 +115,7 @@ function SignOutButtonInner() {
       type="button"
       onClick={() => void signOut()}
       disabled={state.isPending}
-      {...stylex.props(shared.dangerButton)}
+      {...stylex.props(styles.dangerButton)}
     >
       {state.isPending ? "Signing out..." : "Sign out"}
     </button>
@@ -107,7 +127,7 @@ function SignOutError() {
 
   if (!state.error) return null;
 
-  return <p {...stylex.props(shared.errorText)}>{state.error}</p>;
+  return <p {...stylex.props(styles.errorText)}>{state.error}</p>;
 }
 
 const SignOut = {
@@ -119,7 +139,7 @@ const SignOut = {
 export function SignOutButton() {
   return (
     <SignOut.Provider>
-      <div {...stylex.props(shared.gap3)}>
+      <div {...stylex.props(styles.gap)}>
         <SignOut.Button />
         <SignOut.Error />
       </div>

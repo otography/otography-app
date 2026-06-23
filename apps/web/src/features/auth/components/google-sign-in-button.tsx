@@ -1,7 +1,28 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { shared } from "@/styles/shared.stylex";
+import { uiTokens as ui } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  googleButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5rem",
+    padding: "0.75rem 1rem",
+    borderRadius: "0.5rem",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: ui.inputBorder,
+    backgroundColor: ui.white,
+    color: ui.darkText,
+    textDecoration: "none",
+    fontSize: "1rem",
+    cursor: "pointer",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+});
 
 type GoogleSignInButtonProps = {
   from?: string;
@@ -11,7 +32,7 @@ export function GoogleSignInButton({ from }: GoogleSignInButtonProps) {
   const href = from ? `/api/auth/google?from=${encodeURIComponent(from)}` : "/api/auth/google";
   return (
     // oxlint-disable-next-line no-html-link-for-pages -- OAuth リダイレクトのためプレーンな <a> が必要
-    <a href={href} {...stylex.props(shared.googleButton)}>
+    <a href={href} {...stylex.props(styles.googleButton)}>
       <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"
