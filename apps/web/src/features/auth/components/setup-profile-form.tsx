@@ -2,10 +2,12 @@
 
 import { createContext, type ReactNode, useCallback, use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as stylex from "@stylexjs/stylex";
 import { Field, Form, useForm } from "@formisch/react";
 import type { FormStore } from "@formisch/react";
 import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
+import { shared } from "@/styles/shared.stylex";
 import * as v from "valibot";
 
 const SetupProfileSchema = v.object({
@@ -109,7 +111,7 @@ function SetupProfileFrame({ children }: { children: ReactNode }) {
   const { state, actions } = useSetupProfileContext();
 
   return (
-    <Form of={state.form} onSubmit={actions.submit} style={{ display: "grid", gap: "1rem" }}>
+    <Form of={state.form} onSubmit={actions.submit} {...stylex.props(shared.formGrid)}>
       {children}
     </Form>
   );
@@ -121,7 +123,7 @@ function SetupProfileUsernameField() {
   return (
     <Field of={state.form} path={["username"]}>
       {(field) => (
-        <div style={{ display: "grid", gap: "0.5rem" }}>
+        <div {...stylex.props(shared.fieldGroup)}>
           <label>
             <span>Username</span>
             <input
@@ -130,15 +132,11 @@ function SetupProfileUsernameField() {
               type="text"
               aria-invalid={field.errors ? true : undefined}
               aria-describedby={field.errors ? "username-error" : undefined}
-              style={{
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #d6d6d6",
-              }}
+              {...stylex.props(shared.input)}
             />
           </label>
           {field.errors && (
-            <p id="username-error" style={{ margin: 0, color: "#b00020" }}>
+            <p id="username-error" {...stylex.props(shared.errorText)}>
               {field.errors[0]}
             </p>
           )}
@@ -154,7 +152,7 @@ function SetupProfileNameField() {
   return (
     <Field of={state.form} path={["name"]}>
       {(field) => (
-        <div style={{ display: "grid", gap: "0.5rem" }}>
+        <div {...stylex.props(shared.fieldGroup)}>
           <label>
             <span>Name</span>
             <input
@@ -163,15 +161,11 @@ function SetupProfileNameField() {
               type="text"
               aria-invalid={field.errors ? true : undefined}
               aria-describedby={field.errors ? "name-error" : undefined}
-              style={{
-                padding: "0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #d6d6d6",
-              }}
+              {...stylex.props(shared.input)}
             />
           </label>
           {field.errors && (
-            <p id="name-error" style={{ margin: 0, color: "#b00020" }}>
+            <p id="name-error" {...stylex.props(shared.errorText)}>
               {field.errors[0]}
             </p>
           )}
@@ -186,18 +180,14 @@ function SetupProfileError() {
 
   if (!meta.displayedError) return null;
 
-  return <p style={{ margin: 0, color: "#b00020" }}>{meta.displayedError}</p>;
+  return <p {...stylex.props(shared.errorText)}>{meta.displayedError}</p>;
 }
 
 function SetupProfileSubmitButton() {
   const { state } = useSetupProfileContext();
 
   return (
-    <button
-      type="submit"
-      disabled={state.form.isSubmitting}
-      style={{ padding: "0.75rem 1rem", borderRadius: "0.5rem", border: "none" }}
-    >
+    <button type="submit" disabled={state.form.isSubmitting} {...stylex.props(shared.submitButton)}>
       {state.form.isSubmitting ? "Setting up..." : "Set up profile"}
     </button>
   );

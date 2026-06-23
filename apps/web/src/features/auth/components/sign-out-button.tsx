@@ -2,8 +2,10 @@
 
 import { createContext, type ReactNode, useCallback, use, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as stylex from "@stylexjs/stylex";
 import { WebAuthClientError } from "@repo/errors";
 import { api } from "@/features/lib/api";
+import { shared } from "@/styles/shared.stylex";
 
 interface SignOutState {
   error: string | null;
@@ -93,13 +95,7 @@ function SignOutButtonInner() {
       type="button"
       onClick={() => void signOut()}
       disabled={state.isPending}
-      style={{
-        padding: "0.75rem 1rem",
-        borderRadius: "0.5rem",
-        border: "none",
-        backgroundColor: "#b00020",
-        color: "#ffffff",
-      }}
+      {...stylex.props(shared.dangerButton)}
     >
       {state.isPending ? "Signing out..." : "Sign out"}
     </button>
@@ -111,7 +107,7 @@ function SignOutError() {
 
   if (!state.error) return null;
 
-  return <p style={{ margin: 0, color: "#b00020" }}>{state.error}</p>;
+  return <p {...stylex.props(shared.errorText)}>{state.error}</p>;
 }
 
 const SignOut = {
@@ -123,7 +119,7 @@ const SignOut = {
 export function SignOutButton() {
   return (
     <SignOut.Provider>
-      <div style={{ display: "grid", gap: "0.75rem" }}>
+      <div {...stylex.props(shared.gap3)}>
         <SignOut.Button />
         <SignOut.Error />
       </div>
