@@ -385,7 +385,7 @@ export default async function Home() {
           aria-hidden="true"
           className={styles.ctaPurpleAura}
           height={1024}
-          src="/lp-asset-7_transparent_white-to-alpha.png"
+          src="/lp-asset-7.png"
           width={1535}
         />
         <Image
