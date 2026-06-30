@@ -62,8 +62,6 @@ const styles = stylex.create({
     left: "10.2rem",
     width: "min(12rem, 22vw)",
     height: "auto",
-    clipPath: "circle(29% at 50% 52%)",
-    filter: "saturate(0.72) brightness(1.08) blur(0.4px)",
     "@media (max-width: 640px)": {
       bottom: "3.1rem",
       left: "8.4rem",

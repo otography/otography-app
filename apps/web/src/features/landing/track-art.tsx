@@ -59,7 +59,7 @@ type TrackArtProps = {
     height?: string;
     aspectRatio?: string;
     gridRow?: string | number;
-    "@media (max-width: 640px)"?: { gridRow?: string | number };
+    "@media (max-width: 640px)"?: { gridRow?: string };
   }>;
   label?: string;
 };

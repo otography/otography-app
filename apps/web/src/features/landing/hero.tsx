@@ -51,6 +51,7 @@ const styles = stylex.create({
     width: "100%",
     height: "auto",
     margin: 0,
+    paddingInline: "0.15em",
     objectFit: "contain",
     objectPosition: "center",
   },
@@ -121,26 +122,28 @@ const styles = stylex.create({
   heroAura: {
     position: "absolute",
     zIndex: 0,
-    objectFit: "cover",
+    objectFit: "contain",
     pointerEvents: "none",
     userSelect: "none",
-    top: "-8.8rem",
-    left: "-2.4rem",
-    width: "min(53rem, 92%)",
+    top: {
+      default: "-12rem",
+      "@media (max-width: 640px)": "-7rem",
+    },
+    left: {
+      default: "-3rem",
+      "@media (max-width: 640px)": "-7rem",
+    },
+    width: {
+      default: "100%",
+      "@media (max-width: 640px)": "120%",
+    },
     height: "auto",
     clipPath: "circle(26% at 50% 50%)",
-    filter: "saturate(0.92) brightness(1.04)",
-    "@media (max-width: 640px)": {
-      top: "-0.4rem",
-      left: "-31%",
-      width: "44rem",
-      maxWidth: "none",
-    },
   },
   heroDots: {
     position: "absolute",
     zIndex: 0,
-    objectFit: "cover",
+    objectFit: "contain",
     pointerEvents: "none",
     userSelect: "none",
     right: "2.6rem",
@@ -150,9 +153,9 @@ const styles = stylex.create({
     objectPosition: "50% 50%",
     "@media (max-width: 640px)": {
       right: "0.4rem",
-      bottom: "5.4rem",
+      bottom: "-0.4rem",
       width: "7rem",
-      height: "6rem",
+      height: "auto",
     },
   },
   heroOval: {
@@ -166,12 +169,10 @@ const styles = stylex.create({
     width: "min(13.5rem, 25%)",
     height: "auto",
     clipPath: "ellipse(22% 32% at 50% 50%)",
-    opacity: 0.7,
     transform: "rotate(20deg)",
     "@media (max-width: 640px)": {
-      top: "19rem",
-      left: "-17%",
-      width: "15rem",
+      top: "22rem",
+      width: "6rem",
     },
   },
   heroScribble: {
@@ -221,7 +222,9 @@ const styles = stylex.create({
     transform: "rotate(-2deg)",
     "@media (max-width: 640px)": {
       top: "1rem",
-      right: 0,
+      left: "50%",
+      right: "auto",
+      transform: "translateX(-50%) rotate(-2deg)",
     },
   },
   heroPostSecondary: {
@@ -231,8 +234,10 @@ const styles = stylex.create({
     transform: "rotate(4deg)",
     "@media (max-width: 640px)": {
       top: "14rem",
-      right: "0.2rem",
+      left: "50%",
+      right: "auto",
       bottom: "auto",
+      transform: "translateX(-50%) rotate(4deg)",
     },
   },
   heroPostTertiary: {
@@ -241,8 +246,9 @@ const styles = stylex.create({
     transform: "rotate(0deg)",
     "@media (max-width: 640px)": {
       top: "27rem",
+      left: "50%",
       bottom: "auto",
-      left: 0,
+      transform: "translateX(-50%) rotate(0deg)",
     },
   },
   postMeta: {
@@ -258,34 +264,6 @@ const styles = stylex.create({
     color: "#9297a2",
     fontSize: "0.74rem",
     fontWeight: 520,
-  },
-  heroNote: {
-    position: "absolute",
-    right: "2.5rem",
-    bottom: "0.2rem",
-    zIndex: 3,
-    maxWidth: "14rem",
-    margin: 0,
-    fontSize: "1.08rem",
-    fontWeight: 640,
-    lineHeight: 1.75,
-    letterSpacing: "0.16em",
-    "::after": {
-      display: "block",
-      width: "7rem",
-      height: "0.08rem",
-      margin: "0.35rem 0 0 auto",
-      content: '""',
-      backgroundColor: "#1d2330",
-      borderRadius: "999px",
-      transform: "rotate(-5deg)",
-    },
-    "@media (max-width: 640px)": {
-      right: "0.5rem",
-      bottom: 0,
-      maxWidth: "11rem",
-      fontSize: "0.94rem",
-    },
   },
 });
 
@@ -397,7 +375,6 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
         />
         <Image
           alt=""
-          aria-hidden="true"
           height={1024}
           priority
           src="/lp-asset-2.webp"
@@ -425,7 +402,6 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
         {heroPosts.map((post) => (
           <HeroPostCard key={post.name} {...post} />
         ))}
-        <p {...stylex.props(styles.heroNote)}>短い言葉が、新しい出会いになる。</p>
       </div>
     </section>
   );
