@@ -1,6 +1,6 @@
 import Image from "next/image";
 import * as stylex from "@stylexjs/stylex";
-import { landingTokens as t } from "./tokens.stylex";
+import { fontBody, landingTokens as t } from "./tokens.stylex";
 import { PrimaryLink } from "./primary-link";
 
 const styles = stylex.create({
@@ -12,7 +12,6 @@ const styles = stylex.create({
     alignItems: "center",
     minHeight: "15rem",
     padding: "3.5rem max(clamp(1.25rem, 6vw, 7rem), calc((100vw - 78rem) / 2 + 2.5rem))",
-    overflow: "hidden",
     borderTopWidth: "1px",
     borderTopStyle: "solid",
     borderTopColor: t.line,
@@ -74,8 +73,9 @@ const styles = stylex.create({
     justifySelf: "center",
     maxWidth: "37rem",
     margin: 0,
+    fontFamily: fontBody,
     fontSize: "clamp(1.45rem, 3vw, 2rem)",
-    fontWeight: 720,
+    fontWeight: 700,
     lineHeight: 1.8,
     letterSpacing: "0.08em",
     "@media (max-width: 980px)": {
@@ -91,8 +91,9 @@ const styles = stylex.create({
   },
   finalCtaSmall: {
     color: "#2b303d",
+    fontFamily: fontBody,
     fontSize: "0.82rem",
-    fontWeight: 650,
+    fontWeight: 500,
     letterSpacing: "0.08em",
     "@media (max-width: 640px)": {
       textAlign: "center",

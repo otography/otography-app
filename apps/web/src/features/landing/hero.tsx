@@ -3,6 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Avatar } from "./avatar";
 import { MusicPill } from "./music-pill";
 import { PrimaryLink } from "./primary-link";
+import { fontBody, fontHeading } from "./tokens.stylex";
 import type { ArtVariant } from "./track-art";
 
 const styles = stylex.create({
@@ -37,8 +38,9 @@ const styles = stylex.create({
   heroTitle: {
     position: "relative",
     width: "fit-content",
+    fontFamily: fontHeading,
     fontSize: "clamp(4.4rem, 8vw, 6.5rem)",
-    fontWeight: 500,
+    fontWeight: 800,
     lineHeight: 0.98,
     letterSpacing: 0,
     whiteSpace: "nowrap",
@@ -51,15 +53,15 @@ const styles = stylex.create({
     width: "100%",
     height: "auto",
     margin: 0,
-    paddingInline: "0.15em",
     objectFit: "contain",
     objectPosition: "center",
   },
   heroLead: {
     maxWidth: "27rem",
     margin: 0,
+    fontFamily: fontBody,
     fontSize: "clamp(1.25rem, 2vw, 1.55rem)",
-    fontWeight: 720,
+    fontWeight: 700,
     lineHeight: 1.85,
     letterSpacing: "0.12em",
     "@media (max-width: 640px)": {
@@ -71,8 +73,9 @@ const styles = stylex.create({
     maxWidth: "28rem",
     margin: 0,
     color: "#242936",
+    fontFamily: fontBody,
     fontSize: "1rem",
-    fontWeight: 520,
+    fontWeight: 400,
     lineHeight: 2,
     letterSpacing: "0.05em",
   },
@@ -98,8 +101,10 @@ const styles = stylex.create({
     gap: "0.9rem",
     minHeight: "3.25rem",
     whiteSpace: "nowrap",
+    fontFamily: fontBody,
     fontSize: "0.95rem",
-    fontWeight: 720,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
     minWidth: "9.5rem",
     color: "#1e2431",
     ":hover": {
@@ -211,8 +216,9 @@ const styles = stylex.create({
   },
   heroPostText: {
     margin: 0,
+    fontFamily: fontBody,
     fontSize: "1.08rem",
-    fontWeight: 720,
+    fontWeight: 500,
     lineHeight: 1.75,
     letterSpacing: "0.08em",
   },
@@ -257,13 +263,14 @@ const styles = stylex.create({
     gap: "0.55rem",
     alignItems: "center",
     color: "#4b5362",
+    fontFamily: fontBody,
     fontSize: "0.78rem",
-    fontWeight: 680,
+    fontWeight: 700,
   },
   postMetaTime: {
     color: "#9297a2",
     fontSize: "0.74rem",
-    fontWeight: 520,
+    fontWeight: 500,
   },
 });
 
@@ -344,7 +351,7 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
             aria-hidden="true"
             height={1024}
             priority
-            src="/lp-asset-5.webp"
+            src="/lp-asset-5-2.webp"
             width={1536}
             {...stylex.props(styles.inWordsImage)}
           />

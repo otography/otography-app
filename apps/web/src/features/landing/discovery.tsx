@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Avatar } from "./avatar";
+import { fontBody, fontHeading, fontMono } from "./tokens.stylex";
 import { TrackArt, type ArtVariant } from "./track-art";
 
 const styles = stylex.create({
@@ -25,13 +26,15 @@ const styles = stylex.create({
   },
   kicker: {
     color: "#8177ec",
+    fontFamily: fontMono,
     fontSize: "0.84rem",
     fontWeight: 760,
     letterSpacing: "0.08em",
   },
   sectionTitle: {
+    fontFamily: fontHeading,
     fontSize: "clamp(2rem, 4vw, 2.75rem)",
-    fontWeight: 680,
+    fontWeight: 700,
     lineHeight: 1.35,
     letterSpacing: "0.04em",
   },
@@ -39,8 +42,9 @@ const styles = stylex.create({
     maxWidth: "19rem",
     margin: 0,
     color: "#2b303d",
+    fontFamily: fontBody,
     fontSize: "0.98rem",
-    fontWeight: 520,
+    fontWeight: 400,
     lineHeight: 1.95,
   },
   discoveryLink: {
@@ -50,8 +54,9 @@ const styles = stylex.create({
     width: "fit-content",
     marginTop: "1rem",
     color: "#8177ec",
+    fontFamily: fontBody,
     fontSize: "0.9rem",
-    fontWeight: 760,
+    fontWeight: 700,
     ":hover": {
       color: "#6f64e8",
     },
@@ -59,7 +64,7 @@ const styles = stylex.create({
   discoveryGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-    gap: "clamp(1rem, 2vw, 2rem)",
+    gap: "clamp(2.5rem, 5vw, 3.5rem) clamp(1rem, 2vw, 2rem)",
     "@media (max-width: 980px)": {
       gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
     },
@@ -71,33 +76,30 @@ const styles = stylex.create({
     display: "grid",
     gap: "0.7rem",
     minWidth: 0,
-    "@media (max-width: 640px)": {
-      gridTemplateColumns: "7rem 1fr",
-      columnGap: "1rem",
-      alignItems: "start",
-    },
   },
   discoveryArt: {
     width: "100%",
+    height: "auto",
     aspectRatio: "1",
-    "@media (max-width: 640px)": {
-      gridRow: "span 5",
-    },
   },
   discoveryCardTitle: {
     minHeight: "1.3rem",
     overflowWrap: "anywhere",
+    fontFamily: fontBody,
     fontSize: "0.92rem",
-    fontWeight: 760,
+    fontWeight: 700,
     lineHeight: 1.45,
     margin: 0,
+    paddingInline: "0.25rem",
   },
   discoveryCardArtist: {
     margin: 0,
     color: "#4d5360",
+    fontFamily: fontBody,
     fontSize: "0.78rem",
-    fontWeight: 560,
+    fontWeight: 500,
     lineHeight: 1.35,
+    paddingInline: "0.25rem",
   },
   discoveryMeta: {
     display: "grid",
@@ -106,8 +108,10 @@ const styles = stylex.create({
     alignItems: "center",
     minHeight: "1.9rem",
     color: "#4f5663",
+    fontFamily: fontBody,
     fontSize: "0.75rem",
-    fontWeight: 650,
+    fontWeight: 700,
+    paddingInline: "0.25rem",
   },
   discoveryAvatar: {
     width: "1.45rem",
@@ -120,10 +124,12 @@ const styles = stylex.create({
   discoveryCardQuote: {
     margin: 0,
     color: "#202633",
+    fontFamily: fontBody,
     fontSize: "0.92rem",
-    fontWeight: 560,
+    fontWeight: 500,
     lineHeight: 1.75,
     letterSpacing: "0.04em",
+    paddingInline: "0.25rem",
   },
 });
 

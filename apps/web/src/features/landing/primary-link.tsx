@@ -1,6 +1,7 @@
 import Link from "next/link";
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
+import { fontBody } from "./tokens.stylex";
 
 const styles = stylex.create({
   primaryLink: {
@@ -10,8 +11,10 @@ const styles = stylex.create({
     gap: "0.9rem",
     minHeight: "3.25rem",
     whiteSpace: "nowrap",
+    fontFamily: fontBody,
     fontSize: "0.95rem",
-    fontWeight: 720,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
     justifySelf: "end",
     minWidth: "12rem",
     padding: "0 1.65rem",

@@ -1,13 +1,13 @@
 import * as stylex from "@stylexjs/stylex";
-import { landingTokens as t } from "./tokens.stylex";
+import { fontBody, landingTokens as t } from "./tokens.stylex";
 import { Logo } from "./logo";
 import { PrimaryLink } from "./primary-link";
 
 const styles = stylex.create({
   header: {
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
+    width: "100%",
+  },
+  headerInner: {
     display: "grid",
     gridTemplateColumns: "1fr auto 1fr auto",
     alignItems: "center",
@@ -15,9 +15,8 @@ const styles = stylex.create({
     width: "min(100%, 78rem)",
     minHeight: "5rem",
     margin: "0 auto",
-    padding: "1rem clamp(1.25rem, 3vw, 2.5rem)",
-    backgroundColor: "rgba(255, 253, 248, 0.82)",
-    backdropFilter: "blur(18px)",
+    paddingBlock: "1rem",
+    paddingInline: "clamp(1.25rem, 3vw, 2.5rem)",
     "@media (max-width: 980px)": {
       gridTemplateColumns: "1fr auto auto",
     },
@@ -32,8 +31,9 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "clamp(1.5rem, 4vw, 4rem)",
     color: "#11151f",
+    fontFamily: fontBody,
     fontSize: "0.96rem",
-    fontWeight: 520,
+    fontWeight: 600,
     "@media (max-width: 980px)": {
       display: "none",
     },
@@ -72,23 +72,25 @@ const styles = stylex.create({
 export function Header({ ctaHref }: { ctaHref: string }) {
   return (
     <header {...stylex.props(styles.header)}>
-      <Logo />
-      <nav aria-label="メインナビゲーション" {...stylex.props(styles.nav)}>
-        <a href="#about" {...stylex.props(styles.navLink)}>
-          About
-        </a>
-        <a href="#how-it-works" {...stylex.props(styles.navLink)}>
-          How it works
-        </a>
-        <a href="#voices" {...stylex.props(styles.navLink)}>
-          Voices
-        </a>
-      </nav>
-      <PrimaryLink href={ctaHref} style={styles.headerPrimaryLinkHidden} />
-      <button aria-label="メニューを開く" {...stylex.props(styles.menuButton)}>
-        <span {...stylex.props(styles.menuButtonBar)} />
-        <span {...stylex.props(styles.menuButtonBar)} />
-      </button>
+      <div {...stylex.props(styles.headerInner)}>
+        <Logo />
+        <nav aria-label="メインナビゲーション" {...stylex.props(styles.nav)}>
+          <a href="#about" {...stylex.props(styles.navLink)}>
+            About
+          </a>
+          <a href="#how-it-works" {...stylex.props(styles.navLink)}>
+            How it works
+          </a>
+          <a href="#voices" {...stylex.props(styles.navLink)}>
+            Voices
+          </a>
+        </nav>
+        <PrimaryLink href={ctaHref} style={styles.headerPrimaryLinkHidden} />
+        <button aria-label="メニューを開く" {...stylex.props(styles.menuButton)}>
+          <span {...stylex.props(styles.menuButtonBar)} />
+          <span {...stylex.props(styles.menuButtonBar)} />
+        </button>
+      </div>
     </header>
   );
 }
