@@ -18,5 +18,5 @@ const styles = stylex.create({
 });
 
 export function Logo() {
-  return <span {...stylex.props(styles.logo)}>otooto</span>;
+  return <span {...stylex.props(styles.logo)}>otography</span>;
 }

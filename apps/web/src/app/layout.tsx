@@ -30,7 +30,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "otooto",
+  title: "otography",
   description: "Music is passed on in words.",
 };
 

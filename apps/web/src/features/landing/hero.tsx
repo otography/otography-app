@@ -360,7 +360,7 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
           聴いた人の言葉をまとって、曲は次の誰かへ渡っていく。
         </p>
         <p {...stylex.props(styles.heroDescription)}>
-          otootoは、楽曲への短い感想を投稿し、誰かの音楽体験に触れられるプラットフォームです。
+          otographyは、楽曲への短い感想を投稿し、誰かの音楽体験に触れられるプラットフォームです。
         </p>
         <div {...stylex.props(styles.heroActions)}>
           <PrimaryLink href={ctaHref} style={styles.heroActionPrimaryLink} />
