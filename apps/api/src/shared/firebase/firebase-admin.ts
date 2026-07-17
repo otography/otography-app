@@ -20,14 +20,26 @@ const createSessionCookie = (idToken: string) =>
     .createSessionCookie(idToken, { expiresIn: SESSION_COOKIE_MAX_AGE_MS })
     .catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
 
-const verifySessionCookie = (cookie: string) =>
+const verifySessionCookieWithOptions = (
+  cookie: string,
+  { checkRevoked }: { checkRevoked: boolean },
+) =>
   firebaseAuth
-    .verifySessionCookie(cookie, true)
+    .verifySessionCookie(cookie, checkRevoked)
     .catch((e) => AuthError.fromFirebase(e, "Session verification failed."));
+
+// 通常のセッション検証（オフライン JWT 検証のみ）。Firebase への getUser 往復を避ける。
+// 失効・無効化チェックが必要なセンシティブ操作では verifySessionCookieStrict を使うこと。
+const verifySessionCookie = (cookie: string) =>
+  verifySessionCookieWithOptions(cookie, { checkRevoked: false });
+
+// センシティブ操作（アカウント削除など）用の厳格検証。checkRevoked=true で失効・無効化を確認する。
+const verifySessionCookieStrict = (cookie: string) =>
+  verifySessionCookieWithOptions(cookie, { checkRevoked: true });
 
 const revokeRefreshTokens = (uid: string) =>
   firebaseAuth
     .revokeRefreshTokens(uid)
     .catch((e) => AuthError.fromFirebase(e, "Failed to sign you out.", 502));
 
-export { createSessionCookie, verifySessionCookie, revokeRefreshTokens };
+export { createSessionCookie, revokeRefreshTokens, verifySessionCookie, verifySessionCookieStrict };
