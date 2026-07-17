@@ -15,23 +15,26 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 
 // リフレッシュ成功時にルートハンドラがDBにアクセスするためのモック
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+          })),
         })),
       })),
-    })),
-    transaction: vi.fn(async (fn) => fn(txMethods)),
+      transaction: vi.fn(async (fn) => fn(txMethods)),
+    },
+    end: async () => undefined,
   } as never);
 };
 

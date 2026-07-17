@@ -22,6 +22,7 @@
     "format:fix": "turbo run format:fix",
     "_format": "oxfmt --check .",
     "_format:fix": "oxfmt .",
+    "_similarity": "similarity-ts apps/api/src apps/web/src --extensions ts,tsx --exclude node_modules --experimental-overlap --threshold 0.85",
     "quality": "turbo run quality",
     "quality:fix": "turbo run quality:fix",
     "check-types": "turbo run check-types",

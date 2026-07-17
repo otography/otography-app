@@ -8,7 +8,7 @@ import {
   rateLimitByUser,
   requireAuthMiddleware,
 } from "../../shared/middleware";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import { toggleLike } from "./usecase";
 
 const postIdParamSchema = type({
@@ -21,7 +21,7 @@ const postIdParamValidator = arktypeValidator("param", postIdParamSchema, (resul
   }
 });
 
-const postLikes = new Hono<{ Bindings: Bindings }>().post(
+const postLikes = new Hono<Env>().post(
   "/api/posts/:id/like",
   csrfProtection(),
   requireAuthMiddleware(),
@@ -31,7 +31,7 @@ const postLikes = new Hono<{ Bindings: Bindings }>().post(
     // rateLimitByUser が未認証を弾くため、ここではsessionは必ず存在する
     const session = getAuthSession(c)!;
     const { id } = c.req.valid("param");
-    const result = await toggleLike(session, id);
+    const result = await toggleLike(session, id, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);

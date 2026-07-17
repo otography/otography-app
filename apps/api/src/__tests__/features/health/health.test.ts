@@ -3,10 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../../..";
 import { testRequest } from "../../helpers/test-client";
 
-// DBモック — readinessテストでcreateDbの戻り値を制御
+// DBモック — readinessテストでcreateDbClientの戻り値を制御
 const mockExecute = vi.fn();
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(() => ({ execute: mockExecute })),
+  createDbClient: vi.fn(() => ({ db: { execute: mockExecute }, end: async () => undefined })),
 }));
 
 // firebase-restモック — モジュール読み込み時の副作用回避
@@ -116,6 +116,11 @@ describe("GET /api/health/ready (readiness)", () => {
       new URL("/api/health/ready", "http://localhost:3001"),
       {},
       envWithoutFirebase,
+      {
+        waitUntil: () => undefined,
+        passThroughOnException: () => undefined,
+        props: {},
+      },
     );
 
     expect(res.status).toBe(503);

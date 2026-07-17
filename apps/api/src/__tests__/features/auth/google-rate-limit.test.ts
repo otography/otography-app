@@ -30,7 +30,7 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(() => ({ db: {}, end: async () => undefined })),
 }));
 
 // モック適用後にテスト対象をインポート

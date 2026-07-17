@@ -12,7 +12,7 @@ import {
   rateLimitByUser,
   requireAuthMiddleware,
 } from "../../shared/middleware";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import type { Cursor } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
@@ -39,7 +39,7 @@ const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (resu
   }
 });
 
-const posts = new Hono<{ Bindings: Bindings }>()
+const posts = new Hono<Env>()
   .get("/api/posts", async (c) => {
     const session = getAuthSession(c);
 
@@ -53,7 +53,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       cursor = { createdAt: cursorCreatedAt, id: cursorId };
     }
 
-    const result = await getPosts(session, { limit, cursor });
+    const result = await getPosts(session, { limit, cursor }, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -62,7 +62,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
     const { id } = c.req.valid("param");
     const session = getAuthSession(c);
 
-    const result = await getPost(id, session);
+    const result = await getPost(id, session, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -78,7 +78,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
       const session = getAuthSession(c)!;
       const payload = c.req.valid("json");
 
-      const result = await registerPost(payload, session);
+      const result = await registerPost(payload, session, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
@@ -101,7 +101,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
         return badRequestResponse(c, "Please provide at least one field to update.");
       }
 
-      const result = await modifyPost({ id, session, payload });
+      const result = await modifyPost({ id, session, payload }, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
@@ -118,7 +118,7 @@ const posts = new Hono<{ Bindings: Bindings }>()
         return unauthorizedResponse(c, "You are not logged in.");
       }
       const { id } = c.req.valid("param");
-      const result = await removePost(id, session);
+      const result = await removePost(id, session, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);

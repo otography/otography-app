@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 import { cache } from "hono/cache";
 import { generateDeveloperToken } from "../../shared/apple-music/token";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 
-const appleMusic = new Hono<{ Bindings: Bindings }>().get(
+const appleMusic = new Hono<Env>().get(
   "/api/apple-music/token",
   cache({
     cacheName: "apple-music-token",

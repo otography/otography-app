@@ -49,10 +49,10 @@ vi.mock("../../../shared/middleware", async () => {
 });
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 import { getAuthSession } from "../../../shared/middleware";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
@@ -62,14 +62,17 @@ const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
     ...txMethods,
   };
 
-  vi.mocked(createDb).mockReturnValue({
-    ...methods,
-    transaction: vi.fn(async (fn) =>
-      fn({
-        ...methods,
-        execute: vi.fn(() => Promise.resolve([])),
-      }),
-    ),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      ...methods,
+      transaction: vi.fn(async (fn) =>
+        fn({
+          ...methods,
+          execute: vi.fn(() => Promise.resolve([])),
+        }),
+      ),
+    },
+    end: async () => undefined,
   } as never);
 };
 

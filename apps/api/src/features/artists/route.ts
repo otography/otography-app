@@ -2,7 +2,7 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import type { Cursor } from "../../shared/pagination";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
@@ -30,7 +30,7 @@ const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (
   }
 });
 
-const artists = new Hono<{ Bindings: Bindings }>()
+const artists = new Hono<Env>()
   .get("/api/artists", async (c) => {
     const limitParam = c.req.query("limit");
     const cursorCreatedAt = c.req.query("cursor[createdAt]");
@@ -42,14 +42,14 @@ const artists = new Hono<{ Bindings: Bindings }>()
       cursor = { createdAt: cursorCreatedAt, id: cursorId };
     }
 
-    const result = await getArtists({ limit, cursor });
+    const result = await getArtists({ limit, cursor }, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
     return c.json(result);
   })
   .get("/api/artists/:id", artistIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
-    const result = await getArtist(id);
+    const result = await getArtist(id, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -62,7 +62,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     artistCreateValidator,
     async (c) => {
       const payload = c.req.valid("json");
-      const result = await registerArtist(payload);
+      const result = await registerArtist(payload, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
@@ -80,10 +80,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
       if (Object.keys(payload).length === 0) {
         return badRequestResponse(c, "Please provide at least one field to update.");
       }
-      const result = await modifyArtist({
-        id,
-        payload,
-      });
+      const result = await modifyArtist({ id, payload }, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
@@ -97,7 +94,7 @@ const artists = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const { id } = c.req.valid("param");
 
-      const result = await removeArtist(id);
+      const result = await removeArtist(id, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);

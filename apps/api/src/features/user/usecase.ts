@@ -5,7 +5,7 @@ import type {
   SetupProfileValues,
   UpdateUserValues,
 } from "../../shared/db/schema";
-import { createDb } from "../../shared/db";
+import type { Database } from "../../shared/db";
 import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 import { toDbError } from "../../shared/db/postgres-error";
 import { domainAuthError } from "../../shared/errors/domain-error";
@@ -58,10 +58,9 @@ const toProfileDbAuthError = (error: unknown, fallbackMessage: string) => {
 };
 
 // サインアップ時にユーザーレコードを作成
-export const createUserRecord = async (values: InsertUserValues) => {
+export const createUserRecord = async (values: InsertUserValues, db: Database) => {
   console.info("Creating user record.", { firebaseId: maskIdentifier(values.firebaseId) });
 
-  const db = createDb();
   const result = await withAuthenticatedRole(db, (tx) => insertUser(tx, values)).catch((e) =>
     toAuthDbError(e, "Failed to create user record."),
   );
@@ -95,10 +94,9 @@ export const createUserRecord = async (values: InsertUserValues) => {
 };
 
 // 自分のプロフィールを取得
-export const getProfile = async (session: DecodedIdToken) => {
+export const getProfile = async (session: DecodedIdToken, db: Database) => {
   console.info("Fetching current user profile.", { firebaseId: maskIdentifier(session.sub) });
 
-  const db = createDb();
   const initialResult = await withRls(db, session, (tx, userId) => selectCurrentUser(tx, userId));
   if (initialResult instanceof Error && !isMissingDatabaseUser(initialResult)) {
     console.error("Initial profile fetch failed.", errorLogFields(initialResult));
@@ -111,7 +109,7 @@ export const getProfile = async (session: DecodedIdToken) => {
           console.warn("Database user missing during profile fetch; creating it.", {
             firebaseId: maskIdentifier(session.sub),
           });
-          const createdUser = await createUserRecord({ firebaseId: session.sub });
+          const createdUser = await createUserRecord({ firebaseId: session.sub }, db);
           if (createdUser instanceof Error) return createdUser;
 
           // createUserRecord の .returning() で全カラム取得済みなので、
@@ -173,8 +171,11 @@ export const getProfile = async (session: DecodedIdToken) => {
 };
 
 // 初回プロフィール設定（username, name）— UPDATE で既存レコードを更新
-export const setupProfile = async (session: DecodedIdToken, values: SetupProfileValues) => {
-  const db = createDb();
+export const setupProfile = async (
+  session: DecodedIdToken,
+  values: SetupProfileValues,
+  db: Database,
+) => {
   const result = await withRls(db, session, (tx, userId) => setupProfileRepo(tx, userId, values));
   if (result instanceof Error) {
     return toProfileDbAuthError(result, "Failed to create profile.");
@@ -198,8 +199,11 @@ export const setupProfile = async (session: DecodedIdToken, values: SetupProfile
 };
 
 // プロフィール詳細を更新（bio, birthplace, birthyear, gender, name）
-export const updateProfile = async (session: DecodedIdToken, values: UpdateUserValues) => {
-  const db = createDb();
+export const updateProfile = async (
+  session: DecodedIdToken,
+  values: UpdateUserValues,
+  db: Database,
+) => {
   const result = await withRls(db, session, (tx, userId) => updateUserDetails(tx, userId, values));
   if (result instanceof Error) {
     return toProfileDbAuthError(result, "Failed to update profile.");
@@ -227,8 +231,7 @@ export const updateProfile = async (session: DecodedIdToken, values: UpdateUserV
 };
 
 // アカウントを論理削除
-export const deleteAccount = async (session: DecodedIdToken) => {
-  const db = createDb();
+export const deleteAccount = async (session: DecodedIdToken, db: Database) => {
   const result = await withRls(db, session, (tx, userId) => softDeleteUser(tx, userId));
   if (result instanceof Error) {
     return toAuthDbError(result, "Failed to delete account.");
@@ -247,8 +250,7 @@ export const deleteAccount = async (session: DecodedIdToken) => {
 };
 
 // 公開プロフィールを取得（username で検索）
-export const getPublicProfile = async (username: string) => {
-  const db = createDb();
+export const getPublicProfile = async (username: string, db: Database) => {
   const result = await withAnonymousRole(db, (tx) => selectUserByUsername(tx, username)).catch(
     (e) => toAuthDbError(e, "Failed to fetch public profile."),
   );

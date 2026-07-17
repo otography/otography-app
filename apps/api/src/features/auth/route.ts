@@ -12,7 +12,7 @@ import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/aut
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { domainAuthError } from "../../shared/errors/domain-error";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import { createUserRecord } from "../user/usecase";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
 
@@ -30,7 +30,7 @@ const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (re
   }
 });
 
-const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings: Bindings }>) => {
+const handleAuthError = (error: AuthError | AuthRestError, c: Context<Env>) => {
   if (error.statusCode >= 500) {
     console.error("Auth request failed.", errorLogFields(error));
   }
@@ -43,7 +43,7 @@ const handleAuthError = (error: AuthError | AuthRestError, c: Context<{ Bindings
   return respondWithError(error, c);
 };
 
-const auth = new Hono<{ Bindings: Bindings }>()
+const auth = new Hono<Env>()
   .post(
     "/api/auth/sign-in",
     csrfProtection(),
@@ -79,7 +79,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
         firebaseId: maskIdentifier(result.localId),
       });
 
-      const userRecord = await createUserRecord({ firebaseId: result.localId });
+      const userRecord = await createUserRecord({ firebaseId: result.localId }, c.var.db());
       if (userRecord instanceof Error) return handleAuthError(userRecord, c);
       console.info("Email sign-in user record ensured.", {
         firebaseId: maskIdentifier(result.localId),
@@ -134,7 +134,7 @@ const auth = new Hono<{ Bindings: Bindings }>()
       });
 
       // DB にユーザーレコード作成（firebase_id のみ、username は null）
-      const userRecord = await createUserRecord({ firebaseId: signUpResult.localId });
+      const userRecord = await createUserRecord({ firebaseId: signUpResult.localId }, c.var.db());
       if (userRecord instanceof Error) return handleAuthError(userRecord, c);
       console.info("Email sign-up user record created.", {
         firebaseId: maskIdentifier(signUpResult.localId),

@@ -1,6 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { createDb } from "../../shared/db";
+import type { Database } from "../../shared/db";
 import { withRls } from "../../shared/db/rls";
 import { toDbError } from "../../shared/db/postgres-error";
 import { domainDbError } from "../../shared/errors/domain-error";
@@ -11,8 +11,8 @@ import type { ToggleLikeResponse } from "./model";
 export const toggleLike = async (
   session: DecodedIdToken,
   postId: string,
+  db: Database,
 ): Promise<ToggleLikeResponse | DbError> => {
-  const db = createDb();
   const result = await withRls(db, session, async (tx, userId) => {
     const post = await findActivePostById(tx, postId);
     if (!post) {

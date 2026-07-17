@@ -8,7 +8,7 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
 // レートリミットミドルウェアをバイパス（レートリミットテストは別ファイルで実施）
@@ -18,27 +18,30 @@ vi.mock("../../../shared/middleware/rate-limit.middleware", () => ({
 }));
 
 import { signUpWithPassword } from "../../../shared/firebase/firebase-rest";
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 
 // withRls のモック: Firebase ID → UUID ルックアップ + トランザクション
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+          })),
         })),
       })),
-    })),
-    transaction: vi.fn(async (fn) => fn(txMethods)),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([{ id: uuid }]),
+      transaction: vi.fn(async (fn) => fn(txMethods)),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([{ id: uuid }]),
+          })),
         })),
       })),
-    })),
+    },
+    end: async () => undefined,
   } as never);
 };
 

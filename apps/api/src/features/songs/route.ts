@@ -2,7 +2,7 @@ import { type } from "arktype";
 import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import type { Cursor } from "../../shared/pagination";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { songCreateBodySchema } from "./model";
@@ -24,7 +24,7 @@ const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (resul
   }
 });
 
-const songs = new Hono<{ Bindings: Bindings }>()
+const songs = new Hono<Env>()
   .get("/api/songs", async (c) => {
     const limitParam = c.req.query("limit");
     const cursorCreatedAt = c.req.query("cursor[createdAt]");
@@ -36,14 +36,14 @@ const songs = new Hono<{ Bindings: Bindings }>()
       cursor = { createdAt: cursorCreatedAt, id: cursorId };
     }
 
-    const result = await getSongs({ limit, cursor });
+    const result = await getSongs({ limit, cursor }, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
     return c.json(result);
   })
   .get("/api/songs/:id", songIdParamValidator, async (c) => {
     const { id } = c.req.valid("param");
 
-    const result = await getSong(id);
+    const result = await getSong(id, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -56,7 +56,7 @@ const songs = new Hono<{ Bindings: Bindings }>()
     songCreateValidator,
     async (c) => {
       const payload = c.req.valid("json");
-      const result = await registerSong(payload);
+      const result = await registerSong(payload, c.var.db());
 
       if (result instanceof Error) return respondWithError(result, c);
 
@@ -70,7 +70,7 @@ const songs = new Hono<{ Bindings: Bindings }>()
     songIdParamValidator,
     async (c) => {
       const { id } = c.req.valid("param");
-      const result = await syncSong(id);
+      const result = await syncSong(id, c.var.db());
 
       if (result instanceof Error) return respondWithError(result, c);
 

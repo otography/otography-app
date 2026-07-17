@@ -1,5 +1,5 @@
 import { DbError, RlsError } from "@repo/errors";
-import { createDb } from "../../shared/db";
+import type { DatabaseOrTransaction, Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { toDbError } from "../../shared/db/postgres-error";
@@ -20,7 +20,7 @@ const toSongAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
 
 // アーティストをバッチで find-or-create
 const resolveArtistIds = async (
-  db: import("../../shared/db").DatabaseOrTransaction,
+  db: DatabaseOrTransaction,
   artists: { appleMusicId: string; name: string }[],
 ): Promise<string[] | DbError> => {
   return findOrCreateArtists(db, artists).catch((e) => toDbError(e, "Failed to resolve artists."));
@@ -36,8 +36,10 @@ const normalizeSongDbError = (error: unknown, fallbackMessage: string) => {
   return toSongAppleMusicIdError(error, fallbackMessage);
 };
 
-export const getSongs = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
-  const db = createDb();
+export const getSongs = async (
+  pagination: { limit?: number; cursor?: Cursor | null } | undefined,
+  db: Database,
+) => {
   const limit = normalizeLimit(pagination?.limit);
   const rows = await withAnonymousRole(db, (tx) =>
     listSongs(tx, { limit, cursor: pagination?.cursor }),
@@ -52,8 +54,7 @@ export const getSongs = async (pagination?: { limit?: number; cursor?: Cursor | 
   return { songs: trimmed, pagination: paginationMeta };
 };
 
-export const getSong = async (id: string) => {
-  const db = createDb();
+export const getSong = async (id: string, db: Database) => {
   const song = await withAnonymousRole(db, (tx) => findSongById(tx, id));
   if (song instanceof Error) {
     return toDbError(song, "Failed to fetch song.");
@@ -68,14 +69,13 @@ export const getSong = async (id: string) => {
   return { song };
 };
 
-export const registerSong = async (payload: SongCreateBody) => {
+export const registerSong = async (payload: SongCreateBody, db: Database) => {
   const apiResponse = await fetchSong(payload.appleMusicId);
   if (apiResponse instanceof Error) return apiResponse;
 
   const input = toSongInput(apiResponse);
   if (input instanceof Error) return input;
 
-  const db = createDb();
   const result = await withAuthenticatedRole(db, async (tx) => {
     const artistIds = await resolveArtistIds(tx, input.artistEntries);
     if (artistIds instanceof Error) return artistIds;
@@ -94,9 +94,8 @@ export const registerSong = async (payload: SongCreateBody) => {
   return { song: result };
 };
 
-export const syncSong = async (id: string) => {
+export const syncSong = async (id: string, db: Database) => {
   // 既存曲を取得（anon で可）
-  const db = createDb();
   const existing = await withAnonymousRole(db, (tx) => findSongById(tx, id));
   if (existing instanceof Error) {
     return toDbError(existing, "Failed to fetch song.");

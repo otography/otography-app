@@ -7,11 +7,6 @@ const mocks = vi.hoisted(() => ({
   findActivePostById: vi.fn(),
   countPostLikes: vi.fn(),
   withRls: vi.fn(),
-  createDb: vi.fn(),
-}));
-
-vi.mock("../../../shared/db", () => ({
-  createDb: mocks.createDb,
 }));
 
 vi.mock("../../../shared/db/rls", () => ({
@@ -42,7 +37,6 @@ const postId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
 describe("post-likes usecase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createDb.mockReturnValue(db);
     mocks.withRls.mockImplementation(async (_db, _session, fn) => await fn(tx, "user-id"));
   });
 
@@ -52,7 +46,7 @@ describe("post-likes usecase", () => {
       mocks.togglePostLike.mockResolvedValue({ liked: true });
       mocks.countPostLikes.mockResolvedValue(1);
 
-      const result = await toggleLike(session, postId);
+      const result = await toggleLike(session, postId, db);
 
       expect(result).toEqual({ liked: true, likeCount: 1 });
     });
@@ -62,7 +56,7 @@ describe("post-likes usecase", () => {
       mocks.togglePostLike.mockResolvedValue({ liked: false });
       mocks.countPostLikes.mockResolvedValue(0);
 
-      const result = await toggleLike(session, postId);
+      const result = await toggleLike(session, postId, db);
 
       expect(result).toEqual({ liked: false, likeCount: 0 });
     });
@@ -70,7 +64,7 @@ describe("post-likes usecase", () => {
     it("returns 404 DbError when post not found", async () => {
       mocks.findActivePostById.mockResolvedValue(null);
 
-      const result = await toggleLike(session, postId);
+      const result = await toggleLike(session, postId, db);
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({
@@ -86,7 +80,7 @@ describe("post-likes usecase", () => {
       mocks.togglePostLike.mockResolvedValue({ liked: true });
       mocks.countPostLikes.mockResolvedValue(3);
 
-      const result = await toggleLike(session, postId);
+      const result = await toggleLike(session, postId, db);
 
       expect(result).toEqual({ liked: true, likeCount: 3 });
       // 全操作が tx に対して実行される
@@ -99,7 +93,7 @@ describe("post-likes usecase", () => {
       const cause = new RlsError({ message: "User not found in database." });
       mocks.withRls.mockResolvedValue(cause);
 
-      const result = await toggleLike(session, postId);
+      const result = await toggleLike(session, postId, db);
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({

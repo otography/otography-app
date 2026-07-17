@@ -8,7 +8,7 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
 // レートリミットミドルウェアをバイパス（レートリミットテストは別ファイルで実施）
@@ -18,37 +18,40 @@ vi.mock("../../../shared/middleware/rate-limit.middleware", () => ({
 }));
 
 import { signInWithPassword } from "../../../shared/firebase/firebase-rest";
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 
 const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([])),
-    transaction: vi.fn(async (fn) =>
-      fn({
-        execute: vi.fn(() => Promise.resolve(rows)),
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            onConflictDoUpdate: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue(rows),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([])),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          execute: vi.fn(() => Promise.resolve(rows)),
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue(rows),
+              })),
             })),
           })),
-        })),
-        select: vi.fn(() => ({
-          from: vi.fn(() => ({
-            where: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue(rows),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue(rows),
+              })),
             })),
           })),
-        })),
-      }),
-    ),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue(rows),
+        }),
+      ),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue(rows),
+          })),
         })),
       })),
-    })),
+    },
+    end: async () => undefined,
   } as never);
 };
 
@@ -137,19 +140,22 @@ describe("POST /api/auth/sign-in", () => {
         refreshToken: "test-refresh",
       });
       mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
-      vi.mocked(createDb).mockReturnValue({
-        transaction: vi.fn(async (fn) =>
-          fn({
-            execute: vi.fn().mockRejectedValue(new Error("db unavailable")),
-            insert: vi.fn(() => ({
-              values: vi.fn(() => ({
-                onConflictDoUpdate: vi.fn(() => ({
-                  returning: vi.fn().mockRejectedValue(new Error("db unavailable")),
+      vi.mocked(createDbClient).mockReturnValue({
+        db: {
+          transaction: vi.fn(async (fn) =>
+            fn({
+              execute: vi.fn().mockRejectedValue(new Error("db unavailable")),
+              insert: vi.fn(() => ({
+                values: vi.fn(() => ({
+                  onConflictDoUpdate: vi.fn(() => ({
+                    returning: vi.fn().mockRejectedValue(new Error("db unavailable")),
+                  })),
                 })),
               })),
-            })),
-          }),
-        ),
+            }),
+          ),
+        },
+        end: async () => undefined,
       } as never);
 
       const res = await testRequest("/api/auth/sign-in", {
@@ -187,7 +193,7 @@ describe("POST /api/auth/sign-in", () => {
       expect(await res.json()).toEqual({ message: "Signed in successfully." });
       expect(res.getCookie("otography_session")).toBe("test-session-cookie");
       expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(expect.anything(), "test-refresh");
-      expect(createDb).toHaveBeenCalled();
+      expect(createDbClient).toHaveBeenCalled();
     });
   });
 

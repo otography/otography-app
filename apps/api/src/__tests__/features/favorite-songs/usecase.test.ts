@@ -4,17 +4,12 @@ import { DbError, RlsError } from "@repo/errors";
 
 const mocks = vi.hoisted(() => ({
   addFavoriteSong: vi.fn(),
-  createDb: vi.fn(),
   createSongFromAppleMusic: vi.fn(),
   fetchSong: vi.fn(),
   findSongByAppleMusicId: vi.fn(),
   listFavoriteSongs: vi.fn(),
   removeFavoriteSong: vi.fn(),
   withRls: vi.fn(),
-}));
-
-vi.mock("../../../shared/db", () => ({
-  createDb: mocks.createDb,
 }));
 
 vi.mock("../../../shared/db/rls", () => ({
@@ -49,6 +44,7 @@ const session = {
 } as DecodedIdToken;
 
 const tx = { kind: "transaction" } as never;
+let db: never;
 
 const favoriteRow = {
   userId: "user-id",
@@ -72,7 +68,7 @@ const createExistingSongQuery = (rows: unknown[]) => ({
 describe("favorite songs usecase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createDb.mockReturnValue(createExistingSongQuery([{ id: "existing-song-id" }]));
+    db = createExistingSongQuery([{ id: "existing-song-id" }]) as never;
     mocks.withRls.mockImplementation(async (_db, _session, fn) => await fn(tx, "user-id"));
   });
 
@@ -95,7 +91,7 @@ describe("favorite songs usecase", () => {
         },
       ]);
 
-      const result = await getFavoriteSongs(session);
+      const result = await getFavoriteSongs(session, db);
 
       expect(result).toMatchObject({
         favorites: [
@@ -126,7 +122,7 @@ describe("favorite songs usecase", () => {
       const cause = new RlsError({ message: "User not found in database." });
       mocks.withRls.mockResolvedValue(cause);
 
-      const result = await getFavoriteSongs(session);
+      const result = await getFavoriteSongs(session, db);
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({
@@ -146,12 +142,16 @@ describe("favorite songs usecase", () => {
       });
       mocks.addFavoriteSong.mockResolvedValue([favoriteRow]);
 
-      const result = await registerFavoriteSong(session, {
-        appleMusicId: "apple-music-song-id",
-        comment: "great",
-        emoji: "star",
-        color: "#ff0000",
-      });
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: "great",
+          emoji: "star",
+          color: "#ff0000",
+        },
+        db,
+      );
 
       expect(result).toEqual({ favorite: favoriteRow });
       expect(mocks.fetchSong).not.toHaveBeenCalled();
@@ -163,7 +163,7 @@ describe("favorite songs usecase", () => {
     });
 
     it("fetches and creates the song before registering when it is not stored yet", async () => {
-      mocks.createDb.mockReturnValue(createExistingSongQuery([]));
+      db = createExistingSongQuery([]) as never;
       mocks.fetchSong.mockResolvedValue({
         id: "apple-music-song-id",
         attributes: {
@@ -182,12 +182,16 @@ describe("favorite songs usecase", () => {
       ]);
       mocks.addFavoriteSong.mockResolvedValue([{ ...favoriteRow, songId: "created-song-id" }]);
 
-      const result = await registerFavoriteSong(session, {
-        appleMusicId: "apple-music-song-id",
-        comment: null,
-        emoji: null,
-        color: null,
-      });
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
 
       expect(result).toEqual({ favorite: { ...favoriteRow, songId: "created-song-id" } });
       expect(mocks.createSongFromAppleMusic).toHaveBeenCalledWith(
@@ -209,15 +213,19 @@ describe("favorite songs usecase", () => {
         message: "指定された楽曲が見つかりません。",
         statusCode: 404,
       });
-      mocks.createDb.mockReturnValue(createExistingSongQuery([]));
+      db = createExistingSongQuery([]) as never;
       mocks.fetchSong.mockResolvedValue(error);
 
-      const result = await registerFavoriteSong(session, {
-        appleMusicId: "missing-song-id",
-        comment: null,
-        emoji: null,
-        color: null,
-      });
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "missing-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
 
       expect(result).toBe(error);
       expect(mocks.withRls).not.toHaveBeenCalled();
@@ -231,12 +239,16 @@ describe("favorite songs usecase", () => {
       mocks.findSongByAppleMusicId.mockResolvedValue({ id: "song-id" });
       mocks.addFavoriteSong.mockResolvedValue(error);
 
-      const result = await registerFavoriteSong(session, {
-        appleMusicId: "apple-music-song-id",
-        comment: null,
-        emoji: null,
-        color: null,
-      });
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
 
       expect(result).toBe(error);
     });
@@ -245,12 +257,16 @@ describe("favorite songs usecase", () => {
       const cause = new RlsError({ message: "User not found in database." });
       mocks.withRls.mockResolvedValue(cause);
 
-      const result = await registerFavoriteSong(session, {
-        appleMusicId: "apple-music-song-id",
-        comment: null,
-        emoji: null,
-        color: null,
-      });
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({
@@ -266,7 +282,7 @@ describe("favorite songs usecase", () => {
       mocks.findSongByAppleMusicId.mockResolvedValue({ id: "song-id" });
       mocks.removeFavoriteSong.mockResolvedValue([{ songId: "song-id" }]);
 
-      const result = await deleteFavoriteSong(session, "apple-music-song-id");
+      const result = await deleteFavoriteSong(session, "apple-music-song-id", db);
 
       expect(result).toEqual({ deleted: true });
       expect(mocks.findSongByAppleMusicId).toHaveBeenCalledWith(tx, "apple-music-song-id");
@@ -276,7 +292,7 @@ describe("favorite songs usecase", () => {
     it("returns 404 when there is no favorite to remove", async () => {
       mocks.findSongByAppleMusicId.mockResolvedValue(null);
 
-      const result = await deleteFavoriteSong(session, "apple-music-song-id");
+      const result = await deleteFavoriteSong(session, "apple-music-song-id", db);
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({

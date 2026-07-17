@@ -2,7 +2,7 @@ import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
 import { and, eq, isNull } from "drizzle-orm";
 import { fetchSong } from "../../shared/apple-music";
-import { createDb } from "../../shared/db";
+import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { songs } from "../../shared/db/schema";
@@ -20,9 +20,9 @@ import type { AddFavoriteSongInput } from "./model";
 // お気に入り楽曲一覧取得
 export const getFavoriteSongs = async (
   session: DecodedIdToken,
+  db: Database,
   pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
-  const db = createDb();
   const limit = normalizeLimit(pagination?.limit);
   const result = await withRls(db, session, async (tx, userId) => {
     return listFavoriteSongs(tx, userId, { limit, cursor: pagination?.cursor });
@@ -56,9 +56,9 @@ export const getFavoriteSongs = async (
 // 他人のお気に入り楽曲一覧取得（RLS 不要）
 export const getPublicFavoriteSongs = async (
   userId: string,
+  db: Database,
   pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
-  const db = createDb();
   const limit = normalizeLimit(pagination?.limit);
   const result = await listFavoriteSongsPublic(db, userId, {
     limit,
@@ -91,9 +91,9 @@ export const getPublicFavoriteSongs = async (
 export const registerFavoriteSong = async (
   session: DecodedIdToken,
   input: AddFavoriteSongInput,
+  db: Database,
 ) => {
   // トランザクション外で DB を確認し、未登録なら事前に Apple Music API から取得
-  const db = createDb();
   const existing = await db
     .select({ id: songs.id })
     .from(songs)
@@ -170,8 +170,11 @@ export const registerFavoriteSong = async (
 };
 
 // お気に入り楽曲削除（appleMusicId 指定）
-export const deleteFavoriteSong = async (session: DecodedIdToken, appleMusicId: string) => {
-  const db = createDb();
+export const deleteFavoriteSong = async (
+  session: DecodedIdToken,
+  appleMusicId: string,
+  db: Database,
+) => {
   const result = await withRls(db, session, async (tx, userId) => {
     const song = await findSongByAppleMusicId(tx, appleMusicId);
     if (!song) return [];

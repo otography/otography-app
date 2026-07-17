@@ -20,12 +20,12 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
 // モック適用後にテスト対象をインポート
 import { signInWithPassword } from "../../../shared/firebase/firebase-rest";
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 import { app } from "../../../index";
 
 /** AUTH_SIGNIN_RATE_LIMITER の閾値 */
@@ -52,34 +52,37 @@ const createRateLimitMockEnv = () => {
  * DB モック: ユーザーレコード作成成功をシミュレート
  */
 const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([])),
-    transaction: vi.fn(async (fn) =>
-      fn({
-        execute: vi.fn(() => Promise.resolve([])),
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            onConflictDoUpdate: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue(rows),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([])),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          execute: vi.fn(() => Promise.resolve([])),
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue(rows),
+              })),
             })),
           })),
-        })),
-        select: vi.fn(() => ({
-          from: vi.fn(() => ({
-            where: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue(rows),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue(rows),
+              })),
             })),
           })),
-        })),
-      }),
-    ),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue(rows),
+        }),
+      ),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue(rows),
+          })),
         })),
       })),
-    })),
+    },
+    end: async () => undefined,
   } as never);
 };
 

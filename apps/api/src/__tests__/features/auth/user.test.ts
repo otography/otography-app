@@ -9,48 +9,54 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 
 // withRls の新しいモック: Firebase ID → UUID ルックアップ + トランザクション
 const mockDbWithRls = (uuid: string, txMethods: Record<string, unknown>) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: uuid }])),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([{ id: uuid }]),
+          })),
         })),
       })),
-    })),
-    transaction: vi.fn(async (fn) => fn(txMethods)),
+      transaction: vi.fn(async (fn) => fn(txMethods)),
+    },
+    end: async () => undefined,
   } as never);
 };
 
 // selectUserByUsername など公開 read 用のモック
 const mockDbWithSelect = (resolvedValue: unknown[]) => {
-  vi.mocked(createDb).mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([])),
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          limit: vi.fn().mockResolvedValue(resolvedValue),
-        })),
-      })),
-    })),
-    transaction: vi.fn(async (fn) =>
-      fn({
-        execute: vi.fn(() => Promise.resolve([])),
-        select: vi.fn(() => ({
-          from: vi.fn(() => ({
-            where: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue(resolvedValue),
-            })),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      execute: vi.fn(() => Promise.resolve([])),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue(resolvedValue),
           })),
         })),
-      }),
-    ),
+      })),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          execute: vi.fn(() => Promise.resolve([])),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue(resolvedValue),
+              })),
+            })),
+          })),
+        }),
+      ),
+    },
+    end: async () => undefined,
   } as never);
 };
 
@@ -135,62 +141,63 @@ describe("GET /api/user", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    // 1回目: withRls → resolveFirebaseId → db.execute() → ユーザーなし
-    vi.mocked(createDb).mockReturnValueOnce({
-      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: null }])),
-    } as never);
-    // 2回目: insertUser → withAuthenticatedRole → sync_firebase_user()
-    vi.mocked(createDb).mockReturnValueOnce({
-      execute: vi.fn(() => Promise.resolve([])),
-      transaction: vi.fn(async (fn) =>
-        fn({
-          execute: vi.fn(() =>
-            Promise.resolve([
-              {
-                id: "uuid-user",
-                firebaseId: "user123",
-                username: null,
-                name: null,
-                bio: null,
-                birthplace: null,
-                birthyear: null,
-                gender: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-01T00:00:00.000Z",
-                deletedAt: null,
-              },
-            ]),
-          ),
-          insert: vi.fn(() => ({
-            values: vi.fn(() => ({
-              onConflictDoUpdate: vi.fn(() => ({
-                returning: vi.fn().mockResolvedValue([
-                  {
-                    id: "uuid-user",
-                    firebaseId: "user123",
-                    username: null,
-                    name: null,
-                    bio: null,
-                    birthplace: null,
-                    birthyear: null,
-                    gender: null,
-                    createdAt: "2026-01-01T00:00:00.000Z",
-                    updatedAt: "2026-01-01T00:00:00.000Z",
-                    deletedAt: null,
-                  },
-                ]),
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {
+        execute: vi
+          .fn()
+          .mockResolvedValueOnce([{ resolve_firebase_id: null }])
+          .mockResolvedValue([]),
+        transaction: vi.fn(async (fn) =>
+          fn({
+            execute: vi.fn(() =>
+              Promise.resolve([
+                {
+                  id: "uuid-user",
+                  firebaseId: "user123",
+                  username: null,
+                  name: null,
+                  bio: null,
+                  birthplace: null,
+                  birthyear: null,
+                  gender: null,
+                  createdAt: "2026-01-01T00:00:00.000Z",
+                  updatedAt: "2026-01-01T00:00:00.000Z",
+                  deletedAt: null,
+                },
+              ]),
+            ),
+            insert: vi.fn(() => ({
+              values: vi.fn(() => ({
+                onConflictDoUpdate: vi.fn(() => ({
+                  returning: vi.fn().mockResolvedValue([
+                    {
+                      id: "uuid-user",
+                      firebaseId: "user123",
+                      username: null,
+                      name: null,
+                      bio: null,
+                      birthplace: null,
+                      birthyear: null,
+                      gender: null,
+                      createdAt: "2026-01-01T00:00:00.000Z",
+                      updatedAt: "2026-01-01T00:00:00.000Z",
+                      deletedAt: null,
+                    },
+                  ]),
+                })),
               })),
             })),
-          })),
-          select: vi.fn(() => ({
-            from: vi.fn(() => ({
-              where: vi.fn(() => ({
-                limit: vi.fn().mockResolvedValue([]),
+            select: vi.fn(() => ({
+              from: vi.fn(() => ({
+                where: vi.fn(() => ({
+                  limit: vi.fn().mockResolvedValue([]),
+                })),
               })),
             })),
-          })),
-        }),
-      ),
+          }),
+        ),
+      },
+      end: async () => undefined,
     } as never);
 
     const res = await testRequest("/api/user", {
@@ -247,7 +254,7 @@ describe("PATCH /api/user/profile", () => {
       sub: "user123",
       email: "test@example.com",
     });
-    mockDbWithRls("uuid-user", {
+    const txMethods = {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
@@ -270,7 +277,22 @@ describe("PATCH /api/user/profile", () => {
         })),
       })),
       execute: vi.fn().mockResolvedValue([]),
-    });
+    };
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {
+        execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
+        select: vi.fn(() => ({
+          from: vi.fn(() => ({
+            where: vi.fn(() => ({
+              limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+            })),
+          })),
+        })),
+        update: txMethods.update,
+        transaction: vi.fn(async (fn) => fn(txMethods)),
+      },
+      end: async () => undefined,
+    } as never);
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",

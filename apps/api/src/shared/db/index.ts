@@ -11,12 +11,20 @@ import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
-export const createDb = () => {
-  const client = postgres(env.DATABASE_URL, { prepare: false });
+export const createDbClient = () => {
+  const client = postgres(env.DATABASE_URL, {
+    prepare: false,
+    max: 5,
+    connect_timeout: 10,
+  });
 
-  return drizzle({ client, jit: false });
+  return {
+    db: drizzle({ client, jit: false }),
+    end: () => client.end({ timeout: 5 }),
+  };
 };
 
-export type Database = ReturnType<typeof createDb>;
+export type DatabaseClient = ReturnType<typeof createDbClient>;
+export type Database = DatabaseClient["db"];
 export type DatabaseTransaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 export type DatabaseOrTransaction = Database | DatabaseTransaction;

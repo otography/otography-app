@@ -1,5 +1,5 @@
 import { DbError } from "@repo/errors";
-import { createDb } from "../../shared/db";
+import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { toDbError } from "../../shared/db/postgres-error";
@@ -26,8 +26,10 @@ const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   });
 };
 
-export const getArtists = async (pagination?: { limit?: number; cursor?: Cursor | null }) => {
-  const db = createDb();
+export const getArtists = async (
+  pagination: { limit?: number; cursor?: Cursor | null } | undefined,
+  db: Database,
+) => {
   const limit = normalizeLimit(pagination?.limit);
   const rows = await listArtists(db, { limit, cursor: pagination?.cursor }).catch((e) =>
     toDbError(e, "Failed to fetch artists."),
@@ -40,8 +42,7 @@ export const getArtists = async (pagination?: { limit?: number; cursor?: Cursor 
   return { artists: trimmed, pagination: paginationMeta };
 };
 
-export const getArtist = async (id: string) => {
-  const db = createDb();
+export const getArtist = async (id: string, db: Database) => {
   const artist = await findArtistById(db, id).catch((e) => toDbError(e, "Failed to fetch artist."));
   if (artist instanceof Error) return artist;
   if (artist === null) {
@@ -54,7 +55,7 @@ export const getArtist = async (id: string) => {
   return { artist };
 };
 
-export const registerArtist = async (payload: ArtistCreateBody) => {
+export const registerArtist = async (payload: ArtistCreateBody, db: Database) => {
   const apiResponse = await fetchArtist(payload.appleMusicId);
   if (apiResponse instanceof Error) return apiResponse;
 
@@ -66,7 +67,6 @@ export const registerArtist = async (payload: ArtistCreateBody) => {
     birthdate: null,
   };
 
-  const db = createDb();
   const rows = await createArtist(db, dbValues).catch((e) =>
     toArtistAppleMusicIdError(e, "Failed to create artist."),
   );
@@ -85,8 +85,7 @@ type UpdateArtistInput = {
   payload: ArtistUpdateDbModel;
 };
 
-export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
-  const db = createDb();
+export const modifyArtist = async ({ id, payload }: UpdateArtistInput, db: Database) => {
   const updatedArtist = await updateArtistById(db, { id, values: payload }).catch((e) =>
     toArtistAppleMusicIdError(e, "Failed to update artist."),
   );
@@ -101,8 +100,7 @@ export const modifyArtist = async ({ id, payload }: UpdateArtistInput) => {
   return { artist: updatedArtist };
 };
 
-export const removeArtist = async (id: string) => {
-  const db = createDb();
+export const removeArtist = async (id: string, db: Database) => {
   const deletedArtist = await softDeleteArtistById(db, id).catch((e) =>
     toDbError(e, "Failed to delete artist."),
   );
