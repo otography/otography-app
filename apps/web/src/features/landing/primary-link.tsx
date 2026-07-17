@@ -36,6 +36,7 @@ type PrimaryLinkProps = {
     width?: string;
     display?: string;
     minWidth?: string;
+    justifySelf?: string;
     "@media (max-width: 640px)"?: { width?: string; display?: string };
   }>;
 };

@@ -89,6 +89,12 @@ const styles = stylex.create({
     display: "grid",
     gap: "1rem",
     justifyItems: "center",
+    "@media (max-width: 980px)": {
+      justifySelf: "center",
+    },
+  },
+  finalCtaPrimaryLink: {
+    justifySelf: "center",
   },
   finalCtaSmall: {
     color: "#2b303d",
@@ -133,7 +139,7 @@ export function FinalCta({ ctaHref }: { ctaHref: string }) {
         <BudouxText text="あなたの言葉が、誰かの音楽体験を変えるかもしれない。" />
       </p>
       <div {...stylex.props(styles.finalCtaActions)}>
-        <PrimaryLink href={ctaHref} />
+        <PrimaryLink href={ctaHref} style={styles.finalCtaPrimaryLink} />
         <small {...stylex.props(styles.finalCtaSmall)}>
           <BudouxText text="アカウント登録なしでも閲覧できます" />
         </small>
