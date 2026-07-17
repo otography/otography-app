@@ -1,8 +1,8 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
-import { createSong, createGenre, linkSongGenre } from "../../helpers/db/fixtures";
-import { genres, songGenres, songs } from "../../../shared/db/schema";
+import { createArtist, createGenre, createSong, linkSongGenre } from "../../helpers/db/fixtures";
+import { artists, genres, songArtists, songGenres, songs } from "../../../shared/db/schema";
 import { createSongFull } from "../../../features/songs/repository";
 
 const sql = createTestSql();
@@ -86,6 +86,84 @@ describe("genres と song_genres の同期", () => {
       .from(songs)
       .where(eq(songs.id, deletedSongId));
     expect(rows[0]?.deletedAt).toBeNull();
+  });
+
+  it("同じ appleMusicId で createSongFull を 2 回呼んでも PK 違反にならず song が返る", async () => {
+    // Given: アーティスト・ジャンルを用意
+    const artist = await createArtist(db, { name: "Artist A" });
+    const songValues = {
+      title: "Repeat Song",
+      appleMusicId: "am-repeat-song",
+      length: null as number | null,
+      isrcs: null as string | null,
+    };
+
+    // When: 同じ appleMusicId + 同じアーティスト/ジャンルで 2 回呼ぶ
+    const first = await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues,
+        artistIds: [artist.id],
+        genreNames: ["Pop"],
+      }),
+    );
+    const second = await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues,
+        artistIds: [artist.id],
+        genreNames: ["Pop"],
+      }),
+    );
+
+    // Then: どちらも PK 違反にならず song が返る
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(second!.id).toBe(first!.id);
+  });
+
+  it("再登録時に紐付けが最新データへ全置換される", async () => {
+    // Given: 1 回目は アーティスト A + ジャンル "Pop"
+    const artistA = await createArtist(db, { name: "Artist A" });
+    const artistB = await createArtist(db, { name: "Artist B" });
+    const songValues = {
+      title: "Replace Song",
+      appleMusicId: "am-replace-song",
+      length: null as number | null,
+      isrcs: null as string | null,
+    };
+
+    await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues,
+        artistIds: [artistA.id],
+        genreNames: ["Pop"],
+      }),
+    );
+
+    // When: 2 回目は アーティスト B + ジャンル "Rock" で全置換
+    const song = await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues,
+        artistIds: [artistB.id],
+        genreNames: ["Rock"],
+      }),
+    );
+
+    // Then: song_artists / song_genres には B / "Rock" のみ残る
+    expect(song).not.toBeNull();
+
+    const linkedArtists = await db
+      .select({ name: artists.name })
+      .from(songArtists)
+      .innerJoin(artists, eq(songArtists.artistId, artists.id))
+      .where(eq(songArtists.songId, song!.id));
+    expect(linkedArtists).toEqual([{ name: "Artist B" }]);
+
+    const linkedGenres = await db
+      .select({ name: genres.name })
+      .from(songGenres)
+      .innerJoin(genres, eq(songGenres.genreId, genres.id))
+      .where(eq(songGenres.songId, song!.id));
+    expect(linkedGenres).toEqual([{ name: "Rock" }]);
   });
 
   afterAll(async () => {

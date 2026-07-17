@@ -46,21 +46,6 @@ const findOrCreateGenreIds = async (db: DatabaseOrTransaction, genreNames: strin
   return found.map((r) => r.id);
 };
 
-// song_genres の紐付けを追加
-const addSongGenres = async (db: DatabaseOrTransaction, songId: string, genreNames: string[]) => {
-  if (genreNames.length === 0) return;
-
-  const genreIds = await findOrCreateGenreIds(db, genreNames);
-  if (genreIds.length > 0) {
-    await db.insert(songGenres).values(
-      genreIds.map((genreId) => ({
-        songId,
-        genreId,
-      })),
-    );
-  }
-};
-
 // song_genres の紐付けを全置換
 const replaceSongGenres = async (
   db: DatabaseOrTransaction,
@@ -79,19 +64,6 @@ const replaceSongGenres = async (
       })),
     );
   }
-};
-
-// song_artists の紐付けを追加
-const addSongArtists = async (db: DatabaseOrTransaction, songId: string, artistIds: string[]) => {
-  if (artistIds.length === 0) return;
-
-  await db.insert(songArtists).values(
-    artistIds.map((artistId) => ({
-      songId,
-      artistId,
-      isGuest: false,
-    })),
-  );
 };
 
 // song_artists の紐付けを全置換
@@ -136,8 +108,8 @@ export const createSongFull = async (
   const [song] = rows;
   if (!song) return null;
 
-  await addSongArtists(tx, song.id, artistIds);
-  await addSongGenres(tx, song.id, genreNames);
+  await replaceSongArtists(tx, song.id, artistIds);
+  await replaceSongGenres(tx, song.id, genreNames);
 
   return song;
 };
