@@ -28,6 +28,8 @@ export const refreshSession = async (
   const sessionCookie = await createSessionCookie(exchangeResult.id_token);
   if (sessionCookie instanceof Error) return sessionCookie;
 
+  // 直前の refresh token 交換が Firebase 側で失効・無効化ユーザーを拒否済みのため、
+  // verifySessionCookie（checkRevoked=false）で十分。厳格検証は冗長。
   const claims = await verifySessionCookie(sessionCookie);
   if (claims instanceof Error) return claims;
 

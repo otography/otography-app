@@ -10,6 +10,7 @@ vi.mock("../shared/middleware/csrf.middleware", () => ({
 }));
 
 const mockVerifySessionCookie: Mock = vi.fn();
+const mockVerifySessionCookieStrict: Mock = vi.fn();
 const mockCreateSessionCookie: Mock = vi.fn();
 const mockRevokeRefreshTokens: Mock = vi.fn();
 const mockVerifyIdToken: Mock = vi.fn();
@@ -39,6 +40,7 @@ vi.mock("@repo/firebase-auth-rest/auth", () => ({
 vi.mock("../shared/firebase/firebase-admin", () => ({
   createSessionCookie: mockCreateSessionCookie,
   verifySessionCookie: mockVerifySessionCookie,
+  verifySessionCookieStrict: mockVerifySessionCookieStrict,
   revokeRefreshTokens: mockRevokeRefreshTokens,
 }));
 
@@ -67,4 +69,5 @@ export {
   mockSetRefreshTokenCookie,
   mockVerifyIdToken,
   mockVerifySessionCookie,
+  mockVerifySessionCookieStrict,
 };
