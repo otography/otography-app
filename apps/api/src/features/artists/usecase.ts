@@ -1,22 +1,13 @@
-import { DbError } from "@repo/errors";
+import { DbError, RlsError } from "@repo/errors";
 import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { toDbError } from "../../shared/db/postgres-error";
+import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchArtist } from "../../shared/apple-music";
 import { domainDbError } from "../../shared/errors/domain-error";
-import {
-  type ArtistCreateBody,
-  type ArtistCreateDbValues,
-  type ArtistUpdateDbModel,
-} from "./model";
-import {
-  createArtist,
-  findArtistById,
-  listArtists,
-  softDeleteArtistById,
-  updateArtistById,
-} from "./repository";
+import { type ArtistCreateBody, type ArtistCreateDbValues } from "./model";
+import { createArtist, findArtistById, listArtists, updateArtistById } from "./repository";
 
 const ARTIST_APPLE_MUSIC_ID_KEY = "artists_apple_music_id_key";
 
@@ -26,15 +17,27 @@ const toArtistAppleMusicIdError = (error: unknown, fallbackMessage: string) => {
   });
 };
 
+// withAuthenticatedRole / withAnonymousRole はエラーを RlsError として返す（throw しない）。
+// 結果を DbError に変換するヘルパー。cause チェーンから unique violation を検出する。
+const normalizeArtistDbError = (error: unknown, fallbackMessage: string) => {
+  if (error instanceof DbError) return error;
+  if (error instanceof RlsError) {
+    return toArtistAppleMusicIdError(error.cause, fallbackMessage);
+  }
+  return toArtistAppleMusicIdError(error, fallbackMessage);
+};
+
 export const getArtists = async (
   pagination: { limit?: number; cursor?: Cursor | null } | undefined,
   db: Database,
 ) => {
   const limit = normalizeLimit(pagination?.limit);
-  const rows = await listArtists(db, { limit, cursor: pagination?.cursor }).catch((e) =>
-    toDbError(e, "Failed to fetch artists."),
+  const rows = await withAnonymousRole(db, (tx) =>
+    listArtists(tx, { limit, cursor: pagination?.cursor }),
   );
-  if (rows instanceof Error) return rows;
+  if (rows instanceof Error) {
+    return toDbError(rows, "Failed to fetch artists.");
+  }
 
   const paginationMeta = buildPaginationMeta(rows, limit);
   const trimmed = trimItems(rows, limit);
@@ -43,8 +46,10 @@ export const getArtists = async (
 };
 
 export const getArtist = async (id: string, db: Database) => {
-  const artist = await findArtistById(db, id).catch((e) => toDbError(e, "Failed to fetch artist."));
-  if (artist instanceof Error) return artist;
+  const artist = await withAnonymousRole(db, (tx) => findArtistById(tx, id));
+  if (artist instanceof Error) {
+    return toDbError(artist, "Failed to fetch artist.");
+  }
   if (artist === null) {
     return domainDbError({
       slug: "artist-not-found",
@@ -67,12 +72,10 @@ export const registerArtist = async (payload: ArtistCreateBody, db: Database) =>
     birthdate: null,
   };
 
-  const rows = await createArtist(db, dbValues).catch((e) =>
-    toArtistAppleMusicIdError(e, "Failed to create artist."),
-  );
-  if (rows instanceof Error) return rows;
+  const result = await withAuthenticatedRole(db, (tx) => createArtist(tx, dbValues));
+  if (result instanceof Error) return normalizeArtistDbError(result, "Failed to create artist.");
 
-  const [artist] = rows;
+  const [artist] = result;
   if (!artist) {
     return new DbError({ message: "Failed to create artist." });
   }
@@ -80,37 +83,33 @@ export const registerArtist = async (payload: ArtistCreateBody, db: Database) =>
   return { artist };
 };
 
-type UpdateArtistInput = {
-  id: string;
-  payload: ArtistUpdateDbModel;
-};
-
-export const modifyArtist = async ({ id, payload }: UpdateArtistInput, db: Database) => {
-  const updatedArtist = await updateArtistById(db, { id, values: payload }).catch((e) =>
-    toArtistAppleMusicIdError(e, "Failed to update artist."),
-  );
-  if (updatedArtist instanceof Error) return updatedArtist;
-  if (updatedArtist === null) {
+export const syncArtist = async (id: string, db: Database) => {
+  // 既存アーティストを取得（anon で可）
+  const existing = await withAnonymousRole(db, (tx) => findArtistById(tx, id));
+  if (existing instanceof Error) {
+    return toDbError(existing, "Failed to fetch artist.");
+  }
+  if (existing === null) {
     return domainDbError({
       slug: "artist-not-found",
       message: "Artist not found.",
     });
   }
 
-  return { artist: updatedArtist };
-};
+  // Apple Music API から再フェッチ（クライアント入力ではなく既存行の appleMusicId を使用）
+  const apiResponse = await fetchArtist(existing.appleMusicId);
+  if (apiResponse instanceof Error) return apiResponse;
 
-export const removeArtist = async (id: string, db: Database) => {
-  const deletedArtist = await softDeleteArtistById(db, id).catch((e) =>
-    toDbError(e, "Failed to delete artist."),
+  const result = await withAuthenticatedRole(db, (tx) =>
+    updateArtistById(tx, { id, values: { name: apiResponse.attributes.name } }),
   );
-  if (deletedArtist instanceof Error) return deletedArtist;
-  if (deletedArtist === null) {
+  if (result instanceof Error) return normalizeArtistDbError(result, "Failed to sync artist.");
+  if (result === null) {
     return domainDbError({
       slug: "artist-not-found",
       message: "Artist not found.",
     });
   }
 
-  return { deleted: true };
+  return { artist: result };
 };

@@ -37,8 +37,7 @@ vi.mock("../../features/artists/usecase", () => ({
   })),
   getArtists: vi.fn(),
   getArtist: vi.fn(),
-  modifyArtist: vi.fn(),
-  removeArtist: vi.fn(),
+  syncArtist: vi.fn(),
 }));
 
 vi.mock("../../features/songs/usecase", () => ({
