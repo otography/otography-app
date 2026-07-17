@@ -3,7 +3,7 @@ import { artists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
-import type { ArtistCreateDbValues, ArtistUpdateDbModel } from "./model";
+import type { ArtistCreateDbValues, ArtistSyncDbValues } from "./model";
 
 const { deletedAt: _, ...artistColumns } = getColumns(artists);
 
@@ -44,7 +44,7 @@ export const findArtistById = async (db: DatabaseOrTransaction, id: string) => {
 
 export const updateArtistById = async (
   db: DatabaseOrTransaction,
-  { id, values }: { id: string; values: ArtistUpdateDbModel },
+  { id, values }: { id: string; values: ArtistSyncDbValues },
 ) => {
   const rows = await db
     .update(artists)
@@ -53,18 +53,6 @@ export const updateArtistById = async (
     })
     .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
     .returning(artistColumns);
-
-  return rows[0] ?? null;
-};
-
-export const softDeleteArtistById = async (db: DatabaseOrTransaction, id: string) => {
-  const rows = await db
-    .update(artists)
-    .set({
-      deletedAt: sql`now()`,
-    })
-    .where(and(eq(artists.id, id), isNull(artists.deletedAt)))
-    .returning({ id: artists.id });
 
   return rows[0] ?? null;
 };

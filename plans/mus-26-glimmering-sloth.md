@@ -21,6 +21,8 @@
 
 RLS は防御の第二層として `withCheck: deletedAt IS NULL` を artists/songs/genres の update ポリシーに追加(authenticated ロールでは論理削除を表現不可能にする)。
 
+**実装時の追加判明事項(2026-07-17 実測)**: PostgreSQL は `INSERT ... ON CONFLICT DO UPDATE` の競合パスで既存行の読み取りに **SELECT ポリシー**を適用し、通常の UPDATE と異なりフィルタではなくエラー(`new row violates row-level security policy (USING expression)`)にする。`artists_select_active` / `songs_select_active` が authenticated にも `deletedAt IS NULL` を課していたため、復活 upsert(`findOrCreateArtists` / `createSongFull` / `createSongFromAppleMusic`)が authenticated ロールで失敗していた(songs 側は既存コードの潜在バグ)。対応として **authenticated 専用の全行 SELECT ポリシー `artists_select_all_authenticated` / `songs_select_all_authenticated`(`using: true`)を追加**。anon の SELECT は `deletedAt IS NULL` のまま、`withCheck: deletedAt IS NULL` も維持されるため「論理削除は不可能・復活 upsert は可能・公開読み取りは削除行を隠す」が両立する。アプリ層の authenticated 読み取りは全て `isNull(deletedAt)` を明示しており挙動変化なし。genres は復活経路(`onConflictDoNothing` のみ)がないため対象外。
+
 ## TDD テストリスト
 
 **Unit(`__tests__/features/artists/route.test.ts`):**
@@ -98,7 +100,7 @@ RLS は防御の第二層として `withCheck: deletedAt IS NULL` を artists/so
 
 ## 落とし穴(調査で判明済み)
 
-- **`using` は緩めたまま `withCheck` だけ締める**: `findOrCreateArtists`(artists/repository.ts:108-137)の復活 upsert は「既存行(deletedAt あり)を using で、新値(deletedAt: null)を withCheck で」評価されるため、using を締めると曲登録時のアーティスト復活が壊れる
+- ~~**`using` は緩めたまま `withCheck` だけ締める**~~ → **不正確だった**: ON CONFLICT DO UPDATE の競合行読み取りには UPDATE の using だけでなく **SELECT ポリシー**も適用される(psql で実証済み)。復活 upsert には authenticated 専用の全行 SELECT ポリシーが必要(上記「実装時の追加判明事項」参照)
 - **RlsError ラップ**: `withAuthenticatedRole` はエラーを `RlsError` にラップして返すため、unique 制約検出は `error.cause` を見る必要がある(`normalizeArtistDbError` で対応)
 - リポジトリは gitbutler/workspace ブランチで dbMiddleware リファクタリングが未コミット。現在のワーキングツリーの上に積む
 

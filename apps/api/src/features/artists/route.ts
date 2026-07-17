@@ -5,8 +5,8 @@ import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../sh
 import type { Env } from "../../shared/types/env";
 import type { Cursor } from "../../shared/pagination";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
-import { getArtist, getArtists, modifyArtist, registerArtist, removeArtist } from "./usecase";
-import { artistCreateBodySchema, artistUpdateSchema } from "./model";
+import { getArtist, getArtists, registerArtist, syncArtist } from "./usecase";
+import { artistCreateBodySchema } from "./model";
 
 const artistCreateValidator = arktypeValidator("json", artistCreateBodySchema, (result, c) => {
   if (!result.success) {
@@ -21,12 +21,6 @@ const artistIdParamSchema = type({
 const artistIdParamValidator = arktypeValidator("param", artistIdParamSchema, (result, c) => {
   if (!result.success) {
     return badRequestResponse(c, "Please provide a valid artist id.");
-  }
-});
-
-const artistUpdateBodyValidator = arktypeValidator("json", artistUpdateSchema, (result, c) => {
-  if (!result.success) {
-    return badRequestResponse(c, "Please provide a valid artist payload.");
   }
 });
 
@@ -73,31 +67,13 @@ const artists = new Hono<Env>()
     csrfProtection(),
     requireAuthMiddleware(),
     artistIdParamValidator,
-    artistUpdateBodyValidator,
     async (c) => {
       const { id } = c.req.valid("param");
-      const payload = c.req.valid("json");
-      if (Object.keys(payload).length === 0) {
-        return badRequestResponse(c, "Please provide at least one field to update.");
-      }
-      const result = await modifyArtist({ id, payload }, c.var.db());
+      const result = await syncArtist(id, c.var.db());
+
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
-    },
-  )
-  .delete(
-    "/api/artists/:id",
-    csrfProtection(),
-    requireAuthMiddleware(),
-    artistIdParamValidator,
-    async (c) => {
-      const { id } = c.req.valid("param");
-
-      const result = await removeArtist(id, c.var.db());
-      if (result instanceof Error) return respondWithError(result, c);
-
-      return c.body(null, 204);
     },
   );
 

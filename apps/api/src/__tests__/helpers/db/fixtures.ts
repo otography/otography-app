@@ -35,7 +35,7 @@ export const createUser = async (
 
 export const createSong = async (
   db: Db,
-  overrides: { title?: string; appleMusicId?: string } = {},
+  overrides: { title?: string; appleMusicId?: string; deletedAt?: string } = {},
 ) => {
   const id = uniqueId();
   const [row] = await db
@@ -43,6 +43,7 @@ export const createSong = async (
     .values({
       title: overrides.title ?? `Song ${id}`,
       appleMusicId: overrides.appleMusicId ?? `am-${id}`,
+      deletedAt: overrides.deletedAt,
     })
     .returning({ id: songs.id, createdAt: songs.createdAt });
   return row!;
@@ -50,7 +51,7 @@ export const createSong = async (
 
 export const createArtist = async (
   db: Db,
-  overrides: { name?: string; appleMusicId?: string } = {},
+  overrides: { name?: string; appleMusicId?: string; deletedAt?: string } = {},
 ) => {
   const id = uniqueId();
   const [row] = await db
@@ -58,6 +59,7 @@ export const createArtist = async (
     .values({
       name: overrides.name ?? `Artist ${id}`,
       appleMusicId: overrides.appleMusicId ?? `am-${id}`,
+      deletedAt: overrides.deletedAt,
     })
     .returning({ id: artists.id });
   return row!;

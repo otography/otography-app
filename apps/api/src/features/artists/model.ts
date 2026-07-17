@@ -1,4 +1,4 @@
-import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
+import { createInsertSchema } from "drizzle-orm/arktype";
 import { type } from "arktype";
 import { artists } from "../../shared/db/schema";
 
@@ -20,13 +20,5 @@ const artistDbInsertSchema = createInsertSchema(artists, {
 
 export type ArtistCreateDbValues = typeof artistDbInsertSchema.infer;
 
-// アーティスト更新用スキーマ（PATCH、既存のまま）
-export const artistUpdateSchema = createUpdateSchema(artists, {
-  name: (s) => type.pipe(s, type("1 <= string <= 255")),
-  appleMusicId: (s) => type.pipe(s, type("string.trim"), type("1 <= string <= 100")),
-  ipiCode: (s) => type.pipe(s, type("null | string <= 20")),
-  gender: (s) => type.pipe(s, type("null | string <= 20")),
-  birthdate: (s) => type.pipe(s, type("null | string.date.iso")),
-}).pick("name", "appleMusicId", "ipiCode", "type", "gender", "birthplace", "birthdate");
-
-export type ArtistUpdateDbModel = typeof artistUpdateSchema.infer;
+// Apple Music API 由来の再同期で更新可能な値（レスポンスで可変なのは name のみ）
+export type ArtistSyncDbValues = Pick<ArtistCreateDbValues, "name">;

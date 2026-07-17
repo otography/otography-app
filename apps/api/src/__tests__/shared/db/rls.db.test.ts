@@ -1,8 +1,11 @@
 import { eq, sql as drizzleSql } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { RlsError } from "@repo/errors";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createArtist, createGenre, createSong, createUser } from "../../helpers/db/fixtures";
 import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
+import { findOrCreateArtists } from "../../../features/artists/repository";
+import { createSongFull } from "../../../features/songs/repository";
 import {
   artists,
   favoriteArtists,
@@ -57,6 +60,27 @@ describe("anon ロールのSELECTポリシー", () => {
 
     // Then
     expect(rows).toEqual([{ name: "Active" }]);
+  });
+
+  it("論理削除されたアーティスト・楽曲は anon に見えない", async () => {
+    // Given
+    const deletedAt = new Date().toISOString();
+    await createArtist(db, { name: "Active Artist" });
+    await createArtist(db, { name: "Deleted Artist", deletedAt });
+    await createSong(db, { title: "Active Song" });
+    await createSong(db, { title: "Deleted Song", deletedAt });
+
+    // When
+    const artistRows = await withAnonymousRole(db, (tx) =>
+      tx.select({ name: artists.name }).from(artists),
+    );
+    const songRows = await withAnonymousRole(db, (tx) =>
+      tx.select({ title: songs.title }).from(songs),
+    );
+
+    // Then
+    expect(artistRows).toEqual([{ name: "Active Artist" }]);
+    expect(songRows).toEqual([{ title: "Active Song" }]);
   });
 });
 
@@ -192,5 +216,149 @@ describe("投稿RLS: 論理削除フィルタ", () => {
 
     // Then
     expect(rows).toEqual([{ content: "active" }]);
+  });
+});
+
+describe("カタログ論理削除保護: authenticated ロールは deletedAt を UPDATE できない", () => {
+  beforeEach(async () => {
+    await resetPublicTables(sql);
+  });
+
+  it("authenticated は artists の deletedAt を UPDATE できない", async () => {
+    // Given: アクティブなアーティスト
+    const artist = await createArtist(db, { name: "Target Artist" });
+
+    // When: authenticated ロールで deletedAt をセット
+    const result = await withAuthenticatedRole(db, (tx) =>
+      tx
+        .update(artists)
+        .set({ deletedAt: new Date().toISOString() })
+        .where(eq(artists.id, artist.id)),
+    );
+
+    // Then: RlsError が返る
+    expect(result).toBeInstanceOf(RlsError);
+
+    // DB は不変（deletedAt が null のまま）
+    const [row] = await db
+      .select({ deletedAt: artists.deletedAt })
+      .from(artists)
+      .where(eq(artists.id, artist.id));
+    expect(row?.deletedAt).toBeNull();
+  });
+
+  it("authenticated は songs の deletedAt を UPDATE できない", async () => {
+    // Given
+    const song = await createSong(db, { title: "Target Song" });
+
+    // When
+    const result = await withAuthenticatedRole(db, (tx) =>
+      tx.update(songs).set({ deletedAt: new Date().toISOString() }).where(eq(songs.id, song.id)),
+    );
+
+    // Then
+    expect(result).toBeInstanceOf(RlsError);
+    const [row] = await db
+      .select({ deletedAt: songs.deletedAt })
+      .from(songs)
+      .where(eq(songs.id, song.id));
+    expect(row?.deletedAt).toBeNull();
+  });
+
+  it("authenticated は genres の deletedAt を UPDATE できない", async () => {
+    // Given
+    const genre = await createGenre(db, { name: "Target Genre" });
+
+    // When
+    const result = await withAuthenticatedRole(db, (tx) =>
+      tx.update(genres).set({ deletedAt: new Date().toISOString() }).where(eq(genres.id, genre.id)),
+    );
+
+    // Then
+    expect(result).toBeInstanceOf(RlsError);
+    const [row] = await db
+      .select({ deletedAt: genres.deletedAt })
+      .from(genres)
+      .where(eq(genres.id, genre.id));
+    expect(row?.deletedAt).toBeNull();
+  });
+
+  it("authenticated はアクティブな artists の name を UPDATE できる（同期パス保証）", async () => {
+    // Given
+    const artist = await createArtist(db, { name: "Old Name" });
+
+    // When
+    const result = await withAuthenticatedRole(db, (tx) =>
+      tx
+        .update(artists)
+        .set({ name: "New Name" })
+        .where(eq(artists.id, artist.id))
+        .returning({ name: artists.name }),
+    );
+
+    // Then
+    if (result instanceof Error) throw result;
+    expect(result[0]?.name).toBe("New Name");
+  });
+
+  it("findOrCreateArtists は論理削除済みアーティストを復活できる", async () => {
+    // Given: 論理削除済みアーティスト（owner 権限で直接作成）
+    const deleted = await createArtist(db, {
+      name: "Old Name",
+      appleMusicId: "am-revive-1",
+      deletedAt: new Date().toISOString(),
+    });
+
+    // When: findOrCreateArtists で復活アップサート（authenticated ロール）
+    const result = await withAuthenticatedRole(db, (tx) =>
+      findOrCreateArtists(tx, [{ appleMusicId: "am-revive-1", name: "New Name" }]),
+    );
+
+    // Then: 既存行の ID がエラーなく返る
+    if (result instanceof Error) throw result;
+    expect(result).toEqual([deleted.id]);
+
+    // DB の行は復活している
+    const [row] = await db
+      .select({ name: artists.name, deletedAt: artists.deletedAt })
+      .from(artists)
+      .where(eq(artists.appleMusicId, "am-revive-1"));
+    expect(row?.name).toBe("New Name");
+    expect(row?.deletedAt).toBeNull();
+  });
+
+  it("createSongFull は論理削除済み楽曲を復活できる", async () => {
+    // Given: 論理削除済み楽曲（owner 権限で直接作成）
+    await createSong(db, {
+      title: "Old Title",
+      appleMusicId: "am-song-revive-1",
+      deletedAt: new Date().toISOString(),
+    });
+
+    // When: 再登録アップサート（authenticated ロール = registerSong と同じ経路）
+    const result = await withAuthenticatedRole(db, (tx) =>
+      createSongFull(tx, {
+        songValues: {
+          title: "New Title",
+          appleMusicId: "am-song-revive-1",
+          length: null,
+          isrcs: null,
+        },
+        artistIds: [],
+        genreNames: [],
+      }),
+    );
+
+    // Then: エラーなく楽曲が返る
+    if (result instanceof Error) throw result;
+    expect(result).toMatchObject({ title: "New Title" });
+
+    // DB の行は復活している
+    const [row] = await db
+      .select({ title: songs.title, deletedAt: songs.deletedAt })
+      .from(songs)
+      .where(eq(songs.appleMusicId, "am-song-revive-1"));
+    expect(row?.title).toBe("New Title");
+    expect(row?.deletedAt).toBeNull();
   });
 });

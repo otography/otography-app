@@ -5,25 +5,29 @@ import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 /*
- * テストリスト: artists ルート ドメイン固有 problem type URI 設定
+ * テストリスト: artists ルート（カタログ書き込みの同期専用化）
  *
- * 以下のテスト期待値の type をドメイン固有 URI に更新:
- * 1. GET /api/artists/:id → 404 (not found) → artist-not-found
- * 2. POST /api/artists → 409 (appleMusicId 重複) → artist-already-exists
- * 3. PATCH /api/artists/:id → 409 (appleMusicId 重複) → artist-already-exists
- * 4. PATCH /api/artists/:id → 404 (not found) → artist-not-found
- * 5. DELETE /api/artists/:id → 404 (not found) → artist-not-found
+ * GET:
+ * 1. GET /api/artists → 200 (一覧 + ページネーション)
+ * 2. GET /api/artists/:id → 200 (詳細)
+ * 3. GET /api/artists/:id → 400 (不正な id) → bad-request
+ * 4. GET /api/artists/:id → 404 (not found) → artist-not-found
  *
- * 変更なし（汎用 URI のまま）:
- * - GET /api/artists/:id → 400 (不正な id) → bad-request
- * - POST /api/artists → 500 (DB エラー) → internal-error
- * - POST /api/artists → 400 (不正な payload) → bad-request
- * - POST /api/artists → 400 (空の appleMusicId) → bad-request
- * - POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
- * - PATCH /api/artists/:id → 400 (不正な id) → bad-request
- * - PATCH /api/artists/:id → 400 (空の payload) → bad-request
- * - PATCH /api/artists/:id → 400 (不正な payload) → bad-request
- * - 成功レスポンスの形式は変更なし
+ * POST（appleMusicId のみ受け取り Apple Music から作成）:
+ * 5. POST /api/artists → 201 (作成)
+ * 6. POST /api/artists → 409 (appleMusicId 重複、RlsError ラップ経由) → artist-already-exists
+ * 7. POST /api/artists → 500 (その他 DB エラー、RlsError ラップ経由) → internal-error
+ * 8. POST /api/artists → 400 (不正な payload / 空の appleMusicId) → bad-request
+ * 9. POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
+ *
+ * PATCH（Apple Music 再同期。ボディ不要）:
+ * 10. PATCH /api/artists/:id → 200 (既存行の appleMusicId で fetchArtist が呼ばれる)
+ * 11. PATCH /api/artists/:id → 404 (not found) → artist-not-found
+ * 12. PATCH /api/artists/:id → 400 (不正な id) → bad-request
+ * 13. PATCH /api/artists/:id → 502 (Apple Music API エラー) → bad-gateway
+ *
+ * DELETE（エンドポイント廃止）:
+ * 14. DELETE /api/artists/:id → 404 (ルートが存在しない)
  */
 
 vi.mock("../../../shared/middleware", async () => {
@@ -63,11 +67,16 @@ vi.mock("../../../shared/apple-music", () => ({
 import { createDbClient } from "../../../shared/db";
 import { fetchArtist } from "../../../shared/apple-music";
 
+// RLS ヘルパーが tx.execute("set local role ...") を呼ぶため execute スタブが必要
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
+  const tx = {
+    execute: vi.fn().mockResolvedValue(undefined),
+    ...txMethods,
+  };
   vi.mocked(createDbClient).mockReturnValue({
     db: {
-      ...txMethods,
-      transaction: vi.fn(async (fn) => fn(txMethods)),
+      ...tx,
+      transaction: vi.fn(async (fn) => fn(tx)),
     },
     end: async () => undefined,
   } as never);
@@ -265,21 +274,20 @@ describe("artists endpoints", () => {
       attributes: { name: "Duplicate Artist" },
     });
 
-    vi.mocked(createDbClient).mockReturnValue({
-      db: {
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(
-              createDrizzleConstraintError({
-                constraintName: "artists_apple_music_id_key",
-                query: 'insert into "artists"',
-              }),
-            ),
-          })),
+    // withAuthenticatedRole がトランザクション内のエラーを RlsError にラップするため、
+    // unique violation は cause チェーン経由で検出される（normalizeArtistDbError）
+    mockDbWithTransaction({
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn().mockRejectedValue(
+            createDrizzleConstraintError({
+              constraintName: "artists_apple_music_id_key",
+              query: 'insert into "artists"',
+            }),
+          ),
         })),
-      },
-      end: async () => undefined,
-    } as never);
+      })),
+    });
 
     const res = await testRequest("/api/artists", {
       method: "POST",
@@ -301,16 +309,13 @@ describe("artists endpoints", () => {
       attributes: { name: "Broken Artist" },
     });
 
-    vi.mocked(createDbClient).mockReturnValue({
-      db: {
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(new Error("DB error")),
-          })),
+    mockDbWithTransaction({
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn().mockRejectedValue(new Error("DB error")),
         })),
-      },
-      end: async () => undefined,
-    } as never);
+      })),
+    });
 
     const res = await testRequest("/api/artists", {
       method: "POST",
@@ -382,20 +387,50 @@ describe("artists endpoints", () => {
     });
   });
 
-  it("PATCH /api/artists/:id updates artist", async () => {
+  it("PATCH /api/artists/:id syncs artist from Apple Music API", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue({
+      id: "am-existing-artist",
+      attributes: {
+        name: "Synced Artist",
+      },
+    });
+
     mockDbWithTransaction({
+      // findArtistById（syncArtist 冒頭、anon ロール）
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([
+              {
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211113",
+                name: "Old Artist",
+                appleMusicId: "am-existing-artist",
+                ipiCode: null,
+                type: "person",
+                gender: null,
+                birthplace: null,
+                birthdate: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z",
+              },
+            ]),
+          })),
+        })),
+      })),
+      // updateArtistById（authenticated ロール）
       update: vi.fn(() => ({
         set: vi.fn(() => ({
           where: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue([
               {
                 id: "8f648f36-5be1-4af1-bf5d-cf8ebf211113",
-                name: "Updated Artist",
+                name: "Synced Artist",
+                appleMusicId: "am-existing-artist",
                 ipiCode: null,
                 type: "person",
                 gender: null,
-                birthplace: "Tokyo",
-                birthdate: "2000-01-01",
+                birthplace: null,
+                birthdate: null,
                 createdAt: "2026-01-01T00:00:00.000Z",
                 updatedAt: "2026-01-02T00:00:00.000Z",
               },
@@ -405,37 +440,55 @@ describe("artists endpoints", () => {
       })),
     });
 
+    // ボディ不要（既存行の appleMusicId で再同期）
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211113", {
       method: "PATCH",
-      body: {
-        name: "Updated Artist",
-        birthplace: "Tokyo",
-        birthdate: "2000-01-01",
-      },
+      body: {},
     });
 
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({
       artist: {
         id: "8f648f36-5be1-4af1-bf5d-cf8ebf211113",
-        name: "Updated Artist",
-        ipiCode: null,
-        type: "person",
-        gender: null,
-        birthplace: "Tokyo",
-        birthdate: "2000-01-01",
-        createdAt: "2026-01-01T00:00:00.000Z",
+        name: "Synced Artist",
+        appleMusicId: "am-existing-artist",
         updatedAt: "2026-01-02T00:00:00.000Z",
       },
     });
+    // クライアント入力ではなく既存行の appleMusicId で呼ばれる
+    expect(fetchArtist).toHaveBeenCalledWith("am-existing-artist");
+  });
+
+  it("PATCH /api/artists/:id returns 404 when artist not found in DB", async () => {
+    mockDbWithTransaction({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
+          })),
+        })),
+      })),
+    });
+
+    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211120", {
+      method: "PATCH",
+      body: {},
+    });
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/artist-not-found",
+      title: "Artist Not Found",
+      status: 404,
+      detail: "Artist not found.",
+    });
+    expect(fetchArtist).not.toHaveBeenCalled();
   });
 
   it("PATCH /api/artists/:id returns 400 for invalid id", async () => {
     const res = await testRequest("/api/artists/not-uuid", {
       method: "PATCH",
-      body: {
-        name: "Updated Artist",
-      },
+      body: {},
     });
 
     expect(res.status).toBe(400);
@@ -447,153 +500,30 @@ describe("artists endpoints", () => {
     });
   });
 
-  it("PATCH /api/artists/:id returns 409 when appleMusicId is already registered", async () => {
+  it("PATCH /api/artists/:id returns 502 when Apple Music API fails", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue(
+      new DbError({
+        message: "Apple Music API からアーティスト情報を取得できませんでした。",
+        statusCode: 502,
+      }),
+    );
+
     mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
           where: vi.fn(() => ({
-            returning: vi.fn().mockRejectedValue(
-              createDrizzleConstraintError({
-                constraintName: "artists_apple_music_id_key",
-                query: 'update "artists"',
-              }),
-            ),
-          })),
-        })),
-      })),
-    });
-
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211122", {
-      method: "PATCH",
-      body: {
-        appleMusicId: "am-duplicate-artist",
-      },
-    });
-
-    expect(res.status).toBe(409);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/artist-already-exists",
-      title: "Artist Already Exists",
-      status: 409,
-      detail: "Apple Music ID is already registered for another artist.",
-    });
-  });
-
-  it("PATCH /api/artists/:id returns 400 for empty payload", async () => {
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211118", {
-      method: "PATCH",
-      body: {},
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/bad-request",
-      title: "Bad Request",
-      status: 400,
-      detail: "Please provide at least one field to update.",
-    });
-  });
-
-  it("PATCH /api/artists/:id returns 400 for invalid payload", async () => {
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211119", {
-      method: "PATCH",
-      body: {
-        birthdate: "not-date",
-      },
-    });
-
-    expect(res.status).toBe(400);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/bad-request",
-      title: "Bad Request",
-      status: 400,
-      detail: "Please provide a valid artist payload.",
-    });
-  });
-
-  it("PATCH /api/artists/:id returns 404 when not found", async () => {
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-    });
-
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211120", {
-      method: "PATCH",
-      body: {
-        name: "No Artist",
-      },
-    });
-
-    expect(res.status).toBe(404);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/artist-not-found",
-      title: "Artist Not Found",
-      status: 404,
-      detail: "Artist not found.",
-    });
-  });
-
-  it("PATCH /api/artists/:id allows clearing nullable fields with null", async () => {
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
+            limit: vi.fn().mockResolvedValue([
               {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211117",
-                name: "Clearable Artist",
+                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211114",
+                name: "Unreachable Artist",
+                appleMusicId: "am-unreachable",
                 ipiCode: null,
                 type: null,
                 gender: null,
                 birthplace: null,
                 birthdate: null,
                 createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-03T00:00:00.000Z",
-              },
-            ]),
-          })),
-        })),
-      })),
-    });
-
-    const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211117", {
-      method: "PATCH",
-      body: {
-        type: null,
-        birthplace: null,
-        birthdate: null,
-      },
-    });
-
-    expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({
-      artist: {
-        id: "8f648f36-5be1-4af1-bf5d-cf8ebf211117",
-        name: "Clearable Artist",
-        ipiCode: null,
-        type: null,
-        gender: null,
-        birthplace: null,
-        birthdate: null,
-        createdAt: "2026-01-01T00:00:00.000Z",
-        updatedAt: "2026-01-03T00:00:00.000Z",
-      },
-    });
-  });
-
-  it("DELETE /api/artists/:id soft deletes artist", async () => {
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([
-              {
-                id: "8f648f36-5be1-4af1-bf5d-cf8ebf211114",
+                updatedAt: "2026-01-01T00:00:00.000Z",
               },
             ]),
           })),
@@ -602,33 +532,29 @@ describe("artists endpoints", () => {
     });
 
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211114", {
-      method: "DELETE",
+      method: "PATCH",
+      body: {},
     });
 
-    expect(res.status).toBe(204);
+    expect(res.status).toBe(502);
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/bad-gateway",
+      title: "Bad Gateway",
+      status: 502,
+      detail: "Apple Music API からアーティスト情報を取得できませんでした。",
+    });
   });
 
-  it("DELETE /api/artists/:id returns 404 when not found", async () => {
-    mockDbWithTransaction({
-      update: vi.fn(() => ({
-        set: vi.fn(() => ({
-          where: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([]),
-          })),
-        })),
-      })),
-    });
+  it("DELETE /api/artists/:id returns 404 (endpoint removed)", async () => {
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {},
+      end: async () => undefined,
+    } as never);
 
     const res = await testRequest("/api/artists/8f648f36-5be1-4af1-bf5d-cf8ebf211121", {
       method: "DELETE",
     });
 
     expect(res.status).toBe(404);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/artist-not-found",
-      title: "Artist Not Found",
-      status: 404,
-      detail: "Artist not found.",
-    });
   });
 });

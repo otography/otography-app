@@ -169,6 +169,13 @@ export const artists = pgTable.withRLS(
       to: [anonRole, authenticatedRole],
       using: sql`${table.deletedAt} IS NULL`,
     }),
+    // 復活 upsert(ON CONFLICT DO UPDATE)は競合行の読み取りに SELECT ポリシーが適用されるため、
+    // authenticated は論理削除済み行も読める必要がある(公開読み取りは anon ロールで行う)
+    pgPolicy("artists_select_all_authenticated", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
     pgPolicy("artists_insert_authenticated", {
       for: "insert",
       to: authenticatedRole,
@@ -178,7 +185,7 @@ export const artists = pgTable.withRLS(
       for: "update",
       to: authenticatedRole,
       using: sql`true`,
-      withCheck: sql`true`,
+      withCheck: sql`${table.deletedAt} IS NULL`,
     }),
   ],
 );
@@ -256,6 +263,13 @@ export const songs = pgTable.withRLS(
       to: [anonRole, authenticatedRole],
       using: sql`${table.deletedAt} IS NULL`,
     }),
+    // 復活 upsert(ON CONFLICT DO UPDATE)は競合行の読み取りに SELECT ポリシーが適用されるため、
+    // authenticated は論理削除済み行も読める必要がある(公開読み取りは anon ロールで行う)
+    pgPolicy("songs_select_all_authenticated", {
+      for: "select",
+      to: authenticatedRole,
+      using: sql`true`,
+    }),
     pgPolicy("songs_insert_authenticated", {
       for: "insert",
       to: authenticatedRole,
@@ -265,7 +279,7 @@ export const songs = pgTable.withRLS(
       for: "update",
       to: authenticatedRole,
       using: sql`true`,
-      withCheck: sql`true`,
+      withCheck: sql`${table.deletedAt} IS NULL`,
     }),
   ],
 );
@@ -387,7 +401,7 @@ export const genres = pgTable.withRLS(
       for: "update",
       to: authenticatedRole,
       using: sql`true`,
-      withCheck: sql`true`,
+      withCheck: sql`${table.deletedAt} IS NULL`,
     }),
   ],
 );
