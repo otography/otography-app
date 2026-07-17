@@ -43,6 +43,10 @@ vi.mock("../../../features/post-likes/usecase", () => ({
   toggleLike: vi.fn(),
 }));
 
+vi.mock("../../../shared/db", () => ({
+  createDbClient: vi.fn(() => ({ db: {}, end: async () => undefined })),
+}));
+
 import { toggleLike } from "../../../features/post-likes/usecase";
 import { getAuthSession } from "../../../shared/auth/auth-session";
 

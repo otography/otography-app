@@ -1,8 +1,7 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
-import type { DatabaseOrTransaction } from "../../shared/db";
-import { createDb } from "../../shared/db";
+import type { DatabaseOrTransaction, Database } from "../../shared/db";
 import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import type { Cursor } from "../../shared/pagination";
@@ -43,11 +42,10 @@ const resolveUserId = async (
 };
 
 export const getPosts = async (
-  session?: DecodedIdToken | null,
-  pagination?: { limit?: number; cursor?: Cursor | null },
+  session: DecodedIdToken | null | undefined,
+  pagination: { limit?: number; cursor?: Cursor | null } | undefined,
+  db: Database,
 ) => {
-  const db = createDb();
-
   let userId: string | null = null;
   if (session) {
     const resolved = await resolveUserId(db, session.sub);
@@ -70,9 +68,11 @@ export const getPosts = async (
   return { posts: trimmed, pagination: paginationMeta };
 };
 
-export const getPost = async (id: string, session?: DecodedIdToken | null) => {
-  const db = createDb();
-
+export const getPost = async (
+  id: string,
+  session: DecodedIdToken | null | undefined,
+  db: Database,
+) => {
   let userId: string | null = null;
   if (session) {
     const resolved = await resolveUserId(db, session.sub);
@@ -94,9 +94,11 @@ export const getPost = async (id: string, session?: DecodedIdToken | null) => {
   return { post };
 };
 
-export const registerPost = async (payload: PostCreateDbModel, session: DecodedIdToken) => {
-  const db = createDb();
-
+export const registerPost = async (
+  payload: PostCreateDbModel,
+  session: DecodedIdToken,
+  db: Database,
+) => {
   // トランザクション外で曲存在チェック（最適化: 不要なAPI呼び出しを回避）
   const songExists = await songExistsByAppleMusicId(db, payload.appleMusicId).catch((e) =>
     toDbError(e, "Failed to check song existence."),
@@ -160,8 +162,7 @@ type UpdatePostInput = {
   payload: PostUpdateDbModel;
 };
 
-export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
-  const db = createDb();
+export const modifyPost = async ({ id, session, payload }: UpdatePostInput, db: Database) => {
   const post = await withRls(db, session, (tx) => updatePostById(tx, { id, values: payload }));
   if (post instanceof Error) {
     return toDbError(post, "Failed to update post.");
@@ -176,8 +177,7 @@ export const modifyPost = async ({ id, session, payload }: UpdatePostInput) => {
   return { post };
 };
 
-export const removePost = async (id: string, session: DecodedIdToken) => {
-  const db = createDb();
+export const removePost = async (id: string, session: DecodedIdToken, db: Database) => {
   const deletedPost = await withRls(db, session, (tx) => softDeletePostById(tx, id));
   if (deletedPost instanceof Error) {
     return toDbError(deletedPost, "Failed to delete post.");

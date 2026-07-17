@@ -20,12 +20,12 @@ import {
   problemResponse,
 } from "./shared/errors/error-response";
 import { logError } from "./shared/logging/structured-log";
-import { authSessionMiddleware } from "./shared/middleware";
-import type { Bindings } from "./shared/types/bindings";
+import { authSessionMiddleware, dbMiddleware } from "./shared/middleware";
+import type { Env } from "./shared/types/env";
 
-export type { Bindings };
+export type { Env };
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<Env>()
   .use("/api/*", async (c, next) => {
     const middleware = cors({
       origin: c.env.APP_FRONTEND_URL,
@@ -37,6 +37,7 @@ const app = new Hono<{ Bindings: Bindings }>()
     return middleware(c, next);
   })
   .use("*", secureHeaders())
+  .use("/api/*", dbMiddleware())
   // authSessionMiddlewareは認証セッションを解決するミドルウェア
   // health, apple-music等の公開ルートでは不要なため、必要なパスのみに適用
   .use("/api/auth/*", authSessionMiddleware())

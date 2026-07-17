@@ -3,6 +3,7 @@
   "extends": "@repo/typescript-config/base.json",
   "include": ["src/**/*.ts", "worker-configuration.d.ts"],
   "compilerOptions": {
+    "lib": ["es2022", "DOM", "DOM.Iterable", "ESNext.Disposable"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
     "module": "ESNext",

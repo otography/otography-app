@@ -1,11 +1,12 @@
-import type { MiddlewareHandler } from "hono";
+import { createMiddleware } from "hono/factory";
 import { verifySessionCookie } from "../firebase/firebase-admin";
 import { clearSessionCookie, getSessionCookie } from "../auth/session-cookie";
 import { handleRefreshResult, refreshSession } from "../auth/session-refresh";
 import { respondWithError, unauthorizedResponse } from "../errors/error-response";
+import type { Env } from "../types/env";
 
-export const authSessionMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
+export const authSessionMiddleware = () =>
+  createMiddleware<Env>(async (c, next) => {
     c.set("authSession", null);
     const sessionCookie = getSessionCookie(c);
 
@@ -36,11 +37,10 @@ export const authSessionMiddleware = (): MiddlewareHandler => {
     c.set("authSession", claims);
 
     await next();
-  };
-};
+  });
 
-export const requireAuthMiddleware = (): MiddlewareHandler => {
-  return async (c, next) => {
+export const requireAuthMiddleware = () =>
+  createMiddleware<Env>(async (c, next) => {
     if (c.get("authSession")) {
       await next();
       return;
@@ -81,5 +81,4 @@ export const requireAuthMiddleware = (): MiddlewareHandler => {
 
     c.set("authSession", claims);
     await next();
-  };
-};
+  });

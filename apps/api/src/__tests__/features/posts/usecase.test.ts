@@ -4,7 +4,6 @@ import { DbError, RlsError } from "@repo/errors";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 const mocks = vi.hoisted(() => ({
-  createDb: vi.fn(),
   createPost: vi.fn(),
   createSongFull: vi.fn(),
   fetchSong: vi.fn(),
@@ -13,10 +12,6 @@ const mocks = vi.hoisted(() => ({
   songExistsByAppleMusicId: vi.fn(),
   toSongInput: vi.fn(),
   withRls: vi.fn(),
-}));
-
-vi.mock("../../../shared/db", () => ({
-  createDb: mocks.createDb,
 }));
 
 vi.mock("../../../shared/db/rls", () => ({
@@ -59,7 +54,6 @@ const content = "Great song!";
 describe("posts usecase — registerPost", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.createDb.mockReturnValue(db);
     mocks.withRls.mockImplementation(async (_db, _session, fn) => await fn(tx, "user-id"));
   });
 
@@ -81,7 +75,7 @@ describe("posts usecase — registerPost", () => {
       },
     ]);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toEqual({
       post: {
@@ -157,7 +151,7 @@ describe("posts usecase — registerPost", () => {
       },
     ]);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toEqual({
       post: {
@@ -201,7 +195,7 @@ describe("posts usecase — registerPost", () => {
     });
     mocks.fetchSong.mockResolvedValue(apiError);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBe(apiError);
     expect(mocks.withRls).not.toHaveBeenCalled();
@@ -213,7 +207,7 @@ describe("posts usecase — registerPost", () => {
     mocks.findSongByAppleMusicId.mockResolvedValue(null);
     mocks.findOrCreateArtists.mockResolvedValue(songError);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
   });
@@ -223,7 +217,7 @@ describe("posts usecase — registerPost", () => {
     const cause = new RlsError({ message: "User not found in database." });
     mocks.withRls.mockResolvedValue(cause);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({
@@ -241,7 +235,7 @@ describe("posts usecase — registerPost", () => {
     });
     mocks.withRls.mockResolvedValue(cause);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({
@@ -258,7 +252,7 @@ describe("posts usecase — registerPost", () => {
     });
     mocks.songExistsByAppleMusicId.mockRejectedValue(cause);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({
@@ -276,7 +270,7 @@ describe("posts usecase — registerPost", () => {
     });
     mocks.withRls.mockResolvedValue(cause);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({
@@ -294,7 +288,7 @@ describe("posts usecase — registerPost", () => {
     });
     mocks.withRls.mockResolvedValue(cause);
 
-    const result = await registerPost({ appleMusicId, content }, session);
+    const result = await registerPost({ appleMusicId, content }, session, db);
 
     expect(result).toBeInstanceOf(DbError);
     expect(result).toMatchObject({

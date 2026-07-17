@@ -20,6 +20,10 @@ vi.mock("../../../features/posts/usecase", () => ({
   removePost: vi.fn(),
 }));
 
+vi.mock("../../../shared/db", () => ({
+  createDbClient: vi.fn(() => ({ db: {}, end: async () => undefined })),
+}));
+
 // モック適用後にテスト対象をインポート
 import { app } from "../../../index";
 

@@ -47,6 +47,11 @@ export async function testRequest(
       body: body !== undefined ? JSON.stringify(body) : undefined,
     },
     env,
+    {
+      waitUntil: () => undefined,
+      passThroughOnException: () => undefined,
+      props: {},
+    },
   );
 
   return {

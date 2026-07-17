@@ -83,7 +83,11 @@ PostgreSQL with Drizzle ORM and `postgres.js` driver. Row-Level Security (RLS) i
 
 Prepared statements are disabled (`prepare: false`) due to Supabase Transaction pool mode. Insert/update schemas use `drizzle-orm/arktype` (`createInsertSchema`/`createUpdateSchema`).
 
-Database connection uses a `globalThis` singleton pattern to avoid connection pool exhaustion in development.
+Database connections are created lazily per request by `dbMiddleware`. The middleware stores a
+request-scoped DB getter in Hono context, so routes pass the same handle into usecases via DI.
+After the response, it closes the underlying `postgres.js` client with
+`c.executionCtx.waitUntil(client.end())`; this avoids leaving Supavisor client connections idle
+until pooler timeout. `prepare: false` is required for Supavisor transaction pooling.
 
 ### Error Handling
 

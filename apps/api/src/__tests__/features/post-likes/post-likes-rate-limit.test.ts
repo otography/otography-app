@@ -7,6 +7,10 @@ vi.mock("../../../features/post-likes/usecase", () => ({
   toggleLike: vi.fn(async () => ({ liked: true, likeCount: 1 })),
 }));
 
+vi.mock("../../../shared/db", () => ({
+  createDbClient: vi.fn(() => ({ db: {}, end: async () => undefined })),
+}));
+
 // モック適用後にテスト対象をインポート
 import { app } from "../../../index";
 

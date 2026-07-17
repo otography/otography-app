@@ -16,7 +16,7 @@ import { createSessionCookie } from "../../../shared/firebase/firebase-admin";
 import { setSessionCookie } from "../../../shared/auth/session-cookie";
 import { setRefreshTokenCookie } from "../../../shared/auth/refresh-token";
 import { createUserRecord } from "../../user/usecase";
-import type { Bindings } from "../../../shared/types/bindings";
+import type { Env } from "../../../shared/types/env";
 
 // Google OAuth 認可エンドポイント
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -60,7 +60,7 @@ const getOAuthErrorCode = (error: Error): string => {
  * from が未指定の場合は /login にフォールバックする。
  * オープンリダイレクト防止のため、from は相対パスのみ許可する。
  */
-const buildErrorRedirect = (env: Bindings, errorCode: string, from?: string): string => {
+const buildErrorRedirect = (env: Env["Bindings"], errorCode: string, from?: string): string => {
   const safeFrom = from?.startsWith("/") && !from.startsWith("//") ? from : "/login";
   const url = new URL(safeFrom, env.APP_FRONTEND_URL);
   url.searchParams.set("error", errorCode);
@@ -68,7 +68,7 @@ const buildErrorRedirect = (env: Bindings, errorCode: string, from?: string): st
 };
 
 /** Google OAuth 認可画面へリダイレクト */
-export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) => {
+export const googleOAuthRedirect = async (c: Context<Env>) => {
   const redirectParam = c.req.query("redirect");
   const rawFromParam = c.req.query("from");
   // オープンリダイレクト防止: from は相対パスのみ許可
@@ -112,7 +112,7 @@ export const googleOAuthRedirect = async (c: Context<{ Bindings: Bindings }>) =>
 };
 
 /** Google OAuth コールバック — 認可コードを処理してセッションを作成 */
-export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) => {
+export const googleOAuthCallback = async (c: Context<Env>) => {
   const code = c.req.query("code");
   const stateParam = c.req.query("state");
   const googleError = c.req.query("error");
@@ -192,7 +192,7 @@ export const googleOAuthCallback = async (c: Context<{ Bindings: Bindings }>) =>
   }
 
   // ユーザーレコード作成（冪等: 既存なら何もしない）
-  const userRecord = await createUserRecord({ firebaseId: firebaseResult.localId });
+  const userRecord = await createUserRecord({ firebaseId: firebaseResult.localId }, c.var.db());
   if (userRecord instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }

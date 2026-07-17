@@ -25,38 +25,41 @@ vi.mock("../../../shared/firebase/firebase-google", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: mockCreateDb,
+  createDbClient: mockCreateDb,
 }));
 
 const defaultDbMock = () =>
   mockCreateDb.mockReturnValue({
-    execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
-    transaction: vi.fn(async (fn) =>
-      fn({
-        execute: vi.fn(() => Promise.resolve([{ id: "uuid-user" }])),
-        insert: vi.fn(() => ({
-          values: vi.fn(() => ({
-            onConflictDoUpdate: vi.fn(() => ({
-              returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+    db: {
+      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
+      transaction: vi.fn(async (fn) =>
+        fn({
+          execute: vi.fn(() => Promise.resolve([{ id: "uuid-user" }])),
+          insert: vi.fn(() => ({
+            values: vi.fn(() => ({
+              onConflictDoUpdate: vi.fn(() => ({
+                returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+              })),
             })),
           })),
-        })),
-        select: vi.fn(() => ({
-          from: vi.fn(() => ({
-            where: vi.fn(() => ({
-              limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+          select: vi.fn(() => ({
+            from: vi.fn(() => ({
+              where: vi.fn(() => ({
+                limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+              })),
             })),
           })),
-        })),
-      }),
-    ),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        onConflictDoUpdate: vi.fn(() => ({
-          returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+        }),
+      ),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          onConflictDoUpdate: vi.fn(() => ({
+            returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+          })),
         })),
       })),
-    })),
+    },
+    end: async () => undefined,
   });
 
 // --- テスト定数 ---
@@ -564,33 +567,36 @@ describe("GET /api/auth/google/callback", () => {
 
   it("DB insert失敗時、/login?error=session_failedへリダイレクトする", async () => {
     mockCreateDb.mockReturnValue({
-      execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
-      transaction: vi.fn(async (fn) =>
-        fn({
-          execute: vi.fn(() => Promise.reject(new Error("DB error"))),
-          insert: vi.fn(() => ({
-            values: vi.fn(() => ({
-              onConflictDoUpdate: vi.fn(() => ({
-                returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+      db: {
+        execute: vi.fn(() => Promise.resolve([{ resolve_firebase_id: "uuid-user" }])),
+        transaction: vi.fn(async (fn) =>
+          fn({
+            execute: vi.fn(() => Promise.reject(new Error("DB error"))),
+            insert: vi.fn(() => ({
+              values: vi.fn(() => ({
+                onConflictDoUpdate: vi.fn(() => ({
+                  returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+                })),
               })),
             })),
-          })),
-          select: vi.fn(() => ({
-            from: vi.fn(() => ({
-              where: vi.fn(() => ({
-                limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+            select: vi.fn(() => ({
+              from: vi.fn(() => ({
+                where: vi.fn(() => ({
+                  limit: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+                })),
               })),
             })),
-          })),
-        }),
-      ),
-      insert: vi.fn(() => ({
-        values: vi.fn(() => ({
-          onConflictDoUpdate: vi.fn(() => ({
-            returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+          }),
+        ),
+        insert: vi.fn(() => ({
+          values: vi.fn(() => ({
+            onConflictDoUpdate: vi.fn(() => ({
+              returning: vi.fn().mockResolvedValue([{ id: "uuid-user" }]),
+            })),
           })),
         })),
-      })),
+      },
+      end: async () => undefined,
     });
 
     const res = await testRequest(

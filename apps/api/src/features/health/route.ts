@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import type { StatusCode } from "hono/utils/http-status";
 import { sql } from "drizzle-orm";
-import { createDb } from "../../shared/db";
+import type { Database } from "../../shared/db";
+import type { Env } from "../../shared/types/env";
 import type { Bindings } from "../../shared/types/bindings";
 
 // Apple Musicヘルスチェックのタイムアウト（ms）
@@ -17,10 +18,9 @@ interface CheckResult {
 }
 
 // DBヘルスチェック — SELECT 1でコネクションを検証（withRls使わず直接実行）
-async function checkDatabase(): Promise<CheckResult> {
+async function checkDatabase(db: Database): Promise<CheckResult> {
   const start = performance.now();
   try {
-    const db = createDb();
     await db.execute(sql`SELECT 1`);
     return { status: "ok", latencyMs: Math.round(performance.now() - start) };
   } catch (e) {
@@ -68,7 +68,7 @@ async function checkAppleMusic(): Promise<CheckResult> {
   }
 }
 
-const health = new Hono<{ Bindings: Bindings }>()
+const health = new Hono<Env>()
   // livenessプローブ — プロセスが生存していることを確認する軽量エンドポイント
   .get("/", (c) => {
     return c.json({ status: "ok" }, 200, {
@@ -79,7 +79,7 @@ const health = new Hono<{ Bindings: Bindings }>()
   .get("/ready", async (c) => {
     // 全チェックを並列実行
     const [database, firebase, appleMusic] = await Promise.all([
-      checkDatabase(),
+      checkDatabase(c.var.db()),
       checkFirebase(c.env),
       checkAppleMusic(),
     ]);

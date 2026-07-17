@@ -11,7 +11,7 @@ import {
   getAuthSession,
   rateLimitByUser,
 } from "../../shared/middleware";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import { addFavoriteSongSchema } from "./model";
 import {
   appleMusicIdParamSchema,
@@ -25,7 +25,7 @@ import {
   deleteFavoriteSong,
 } from "./usecase";
 
-const favoriteSongs = new Hono<{ Bindings: Bindings }>()
+const favoriteSongs = new Hono<Env>()
   // 自分のお気に入り楽曲一覧取得
   .get("/api/me/favorites/songs", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
@@ -34,7 +34,7 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
     }
 
     const { limit, cursor } = parsePaginationQuery(c);
-    const result = await getFavoriteSongs(session, { limit, cursor });
+    const result = await getFavoriteSongs(session, c.var.db(), { limit, cursor });
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -51,7 +51,7 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
     async (c) => {
       const { userId } = c.req.valid("param");
       const { limit, cursor } = parsePaginationQuery(c);
-      const result = await getPublicFavoriteSongs(userId, { limit, cursor });
+      const result = await getPublicFavoriteSongs(userId, c.var.db(), { limit, cursor });
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);
@@ -76,7 +76,7 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
       }
 
       const input = c.req.valid("json");
-      const result = await registerFavoriteSong(session, input);
+      const result = await registerFavoriteSong(session, input, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result, 201);
@@ -100,7 +100,7 @@ const favoriteSongs = new Hono<{ Bindings: Bindings }>()
       }
 
       const { appleMusicId } = c.req.valid("param");
-      const result = await deleteFavoriteSong(session, appleMusicId);
+      const result = await deleteFavoriteSong(session, appleMusicId, c.var.db());
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.body(null, 204);

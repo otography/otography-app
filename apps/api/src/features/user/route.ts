@@ -9,7 +9,7 @@ import {
   respondWithError,
   unauthorizedResponse,
 } from "../../shared/errors/error-response";
-import type { Bindings } from "../../shared/types/bindings";
+import type { Env } from "../../shared/types/env";
 import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
 import {
   getProfile,
@@ -19,7 +19,7 @@ import {
   getPublicProfile,
 } from "./usecase";
 
-const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) => {
+const handleUserError = (error: AuthError, c: Context<Env>) => {
   console.warn("User route returned error.", {
     path: c.req.path,
     ...errorLogFields(error),
@@ -27,7 +27,7 @@ const handleUserError = (error: AuthError, c: Context<{ Bindings: Bindings }>) =
   return respondWithError(error, c);
 };
 
-const user = new Hono<{ Bindings: Bindings }>()
+const user = new Hono<Env>()
   // 自分のプロフィール取得
   .get("/api/user", requireAuthMiddleware(), async (c) => {
     const session = getAuthSession(c);
@@ -36,7 +36,7 @@ const user = new Hono<{ Bindings: Bindings }>()
       return unauthorizedResponse(c, "You are not logged in.");
     }
     console.info("GET /api/user started.", { hasEmail: Boolean(session.email) });
-    const result = await getProfile(session);
+    const result = await getProfile(session, c.var.db());
     if (result instanceof Error) return handleUserError(result, c);
     console.info("GET /api/user succeeded.", {
       hasName: Boolean(result.profile.name),
@@ -60,7 +60,7 @@ const user = new Hono<{ Bindings: Bindings }>()
         return unauthorizedResponse(c, "You are not logged in.");
       }
       const values = c.req.valid("json");
-      const result = await setupProfile(session, values);
+      const result = await setupProfile(session, values, c.var.db());
       if (result instanceof Error) return handleUserError(result, c);
       return c.json({ message: "Profile updated.", profile: result.profile }, 200);
     },
@@ -82,7 +82,7 @@ const user = new Hono<{ Bindings: Bindings }>()
         return unauthorizedResponse(c, "You are not logged in.");
       }
       const values = c.req.valid("json");
-      const result = await updateProfile(session, values);
+      const result = await updateProfile(session, values, c.var.db());
       if (result instanceof Error) return handleUserError(result, c);
       return c.json({ message: "Profile updated.", profile: result.profile }, 200);
     },
@@ -94,7 +94,7 @@ const user = new Hono<{ Bindings: Bindings }>()
     if (!session) {
       return unauthorizedResponse(c, "You are not logged in.");
     }
-    const result = await deleteAccount(session);
+    const result = await deleteAccount(session, c.var.db());
     if (result instanceof Error) return handleUserError(result, c);
     return c.json({ message: "Account deleted." }, 200);
   })
@@ -102,7 +102,7 @@ const user = new Hono<{ Bindings: Bindings }>()
   // 公開プロフィール取得
   .get("/api/users/:username", async (c) => {
     const { username } = c.req.param();
-    const result = await getPublicProfile(username);
+    const result = await getPublicProfile(username, c.var.db());
     if (result instanceof Error) return handleUserError(result, c);
     return c.json(result, 200);
   });

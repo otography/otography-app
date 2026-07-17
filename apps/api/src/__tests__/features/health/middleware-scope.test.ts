@@ -9,7 +9,7 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(() => ({ transaction: vi.fn() })),
+  createDbClient: vi.fn(() => ({ db: { transaction: vi.fn() }, end: async () => undefined })),
 }));
 
 describe("authSessionMiddleware スコープ (VAL-MW-001, VAL-MW-002)", () => {

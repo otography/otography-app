@@ -24,7 +24,7 @@
       "cache": false
     },
     "quality": {
-      "dependsOn": ["//#_lint", "//#_format", "//#check-dead-code"]
+      "dependsOn": ["//#_lint", "//#_format", "//#check-dead-code", "//#_similarity"]
     },
     "quality:fix": {
       "dependsOn": ["//#_lint:fix", "//#_format:fix"],
@@ -72,6 +72,10 @@
     },
     "//#check-dead-code": {
       "inputs": ["$TURBO_DEFAULT$", "knip.jsonc", "apps/*/package.json", "packages/*/package.json"]
+    },
+    "//#_similarity": {
+      "inputs": ["apps/api/src/**/*.ts", "apps/web/src/**/*.ts", "apps/web/src/**/*.tsx"],
+      "cache": false
     }
   }
 }

@@ -49,7 +49,7 @@ vi.mock("../../../shared/middleware", async () => {
 });
 
 vi.mock("../../../shared/db", () => ({
-  createDb: vi.fn(),
+  createDbClient: vi.fn(),
 }));
 
 vi.mock("../../../shared/apple-music", async (importOriginal) => {
@@ -60,7 +60,7 @@ vi.mock("../../../shared/apple-music", async (importOriginal) => {
   };
 });
 
-import { createDb } from "../../../shared/db";
+import { createDbClient } from "../../../shared/db";
 import { fetchSong } from "../../../shared/apple-music";
 
 const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
@@ -68,9 +68,12 @@ const mockDbWithTransaction = (txMethods: Record<string, unknown>) => {
     execute: vi.fn().mockResolvedValue(undefined),
     ...txMethods,
   };
-  vi.mocked(createDb).mockReturnValue({
-    ...tx,
-    transaction: vi.fn(async (fn) => fn(tx)),
+  vi.mocked(createDbClient).mockReturnValue({
+    db: {
+      ...tx,
+      transaction: vi.fn(async (fn) => fn(tx)),
+    },
+    end: async () => undefined,
   } as never);
 };
 
@@ -368,14 +371,17 @@ describe("songs endpoints", () => {
       attributes: { name: "Duplicate Song", genreNames: [] },
     });
 
-    vi.mocked(createDb).mockReturnValue({
-      execute: vi.fn().mockResolvedValue(undefined),
-      transaction: vi.fn().mockRejectedValue(
-        createDrizzleConstraintError({
-          constraintName: "songs_apple_music_id_key",
-          query: 'insert into "songs"',
-        }),
-      ),
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {
+        execute: vi.fn().mockResolvedValue(undefined),
+        transaction: vi.fn().mockRejectedValue(
+          createDrizzleConstraintError({
+            constraintName: "songs_apple_music_id_key",
+            query: 'insert into "songs"',
+          }),
+        ),
+      },
+      end: async () => undefined,
     } as never);
 
     const res = await testRequest("/api/songs", {
@@ -398,9 +404,12 @@ describe("songs endpoints", () => {
       attributes: { name: "Broken Song", genreNames: [] },
     });
 
-    vi.mocked(createDb).mockReturnValue({
-      execute: vi.fn().mockResolvedValue(undefined),
-      transaction: vi.fn().mockRejectedValue(new Error("DB error")),
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {
+        execute: vi.fn().mockResolvedValue(undefined),
+        transaction: vi.fn().mockRejectedValue(new Error("DB error")),
+      },
+      end: async () => undefined,
     } as never);
 
     const res = await testRequest("/api/songs", {
@@ -454,6 +463,10 @@ describe("songs endpoints", () => {
         statusCode: 502,
       }),
     );
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {},
+      end: async () => undefined,
+    } as never);
 
     const res = await testRequest("/api/songs", {
       method: "POST",

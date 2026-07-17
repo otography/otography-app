@@ -65,6 +65,10 @@ vi.mock("../../../features/favorite-songs/usecase", () => ({
   deleteFavoriteSong: vi.fn(),
 }));
 
+vi.mock("../../../shared/db", () => ({
+  createDbClient: vi.fn(() => ({ db: {}, end: async () => undefined })),
+}));
+
 import {
   getFavoriteSongs,
   getPublicFavoriteSongs,
