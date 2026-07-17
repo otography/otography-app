@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
+import { BudouxText } from "../lib/budoux-text";
 import { Avatar } from "./avatar";
-import { fontBody, fontHeading, fontMono } from "./tokens.stylex";
+import { fontTokens } from "./tokens.stylex";
 import { TrackArt, type ArtVariant } from "./track-art";
 
 const styles = stylex.create({
@@ -26,13 +27,13 @@ const styles = stylex.create({
   },
   kicker: {
     color: "#8177ec",
-    fontFamily: fontMono,
+    fontFamily: fontTokens.mono,
     fontSize: "0.84rem",
     fontWeight: 760,
     letterSpacing: "0.08em",
   },
   sectionTitle: {
-    fontFamily: fontHeading,
+    fontFamily: fontTokens.heading,
     fontSize: "clamp(2rem, 4vw, 2.75rem)",
     fontWeight: 700,
     lineHeight: 1.35,
@@ -42,7 +43,7 @@ const styles = stylex.create({
     maxWidth: "19rem",
     margin: 0,
     color: "#2b303d",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.98rem",
     fontWeight: 400,
     lineHeight: 1.95,
@@ -54,7 +55,7 @@ const styles = stylex.create({
     width: "fit-content",
     marginTop: "1rem",
     color: "#8177ec",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.9rem",
     fontWeight: 700,
     ":hover": {
@@ -85,7 +86,7 @@ const styles = stylex.create({
   discoveryCardTitle: {
     minHeight: "1.3rem",
     overflowWrap: "anywhere",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.92rem",
     fontWeight: 700,
     lineHeight: 1.45,
@@ -95,7 +96,7 @@ const styles = stylex.create({
   discoveryCardArtist: {
     margin: 0,
     color: "#4d5360",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.78rem",
     fontWeight: 500,
     lineHeight: 1.35,
@@ -108,7 +109,7 @@ const styles = stylex.create({
     alignItems: "center",
     minHeight: "1.9rem",
     color: "#4f5663",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.75rem",
     fontWeight: 700,
     paddingInline: "0.25rem",
@@ -124,7 +125,7 @@ const styles = stylex.create({
   discoveryCardQuote: {
     margin: 0,
     color: "#202633",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.92rem",
     fontWeight: 500,
     lineHeight: 1.75,
@@ -196,7 +197,9 @@ function DiscoveryCard({
         </span>
         <span>{likes}</span>
       </div>
-      <blockquote {...stylex.props(styles.discoveryCardQuote)}>{quote}</blockquote>
+      <blockquote {...stylex.props(styles.discoveryCardQuote)}>
+        <BudouxText text={quote} />
+      </blockquote>
     </article>
   );
 }
@@ -206,9 +209,11 @@ export function Discovery() {
     <section {...stylex.props(styles.discovery)} id="voices">
       <div {...stylex.props(styles.discoveryIntro)}>
         <span {...stylex.props(styles.kicker)}>DISCOVER</span>
-        <h2 {...stylex.props(styles.sectionTitle)}>いろんな人の、いろんな聴き方。</h2>
+        <h2 {...stylex.props(styles.sectionTitle)}>
+          <BudouxText text="いろんな人の、いろんな聴き方。" />
+        </h2>
         <p {...stylex.props(styles.discoveryIntroText)}>
-          同じ曲でも、聴く人やタイミングで感じ方は違う。だからおもしろい。
+          <BudouxText text="同じ曲でも、聴く人やタイミングで感じ方は違う。だからおもしろい。" />
         </p>
         <a href="#voices" {...stylex.props(styles.discoveryLink)}>
           <span>みんなの感想を見る</span>

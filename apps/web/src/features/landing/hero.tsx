@@ -1,9 +1,10 @@
 import Image from "next/image";
 import * as stylex from "@stylexjs/stylex";
+import { BudouxText } from "../lib/budoux-text";
 import { Avatar } from "./avatar";
 import { MusicPill } from "./music-pill";
 import { PrimaryLink } from "./primary-link";
-import { fontBody, fontHeading } from "./tokens.stylex";
+import { fontTokens } from "./tokens.stylex";
 import type { ArtVariant } from "./track-art";
 
 const styles = stylex.create({
@@ -38,7 +39,7 @@ const styles = stylex.create({
   heroTitle: {
     position: "relative",
     width: "fit-content",
-    fontFamily: fontHeading,
+    fontFamily: fontTokens.heading,
     fontSize: "clamp(4.4rem, 8vw, 6.5rem)",
     fontWeight: 800,
     lineHeight: 0.98,
@@ -59,7 +60,7 @@ const styles = stylex.create({
   heroLead: {
     maxWidth: "27rem",
     margin: 0,
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "clamp(1.25rem, 2vw, 1.55rem)",
     fontWeight: 700,
     lineHeight: 1.85,
@@ -73,7 +74,7 @@ const styles = stylex.create({
     maxWidth: "28rem",
     margin: 0,
     color: "#242936",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "1rem",
     fontWeight: 400,
     lineHeight: 2,
@@ -101,7 +102,7 @@ const styles = stylex.create({
     gap: "0.9rem",
     minHeight: "3.25rem",
     whiteSpace: "nowrap",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.95rem",
     fontWeight: 700,
     letterSpacing: "0.04em",
@@ -216,7 +217,7 @@ const styles = stylex.create({
   },
   heroPostText: {
     margin: 0,
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "1.08rem",
     fontWeight: 500,
     lineHeight: 1.75,
@@ -263,7 +264,7 @@ const styles = stylex.create({
     gap: "0.55rem",
     alignItems: "center",
     color: "#4b5362",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.78rem",
     fontWeight: 700,
   },
@@ -331,7 +332,9 @@ function HeroPostCard({
         <span>{name}</span>
         <time {...stylex.props(styles.postMetaTime)}>{time}</time>
       </div>
-      <p {...stylex.props(styles.heroPostText)}>{text}</p>
+      <p {...stylex.props(styles.heroPostText)}>
+        <BudouxText text={text} />
+      </p>
       <MusicPill artVariant={artVariant} title={title} artist={artist} />
     </article>
   );
@@ -357,10 +360,10 @@ export function Hero({ ctaHref }: { ctaHref: string }) {
           />
         </h1>
         <p {...stylex.props(styles.heroLead)}>
-          聴いた人の言葉をまとって、曲は次の誰かへ渡っていく。
+          <BudouxText text="聴いた人の言葉をまとって、曲は次の誰かへ渡っていく。" />
         </p>
         <p {...stylex.props(styles.heroDescription)}>
-          otographyは、楽曲への短い感想を投稿し、誰かの音楽体験に触れられるプラットフォームです。
+          <BudouxText text="otographyは、楽曲への短い感想を投稿し、誰かの音楽体験に触れられるプラットフォームです。" />
         </p>
         <div {...stylex.props(styles.heroActions)}>
           <PrimaryLink href={ctaHref} style={styles.heroActionPrimaryLink} />

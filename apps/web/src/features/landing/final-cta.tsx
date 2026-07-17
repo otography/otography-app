@@ -1,6 +1,7 @@
 import Image from "next/image";
 import * as stylex from "@stylexjs/stylex";
-import { fontBody, landingTokens as t } from "./tokens.stylex";
+import { BudouxText } from "../lib/budoux-text";
+import { fontTokens, landingTokens as t } from "./tokens.stylex";
 import { PrimaryLink } from "./primary-link";
 
 const styles = stylex.create({
@@ -73,7 +74,7 @@ const styles = stylex.create({
     justifySelf: "center",
     maxWidth: "37rem",
     margin: 0,
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "clamp(1.45rem, 3vw, 2rem)",
     fontWeight: 700,
     lineHeight: 1.8,
@@ -91,7 +92,7 @@ const styles = stylex.create({
   },
   finalCtaSmall: {
     color: "#2b303d",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.82rem",
     fontWeight: 500,
     letterSpacing: "0.08em",
@@ -129,12 +130,12 @@ export function FinalCta({ ctaHref }: { ctaHref: string }) {
         {...stylex.props(styles.ctaGoldOrb)}
       />
       <p {...stylex.props(styles.finalCtaText)}>
-        あなたの言葉が、誰かの音楽体験を変えるかもしれない。
+        <BudouxText text="あなたの言葉が、誰かの音楽体験を変えるかもしれない。" />
       </p>
       <div {...stylex.props(styles.finalCtaActions)}>
         <PrimaryLink href={ctaHref} />
         <small {...stylex.props(styles.finalCtaSmall)}>
-          アカウント登録なしでも投稿や閲覧ができます
+          <BudouxText text="アカウント登録なしでも閲覧できます" />
         </small>
       </div>
     </section>

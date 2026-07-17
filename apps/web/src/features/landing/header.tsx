@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import { fontBody, landingTokens as t } from "./tokens.stylex";
+import { fontTokens, landingTokens as t } from "./tokens.stylex";
 import { Logo } from "./logo";
 import { PrimaryLink } from "./primary-link";
 
@@ -10,6 +10,7 @@ const styles = stylex.create({
   header: {
     width: "100%",
     position: "relative",
+    backgroundColor: t.paper,
   },
   headerInner: {
     position: "relative",
@@ -23,7 +24,6 @@ const styles = stylex.create({
     margin: "0 auto",
     paddingBlock: "1rem",
     paddingInline: "clamp(1.25rem, 3vw, 2.5rem)",
-    backgroundColor: t.paper,
     "@media (max-width: 980px)": {
       gridTemplateColumns: "1fr auto auto",
     },
@@ -38,7 +38,7 @@ const styles = stylex.create({
     alignItems: "center",
     gap: "clamp(1.5rem, 4vw, 4rem)",
     color: "#11151f",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.96rem",
     fontWeight: 600,
     "@media (max-width: 980px)": {
@@ -115,7 +115,7 @@ const styles = stylex.create({
     paddingBlock: "1.5rem 2rem",
     paddingInline: "clamp(1.25rem, 3vw, 2.5rem)",
     color: "#11151f",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "1.05rem",
     fontWeight: 600,
     "@media (max-width: 980px)": {

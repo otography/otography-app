@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Logo } from "./logo";
-import { fontBody } from "./tokens.stylex";
+import { fontTokens } from "./tokens.stylex";
 
 const styles = stylex.create({
   footer: {
@@ -25,7 +25,7 @@ const styles = stylex.create({
     alignItems: "center",
     justifyContent: "center",
     color: "#596070",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "0.78rem",
     fontWeight: 600,
     "@media (max-width: 980px)": {

@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { fontBody } from "./tokens.stylex";
+import { fontTokens } from "./tokens.stylex";
 import { TrackArt, type ArtVariant } from "./track-art";
 
 const styles = stylex.create({
@@ -8,7 +8,7 @@ const styles = stylex.create({
     gridTemplateColumns: "auto 1fr",
     gap: "0.72rem",
     alignItems: "center",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
   },
   title: {
     display: "block",

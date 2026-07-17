@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
-import { fontBody, fontHeading, fontMono, landingTokens as t } from "./tokens.stylex";
+import { BudouxText } from "../lib/budoux-text";
+import { fontTokens, landingTokens as t } from "./tokens.stylex";
 
 const styles = stylex.create({
   howItWorks: {
@@ -22,13 +23,13 @@ const styles = stylex.create({
   },
   kicker: {
     color: "#8177ec",
-    fontFamily: fontMono,
+    fontFamily: fontTokens.mono,
     fontSize: "0.84rem",
     fontWeight: 760,
     letterSpacing: "0.08em",
   },
   sectionTitle: {
-    fontFamily: fontHeading,
+    fontFamily: fontTokens.heading,
     fontSize: "clamp(2rem, 4vw, 2.75rem)",
     fontWeight: 700,
     lineHeight: 1.35,
@@ -37,7 +38,7 @@ const styles = stylex.create({
   bodyText: {
     margin: 0,
     color: "#242936",
-    fontFamily: fontBody,
+    fontFamily: fontTokens.body,
     fontSize: "1.02rem",
     fontWeight: 400,
     lineHeight: 2.05,
@@ -49,9 +50,11 @@ export function HowItWorks() {
   return (
     <section {...stylex.props(styles.howItWorks)} id="how-it-works">
       <span {...stylex.props(styles.kicker)}>HOW IT WORKS</span>
-      <h2 {...stylex.props(styles.sectionTitle)}>感想がつなぐ、音楽との出会い。</h2>
+      <h2 {...stylex.props(styles.sectionTitle)}>
+        <BudouxText text="感想がつなぐ、音楽との出会い。" />
+      </h2>
       <p {...stylex.props(styles.bodyText)}>
-        楽曲を聴いて浮かんだ気持ちや情景を、短い言葉で気軽に投稿する。他の人の感想を読んで、気になる曲を見つけて聴いてみる。そうやって一つの楽曲に、いろんな人のいろんな言葉が積もっていき、その曲の新しい一面が見えてきます。
+        <BudouxText text="楽曲を聴いて浮かんだ気持ちや情景を、短い言葉で気軽に投稿する。他の人の感想を読んで、気になる曲を見つけて聴いてみる。そうやって一つの楽曲に、いろんな人のいろんな言葉が積もっていき、その曲の新しい一面が見えてきます。" />
       </p>
     </section>
   );

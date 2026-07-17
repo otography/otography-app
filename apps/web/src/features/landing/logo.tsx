@@ -1,12 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
-import { fontHeading } from "./tokens.stylex";
+import { fontTokens } from "./tokens.stylex";
 
 const styles = stylex.create({
   logo: {
     display: "inline-flex",
     alignItems: "center",
     minHeight: "2rem",
-    fontFamily: fontHeading,
+    fontFamily: fontTokens.heading,
     fontSize: "clamp(1.35rem, 2.4vw, 1.85rem)",
     fontWeight: 800,
     lineHeight: 1,
