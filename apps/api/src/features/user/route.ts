@@ -2,7 +2,12 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
-import { csrfProtection, requireAuthMiddleware, getAuthSession } from "../../shared/middleware";
+import {
+  csrfProtection,
+  getAuthSession,
+  requireAuthMiddleware,
+  requireFreshSessionMiddleware,
+} from "../../shared/middleware";
 import { errorLogFields } from "../../shared/logging/redaction";
 import {
   badRequestResponse,
@@ -88,16 +93,22 @@ const user = new Hono<Env>()
     },
   )
 
-  // アカウント削除（論理削除）
-  .delete("/api/user", csrfProtection(), requireAuthMiddleware(), async (c) => {
-    const session = getAuthSession(c);
-    if (!session) {
-      return unauthorizedResponse(c, "You are not logged in.");
-    }
-    const result = await deleteAccount(session, c.var.db());
-    if (result instanceof Error) return handleUserError(result, c);
-    return c.json({ message: "Account deleted." }, 200);
-  })
+  // アカウント削除（論理削除）— センシティブ操作のため厳格検証で失効・無効化を確認
+  .delete(
+    "/api/user",
+    csrfProtection(),
+    requireAuthMiddleware(),
+    requireFreshSessionMiddleware(),
+    async (c) => {
+      const session = getAuthSession(c);
+      if (!session) {
+        return unauthorizedResponse(c, "You are not logged in.");
+      }
+      const result = await deleteAccount(session, c.var.db());
+      if (result instanceof Error) return handleUserError(result, c);
+      return c.json({ message: "Account deleted." }, 200);
+    },
+  )
 
   // 公開プロフィール取得
   .get("/api/users/:username", async (c) => {

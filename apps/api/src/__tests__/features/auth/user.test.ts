@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockVerifySessionCookie } from "../../setup";
+import {
+  mockGetRefreshTokenCookie,
+  mockVerifySessionCookie,
+  mockVerifySessionCookieStrict,
+} from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -548,8 +552,84 @@ describe("DELETE /api/user", () => {
     expect(res.status).toBe(401);
   });
 
+  it("returns 401 session-revoked when session is revoked（deleteAccount は未実行）", async () => {
+    const { AuthError } = await import("@repo/errors/server");
+    const { FirebaseAuthError } = await import("@repo/firebase-auth-rest/auth");
+    // 通常検証は成功（authSession 設定済みになる）
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    // 厳格検証で失効を検知
+    const firebaseError = new FirebaseAuthError({
+      code: "session-cookie-revoked",
+      message: "The session cookie has been revoked.",
+    });
+    mockVerifySessionCookieStrict.mockResolvedValue(
+      AuthError.fromFirebase(firebaseError, "Session verification failed."),
+    );
+    // refresh token なし → refreshSession は null
+    mockGetRefreshTokenCookie.mockResolvedValue(null);
+
+    const deleteSpy = vi.fn().mockResolvedValue(undefined);
+    mockDbWithRls("uuid-user", {
+      update: vi.fn(() => ({
+        set: vi.fn(() => ({
+          where: vi.fn(() => ({ returning: deleteSpy })),
+        })),
+      })),
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      method: "DELETE",
+      cookie: { otography_session: "revoked-session" },
+    });
+
+    expect(res.status).toBe(401);
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/session-revoked",
+      status: 401,
+    });
+    // センシティブ操作の DB 副作用が実行されていないことを検証
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 account-disabled when user is disabled", async () => {
+    const { AuthError } = await import("@repo/errors/server");
+    const { FirebaseAuthError } = await import("@repo/firebase-auth-rest/auth");
+    mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    const firebaseError = new FirebaseAuthError({
+      code: "user-disabled",
+      message: "The user record is disabled.",
+    });
+    mockVerifySessionCookieStrict.mockResolvedValue(
+      AuthError.fromFirebase(firebaseError, "Session verification failed."),
+    );
+    mockGetRefreshTokenCookie.mockResolvedValue(null);
+
+    const res = await testRequest("/api/user", {
+      method: "DELETE",
+      cookie: { otography_session: "disabled-session" },
+    });
+
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/account-disabled",
+      status: 403,
+    });
+  });
+
   it("returns 200 on success", async () => {
     mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    // センシティブ操作の厳格検証も成功
+    mockVerifySessionCookieStrict.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
     });
@@ -589,6 +669,10 @@ describe("DELETE /api/user", () => {
 
   it("returns 500 when DB delete fails", async () => {
     mockVerifySessionCookie.mockResolvedValue({
+      sub: "user123",
+      email: "test@example.com",
+    });
+    mockVerifySessionCookieStrict.mockResolvedValue({
       sub: "user123",
       email: "test@example.com",
     });
