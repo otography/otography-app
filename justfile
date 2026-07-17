@@ -48,6 +48,10 @@ db-lint:
 dev: db-generate db-migrate
     bun run dev
 
+# 外出先プレビュー用: web をスマホ/Tailscale/ngrok から見えるように立ち上げる
+dev-away: db-generate db-migrate
+    bun run dev --filter=api & cd apps/web && bun run dev -- --hostname 0.0.0.0
+
 # APIのみ
 api:
     cd apps/api && bun run dev
@@ -55,6 +59,14 @@ api:
 # webのみ
 web:
     bun run dev --filter=web
+
+# 外出先プレビュー用: webのみを外部接続許可で起動
+web-away:
+    cd apps/web && bun run dev -- --hostname 0.0.0.0
+
+# 外出先プレビュー用: web の ngrok URLを発行
+ngrok:
+    ngrok http 3000
 
 # セットアップ: pull -> install -> db-start -> db-migrate -> dev
 setup:

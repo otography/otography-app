@@ -1,38 +1,38 @@
 "use client";
 
-// Google OAuth ログインボタン
-// プレーンなリンク要素で /api/auth/google へ遷移する
-// Next.js Link ではなくプレーンな <a> を使う（OAuth リダイレクトを正しく処理するため）
-// Firebase SDK や Google SDK は使用しない
+import * as stylex from "@stylexjs/stylex";
+import { uiTokens as ui } from "@/styles/tokens.stylex";
+
+const styles = stylex.create({
+  googleButton: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "0.5rem",
+    padding: "0.75rem 1rem",
+    borderRadius: "0.5rem",
+    borderWidth: "1px",
+    borderStyle: "solid",
+    borderColor: ui.inputBorder,
+    backgroundColor: ui.white,
+    color: ui.darkText,
+    textDecoration: "none",
+    fontSize: "1rem",
+    cursor: "pointer",
+    width: "100%",
+    boxSizing: "border-box",
+  },
+});
 
 type GoogleSignInButtonProps = {
-  /** OAuth エラー時のリダイレクト先（例: "/signup"）。未指定時は "/login" にフォールバック */
   from?: string;
 };
 
 export function GoogleSignInButton({ from }: GoogleSignInButtonProps) {
   const href = from ? `/api/auth/google?from=${encodeURIComponent(from)}` : "/api/auth/google";
   return (
-    // oxlint-disable-next-line no-html-link-for-pages -- OAuth リダイレクトのためプレーンな <a> が必要（Next.js Link は fetch で CORS エラーになる）
-    <a
-      href={href}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.5rem",
-        padding: "0.75rem 1rem",
-        borderRadius: "0.5rem",
-        border: "1px solid #d6d6d6",
-        backgroundColor: "#ffffff",
-        color: "#333",
-        textDecoration: "none",
-        fontSize: "1rem",
-        cursor: "pointer",
-        width: "100%",
-        boxSizing: "border-box",
-      }}
-    >
+    // oxlint-disable-next-line no-html-link-for-pages -- OAuth リダイレクトのためプレーンな <a> が必要
+    <a href={href} {...stylex.props(styles.googleButton)}>
       <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
         <path
           d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z"

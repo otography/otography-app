@@ -1,78 +1,29 @@
-import Link from "next/link";
+import * as stylex from "@stylexjs/stylex";
 import { NoProfileError } from "@repo/errors";
 import { getCurrentUser } from "@/features/auth";
+import { Header, Hero, HowItWorks, Discovery, FinalCta, Footer } from "@/features/landing";
+import { styles } from "./page.stylex";
+
+type CurrentUserResult = Awaited<ReturnType<typeof getCurrentUser>>;
+
+function getCtaHref(result: CurrentUserResult) {
+  if (!(result instanceof Error)) return "/account";
+  if (result instanceof NoProfileError) return "/setup-profile";
+  return "/login";
+}
 
 export default async function Home() {
   const result = await getCurrentUser();
+  const ctaHref = getCtaHref(result);
 
   return (
-    <main
-      style={{
-        display: "grid",
-        placeItems: "center",
-        minHeight: "100dvh",
-        padding: "2rem",
-        backgroundColor: "#f6f7fb",
-      }}
-    >
-      <section
-        style={{
-          width: "100%",
-          maxWidth: "40rem",
-          padding: "2rem",
-          borderRadius: "1rem",
-          border: "1px solid #d6d6d6",
-          backgroundColor: "#ffffff",
-          display: "grid",
-          gap: "1rem",
-        }}
-      >
-        <h1 style={{ margin: 0 }}>Otography</h1>
-        <p style={{ margin: 0, lineHeight: 1.5 }}>Welcome to Otography App</p>
-        {!(result instanceof Error) ? (
-          <Link
-            href="/account"
-            style={{
-              padding: "0.75rem 1rem",
-              borderRadius: "0.5rem",
-              border: "1px solid #d6d6d6",
-              textAlign: "center",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
-            Account
-          </Link>
-        ) : result instanceof NoProfileError ? (
-          <Link
-            href="/setup-profile"
-            style={{
-              padding: "0.75rem 1rem",
-              borderRadius: "0.5rem",
-              border: "1px solid #d6d6d6",
-              textAlign: "center",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
-            Set up profile
-          </Link>
-        ) : (
-          <Link
-            href="/login"
-            style={{
-              padding: "0.75rem 1rem",
-              borderRadius: "0.5rem",
-              border: "1px solid #d6d6d6",
-              textAlign: "center",
-              textDecoration: "none",
-              color: "inherit",
-            }}
-          >
-            Sign in
-          </Link>
-        )}
-      </section>
+    <main {...stylex.props(styles.page)}>
+      <Header ctaHref={ctaHref} />
+      <Hero ctaHref={ctaHref} />
+      <HowItWorks />
+      <Discovery />
+      <FinalCta ctaHref={ctaHref} />
+      <Footer />
     </main>
   );
 }
