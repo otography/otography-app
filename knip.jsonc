@@ -22,9 +22,12 @@
     "apps/web": {
       "entry": ["src/env.ts"],
       "project": ["src/**/*.{ts,tsx}"],
-      // next.config.ts が transpilePackages/stylexImports に文字列で渡すのみで
-      // import 文がないため knip の静的解析では検出できない
-      "ignoreDependencies": ["@stylexjs/open-props"],
+      // @stylexjs/open-props: next.config.ts が transpilePackages/stylexImports に
+      // 文字列で渡すのみで import 文がないため knip の静的解析では検出できない
+      // @stylexswc/turbopack-plugin: ソースからは直接importされないが、
+      // @stylexswc/nextjs-plugin/turbopack が実行時に webpack-loaders.js から
+      // apps/web を起点にモジュール解決するため直接依存として必要
+      "ignoreDependencies": ["@stylexjs/open-props", "@stylexswc/turbopack-plugin"],
     },
     "apps/api": {
       "entry": [],
