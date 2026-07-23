@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockCreateSessionCookie, mockSetRefreshTokenCookie } from "../../setup";
+import { mockIssueSession } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
@@ -11,7 +11,7 @@ vi.mock("../../../shared/db", () => ({
   createDbClient: vi.fn(),
 }));
 
-// レートリミットミドルウェアをバイパス（レートリミットテストは別ファイルで実施）
+// レートリミットミドルウェアをバイパス
 vi.mock("../../../shared/middleware/rate-limit.middleware", () => ({
   rateLimitByIp: () => async (_c: unknown, next: () => Promise<void>) => await next(),
   rateLimitByUser: () => async (_c: unknown, next: () => Promise<void>) => await next(),
@@ -47,6 +47,13 @@ const mockDbWithUserInsert = (rows: unknown[] = [{ id: "uuid-user" }]) => {
         values: vi.fn(() => ({
           onConflictDoUpdate: vi.fn(() => ({
             returning: vi.fn().mockResolvedValue(rows),
+          })),
+        })),
+      })),
+      select: vi.fn(() => ({
+        from: vi.fn(() => ({
+          where: vi.fn(() => ({
+            limit: vi.fn().mockResolvedValue([]),
           })),
         })),
       })),
@@ -102,44 +109,13 @@ describe("POST /api/auth/sign-in", () => {
   });
 
   describe("upstream dependency failure", () => {
-    it("returns 502 when createSessionCookie fails", async () => {
-      const { AuthError } = await import("@repo/errors/server");
+    it("returns 500 when DB user record creation fails", async () => {
       vi.mocked(signInWithPassword).mockResolvedValue({
         idToken: "test-id-token",
         localId: "user123",
         expiresIn: "3600",
         refreshToken: "test-refresh",
       });
-      mockCreateSessionCookie.mockResolvedValue(
-        new AuthError({
-          message: "Session creation failed.",
-          code: "session-failed",
-          statusCode: 502,
-        }),
-      );
-
-      const res = await testRequest("/api/auth/sign-in", {
-        method: "POST",
-        body: { email: "test@example.com", password: "password123" },
-      });
-
-      expect(res.status).toBe(502);
-      expect(await res.json()).toMatchObject({
-        type: "https://api.otography.com/errors/bad-gateway",
-        title: "Bad Gateway",
-        status: 502,
-        detail: "Session creation failed.",
-      });
-    });
-
-    it("returns 500 when user record creation fails", async () => {
-      vi.mocked(signInWithPassword).mockResolvedValue({
-        idToken: "test-id-token",
-        localId: "user123",
-        expiresIn: "3600",
-        refreshToken: "test-refresh",
-      });
-      mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
       vi.mocked(createDbClient).mockReturnValue({
         db: {
           transaction: vi.fn(async (fn) =>
@@ -170,19 +146,22 @@ describe("POST /api/auth/sign-in", () => {
         status: 500,
         detail: "Failed to create user record.",
       });
-      expect(res.getCookie("otography_session")).toBeUndefined();
     });
   });
 
   describe("success", () => {
-    it("returns 200 with session cookie and refresh token cookie", async () => {
+    it("returns 200 and sets opaque session cookie on success", async () => {
       vi.mocked(signInWithPassword).mockResolvedValue({
         idToken: "test-id-token",
         localId: "user123",
         expiresIn: "3600",
         refreshToken: "test-refresh",
       });
-      mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
+      // issueSession モックを成功させる
+      vi.mocked(mockIssueSession).mockResolvedValue({
+        opaqueId: "test-opaque-id",
+        session: { id: "session-uuid", userId: "uuid-user" },
+      });
 
       const res = await testRequest("/api/auth/sign-in", {
         method: "POST",
@@ -191,9 +170,9 @@ describe("POST /api/auth/sign-in", () => {
 
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual({ message: "Signed in successfully." });
-      expect(res.getCookie("otography_session")).toBe("test-session-cookie");
-      expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(expect.anything(), "test-refresh");
-      expect(createDbClient).toHaveBeenCalled();
+      // オペークセッションCookieが設定されている
+      const cookie = res.getCookie("otography_session");
+      expect(cookie).toBe("test-opaque-id");
     });
   });
 

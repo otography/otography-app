@@ -14,6 +14,6 @@ AUTH_OAUTH_STATE_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
-# AES-256-GCM暗号化キー（64文字のhex文字列）。refresh token cookieの暗号化に使用。
-# 生成例: openssl rand -hex 32
-AUTH_ENCRYPTION_KEY=
+# サーバーセッション用 AES-256-GCM キーリング。
+# hex は `openssl rand -hex 32` で生成し、実値はコミットしない。
+AUTH_SESSION_KEY_RING='{"v":1,"activeKeyId":"2026-01","keys":[{"id":"2026-01","hex":"64文字のhex"}]}'

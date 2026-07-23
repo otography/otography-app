@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockVerifySessionCookie } from "../../setup";
+import { mockResolveSession } from "../../setup";
 
 // ユースケース層をモック - レートリミットテストではDB操作は不要
 vi.mock("../../../features/post-likes/usecase", () => ({
@@ -74,9 +74,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
   beforeEach(() => {
     vi.clearAllMocks();
     // セッションcookie検証が成功するようにモック
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-1",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-1",
+        email: "test@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
   });
 
@@ -132,9 +135,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
     expect(userAExhausted.status).toBe(429);
 
     // ユーザーBはまだレートリミットに影響されていない
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-2",
-      email: "user-b@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-2",
+        email: "user-b@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
     const userBRes = await makeLikeRequest(mockEnv, "session-user-b");
     expect(userBRes.status).toBe(200);
@@ -144,9 +150,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
 describe("LIKE_RATE_LIMITER と CONTENT_RATE_LIMITER の独立性 (VAL-REFACTOR-003)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-1",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-1",
+        email: "test@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
   });
 

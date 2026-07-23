@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { REFRESH_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME } from "api/auth-cookies";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
 // APIパスはすべてNext.jsリライトでAPIサーバーに転送されるため、
 // セッションチェックの対象外とする（OAuth コールバック等を含む）
 const API_PREFIX = "/api/";
+
+// 本番（HTTPS）と開発（localhost HTTP）で異なるCookie名を使用
+const isSecureUrl = (url: URL) => url.protocol === "https:";
+const getSessionCookieName = (isSecure: boolean) =>
+  isSecure ? "__Host-otography_session" : "otography_session";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,10 +23,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // セッションクッキーがなくても refresh token があれば API 側の自動更新に任せる
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME);
-  const refreshTokenCookie = request.cookies.get(REFRESH_TOKEN_COOKIE_NAME);
-  if (!sessionCookie?.value && !refreshTokenCookie?.value) {
+  // オペークセッションCookieのみをチェック
+  const isSecure = isSecureUrl(request.nextUrl);
+  const sessionCookieName = getSessionCookieName(isSecure);
+  const sessionCookie = request.cookies.get(sessionCookieName);
+  if (!sessionCookie?.value) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockCreateSessionCookie, mockSetRefreshTokenCookie } from "../../setup";
+import { mockIssueSession } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 // --- モック関数（vi.hoistedで定義し、モックとテストの両方で参照可能にする） ---
@@ -69,7 +69,6 @@ const VALID_CODE = "valid-google-auth-code";
 const GOOGLE_ID_TOKEN = "google-id-token-123";
 const FIREBASE_ID_TOKEN = "firebase-id-token-abc";
 const FIREBASE_REFRESH_TOKEN = "firebase-refresh-token-def";
-const SESSION_COOKIE = "test-session-cookie";
 
 describe("GET /api/auth/google", () => {
   beforeEach(() => {
@@ -191,8 +190,7 @@ describe("GET /api/auth/google/callback", () => {
       photoUrl: "",
       needConfirmation: false,
     });
-    mockCreateSessionCookie.mockResolvedValue(SESSION_COOKIE);
-    mockSetRefreshTokenCookie.mockResolvedValue(undefined);
+    mockIssueSession.mockResolvedValue({ opaqueId: "opaque-google", session: { id: "sess" } });
   });
 
   // --- 成功ケース ---
@@ -207,12 +205,8 @@ describe("GET /api/auth/google/callback", () => {
     const location = res.headers.get("Location")!;
     expect(location).toContain("/account");
 
-    // セッションCookieとリフレッシュトークンCookieが設定される
-    expect(res.getCookie("otography_session")).toBe(SESSION_COOKIE);
-    expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(
-      expect.anything(),
-      FIREBASE_REFRESH_TOKEN,
-    );
+    // オペークセッションCookieが設定される
+    expect(res.getCookie("otography_session")).toBe("opaque-google");
   });
 
   it("新規ユーザーでもstate.redirectにリダイレクトする（setup-profile遷移はフロントエンド担当）", async () => {
@@ -237,12 +231,8 @@ describe("GET /api/auth/google/callback", () => {
     // 新規ユーザーの/setup-profile遷移はフロントエンドのrequireAuth()が担当
     expect(location).toContain("/account");
 
-    // セッションCookieとリフレッシュトークンCookieが設定される
-    expect(res.getCookie("otography_session")).toBe(SESSION_COOKIE);
-    expect(mockSetRefreshTokenCookie).toHaveBeenCalledWith(
-      expect.anything(),
-      FIREBASE_REFRESH_TOKEN,
-    );
+    // オペークセッションCookieが設定される
+    expect(res.getCookie("otography_session")).toBe("opaque-google");
   });
 
   it("state内のredirectが優先される", async () => {
@@ -342,7 +332,7 @@ describe("GET /api/auth/google/callback", () => {
 
     // セッションCookieは設定されない
     expect(res.getCookie("otography_session")).toBeUndefined();
-    expect(mockCreateSessionCookie).not.toHaveBeenCalled();
+    expect(mockIssueSession).not.toHaveBeenCalled();
   });
 
   it("Firebase認証失敗時、/login?error=firebase_auth_failedへリダイレクトする", async () => {
@@ -379,7 +369,8 @@ describe("GET /api/auth/google/callback", () => {
 
   it("セッションCookie作成失敗時、/login?error=session_failedへリダイレクトする", async () => {
     const { AuthError } = await import("@repo/errors/server");
-    mockCreateSessionCookie.mockResolvedValue(
+    // issueSession失敗
+    vi.mocked(mockIssueSession).mockResolvedValue(
       new AuthError({
         message: "Session creation failed.",
         code: "session-failed",
@@ -397,11 +388,8 @@ describe("GET /api/auth/google/callback", () => {
     expect(location).toContain("/login?error=session_failed");
   });
 
-  it("リフレッシュトークンCookie設定失敗時、/login?error=session_failedへリダイレクトする", async () => {
-    const { AuthRestError } = await import("@repo/errors");
-    mockSetRefreshTokenCookie.mockResolvedValue(
-      new AuthRestError({ message: "Failed to set refresh token.", statusCode: 500 }),
-    );
+  it("ユーザーレコード作成失敗時、/login?error=session_failedへリダイレクトする", async () => {
+    vi.mocked(mockIssueSession).mockResolvedValue(new Error("DB error"));
 
     const res = await testRequest(
       `/api/auth/google/callback?code=${VALID_CODE}&state=${VALID_STATE}`,

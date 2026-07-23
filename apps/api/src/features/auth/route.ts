@@ -5,10 +5,11 @@ import type { Context } from "hono";
 import { AuthRestError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
-import { createSessionCookie, revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
-import { csrfProtection, getAuthSession, rateLimitByIp } from "../../shared/middleware";
-import { setSessionCookie, clearSessionCookie } from "../../shared/auth/session-cookie";
-import { setRefreshTokenCookie, clearRefreshTokenCookie } from "../../shared/auth/refresh-token";
+import { csrfProtection, rateLimitByIp } from "../../shared/middleware";
+import { clearOpaqueSessionCookie, setOpaqueSessionCookie } from "../../shared/auth/opaque-cookie";
+import { getEncryptCtx } from "../../shared/auth/key-ring-loader";
+import { issueSession } from "../../shared/auth/session-service";
+import { revokeSession } from "../../shared/auth/session-repository";
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { domainAuthError } from "../../shared/errors/domain-error";
@@ -36,11 +37,25 @@ const handleAuthError = (error: AuthError | AuthRestError, c: Context<Env>) => {
   }
 
   if ("clearCookie" in error && error.clearCookie) {
-    clearSessionCookie(c);
-    clearRefreshTokenCookie(c);
+    clearOpaqueSessionCookie(c);
   }
 
   return respondWithError(error, c);
+};
+
+// 暗号化コンテキストを取得（失敗時はエラーレスポンス）
+const getCtxOrError = async () => {
+  const ctx = await getEncryptCtx();
+  if (ctx instanceof Error) {
+    console.error("暗号化コンテキストの初期化に失敗しました。", { message: ctx.message });
+    return new AuthError({
+      message: "Session encryption not configured.",
+      code: "encryption-config-error",
+      statusCode: 500,
+      cause: ctx,
+    });
+  }
+  return ctx;
 };
 
 const auth = new Hono<Env>()
@@ -73,21 +88,39 @@ const auth = new Hono<Env>()
         firebaseId: maskIdentifier(result.localId),
       });
 
-      const sessionCookie = await createSessionCookie(result.idToken);
-      if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
-      console.info("Email sign-in session cookie created.", {
-        firebaseId: maskIdentifier(result.localId),
-      });
-
+      // DBにユーザーレコード作成（先に作成、失敗時はセッションを発行しない）
       const userRecord = await createUserRecord({ firebaseId: result.localId }, c.var.db());
       if (userRecord instanceof Error) return handleAuthError(userRecord, c);
       console.info("Email sign-in user record ensured.", {
         firebaseId: maskIdentifier(result.localId),
       });
 
-      setSessionCookie(c, sessionCookie);
-      const refreshCookie = await setRefreshTokenCookie(c, result.refreshToken);
-      if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
+      // 暗号化コンテキスト取得
+      const ctx = await getCtxOrError();
+      if (ctx instanceof Error) return handleAuthError(ctx, c);
+
+      // サーバーセッションを発行
+      const issued = await issueSession({
+        firebaseIdToken: result.idToken,
+        firebaseRefreshToken: result.refreshToken,
+        userId: userRecord.id,
+        db: c.var.db(),
+        ctx,
+      });
+      if (issued instanceof Error) {
+        return handleAuthError(
+          new AuthError({
+            message: issued.message,
+            code: "session-issuance-failed",
+            statusCode: 500,
+            cause: issued,
+          }),
+          c,
+        );
+      }
+
+      // オペークCookieのみを設定（Firebaseクレデンシャルはブラウザに置かない）
+      setOpaqueSessionCookie(c, issued.opaqueId);
       console.info("Email sign-in completed.", { firebaseId: maskIdentifier(result.localId) });
       return c.json({ message: "Signed in successfully." }, 200);
     },
@@ -127,50 +160,73 @@ const auth = new Hono<Env>()
         firebaseId: maskIdentifier(signUpResult.localId),
       });
 
-      const sessionCookie = await createSessionCookie(signUpResult.idToken);
-      if (sessionCookie instanceof Error) return handleAuthError(sessionCookie, c);
-      console.info("Email sign-up session cookie created.", {
-        firebaseId: maskIdentifier(signUpResult.localId),
-      });
-
-      // DB にユーザーレコード作成（firebase_id のみ、username は null）
+      // DBにユーザーレコード作成
       const userRecord = await createUserRecord({ firebaseId: signUpResult.localId }, c.var.db());
       if (userRecord instanceof Error) return handleAuthError(userRecord, c);
       console.info("Email sign-up user record created.", {
         firebaseId: maskIdentifier(signUpResult.localId),
       });
 
-      setSessionCookie(c, sessionCookie);
-      const refreshCookie = await setRefreshTokenCookie(c, signUpResult.refreshToken);
-      if (refreshCookie instanceof Error) return handleAuthError(refreshCookie, c);
+      // 暗号化コンテキスト取得
+      const ctx = await getCtxOrError();
+      if (ctx instanceof Error) return handleAuthError(ctx, c);
+
+      // サーバーセッションを発行
+      const issued = await issueSession({
+        firebaseIdToken: signUpResult.idToken,
+        firebaseRefreshToken: signUpResult.refreshToken,
+        userId: userRecord.id,
+        db: c.var.db(),
+        ctx,
+      });
+      if (issued instanceof Error) {
+        return handleAuthError(
+          new AuthError({
+            message: issued.message,
+            code: "session-issuance-failed",
+            statusCode: 500,
+            cause: issued,
+          }),
+          c,
+        );
+      }
+
+      setOpaqueSessionCookie(c, issued.opaqueId);
       console.info("Email sign-up completed.", {
         firebaseId: maskIdentifier(signUpResult.localId),
       });
       return c.json({ message: "Account created successfully." }, 201);
     },
   )
+  // サインアウト: 現在のデバイスのサーバーセッションのみを無効化する（#2）。
+  // Firebase のグローバルな revokeRefreshTokens は呼ばない（アカウント削除/sign-out-all のみ）。
   .post("/api/auth/sign-out", csrfProtection(), async (c) => {
-    const session = getAuthSession(c);
-    const userId = session?.sub;
+    const sessionCtx = c.get("sessionCtx");
 
-    if (!userId) {
-      clearSessionCookie(c);
-      clearRefreshTokenCookie(c);
+    // Cookieがない、またはセッションが未解決 → Cookieクリアのみ
+    if (!sessionCtx) {
+      clearOpaqueSessionCookie(c);
       return c.body(null, 204);
     }
 
-    const revokeResult = await revokeRefreshTokens(userId);
+    // sessionCtx からセッションIDを取得して無効化（再ハッシュ/再照会なし #3）
+    const revokeResult = await revokeSession(c.var.db(), sessionCtx.sessionId);
     if (revokeResult instanceof Error) {
-      if (revokeResult.clearCookie) {
-        clearSessionCookie(c);
-        clearRefreshTokenCookie(c);
-        return c.body(null, 204);
-      }
-      return handleAuthError(revokeResult, c);
+      console.error("サインアウト時のセッション無効化に失敗しました。", {
+        message: revokeResult.message,
+      });
+      return respondWithError(
+        new AuthError({
+          message: "Failed to sign out.",
+          code: "session-revocation-failed",
+          statusCode: 500,
+          cause: revokeResult,
+        }),
+        c,
+      );
     }
 
-    clearSessionCookie(c);
-    clearRefreshTokenCookie(c);
+    clearOpaqueSessionCookie(c);
     return c.body(null, 204);
   })
   .get("/api/auth/google", rateLimitByIp("AUTH_GOOGLE_RATE_LIMITER"), googleOAuthRedirect)

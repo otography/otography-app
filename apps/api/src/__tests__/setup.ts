@@ -46,27 +46,116 @@ vi.mock("../shared/firebase/firebase-admin", () => ({
 
 const mockExchangeRefreshToken: Mock = vi.fn();
 
-const mockGetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(null);
-const mockSetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(undefined);
-const mockClearRefreshTokenCookie: Mock = vi.fn();
-
 vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,
 }));
 
-vi.mock("../shared/auth/refresh-token", () => ({
-  getRefreshTokenCookie: mockGetRefreshTokenCookie,
-  setRefreshTokenCookie: mockSetRefreshTokenCookie,
-  clearRefreshTokenCookie: mockClearRefreshTokenCookie,
+// セッションサービス・リポジトリのモック
+// ミドルウェアとルートハンドラが内部で使用するため、ここでモックを設定する。
+// 各テストファイルで必要に応じて上書きする。
+const mockGetValidSessionByOpaqueId: Mock = vi.fn().mockResolvedValue(null);
+const mockGetCurrentSessionById: Mock = vi.fn().mockResolvedValue(null);
+const mockCreateServerSession: Mock = vi.fn();
+const mockTouchSession: Mock = vi.fn().mockResolvedValue(undefined);
+const mockRefreshSessionCredentials: Mock = vi.fn();
+const mockRevokeSession: Mock = vi.fn().mockResolvedValue(undefined);
+const mockRevokeAllUserSessions: Mock = vi.fn().mockResolvedValue(undefined);
+const mockGetSessionsByKeyVersion: Mock = vi.fn().mockResolvedValue([]);
+const mockCountSessionsByKeyVersion: Mock = vi.fn().mockResolvedValue(0);
+
+vi.mock("../shared/auth/session-repository", () => ({
+  createServerSession: mockCreateServerSession,
+  getValidSessionByOpaqueId: mockGetValidSessionByOpaqueId,
+  getCurrentSessionById: mockGetCurrentSessionById,
+  touchSession: mockTouchSession,
+  refreshSessionCredentials: mockRefreshSessionCredentials,
+  revokeSession: mockRevokeSession,
+  revokeAllUserSessions: mockRevokeAllUserSessions,
+  getSessionsByKeyVersion: mockGetSessionsByKeyVersion,
+  countSessionsByKeyVersion: mockCountSessionsByKeyVersion,
+}));
+
+// セッション暗号化のモック（実際の暗号化を使用するとテストが複雑になるため）
+const mockGenerateOpaqueSessionId: Mock = vi.fn(() => "test-opaque-id-mock");
+const mockHashSessionId: Mock = vi.fn(async (id: string) => `hash-of-${id}`);
+const mockIsValidOpaqueCookieValue: Mock = vi.fn(() => true);
+
+vi.mock("../shared/auth/session-crypto", () => ({
+  generateOpaqueSessionId: mockGenerateOpaqueSessionId,
+  hashSessionId: mockHashSessionId,
+  isValidOpaqueCookieValue: mockIsValidOpaqueCookieValue,
+}));
+
+// キーリングローダーのモック
+const mockGetEncryptCtx: Mock = vi.fn().mockResolvedValue({
+  activeKeyId: "test-key-1",
+  activeKey: {},
+  keys: new Map([["test-key-1", { id: "test-key-1", cryptoKey: {}, decryptOnly: false }]]),
+});
+
+vi.mock("../shared/auth/key-ring-loader", () => ({
+  getEncryptCtx: mockGetEncryptCtx,
+}));
+
+// エンベロープ暗号化のモック
+const mockEncryptCredential: Mock = vi.fn(async (_ctx: unknown, plaintext: string) => ({
+  v: 1,
+  kid: "test-key-1",
+  iv: "00".repeat(12),
+  ct: `encrypted-${plaintext}`,
+}));
+
+const mockDecryptCredential: Mock = vi.fn(async (_ctx: unknown, envelope: { ct: string }) => {
+  // ct が "encrypted-XYZ" の形式なら "XYZ" を返す
+  if (envelope.ct.startsWith("encrypted-")) {
+    return envelope.ct.slice("encrypted-".length);
+  }
+  return envelope.ct;
+});
+
+vi.mock("../shared/auth/envelope", () => ({
+  encryptCredential: mockEncryptCredential,
+  decryptCredential: mockDecryptCredential,
+  EnvelopeError: class EnvelopeError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "EnvelopeError";
+    }
+  },
+}));
+
+// セッションサービスのモック
+const mockIssueSession: Mock = vi.fn();
+const mockResolveSession: Mock = vi.fn().mockResolvedValue(null);
+
+vi.mock("../shared/auth/session-service", () => ({
+  issueSession: mockIssueSession,
+  resolveSession: mockResolveSession,
+  batchReEncrypt: vi.fn().mockResolvedValue({ reEncrypted: 0, errors: [] }),
+  countRemainingByKey: vi.fn().mockResolvedValue(0),
 }));
 
 export {
-  mockClearRefreshTokenCookie,
+  mockCountSessionsByKeyVersion,
+  mockCreateServerSession,
   mockCreateSessionCookie,
+  mockDecryptCredential,
+  mockEncryptCredential,
   mockExchangeRefreshToken,
-  mockGetRefreshTokenCookie,
+  mockGenerateOpaqueSessionId,
+  mockGetEncryptCtx,
+  mockGetCurrentSessionById,
+  mockGetSessionsByKeyVersion,
+  mockGetValidSessionByOpaqueId,
+  mockHashSessionId,
+  mockIsValidOpaqueCookieValue,
+  mockIssueSession,
+  mockRefreshSessionCredentials,
+  mockResolveSession,
+  mockRevokeAllUserSessions,
   mockRevokeRefreshTokens,
-  mockSetRefreshTokenCookie,
+  mockRevokeSession,
+  mockTouchSession,
   mockVerifyIdToken,
   mockVerifySessionCookie,
   mockVerifySessionCookieStrict,

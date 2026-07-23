@@ -33,7 +33,8 @@ import {
   problemResponse,
 } from "../shared/errors/error-response";
 import { logError } from "../shared/logging/structured-log";
-import { SESSION_COOKIE_NAME } from "../shared/auth/cookies";
+// テスト用に固定のCookie名（開発環境と同じ）
+const SESSION_COOKIE_NAME = "otography_session";
 import { deleteCookie } from "hono/cookie";
 
 // グローバルエラーハンドラーを適用したテスト用アプリを構築

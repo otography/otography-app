@@ -12,9 +12,9 @@ import {
   OAUTH_NONCE_COOKIE_NAME,
 } from "../../../shared/auth/oauth-state";
 import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebase/firebase-google";
-import { createSessionCookie } from "../../../shared/firebase/firebase-admin";
-import { setSessionCookie } from "../../../shared/auth/session-cookie";
-import { setRefreshTokenCookie } from "../../../shared/auth/refresh-token";
+import { setOpaqueSessionCookie } from "../../../shared/auth/opaque-cookie";
+import { getEncryptCtx } from "../../../shared/auth/key-ring-loader";
+import { issueSession } from "../../../shared/auth/session-service";
 import { createUserRecord } from "../../user/usecase";
 import type { Env } from "../../../shared/types/env";
 
@@ -179,26 +179,31 @@ export const googleOAuthCallback = async (c: Context<Env>) => {
     return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult), errorPage), 302);
   }
 
-  // セッションCookieを作成
-  const sessionCookie = await createSessionCookie(firebaseResult.idToken);
-  if (sessionCookie instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
-  }
-
-  // リフレッシュトークンCookieを設定
-  const refreshResult = await setRefreshTokenCookie(c, firebaseResult.refreshToken);
-  if (refreshResult instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
-  }
-
   // ユーザーレコード作成（冪等: 既存なら何もしない）
   const userRecord = await createUserRecord({ firebaseId: firebaseResult.localId }, c.var.db());
   if (userRecord instanceof Error) {
     return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
   }
 
-  // セッションCookieを設定
-  setSessionCookie(c, sessionCookie);
+  // サーバーセッションを発行
+  const ctx = await getEncryptCtx();
+  if (ctx instanceof Error) {
+    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
+  }
+
+  const issued = await issueSession({
+    firebaseIdToken: firebaseResult.idToken,
+    firebaseRefreshToken: firebaseResult.refreshToken,
+    userId: userRecord.id,
+    db: c.var.db(),
+    ctx,
+  });
+  if (issued instanceof Error) {
+    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
+  }
+
+  // オペークCookieのみを設定
+  setOpaqueSessionCookie(c, issued.opaqueId);
 
   // 使用済みのnonce cookieを削除
   deleteCookie(c, OAUTH_NONCE_COOKIE_NAME, {

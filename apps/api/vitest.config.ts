@@ -1,6 +1,13 @@
 import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
 
+// テスト用ダミーキーリングJSON（32バイト = 64 hex文字のダミーキー）
+const TEST_KEY_RING = JSON.stringify({
+  v: 1,
+  activeKeyId: "test-key-1",
+  keys: [{ id: "test-key-1", hex: "a".repeat(64) }],
+});
+
 // wrangler.jsonc の vars を env.dev/production に分けたため、
 // トップレベル vars が空になりテスト環境にバインドされなくなった。
 // dev 環境と同じ値 + secrets のダミーを miniflare.bindings で注入する。
@@ -18,7 +25,8 @@ const testBindings = {
   AUTH_OAUTH_STATE_SECRET: "test-oauth-state-secret-for-ci",
   GOOGLE_CLIENT_ID: "test-google-client-id",
   GOOGLE_CLIENT_SECRET: "test-google-client-secret",
-  AUTH_ENCRYPTION_KEY: "0".repeat(64),
+  // セッション暗号化キーリング（JSON文字列）
+  AUTH_SESSION_KEY_RING: TEST_KEY_RING,
 };
 
 export default defineConfig({

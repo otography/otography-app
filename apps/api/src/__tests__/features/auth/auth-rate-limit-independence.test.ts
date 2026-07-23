@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockCreateSessionCookie } from "../../setup";
+import { mockIssueSession } from "../../setup";
 
 // getConnInfo をモックしてテスト用IPアドレスを制御可能にする
 // vi.mock のクロージャで変数再代入を反映するため、ミュータブルなオブジェクトを使用
@@ -157,7 +157,7 @@ describe("認証エンドポイント間のレートリミット独立性 (VAL-A
       refreshToken: "test-refresh",
       isNewUser: true,
     });
-    mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
+    mockIssueSession.mockResolvedValue({ opaqueId: "opaque-id", session: { id: "sess" } });
     // Google OAuth リダイレクト成功のモック設定
     mockGenerateOAuthState.mockResolvedValue({ nonce: "test-nonce", token: "test-state" });
     mockDbWithUserInsert();
@@ -200,7 +200,7 @@ describe("認証エンドポイント間のレートリミット独立性 (VAL-A
       refreshToken: "test-refresh",
       isNewUser: true,
     });
-    mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
+    mockIssueSession.mockResolvedValue({ opaqueId: "opaque-id", session: { id: "sess" } });
     mockGenerateOAuthState.mockResolvedValue({ nonce: "test-nonce", token: "test-state" });
     mockDbWithUserInsert();
 

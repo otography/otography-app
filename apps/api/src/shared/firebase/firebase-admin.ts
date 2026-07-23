@@ -2,7 +2,7 @@ import { env } from "cloudflare:workers";
 import { cert, initializeApp } from "@repo/firebase-auth-rest/app";
 import { getAuth } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
-import { SESSION_COOKIE_MAX_AGE_MS } from "../auth/session-cookie";
+import { ABSOLUTE_TIMEOUT_MS } from "../auth/session-config";
 
 const firebaseAuth = getAuth(
   initializeApp({
@@ -17,7 +17,7 @@ const firebaseAuth = getAuth(
 
 const createSessionCookie = (idToken: string) =>
   firebaseAuth
-    .createSessionCookie(idToken, { expiresIn: SESSION_COOKIE_MAX_AGE_MS })
+    .createSessionCookie(idToken, { expiresIn: ABSOLUTE_TIMEOUT_MS })
     .catch((e) => AuthError.fromFirebase(e, "Session creation failed.", 502));
 
 const verifySessionCookieWithOptions = (

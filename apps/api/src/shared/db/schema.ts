@@ -1,12 +1,15 @@
 import { sql } from "drizzle-orm";
 import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
 import { type } from "arktype";
+import type { CredentialEnvelope } from "../auth/envelope";
 import {
+  bigint,
   boolean,
   check,
   date,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgPolicy,
   pgRole,
@@ -119,6 +122,75 @@ export const users = pgTable(
       using: sql`${table.id} = ${requestingUserId}`,
       withCheck: sql`${table.id} = ${requestingUserId}`,
     }),
+  ],
+);
+
+/**
+ * サーバーサイドセッションテーブル
+ *
+ * ブラウザにはオペークなセッションIDのみをCookieで設定し、
+ * Firebase クレデンシャルはこのテーブルに暗号化して保存する。
+ * バックエンド基盤のため RLS は適用せず、service role のみアクセスする。
+ *
+ * raw セッションIDは保存せず、SHA-256 ハッシュのみを保存する。
+ * session_hash の unique 制約がインデックスとしても機能するため、
+ * 重複する非ユニークハッシュインデックスは作成しない。
+ *
+ * ライフタイムポリシー（プロダクト決定、Firebaseとは独立）:
+ *   idle timeout: 最終使用から5日
+ *   absolute timeout: セッション作成から14日（延長不可）
+ */
+/** @db-schema */
+export const serverSessions = pgTable(
+  "server_sessions",
+  {
+    id: uuidV7("id").primaryKey(),
+    // オペークセッションID(raw)の SHA-256 ハッシュ（hex）
+    sessionHash: varchar("session_hash", { length: 64 }).notNull().unique(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // 暗号化された Firebase セッションクッキー（型付き jsonb エンベロープ）
+    encryptedSessionCredential: jsonb("encrypted_session_credential")
+      .$type<CredentialEnvelope>()
+      .notNull(),
+    // 暗号化された Firebase リフレッシュトークン（型付き jsonb エンベロープ）
+    encryptedRefreshToken: jsonb("encrypted_refresh_token").$type<CredentialEnvelope>().notNull(),
+    // セッション作成時に使用したキーリングのアクティブキーID（NOT NULL）
+    keyVersion: varchar("key_version", { length: 100 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => sql`now()`),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    // アイドルタイムアウト（絶対時間）
+    idleExpiresAt: timestamp("idle_expires_at", { withTimezone: true, mode: "string" }).notNull(),
+    // 絶対有効期限（セッション作成から固定期間後）
+    absoluteExpiresAt: timestamp("absolute_expires_at", {
+      withTimezone: true,
+      mode: "string",
+    }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true, mode: "string" }),
+    // 楽観的排他制御用バージョン（リフレッシュトークンの原子更新で使用）
+    version: bigint("version", { mode: "number" }).notNull().default(1),
+  },
+  (table) => [
+    index("idx_server_sessions_user_id").on(table.userId),
+    check(
+      "server_sessions_session_hash_format_check",
+      sql`${table.sessionHash} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check("server_sessions_key_version_not_empty_check", sql`length(${table.keyVersion}) > 0`),
+    check("server_sessions_version_positive_check", sql`${table.version} > 0`),
+    check(
+      "server_sessions_expiry_order_check",
+      sql`${table.idleExpiresAt} <= ${table.absoluteExpiresAt}`,
+    ),
   ],
 );
 

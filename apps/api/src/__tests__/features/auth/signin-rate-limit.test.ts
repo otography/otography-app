@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockCreateSessionCookie } from "../../setup";
+import { mockIssueSession } from "../../setup";
 
 // getConnInfo をモックしてテスト用IPアドレスを制御可能にする
 // vi.mock のクロージャで変数再代入を反映するため、ミュータブルなオブジェクトを使用
@@ -112,7 +112,7 @@ describe("POST /api/auth/sign-in レートリミット", () => {
       expiresIn: "3600",
       refreshToken: "test-refresh",
     });
-    mockCreateSessionCookie.mockResolvedValue("test-session-cookie");
+    mockIssueSession.mockResolvedValue({ opaqueId: "opaque-id", session: { id: "sess" } });
     mockDbWithUserInsert();
 
     const mockEnv = createRateLimitMockEnv();
