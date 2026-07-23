@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  mockGetRefreshTokenCookie,
-  mockVerifySessionCookie,
-  mockVerifySessionCookieStrict,
-} from "../../setup";
+import { mockResolveSession, mockRevokeRefreshTokens } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
+
+const sessionRepository = vi.hoisted(() => ({
+  revokeAllUserSessions: vi.fn().mockResolvedValue(undefined),
+  revokeSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../shared/auth/session-repository", () => sessionRepository);
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
@@ -82,10 +85,9 @@ describe("GET /api/user", () => {
   });
 
   it("returns 401 when session cookie is invalid", async () => {
-    const { AuthError } = await import("@repo/errors/server");
-    mockVerifySessionCookie.mockResolvedValue(
-      new AuthError({ message: "Invalid session.", code: "auth/invalid-session", statusCode: 401 }),
-    );
+    // セッション解決失敗 → null が返され、authSession は設定されない
+    mockResolveSession.mockResolvedValue(null);
+    mockDbWithSelect([]); // ダミーDB接続を提供
 
     const res = await testRequest("/api/user", {
       cookie: { otography_session: "invalid-session" },
@@ -95,11 +97,14 @@ describe("GET /api/user", () => {
   });
 
   it("returns 200 with user profile when session is valid", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-      name: "Test User",
-      picture: "https://example.com/photo.jpg",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+        name: "Test User",
+        picture: "https://example.com/photo.jpg",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       select: vi.fn(() => ({
@@ -127,7 +132,7 @@ describe("GET /api/user", () => {
     });
 
     const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(200);
@@ -141,9 +146,12 @@ describe("GET /api/user", () => {
   });
 
   it("creates a missing user record and returns 404 when profile is not set up", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     vi.mocked(createDbClient).mockReturnValue({
       db: {
@@ -205,7 +213,7 @@ describe("GET /api/user", () => {
     } as never);
 
     const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(404);
@@ -233,14 +241,17 @@ describe("PATCH /api/user/profile", () => {
   });
 
   it("returns 400 for invalid profile data", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "", name: "" },
     });
 
@@ -254,9 +265,12 @@ describe("PATCH /api/user/profile", () => {
   });
 
   it("returns 200 with profile on success", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     const txMethods = {
       update: vi.fn(() => ({
@@ -300,7 +314,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "newuser", name: "New User" },
     });
 
@@ -312,9 +326,12 @@ describe("PATCH /api/user/profile", () => {
   });
 
   it("returns 500 when DB insert fails", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -329,7 +346,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "newuser", name: "New User" },
     });
 
@@ -343,9 +360,12 @@ describe("PATCH /api/user/profile", () => {
   });
 
   it("returns 409 when username is already taken", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -365,7 +385,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "existinguser", name: "Existing User" },
     });
 
@@ -394,9 +414,12 @@ describe("PATCH /api/user", () => {
   });
 
   it("returns 200 with updated profile on success", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -425,7 +448,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { bio: "Updated bio", birthplace: "Tokyo" },
     });
 
@@ -437,9 +460,12 @@ describe("PATCH /api/user", () => {
   });
 
   it("returns 500 when DB update fails", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -454,7 +480,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { bio: "Updated bio" },
     });
 
@@ -468,9 +494,12 @@ describe("PATCH /api/user", () => {
   });
 
   it("returns 400 when DB rejects birthyear check constraint", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -491,7 +520,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { birthyear: 3000 },
     });
 
@@ -505,9 +534,12 @@ describe("PATCH /api/user", () => {
   });
 
   it("returns 409 when updating username to a taken value", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
@@ -527,7 +559,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "existinguser" },
     });
 
@@ -544,6 +576,8 @@ describe("PATCH /api/user", () => {
 describe("DELETE /api/user", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionRepository.revokeAllUserSessions.mockResolvedValue(undefined);
+    mockRevokeRefreshTokens.mockResolvedValue(undefined);
   });
 
   it("returns 401 when no session cookie is present", async () => {
@@ -553,23 +587,23 @@ describe("DELETE /api/user", () => {
   });
 
   it("returns 401 session-revoked when session is revoked（deleteAccount は未実行）", async () => {
+    // authSessionMiddleware では通常検証で成功
+    // requireFreshSessionMiddleware では strict モードで revoked エラー
     const { AuthError } = await import("@repo/errors/server");
-    const { FirebaseAuthError } = await import("@repo/firebase-auth-rest/auth");
-    // 通常検証は成功（authSession 設定済みになる）
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-    });
-    // 厳格検証で失効を検知
-    const firebaseError = new FirebaseAuthError({
-      code: "session-cookie-revoked",
-      message: "The session cookie has been revoked.",
-    });
-    mockVerifySessionCookieStrict.mockResolvedValue(
-      AuthError.fromFirebase(firebaseError, "Session verification failed."),
-    );
-    // refresh token なし → refreshSession は null
-    mockGetRefreshTokenCookie.mockResolvedValue(null);
+    mockResolveSession
+      .mockResolvedValueOnce({
+        claims: { sub: "user123", email: "test@example.com" },
+        session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
+      })
+      .mockResolvedValueOnce(
+        new AuthError({
+          message: "Session revoked.",
+          code: "auth/session-cookie-revoked",
+          statusCode: 401,
+          clearCookie: true,
+          problemSlug: "session-revoked",
+        }),
+      );
 
     const deleteSpy = vi.fn().mockResolvedValue(undefined);
     mockDbWithRls("uuid-user", {
@@ -583,7 +617,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "revoked-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(401);
@@ -597,23 +631,24 @@ describe("DELETE /api/user", () => {
 
   it("returns 403 account-disabled when user is disabled", async () => {
     const { AuthError } = await import("@repo/errors/server");
-    const { FirebaseAuthError } = await import("@repo/firebase-auth-rest/auth");
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-    });
-    const firebaseError = new FirebaseAuthError({
-      code: "user-disabled",
-      message: "The user record is disabled.",
-    });
-    mockVerifySessionCookieStrict.mockResolvedValue(
-      AuthError.fromFirebase(firebaseError, "Session verification failed."),
-    );
-    mockGetRefreshTokenCookie.mockResolvedValue(null);
+    mockResolveSession
+      .mockResolvedValueOnce({
+        claims: { sub: "user123", email: "test@example.com" },
+        session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
+      })
+      .mockResolvedValueOnce(
+        new AuthError({
+          message: "Account is disabled.",
+          code: "auth/user-disabled",
+          statusCode: 403,
+          clearCookie: true,
+          problemSlug: "account-disabled",
+        }),
+      );
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "disabled-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(403);
@@ -623,16 +658,16 @@ describe("DELETE /api/user", () => {
     });
   });
 
-  it("returns 200 on success", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+  it("returns 200 on success, revokes all server sessions, and revokes Firebase tokens", async () => {
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
     // センシティブ操作の厳格検証も成功
-    mockVerifySessionCookieStrict.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-    });
+
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
@@ -647,9 +682,9 @@ describe("DELETE /api/user", () => {
                 birthplace: null,
                 birthyear: null,
                 gender: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-03T00:00:00.000Z",
-                deletedAt: "2026-01-03T00:00:00.000Z",
+                createdAt: "2026-01-01T00:00:00Z",
+                updatedAt: "2026-01-03T00:00:00Z",
+                deletedAt: "2026-01-03T00:00:00Z",
               },
             ]),
           })),
@@ -660,22 +695,78 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ message: "Account deleted." });
+    // アカウント削除時に全サーバーセッションが無効化される（#1）
+    expect(sessionRepository.revokeAllUserSessions).toHaveBeenCalledWith(
+      expect.anything(),
+      "uuid-user",
+    );
+    // アカウント削除境界でのみ Firebase トークン無効化（#2）
+    expect(mockRevokeRefreshTokens).toHaveBeenCalledWith("user123");
+    expect(sessionRepository.revokeAllUserSessions.mock.invocationCallOrder[0]).toBeLessThan(
+      mockRevokeRefreshTokens.mock.invocationCallOrder[0]!,
+    );
+    // Cookieがクリアされる
+    const cookie = res.getCookie("otography_session");
+    expect(cookie === undefined || cookie === "").toBe(true);
+  });
+
+  it("does not delete the account when server-session revocation fails", async () => {
+    mockResolveSession.mockResolvedValue({
+      claims: { sub: "user123", email: "test@example.com" },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
+    });
+    sessionRepository.revokeAllUserSessions.mockResolvedValue(new Error("database unavailable"));
+    const deleteSpy = vi.fn();
+    mockDbWithRls("uuid-user", {
+      update: deleteSpy,
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      method: "DELETE",
+      cookie: { otography_session: "a".repeat(43) },
+    });
+
+    expect(res.status).toBe(500);
+    expect(deleteSpy).not.toHaveBeenCalled();
+    expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
+  });
+
+  it("does not delete the account when Firebase token revocation fails", async () => {
+    mockResolveSession.mockResolvedValue({
+      claims: { sub: "user123", email: "test@example.com" },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
+    });
+    mockRevokeRefreshTokens.mockResolvedValue(new Error("Firebase unavailable"));
+    const deleteSpy = vi.fn();
+    mockDbWithRls("uuid-user", {
+      update: deleteSpy,
+      execute: vi.fn().mockResolvedValue([]),
+    });
+
+    const res = await testRequest("/api/user", {
+      method: "DELETE",
+      cookie: { otography_session: "a".repeat(43) },
+    });
+
+    expect(res.status).toBe(500);
+    expect(deleteSpy).not.toHaveBeenCalled();
   });
 
   it("returns 500 when DB delete fails", async () => {
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "user123",
+        email: "test@example.com",
+      },
+      session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
-    mockVerifySessionCookieStrict.mockResolvedValue({
-      sub: "user123",
-      email: "test@example.com",
-    });
+
     mockDbWithRls("uuid-user", {
       update: vi.fn(() => ({
         set: vi.fn(() => ({
@@ -689,7 +780,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(500);

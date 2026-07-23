@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  mockClearRefreshTokenCookie,
-  mockRevokeRefreshTokens,
-  mockVerifySessionCookie,
-} from "../../setup";
+import { mockResolveSession, mockRevokeRefreshTokens } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
+
+const sessionRepository = vi.hoisted(() => ({
+  revokeAllUserSessions: vi.fn().mockResolvedValue(undefined),
+  revokeSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../shared/auth/session-repository", () => sessionRepository);
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
@@ -12,15 +15,22 @@ vi.mock("../../../shared/firebase/firebase-rest", () => ({
 }));
 
 vi.mock("../../../shared/db", () => ({
-  createDbClient: vi.fn(() => ({ db: { transaction: vi.fn() }, end: async () => undefined })),
+  createDbClient: vi.fn(),
 }));
+
+import { createDbClient } from "../../../shared/db";
 
 describe("POST /api/auth/sign-out", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // dbMiddleware が DB 接続を返すようにモック
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {},
+      end: async () => undefined,
+    } as never);
   });
 
-  it("returns 204 and clears both cookies when no session cookie is present", async () => {
+  it("returns 204 and clears opaque cookie when no session cookie is present", async () => {
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
@@ -28,46 +38,44 @@ describe("POST /api/auth/sign-out", () => {
 
     expect(res.status).toBe(204);
     expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
-    expect(mockClearRefreshTokenCookie).toHaveBeenCalled();
+    expect(sessionRepository.revokeSession).not.toHaveBeenCalled();
   });
 
-  it("returns 204 and clears both cookies when session is valid", async () => {
-    mockVerifySessionCookie.mockResolvedValue({ sub: "user123", email: "test@example.com" });
-    mockRevokeRefreshTokens.mockResolvedValue(undefined);
+  it("returns 204, revokes current server session only, and clears cookie", async () => {
+    mockResolveSession.mockResolvedValue({
+      claims: { sub: "user123", email: "test@example.com" },
+      session: { id: "session-uuid", userId: "uuid-user", version: 1 },
+    });
 
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
-      cookie: { otography_session: "valid-session", otography_refresh_token: "encrypted-rt" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(204);
-    expect(mockRevokeRefreshTokens).toHaveBeenCalledWith("user123");
-    // セッションcookieが削除されている（値が空 or Deleteマーカー）
-    const sessionCookie = res.getCookie("otography_session");
-    expect(sessionCookie === undefined || sessionCookie === "").toBe(true);
-    expect(mockClearRefreshTokenCookie).toHaveBeenCalled();
+    // sign-out は現在のサーバーセッションのみを無効化（sessionCtx 経由）
+    expect(sessionRepository.revokeSession).toHaveBeenCalledWith(expect.anything(), "session-uuid");
+    // Firebase のグローバルな revokeRefreshTokens は呼ばない（#2）
+    expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
+    const cookie = res.getCookie("otography_session");
+    expect(cookie === undefined || cookie === "").toBe(true);
   });
 
-  it("returns 502 when revokeRefreshTokens fails without clearCookie", async () => {
-    const { AuthError } = await import("@repo/errors/server");
-    mockVerifySessionCookie.mockResolvedValue({ sub: "user123", email: "test@example.com" });
-    mockRevokeRefreshTokens.mockResolvedValue(
-      new AuthError({ message: "Failed to sign you out.", code: "revoke-failed", statusCode: 502 }),
-    );
+  it("returns 500 and keeps the cookie when revoking the current session fails", async () => {
+    mockResolveSession.mockResolvedValue({
+      claims: { sub: "user123", email: "test@example.com" },
+      session: { id: "session-uuid", userId: "uuid-user", version: 1 },
+    });
+    sessionRepository.revokeSession.mockResolvedValue(new Error("database unavailable"));
 
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
-    expect(res.status).toBe(502);
-    expect(await res.json()).toMatchObject({
-      type: "https://api.otography.com/errors/bad-gateway",
-      title: "Bad Gateway",
-      status: 502,
-      detail: "Failed to sign you out.",
-    });
+    expect(res.status).toBe(500);
+    expect(res.getCookie("otography_session")).toBeUndefined();
   });
 });

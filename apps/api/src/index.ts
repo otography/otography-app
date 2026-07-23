@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { deleteCookie } from "hono/cookie";
 import { secureHeaders } from "hono/secure-headers";
 import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
@@ -13,7 +12,7 @@ import { songs } from "./features/songs";
 import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
-import { SESSION_COOKIE_NAME } from "./shared/auth/cookies";
+import { clearOpaqueSessionCookie } from "./shared/auth/opaque-cookie";
 import {
   createProblemInstance,
   formatErrorResponse,
@@ -53,9 +52,7 @@ const app = new Hono<Env>()
     });
 
     if (clearCookie) {
-      deleteCookie(c, SESSION_COOKIE_NAME, {
-        path: "/",
-      });
+      clearOpaqueSessionCookie(c);
     }
 
     return c.body(JSON.stringify(body), statusCode, {

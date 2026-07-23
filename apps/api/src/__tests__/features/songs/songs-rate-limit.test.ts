@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockVerifySessionCookie } from "../../setup";
+import { mockResolveSession } from "../../setup";
 
 // ユースケース層をモック - レートリミットテストではDB操作は不要
 vi.mock("../../../features/songs/usecase", () => ({
@@ -56,7 +56,7 @@ const SONGS_URL = new URL("/api/songs", "http://localhost:3001");
 
 const makeSongRequest = (
   mockEnv: ReturnType<typeof createRateLimitMockEnv>,
-  sessionCookie = "valid-session-cookie",
+  sessionCookie = "a".repeat(43),
 ) =>
   app.request(
     SONGS_URL,
@@ -75,9 +75,12 @@ describe("POST /api/songs レートリミット", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // セッションcookie検証が成功するようにモック
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-1",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-1",
+        email: "test@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
   });
 

@@ -46,27 +46,68 @@ vi.mock("../shared/firebase/firebase-admin", () => ({
 
 const mockExchangeRefreshToken: Mock = vi.fn();
 
-const mockGetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(null);
-const mockSetRefreshTokenCookie: Mock = vi.fn().mockResolvedValue(undefined);
-const mockClearRefreshTokenCookie: Mock = vi.fn();
-
 vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,
 }));
 
-vi.mock("../shared/auth/refresh-token", () => ({
-  getRefreshTokenCookie: mockGetRefreshTokenCookie,
-  setRefreshTokenCookie: mockSetRefreshTokenCookie,
-  clearRefreshTokenCookie: mockClearRefreshTokenCookie,
+// キーリングローダーのモック
+const mockGetEncryptCtx: Mock = vi.fn().mockResolvedValue({
+  activeKeyId: "test-key-1",
+  activeKey: {},
+  keys: new Map([["test-key-1", { id: "test-key-1", cryptoKey: {}, decryptOnly: false }]]),
+});
+
+vi.mock("../shared/auth/key-ring-loader", () => ({
+  getEncryptCtx: mockGetEncryptCtx,
+}));
+
+// エンベロープ暗号化のモック
+const mockEncryptCredential: Mock = vi.fn(async (_ctx: unknown, plaintext: string) => ({
+  v: 1,
+  kid: "test-key-1",
+  iv: "00".repeat(12),
+  ct: `encrypted-${plaintext}`,
+}));
+
+const mockDecryptCredential: Mock = vi.fn(async (_ctx: unknown, envelope: { ct: string }) => {
+  // ct が "encrypted-XYZ" の形式なら "XYZ" を返す
+  if (envelope.ct.startsWith("encrypted-")) {
+    return envelope.ct.slice("encrypted-".length);
+  }
+  return envelope.ct;
+});
+
+vi.mock("../shared/auth/envelope", () => ({
+  encryptCredential: mockEncryptCredential,
+  decryptCredential: mockDecryptCredential,
+  EnvelopeError: class EnvelopeError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "EnvelopeError";
+    }
+  },
+}));
+
+// セッションサービスのモック
+const mockIssueSession: Mock = vi.fn();
+const mockResolveSession: Mock = vi.fn().mockResolvedValue(null);
+
+vi.mock("../shared/auth/session-service", () => ({
+  issueSession: mockIssueSession,
+  resolveSession: mockResolveSession,
+  batchReEncrypt: vi.fn().mockResolvedValue({ reEncrypted: 0, errors: [] }),
+  countRemainingByKey: vi.fn().mockResolvedValue(0),
 }));
 
 export {
-  mockClearRefreshTokenCookie,
   mockCreateSessionCookie,
+  mockDecryptCredential,
+  mockEncryptCredential,
   mockExchangeRefreshToken,
-  mockGetRefreshTokenCookie,
+  mockGetEncryptCtx,
+  mockIssueSession,
+  mockResolveSession,
   mockRevokeRefreshTokens,
-  mockSetRefreshTokenCookie,
   mockVerifyIdToken,
   mockVerifySessionCookie,
   mockVerifySessionCookieStrict,

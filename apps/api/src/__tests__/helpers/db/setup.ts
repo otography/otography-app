@@ -64,6 +64,8 @@ const grantMigratedObjectsToTestRoles = async (sql: postgres.Sql) => {
   await sql`GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO anon`;
   await sql`GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO authenticated`;
   await sql`GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO anon`;
+  // backend 専用テーブルは本番 migration と同じくアプリロールから隔離する。
+  await sql`REVOKE ALL PRIVILEGES ON TABLE public.server_sessions FROM authenticated, anon`;
 };
 
 export default async function setupDb() {

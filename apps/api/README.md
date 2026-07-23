@@ -1,85 +1,79 @@
-# API (Hono + Supabase + Drizzle)
+# API (Hono + PostgreSQL + Firebase Auth)
 
-Supabase の公式 Hono 認証サンプルに合わせた API サーバーです。
+Cloudflare Workers 上で動作する Hono API です。ブラウザにはランダムなオペーク
+セッションIDだけを Cookie として渡し、Firebase のセッションクレデンシャルと
+リフレッシュトークンは PostgreSQL の `server_sessions` に AES-256-GCM で暗号化して
+保存します。
 
-## セットアップ
+## ローカルセットアップ
 
-### 1. 環境変数
+`apps/api/.dev.vars.example` を `.dev.vars` にコピーし、Firebase、Database、OAuth、
+`AUTH_SESSION_KEY_RING` を設定します。キーは次のコマンドで生成できます。
 
-`.env` を作成し、以下を設定します。
-
-```env
-# Supabase
-DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres
-SUPABASE_URL=https://[PROJECT-REF].supabase.co
-SUPABASE_PUBLISHABLE_KEY=your-publishable-key
-
-# Server
-PORT=3001
-APP_FRONTEND_URL=http://localhost:3000
-NODE_ENV=development
+```bash
+openssl rand -hex 32
 ```
 
-### 2. 依存関係のインストール
+キーリングの形式は次のとおりです。`activeKeyId` は暗号化に使うキー、
+`decryptOnly` は過去データの復号だけを許すキーです。
+
+```json
+{
+  "v": 1,
+  "activeKeyId": "2026-07",
+  "keys": [
+    { "id": "2026-07", "hex": "64文字のhex" },
+    { "id": "2026-04", "hex": "64文字のhex", "decryptOnly": true }
+  ]
+}
+```
 
 ```bash
 bun install
+bun run dev --filter=api
 ```
 
-### 3. 開発サーバーの起動
+## 本番の鍵管理
+
+本番では `AUTH_SESSION_KEY_RING` を Cloudflare Secrets Store の
+`SecretsStoreSecret` バインディングとして設定します。ローカルとテストでは同名の
+文字列を使用します。
+
+Secrets Store は外部KMSではありません。Worker は `.get()` によってキーリングの
+平文を取得し、Web Crypto が Worker 内で AES-GCM を実行します。Worker に鍵素材を
+渡さず暗号処理だけを外部サービスへ委譲する要件がある場合は、Cloud KMS/HSM の
+Encrypt/Decrypt API を呼ぶ別設計が必要です。
+
+### 鍵ローテーション手順
+
+1. 新しい32バイト鍵を追加し、新しいIDを `activeKeyId` にする。
+2. 旧キーを `decryptOnly: true` のまま残して Secrets Store を更新する。
+3. 通常アクセス時の遅延再暗号化、または `batchReEncrypt` を反復実行する。
+4. `countRemainingByKey` が0であることを確認する。
+5. 旧キーをキーリングから削除する。
+
+旧キーを先に削除すると残存セッションを復号できません。キーリング値は毎回再取得し、
+内容のSHA-256が変わった場合だけ `CryptoKey` キャッシュを再構築します。
+
+## セッション方針
+
+- Cookie: 本番は `__Host-otography_session`、開発は `otography_session`
+- 属性: `HttpOnly`, `SameSite=Strict`, `Path=/`, 本番のみ `Secure`、`Domain` なし
+- idle timeout: 5日
+- absolute timeout: 14日（延長不可）
+- サインアウト: 現在のデバイスのサーバーセッションだけを失効
+- アカウント削除: 全サーバーセッションと Firebase トークンを失効してから論理削除
+
+## 検証とDBコマンド
 
 ```bash
-bun run dev
-```
+bun run test --filter=api
+just db-start
+bun run test:db --filter=api
+bun run check-types --filter=api
+bun run lint --filter=api
 
-API は `http://localhost:3001` で起動します。
-
-## 認証ミドルウェア
-
-`src/middleware/auth.middleware.ts` の `supabaseMiddleware` を全ルートへ適用しています。
-
-```ts
-app.use("*", supabaseMiddleware());
-```
-
-ルート内では `getSupabase(c)` で Supabase クライアントを取得します。
-
-## エンドポイント
-
-### `GET /`
-
-ヘルスチェック用のシンプルな応答。
-
-### `GET /api/user`
-
-`supabase.auth.getClaims()` でログイン状態を返します。
-
-- 未ログイン: `{ "message": "You are not logged in." }`
-- ログイン済み: `{ "message": "You are logged in!", "userId": "..." }`
-
-### `GET /signout`
-
-`supabase.auth.signOut()` 実行後、`/` へリダイレクトします。
-
-### `GET /countries`
-
-RLS 有効テーブルの取得例です。
-
-```ts
-const { data, error } = await supabase.from("countries").select("*");
-```
-
-## Drizzle コマンド
-
-```bash
+cd apps/api
 bun run db:generate
 bun run db:migrate
-bun run db:push
-bun run db:studio
 ```
-
-## 公式サンプル
-
-ベースにしたサンプル:
-
-- https://github.com/supabase/supabase/blob/4d967740f73fd5bf8af9ae9c26afacc0c24149db/examples/auth/hono/src/index.tsx

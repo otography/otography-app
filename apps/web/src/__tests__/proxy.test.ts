@@ -1,6 +1,5 @@
 import type { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { REFRESH_TOKEN_COOKIE_NAME, SESSION_COOKIE_NAME } from "api/auth-cookies";
 
 // NextResponse の呼び出しを追跡
 const mockNext = vi.fn();
@@ -18,22 +17,18 @@ const { proxy } = await import("../../proxy");
 function createRequest(
   path: string,
   sessionCookieValue?: string,
-  refreshTokenCookieValue?: string,
+  isSecure: boolean = false,
 ): NextRequest {
-  const base = "http://localhost:3000";
+  const base = isSecure ? "https://localhost:3000" : "http://localhost:3000";
+  const cookieName = isSecure ? "__Host-otography_session" : "otography_session";
   const cookies = new Map<string, { name: string; value: string }>();
   if (sessionCookieValue !== undefined) {
-    cookies.set(SESSION_COOKIE_NAME, { name: SESSION_COOKIE_NAME, value: sessionCookieValue });
-  }
-  if (refreshTokenCookieValue !== undefined) {
-    cookies.set(REFRESH_TOKEN_COOKIE_NAME, {
-      name: REFRESH_TOKEN_COOKIE_NAME,
-      value: refreshTokenCookieValue,
-    });
+    cookies.set(cookieName, { name: cookieName, value: sessionCookieValue });
   }
   return {
     nextUrl: {
       pathname: path,
+      protocol: isSecure ? "https:" : "http:",
       clone: () => new URL(path, base),
     },
     cookies: {
@@ -66,21 +61,21 @@ describe("proxy", () => {
     });
   });
 
-  describe("保護パス — クッキーあり", () => {
-    it("/account は next() を返す", () => {
-      proxy(createRequest("/account", "valid-session"));
+  describe("保護パス — オペークセッションCookieあり", () => {
+    it("/account は next() を返す（開発環境）", () => {
+      proxy(createRequest("/account", "opaque-session-id"));
       expect(mockNext).toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
     });
 
-    it("refresh token cookie のみでも next() を返す", () => {
-      proxy(createRequest("/account", undefined, "valid-refresh-token"));
+    it("/account は next() を返す（本番環境 __Host- プレフィックス）", () => {
+      proxy(createRequest("/account", "opaque-session-id", true));
       expect(mockNext).toHaveBeenCalled();
       expect(mockRedirect).not.toHaveBeenCalled();
     });
   });
 
-  describe("保護パス — クッキーなし", () => {
+  describe("保護パス — セッションCookieなし", () => {
     it("/account は /login へリダイレクト", () => {
       proxy(createRequest("/account"));
       expect(mockRedirect).toHaveBeenCalled();
@@ -102,13 +97,33 @@ describe("proxy", () => {
   });
 
   describe("クッキーが空文字", () => {
-    it("session cookie が空文字ならリダイレクトされる", () => {
+    it("セッションCookie が空文字ならリダイレクトされる", () => {
       proxy(createRequest("/account", ""));
       expect(mockRedirect).toHaveBeenCalled();
     });
+  });
 
-    it("refresh token cookie が空文字ならリダイレクトされる", () => {
-      proxy(createRequest("/account", undefined, ""));
+  describe("旧リフレッシュトークンCookieはチェックしない", () => {
+    it("旧 otography_refresh_token のみがあってもリダイレクトされる", () => {
+      // 新システムではリフレッシュトークンCookieをチェックしない
+      const base = "http://localhost:3000";
+      const cookies = new Map<string, { name: string; value: string }>();
+      cookies.set("otography_refresh_token", {
+        name: "otography_refresh_token",
+        value: "old-refresh",
+      });
+      const req = {
+        nextUrl: {
+          pathname: "/account",
+          protocol: "http:",
+          clone: () => new URL("/account", base),
+        },
+        cookies: {
+          get: (name: string) => cookies.get(name),
+        },
+      } as NextRequest;
+
+      proxy(req);
       expect(mockRedirect).toHaveBeenCalled();
     });
   });

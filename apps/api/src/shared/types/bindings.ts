@@ -1,7 +1,10 @@
 export type Bindings = {
   AUTH_COOKIE_DOMAIN: string | undefined;
-  AUTH_ENCRYPTION_KEY: string;
   AUTH_OAUTH_STATE_SECRET: string;
+  // セッション暗号化キーリング（JSON文字列）
+  // 本番: Cloudflare Secrets Store 経由（SecretsStoreSecret）
+  // ローカル/vitest: 文字列として直接注入
+  AUTH_SESSION_KEY_RING: string | { get: () => Promise<string> };
   APP_FRONTEND_URL: string;
   APPLE_KEY_ID: string;
   APPLE_TEAM_ID: string;

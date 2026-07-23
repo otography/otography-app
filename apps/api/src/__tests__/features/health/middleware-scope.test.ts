@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockVerifySessionCookie } from "../../setup";
+import { mockResolveSession } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 
 // テスト用にfirebase-restをモック
@@ -18,14 +18,14 @@ describe("authSessionMiddleware スコープ (VAL-MW-001, VAL-MW-002)", () => {
   });
 
   describe("VAL-MW-002: healthエンドポイントはauthSessionミドルウェアをバイパスする", () => {
-    it("GET /api/health にcookie付きでアクセスしてもverifySessionCookieが呼ばれない", async () => {
-      // cookie付きでリクエスト — もしauthSessionMiddlewareが動いていればverifyが呼ばれる
+    it("GET /api/health にcookie付きでアクセスしてもresolveSessionが呼ばれない", async () => {
+      // cookie付きでリクエスト — もしauthSessionMiddlewareが動いていればresolveが呼ばれる
       await testRequest("/api/health", {
         cookie: { otography_session: "some-session-cookie" },
       });
 
-      // authSessionMiddlewareがスキップされていればverifyは呼ばれない
-      expect(mockVerifySessionCookie).not.toHaveBeenCalled();
+      // authSessionMiddlewareがスキップされていればresolveは呼ばれない
+      expect(mockResolveSession).not.toHaveBeenCalled();
     });
   });
 

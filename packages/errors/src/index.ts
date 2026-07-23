@@ -1,5 +1,4 @@
 export { AuthRestError } from "./auth-rest-error";
-export { RefreshTokenCookieError } from "./refresh-token-errors";
 export { WebAuthClientError } from "./web-auth-errors";
 export type { ErrorStatusCode } from "./http-status";
 export {

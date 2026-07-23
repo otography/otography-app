@@ -1,6 +1,6 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { mockVerifySessionCookie } from "../../setup";
+import { mockResolveSession } from "../../setup";
 
 // ユースケース層をモック - レートリミットテストではDB操作は不要
 vi.mock("../../../features/post-likes/usecase", () => ({
@@ -60,7 +60,7 @@ type MockEnv = ReturnType<typeof createLikeRateLimitMockEnv>;
 
 const postId = "6f648f36-5be1-4af1-bf5d-cf8ebf222221";
 
-const makeLikeRequest = (mockEnv: MockEnv, sessionCookie = "valid-session-cookie") =>
+const makeLikeRequest = (mockEnv: MockEnv, sessionCookie = "a".repeat(43)) =>
   app.request(
     new URL(`/api/posts/${postId}/like`, "http://localhost:3001"),
     {
@@ -74,9 +74,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
   beforeEach(() => {
     vi.clearAllMocks();
     // セッションcookie検証が成功するようにモック
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-1",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-1",
+        email: "test@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
   });
 
@@ -123,20 +126,23 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
 
     // ユーザーAとして30リクエスト: 全て成功
     for (let i = 0; i < RATE_LIMIT; i++) {
-      const res = await makeLikeRequest(mockEnv, "session-user-a");
+      const res = await makeLikeRequest(mockEnv, "a".repeat(43));
       expect(res.status).toBe(200);
     }
 
     // ユーザーAの31リクエスト目は429
-    const userAExhausted = await makeLikeRequest(mockEnv, "session-user-a");
+    const userAExhausted = await makeLikeRequest(mockEnv, "a".repeat(43));
     expect(userAExhausted.status).toBe(429);
 
     // ユーザーBはまだレートリミットに影響されていない
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-2",
-      email: "user-b@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-2",
+        email: "user-b@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
-    const userBRes = await makeLikeRequest(mockEnv, "session-user-b");
+    const userBRes = await makeLikeRequest(mockEnv, "b".repeat(43));
     expect(userBRes.status).toBe(200);
   });
 });
@@ -144,9 +150,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
 describe("LIKE_RATE_LIMITER と CONTENT_RATE_LIMITER の独立性 (VAL-REFACTOR-003)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockVerifySessionCookie.mockResolvedValue({
-      sub: "firebase-user-1",
-      email: "test@example.com",
+    mockResolveSession.mockResolvedValue({
+      claims: {
+        sub: "firebase-user-1",
+        email: "test@example.com",
+      },
+      session: { id: "sess", userId: "uuid", version: 1 },
     });
   });
 
