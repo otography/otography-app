@@ -19,10 +19,8 @@ export const postUpdateSchema = createUpdateSchema(posts, {
   .pick("content")
   .partial();
 
+const postDbInsertSchema = createInsertSchema(posts).pick("songId", "userId", "content");
+
 export type PostCreateDbModel = typeof postInsertSchema.infer;
 export type PostUpdateDbModel = typeof postUpdateSchema.infer;
-export type PostInsertDbModel = {
-  songId: string;
-  userId: string;
-  content: string;
-};
+export type PostInsertDbModel = typeof postDbInsertSchema.infer;

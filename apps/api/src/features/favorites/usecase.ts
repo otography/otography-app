@@ -54,7 +54,9 @@ export const getFavoritePage = async <T extends { favorite: FavoriteMetadata }, 
   mapResource,
 }: FavoritePageOptions<T, U>) => {
   const limit = normalizeLimit(pagination?.limit);
-  const rows = await load({ limit, cursor: pagination?.cursor });
+  const rows = await load({ limit, cursor: pagination?.cursor }).catch((e) =>
+    toDbError(e, errorMessage),
+  );
   if (rows instanceof Error) return toDbError(rows, errorMessage);
 
   return createFavoritePage(rows, limit, getFavoriteId, mapResource);

@@ -1,10 +1,5 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { AuthError } from "@repo/errors/server";
-import type {
-  InsertUserValues,
-  SetupProfileValues,
-  UpdateUserValues,
-} from "../../shared/db/schema";
 import type { Database } from "../../shared/db";
 import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 import { toDbError } from "../../shared/db/postgres-error";
@@ -18,6 +13,7 @@ import {
   softDeleteUser,
 } from "./repository";
 import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
+import type { InsertUserValues, SetupProfileValues, UpdateUserValues } from "./model";
 
 const USERS_USERNAME_KEY = "users_username_key";
 const USERS_BIRTHYEAR_CHECK = "users_birthyear_check";

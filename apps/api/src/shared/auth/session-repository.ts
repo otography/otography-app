@@ -1,8 +1,9 @@
 import * as errore from "errore";
 import { and, eq, gt, isNull, lt, sql } from "drizzle-orm";
 import { serverSessions } from "../db/schema";
+import type { InsertServerSessionValues, SelectServerSessionValues } from "./session-model";
 import type { DatabaseOrTransaction } from "../db";
-import { validateEnvelope, type CredentialEnvelope } from "./envelope";
+import { validateEnvelope } from "./envelope";
 import { hashSessionId } from "./session-crypto";
 import {
   ABSOLUTE_TIMEOUT_MS,
@@ -19,26 +20,13 @@ class SessionRepoError extends errore.createTaggedError({
 }
 
 // セッション作成時に保存する暗号化クレデンシャル
-export type SessionCredentials = {
-  encryptedSessionCredential: CredentialEnvelope;
-  encryptedRefreshToken: CredentialEnvelope;
-  keyVersion: string;
-};
+export type SessionCredentials = Pick<
+  InsertServerSessionValues,
+  "encryptedSessionCredential" | "encryptedRefreshToken" | "keyVersion"
+>;
 
 // セッション読み取り結果
-export type ServerSession = {
-  id: string;
-  userId: string;
-  encryptedSessionCredential: CredentialEnvelope;
-  encryptedRefreshToken: CredentialEnvelope;
-  keyVersion: string;
-  version: number;
-  createdAt: string;
-  lastUsedAt: string;
-  idleExpiresAt: string;
-  absoluteExpiresAt: string;
-  revokedAt: string | null;
-};
+export type ServerSession = Omit<SelectServerSessionValues, "sessionHash" | "updatedAt">;
 
 // 新規セッション作成用パラメータ
 type CreateSessionParams = {
@@ -286,9 +274,7 @@ export const countSessionsByKeyVersion = async (
 };
 
 // DB行を ServerSession 型に変換
-const rowToSession = (
-  row: typeof serverSessions.$inferSelect,
-): ServerSession | SessionRepoError => {
+const rowToSession = (row: SelectServerSessionValues): ServerSession | SessionRepoError => {
   const sessionCredential = validateEnvelope(row.encryptedSessionCredential);
   if (sessionCredential instanceof Error) {
     return new SessionRepoError({

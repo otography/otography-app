@@ -1,13 +1,26 @@
 import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { getAuthSession } from "../auth/auth-session";
-import { problemResponse, unauthorizedResponse } from "../errors/error-response";
+import { problemResponse, respondWithError, unauthorizedResponse } from "../errors/error-response";
 import type { Env } from "../types/env";
 
 /** レートリミットバインディングの呼び出しインターフェース */
 interface RateLimiterBinding {
   limit: (opts: { key: string }) => Promise<{ success: boolean }>;
 }
+
+const getRateLimiter = (bindings: Env["Bindings"], limiterName: string) => {
+  const binding: unknown = (bindings as Record<string, unknown>)[limiterName];
+  if (
+    typeof binding !== "object" ||
+    binding === null ||
+    !("limit" in binding) ||
+    typeof binding.limit !== "function"
+  ) {
+    return new Error(`Rate limiter binding ${limiterName} is not configured.`);
+  }
+  return binding as RateLimiterBinding;
+};
 
 /**
  * IPアドレスをキーとしたレートリミットミドルウェアファクトリ
@@ -16,7 +29,9 @@ interface RateLimiterBinding {
 export const rateLimitByIp = (limiterName: string) =>
   createMiddleware<Env>(async (c, next) => {
     const ip = getConnInfo(c).remote.address ?? "unknown";
-    const limiter = c.env[limiterName as keyof Env["Bindings"]] as unknown as RateLimiterBinding;
+    const limiter = getRateLimiter(c.env, limiterName);
+    if (limiter instanceof Error) return respondWithError(limiter, c);
+
     const { success } = await limiter.limit({ key: ip });
     if (!success) {
       return problemResponse(
@@ -41,7 +56,9 @@ export const rateLimitByUser = (limiterName: string) =>
       return unauthorizedResponse(c, "You are not logged in.");
     }
 
-    const limiter = c.env[limiterName as keyof Env["Bindings"]] as unknown as RateLimiterBinding;
+    const limiter = getRateLimiter(c.env, limiterName);
+    if (limiter instanceof Error) return respondWithError(limiter, c);
+
     const { success } = await limiter.limit({ key: session.sub });
 
     if (!success) {

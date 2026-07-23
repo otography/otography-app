@@ -63,6 +63,24 @@ describe("rateLimitByIp", () => {
     expect(await res.json()).toEqual({ ok: true });
   });
 
+  it("bindingが未設定の場合はthrowせず500エラーレスポンスを返す", async () => {
+    const onError = vi.fn((error: Error, c) => c.text(error.message, 500));
+    const app = new Hono();
+    app.onError(onError);
+    app.use(rateLimitByIp("MISSING_LIMITER"));
+    app.get("/test", (c) => c.json({ ok: true }));
+
+    const response = await app.request("http://localhost/test", {}, env);
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("content-type")).toContain("application/problem+json");
+    expect(await response.json()).toMatchObject({
+      status: 500,
+      detail: "Internal server error.",
+    });
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("success=falseの場合、429を返す (VAL-MW-003)", async () => {
     const mockEnv = createMockEnv(async () => ({ success: false }));
     const app = new Hono();
@@ -169,6 +187,25 @@ describe("rateLimitByUser", () => {
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
+  });
+
+  it("bindingが不正な場合はthrowせず500エラーレスポンスを返す", async () => {
+    const onError = vi.fn((error: Error, c) => c.text(error.message, 500));
+    const invalidEnv = { ...env, INVALID_LIMITER: { limit: "not-a-function" } };
+    const app = new Hono();
+    app.onError(onError);
+    app.use(rateLimitByUser("INVALID_LIMITER"));
+    app.get("/test", (c) => c.json({ ok: true }));
+
+    const response = await app.request("http://localhost/test", {}, invalidEnv);
+
+    expect(response.status).toBe(500);
+    expect(response.headers.get("content-type")).toContain("application/problem+json");
+    expect(await response.json()).toMatchObject({
+      status: 500,
+      detail: "Internal server error.",
+    });
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it("success=falseの場合、429を返す (VAL-MW-003)", async () => {

@@ -1,6 +1,4 @@
 import { sql } from "drizzle-orm";
-import { createInsertSchema, createUpdateSchema } from "drizzle-orm/arktype";
-import { type } from "arktype";
 import type { CredentialEnvelope } from "../auth/envelope";
 import {
   bigint,
@@ -637,31 +635,3 @@ export const postLikes = pgTable.withRLS(
     }),
   ],
 );
-
-// users テーブルの arktype スキーマ
-// insert 用: firebaseId, username は必須、name はオプショナル
-const insertUserSchema = createInsertSchema(users);
-
-// update 用: すべてオプショナル（id, firebaseId, createdAt, updatedAt, deletedAt は自動管理のため除外）
-export const updateUserSchema = createUpdateSchema(users).omit(
-  "id",
-  "firebaseId",
-  "createdAt",
-  "updatedAt",
-  "deletedAt",
-);
-
-// 初回プロフィール設定用（username, name ともに trim + 1文字以上必須）
-export const setupProfileSchema = type.merge(updateUserSchema.pick("username", "name").required(), {
-  username: type.pipe(type("string.trim"), type("string >= 1")),
-  name: type.pipe(type("string.trim"), type("string >= 1")),
-});
-
-// insertUserSchema の型（values 引数に使用）
-export type InsertUserValues = typeof insertUserSchema.infer;
-
-// updateUserSchema の型（values 引数に使用）
-export type UpdateUserValues = typeof updateUserSchema.infer;
-
-// setupProfileSchema の型（values 引数に使用）
-export type SetupProfileValues = typeof setupProfileSchema.infer;
