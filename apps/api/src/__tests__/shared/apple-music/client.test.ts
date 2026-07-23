@@ -1,8 +1,21 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  generateDeveloperToken: vi.fn(),
+}));
+
+vi.mock("../../../shared/apple-music/token", () => ({
+  generateDeveloperToken: mocks.generateDeveloperToken,
+}));
 
 import { fetchArtist, fetchSong } from "../../../shared/apple-music/client";
 
 describe("Apple Music client", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.generateDeveloperToken.mockResolvedValue("developer-token");
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -28,7 +41,7 @@ describe("Apple Music client", () => {
       `https://api.music.apple.com/v1/catalog/jp/${resource}/id%2Fwith%20space${query}`,
     );
     expect(init).toMatchObject({
-      headers: { Authorization: expect.stringMatching(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/) },
+      headers: { Authorization: "Bearer developer-token" },
     });
   });
 
