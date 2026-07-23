@@ -50,42 +50,6 @@ vi.mock("../shared/firebase/firebase-token-exchange", () => ({
   exchangeRefreshToken: mockExchangeRefreshToken,
 }));
 
-// セッションサービス・リポジトリのモック
-// ミドルウェアとルートハンドラが内部で使用するため、ここでモックを設定する。
-// 各テストファイルで必要に応じて上書きする。
-const mockGetValidSessionByOpaqueId: Mock = vi.fn().mockResolvedValue(null);
-const mockGetCurrentSessionById: Mock = vi.fn().mockResolvedValue(null);
-const mockCreateServerSession: Mock = vi.fn();
-const mockTouchSession: Mock = vi.fn().mockResolvedValue(undefined);
-const mockRefreshSessionCredentials: Mock = vi.fn();
-const mockRevokeSession: Mock = vi.fn().mockResolvedValue(undefined);
-const mockRevokeAllUserSessions: Mock = vi.fn().mockResolvedValue(undefined);
-const mockGetSessionsByKeyVersion: Mock = vi.fn().mockResolvedValue([]);
-const mockCountSessionsByKeyVersion: Mock = vi.fn().mockResolvedValue(0);
-
-vi.mock("../shared/auth/session-repository", () => ({
-  createServerSession: mockCreateServerSession,
-  getValidSessionByOpaqueId: mockGetValidSessionByOpaqueId,
-  getCurrentSessionById: mockGetCurrentSessionById,
-  touchSession: mockTouchSession,
-  refreshSessionCredentials: mockRefreshSessionCredentials,
-  revokeSession: mockRevokeSession,
-  revokeAllUserSessions: mockRevokeAllUserSessions,
-  getSessionsByKeyVersion: mockGetSessionsByKeyVersion,
-  countSessionsByKeyVersion: mockCountSessionsByKeyVersion,
-}));
-
-// セッション暗号化のモック（実際の暗号化を使用するとテストが複雑になるため）
-const mockGenerateOpaqueSessionId: Mock = vi.fn(() => "test-opaque-id-mock");
-const mockHashSessionId: Mock = vi.fn(async (id: string) => `hash-of-${id}`);
-const mockIsValidOpaqueCookieValue: Mock = vi.fn(() => true);
-
-vi.mock("../shared/auth/session-crypto", () => ({
-  generateOpaqueSessionId: mockGenerateOpaqueSessionId,
-  hashSessionId: mockHashSessionId,
-  isValidOpaqueCookieValue: mockIsValidOpaqueCookieValue,
-}));
-
 // キーリングローダーのモック
 const mockGetEncryptCtx: Mock = vi.fn().mockResolvedValue({
   activeKeyId: "test-key-1",
@@ -136,26 +100,14 @@ vi.mock("../shared/auth/session-service", () => ({
 }));
 
 export {
-  mockCountSessionsByKeyVersion,
-  mockCreateServerSession,
   mockCreateSessionCookie,
   mockDecryptCredential,
   mockEncryptCredential,
   mockExchangeRefreshToken,
-  mockGenerateOpaqueSessionId,
   mockGetEncryptCtx,
-  mockGetCurrentSessionById,
-  mockGetSessionsByKeyVersion,
-  mockGetValidSessionByOpaqueId,
-  mockHashSessionId,
-  mockIsValidOpaqueCookieValue,
   mockIssueSession,
-  mockRefreshSessionCredentials,
   mockResolveSession,
-  mockRevokeAllUserSessions,
   mockRevokeRefreshTokens,
-  mockRevokeSession,
-  mockTouchSession,
   mockVerifyIdToken,
   mockVerifySessionCookie,
   mockVerifySessionCookieStrict,

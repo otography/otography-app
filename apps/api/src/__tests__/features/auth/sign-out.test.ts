@@ -1,6 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { mockResolveSession, mockRevokeRefreshTokens, mockRevokeSession } from "../../setup";
+import { mockResolveSession, mockRevokeRefreshTokens } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
+
+const sessionRepository = vi.hoisted(() => ({
+  revokeAllUserSessions: vi.fn().mockResolvedValue(undefined),
+  revokeSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../shared/auth/session-repository", () => sessionRepository);
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
@@ -31,7 +38,7 @@ describe("POST /api/auth/sign-out", () => {
 
     expect(res.status).toBe(204);
     expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
-    expect(mockRevokeSession).not.toHaveBeenCalled();
+    expect(sessionRepository.revokeSession).not.toHaveBeenCalled();
   });
 
   it("returns 204, revokes current server session only, and clears cookie", async () => {
@@ -43,12 +50,12 @@ describe("POST /api/auth/sign-out", () => {
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
-      cookie: { otography_session: "opaque-session-id" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(204);
     // sign-out は現在のサーバーセッションのみを無効化（sessionCtx 経由）
-    expect(mockRevokeSession).toHaveBeenCalledWith(expect.anything(), "session-uuid");
+    expect(sessionRepository.revokeSession).toHaveBeenCalledWith(expect.anything(), "session-uuid");
     // Firebase のグローバルな revokeRefreshTokens は呼ばない（#2）
     expect(mockRevokeRefreshTokens).not.toHaveBeenCalled();
     const cookie = res.getCookie("otography_session");
@@ -60,12 +67,12 @@ describe("POST /api/auth/sign-out", () => {
       claims: { sub: "user123", email: "test@example.com" },
       session: { id: "session-uuid", userId: "uuid-user", version: 1 },
     });
-    mockRevokeSession.mockResolvedValue(new Error("database unavailable"));
+    sessionRepository.revokeSession.mockResolvedValue(new Error("database unavailable"));
 
     const res = await testRequest("/api/auth/sign-out", {
       method: "POST",
       headers: { Origin: "http://localhost:3000" },
-      cookie: { otography_session: "opaque-session-id" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(500);

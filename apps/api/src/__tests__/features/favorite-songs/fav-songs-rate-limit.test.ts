@@ -61,7 +61,7 @@ const FAV_SONGS_URL = new URL("/api/me/favorites/songs", "http://localhost:3001"
 
 const makeFavSongRequest = (
   mockEnv: ReturnType<typeof createRateLimitMockEnv>,
-  sessionCookie = "valid-session-cookie",
+  sessionCookie = "a".repeat(43),
 ) =>
   app.request(
     FAV_SONGS_URL,

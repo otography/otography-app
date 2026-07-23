@@ -51,7 +51,7 @@ const POSTS_URL = new URL("/api/posts", "http://localhost:3001");
 
 const makePostRequest = (
   mockEnv: ReturnType<typeof createRateLimitMockEnv>,
-  sessionCookie = "valid-session-cookie",
+  sessionCookie = "a".repeat(43),
 ) =>
   app.request(
     POSTS_URL,

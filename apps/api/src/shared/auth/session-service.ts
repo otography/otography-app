@@ -86,6 +86,7 @@ export const issueSession = async ({
   // AADバインディング用のセッションハッシュを事前計算
   const { hashSessionId } = await import("./session-crypto");
   const sessionHash = await hashSessionId(opaqueId);
+  if (sessionHash instanceof Error) return sessionHash;
 
   const sessionBinding: AadBinding = {
     sessionHash,
@@ -135,6 +136,7 @@ export const resolveSession = async (
   // 暗号化クレデンシャルを復号
   const { hashSessionId } = await import("./session-crypto");
   const sessionHash = await hashSessionId(opaqueId);
+  if (sessionHash instanceof Error) return sessionHash;
   const sessionBinding: AadBinding = {
     sessionHash,
     userId: session.userId,

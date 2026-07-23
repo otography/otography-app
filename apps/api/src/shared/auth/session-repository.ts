@@ -72,6 +72,7 @@ export const createServerSession = async (
   const now = params.now ?? new Date();
   const timestamps = computeTimestamps(now);
   const sessionHash = await hashSessionId(params.rawSessionId);
+  if (sessionHash instanceof Error) return sessionHash;
 
   const result = await db
     .insert(serverSessions)
@@ -101,6 +102,7 @@ export const getValidSessionByOpaqueId = async (
   now: Date = new Date(),
 ): Promise<ServerSession | null | Error> => {
   const sessionHash = await hashSessionId(rawSessionId);
+  if (sessionHash instanceof Error) return sessionHash;
   const nowIso = now.toISOString();
 
   const result = await db

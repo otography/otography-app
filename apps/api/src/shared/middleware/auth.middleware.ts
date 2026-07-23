@@ -116,7 +116,9 @@ export const requireFreshSessionMiddleware = () =>
 
     const resolved = await resolveSession(opaqueId, c.var.db(), ctxResult, true);
     if (resolved instanceof Error) {
-      clearOpaqueSessionCookie(c);
+      if (resolved instanceof AuthError && resolved.clearCookie) {
+        clearOpaqueSessionCookie(c);
+      }
       return respondWithError(resolved, c);
     }
     if (resolved === null) {

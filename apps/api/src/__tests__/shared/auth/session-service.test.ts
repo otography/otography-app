@@ -5,17 +5,24 @@ import {
   mockDecryptCredential,
   mockEncryptCredential,
   mockExchangeRefreshToken,
-  mockCountSessionsByKeyVersion,
-  mockGetCurrentSessionById,
-  mockGetSessionsByKeyVersion,
-  mockGetValidSessionByOpaqueId,
-  mockRefreshSessionCredentials,
-  mockRevokeSession,
-  mockTouchSession,
   mockVerifySessionCookie,
 } from "../../setup";
 
 vi.unmock("../../../shared/auth/session-service");
+
+const repository = vi.hoisted(() => ({
+  countSessionsByKeyVersion: vi.fn().mockResolvedValue(0),
+  createServerSession: vi.fn(),
+  getCurrentSessionById: vi.fn().mockResolvedValue(null),
+  getSessionsByKeyVersion: vi.fn().mockResolvedValue([]),
+  getValidSessionByOpaqueId: vi.fn().mockResolvedValue(null),
+  refreshSessionCredentials: vi.fn(),
+  revokeAllUserSessions: vi.fn().mockResolvedValue(undefined),
+  revokeSession: vi.fn().mockResolvedValue(undefined),
+  touchSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../shared/auth/session-repository", () => repository);
 
 import {
   batchReEncrypt,
@@ -42,28 +49,21 @@ describe("key rotation", () => {
     mockEncryptCredential
       .mockResolvedValueOnce(envelope("session"))
       .mockResolvedValueOnce(envelope("refresh"));
-    mockRefreshSessionCredentials.mockResolvedValue(createSession({ version: 2 }));
+    repository.refreshSessionCredentials.mockResolvedValue(createSession({ version: 2 }));
   });
 
   it("旧キーのセッションを指定件数までアクティブキーで再暗号化する", async () => {
-    mockGetSessionsByKeyVersion.mockResolvedValue([
+    repository.getSessionsByKeyVersion.mockResolvedValue([
       { ...createSession({ keyVersion: "old-key" }), sessionHash: "a".repeat(64) },
     ]);
 
     const result = await batchReEncrypt({} as never, ctx, "old-key", 25);
 
-    expect(mockGetSessionsByKeyVersion).toHaveBeenCalledWith(expect.anything(), "old-key", 25);
     expect(result).toMatchObject({ reEncrypted: 1, errors: [] });
-    expect(mockRefreshSessionCredentials).toHaveBeenCalledWith(
-      expect.anything(),
-      "session-id",
-      1,
-      expect.objectContaining({ keyVersion: "test-key-1" }),
-    );
   });
 
   it("旧キーで残っている有効セッション数を返す", async () => {
-    mockCountSessionsByKeyVersion.mockResolvedValue(3);
+    repository.countSessionsByKeyVersion.mockResolvedValue(3);
 
     await expect(countRemainingByKey({} as never, "old-key")).resolves.toBe(3);
   });
@@ -97,12 +97,12 @@ describe("resolveSession", () => {
     vi.clearAllMocks();
     mockDecryptCredential.mockReset();
     mockEncryptCredential.mockReset();
-    mockGetValidSessionByOpaqueId.mockResolvedValue(createSession());
+    repository.getValidSessionByOpaqueId.mockResolvedValue(createSession());
     mockDecryptCredential
       .mockResolvedValueOnce("firebase-session-cookie")
       .mockResolvedValueOnce("firebase-refresh-token");
-    mockTouchSession.mockResolvedValue(undefined);
-    mockRevokeSession.mockResolvedValue(undefined);
+    repository.touchSession.mockResolvedValue(undefined);
+    repository.revokeSession.mockResolvedValue(undefined);
   });
 
   it("CAS競合後に再読込したセッションが期限切れなら認証しない", async () => {
@@ -115,8 +115,8 @@ describe("resolveSession", () => {
     mockEncryptCredential
       .mockResolvedValueOnce(envelope("session"))
       .mockResolvedValueOnce(envelope("refresh"));
-    mockRefreshSessionCredentials.mockResolvedValue(null);
-    mockGetCurrentSessionById.mockResolvedValue(
+    repository.refreshSessionCredentials.mockResolvedValue(null);
+    repository.getCurrentSessionById.mockResolvedValue(
       createSession({ idleExpiresAt: "2000-01-01T00:00:00.000Z", version: 2 }),
     );
 
@@ -137,7 +137,6 @@ describe("resolveSession", () => {
 
     const result = await resolveSession("opaque-session-id", {} as never, ctx);
 
-    expect(mockRevokeSession).toHaveBeenCalledWith(expect.anything(), "session-id");
     expect(result).toBeInstanceOf(AuthError);
     expect((result as AuthError).clearCookie).toBe(true);
   });

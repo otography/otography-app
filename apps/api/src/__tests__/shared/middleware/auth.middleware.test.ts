@@ -52,7 +52,7 @@ describe("authSessionMiddleware + requireAuthMiddleware", () => {
     });
     const app = createTestApp();
     const res = await app.request("/protected/data", {
-      headers: { Cookie: "otography_session=valid-opaque-id" },
+      headers: { Cookie: `otography_session=${"a".repeat(43)}` },
     });
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
@@ -72,7 +72,7 @@ describe("authSessionMiddleware + requireAuthMiddleware", () => {
     mockResolveSession.mockResolvedValue(new Error("database unavailable"));
     const app = createTestApp();
     const res = await app.request("/protected/data", {
-      headers: { Cookie: "otography_session=valid-opaque-id" },
+      headers: { Cookie: `otography_session=${"a".repeat(43)}` },
     });
 
     expect(res.status).toBe(500);
@@ -95,7 +95,7 @@ describe("requireFreshSessionMiddleware", () => {
     const app = createTestApp();
     const res = await app.request("/sensitive/delete", {
       method: "DELETE",
-      headers: { Cookie: "otography_session=valid-id" },
+      headers: { Cookie: `otography_session=${"a".repeat(43)}` },
     });
     expect(res.status).toBe(200);
   });
@@ -118,8 +118,27 @@ describe("requireFreshSessionMiddleware", () => {
     const app = createTestApp();
     const res = await app.request("/sensitive/delete", {
       method: "DELETE",
-      headers: { Cookie: "otography_session=revoked-id" },
+      headers: { Cookie: `otography_session=${"a".repeat(43)}` },
     });
     expect(res.status).toBe(401);
+    expect(res.headers.get("set-cookie")).toContain("otography_session=");
+  });
+
+  it("strictモードの一時障害なら500を返しCookieを消さない", async () => {
+    mockResolveSession
+      .mockResolvedValueOnce({
+        claims: { sub: "user123" },
+        session: { id: "sess", userId: "uuid", version: 1 },
+      })
+      .mockResolvedValueOnce(new Error("database unavailable"));
+    const app = createTestApp();
+
+    const res = await app.request("/sensitive/delete", {
+      method: "DELETE",
+      headers: { Cookie: `otography_session=${"a".repeat(43)}` },
+    });
+
+    expect(res.status).toBe(500);
+    expect(res.headers.get("set-cookie")).toBeNull();
   });
 });

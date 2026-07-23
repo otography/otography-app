@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  mockResolveSession,
-  mockRevokeAllUserSessions,
-  mockRevokeRefreshTokens,
-} from "../../setup";
+import { mockResolveSession, mockRevokeRefreshTokens } from "../../setup";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
+
+const sessionRepository = vi.hoisted(() => ({
+  revokeAllUserSessions: vi.fn().mockResolvedValue(undefined),
+  revokeSession: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../../shared/auth/session-repository", () => sessionRepository);
 
 vi.mock("../../../shared/firebase/firebase-rest", () => ({
   signInWithPassword: vi.fn(),
@@ -129,7 +132,7 @@ describe("GET /api/user", () => {
     });
 
     const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(200);
@@ -210,7 +213,7 @@ describe("GET /api/user", () => {
     } as never);
 
     const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(404);
@@ -248,7 +251,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "", name: "" },
     });
 
@@ -311,7 +314,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "newuser", name: "New User" },
     });
 
@@ -343,7 +346,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "newuser", name: "New User" },
     });
 
@@ -382,7 +385,7 @@ describe("PATCH /api/user/profile", () => {
 
     const res = await testRequest("/api/user/profile", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "existinguser", name: "Existing User" },
     });
 
@@ -445,7 +448,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { bio: "Updated bio", birthplace: "Tokyo" },
     });
 
@@ -477,7 +480,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { bio: "Updated bio" },
     });
 
@@ -517,7 +520,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { birthyear: 3000 },
     });
 
@@ -556,7 +559,7 @@ describe("PATCH /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "PATCH",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
       body: { username: "existinguser" },
     });
 
@@ -573,7 +576,7 @@ describe("PATCH /api/user", () => {
 describe("DELETE /api/user", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRevokeAllUserSessions.mockResolvedValue(undefined);
+    sessionRepository.revokeAllUserSessions.mockResolvedValue(undefined);
     mockRevokeRefreshTokens.mockResolvedValue(undefined);
   });
 
@@ -614,7 +617,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "revoked-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(401);
@@ -645,7 +648,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "disabled-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(403);
@@ -679,9 +682,9 @@ describe("DELETE /api/user", () => {
                 birthplace: null,
                 birthyear: null,
                 gender: null,
-                createdAt: "2026-01-01T00:00:00.000Z",
-                updatedAt: "2026-01-03T00:00:00.000Z",
-                deletedAt: "2026-01-03T00:00:00.000Z",
+                createdAt: "2026-01-01T00:00:00Z",
+                updatedAt: "2026-01-03T00:00:00Z",
+                deletedAt: "2026-01-03T00:00:00Z",
               },
             ]),
           })),
@@ -692,16 +695,19 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ message: "Account deleted." });
     // アカウント削除時に全サーバーセッションが無効化される（#1）
-    expect(mockRevokeAllUserSessions).toHaveBeenCalledWith(expect.anything(), "uuid-user");
+    expect(sessionRepository.revokeAllUserSessions).toHaveBeenCalledWith(
+      expect.anything(),
+      "uuid-user",
+    );
     // アカウント削除境界でのみ Firebase トークン無効化（#2）
     expect(mockRevokeRefreshTokens).toHaveBeenCalledWith("user123");
-    expect(mockRevokeAllUserSessions.mock.invocationCallOrder[0]).toBeLessThan(
+    expect(sessionRepository.revokeAllUserSessions.mock.invocationCallOrder[0]).toBeLessThan(
       mockRevokeRefreshTokens.mock.invocationCallOrder[0]!,
     );
     // Cookieがクリアされる
@@ -714,7 +720,7 @@ describe("DELETE /api/user", () => {
       claims: { sub: "user123", email: "test@example.com" },
       session: { id: "sess-uuid", userId: "uuid-user", version: 1 },
     });
-    mockRevokeAllUserSessions.mockResolvedValue(new Error("database unavailable"));
+    sessionRepository.revokeAllUserSessions.mockResolvedValue(new Error("database unavailable"));
     const deleteSpy = vi.fn();
     mockDbWithRls("uuid-user", {
       update: deleteSpy,
@@ -723,7 +729,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(500);
@@ -745,7 +751,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(500);
@@ -774,7 +780,7 @@ describe("DELETE /api/user", () => {
 
     const res = await testRequest("/api/user", {
       method: "DELETE",
-      cookie: { otography_session: "valid-session" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(500);

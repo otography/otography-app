@@ -69,7 +69,7 @@ describe("Session resolution on protected route (GET /api/user)", () => {
     mockDbWithRls("uuid-user", defaultDbTx);
 
     const res = await testRequest("/api/user", {
-      cookie: { otography_session: "valid-opaque-id" },
+      cookie: { otography_session: "a".repeat(43) },
     });
 
     expect(res.status).toBe(200);

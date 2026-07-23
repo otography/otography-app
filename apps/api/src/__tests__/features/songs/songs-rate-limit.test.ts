@@ -56,7 +56,7 @@ const SONGS_URL = new URL("/api/songs", "http://localhost:3001");
 
 const makeSongRequest = (
   mockEnv: ReturnType<typeof createRateLimitMockEnv>,
-  sessionCookie = "valid-session-cookie",
+  sessionCookie = "a".repeat(43),
 ) =>
   app.request(
     SONGS_URL,

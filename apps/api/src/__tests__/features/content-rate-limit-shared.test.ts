@@ -125,7 +125,7 @@ const POSTS_URL = new URL("/api/posts", "http://localhost:3001");
 const ARTISTS_URL = new URL("/api/artists", "http://localhost:3001");
 const SONGS_URL = new URL("/api/songs", "http://localhost:3001");
 
-const makePostRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
+const makePostRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "a".repeat(43)) =>
   app.request(
     POSTS_URL,
     {
@@ -139,7 +139,7 @@ const makePostRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-sessi
     mockEnv,
   );
 
-const makeArtistRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
+const makeArtistRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "a".repeat(43)) =>
   app.request(
     ARTISTS_URL,
     {
@@ -153,7 +153,7 @@ const makeArtistRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-ses
     mockEnv,
   );
 
-const makeSongRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "valid-session-cookie") =>
+const makeSongRequest = (mockEnv: MockRateLimitEnv, sessionCookie = "a".repeat(43)) =>
   app.request(
     SONGS_URL,
     {
@@ -230,12 +230,12 @@ describe("コンテンツエンドポイント間の共有レートリミット�
 
       // ユーザーAとして30件の投稿を作成
       for (let i = 0; i < RATE_LIMIT; i++) {
-        const res = await makePostRequest(mockEnv, "session-user-a");
+        const res = await makePostRequest(mockEnv, "a".repeat(43));
         expect(res.status).toBe(201);
       }
 
       // ユーザーAの31リクエスト目は429
-      const userAExhausted = await makePostRequest(mockEnv, "session-user-a");
+      const userAExhausted = await makePostRequest(mockEnv, "a".repeat(43));
       expect(userAExhausted.status).toBe(429);
 
       // ユーザーBはまだレートリミットに影響されていない
@@ -246,7 +246,7 @@ describe("コンテンツエンドポイント間の共有レートリミット�
         },
         session: { id: "sess", userId: "uuid", version: 1 },
       });
-      const userBRes = await makePostRequest(mockEnv, "session-user-b");
+      const userBRes = await makePostRequest(mockEnv, "b".repeat(43));
       expect(userBRes.status).toBe(201);
     });
   });

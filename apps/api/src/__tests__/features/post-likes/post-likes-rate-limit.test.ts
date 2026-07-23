@@ -60,7 +60,7 @@ type MockEnv = ReturnType<typeof createLikeRateLimitMockEnv>;
 
 const postId = "6f648f36-5be1-4af1-bf5d-cf8ebf222221";
 
-const makeLikeRequest = (mockEnv: MockEnv, sessionCookie = "valid-session-cookie") =>
+const makeLikeRequest = (mockEnv: MockEnv, sessionCookie = "a".repeat(43)) =>
   app.request(
     new URL(`/api/posts/${postId}/like`, "http://localhost:3001"),
     {
@@ -126,12 +126,12 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
 
     // ユーザーAとして30リクエスト: 全て成功
     for (let i = 0; i < RATE_LIMIT; i++) {
-      const res = await makeLikeRequest(mockEnv, "session-user-a");
+      const res = await makeLikeRequest(mockEnv, "a".repeat(43));
       expect(res.status).toBe(200);
     }
 
     // ユーザーAの31リクエスト目は429
-    const userAExhausted = await makeLikeRequest(mockEnv, "session-user-a");
+    const userAExhausted = await makeLikeRequest(mockEnv, "a".repeat(43));
     expect(userAExhausted.status).toBe(429);
 
     // ユーザーBはまだレートリミットに影響されていない
@@ -142,7 +142,7 @@ describe("POST /api/posts/:id/like レートリミット (VAL-REFACTOR-001, VAL-
       },
       session: { id: "sess", userId: "uuid", version: 1 },
     });
-    const userBRes = await makeLikeRequest(mockEnv, "session-user-b");
+    const userBRes = await makeLikeRequest(mockEnv, "b".repeat(43));
     expect(userBRes.status).toBe(200);
   });
 });

@@ -59,7 +59,7 @@ const ARTISTS_URL = new URL("/api/artists", "http://localhost:3001");
 
 const makeArtistRequest = (
   mockEnv: ReturnType<typeof createRateLimitMockEnv>,
-  sessionCookie = "valid-session-cookie",
+  sessionCookie = "a".repeat(43),
 ) =>
   app.request(
     ARTISTS_URL,

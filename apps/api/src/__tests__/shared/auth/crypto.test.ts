@@ -53,6 +53,9 @@ describe("hashSessionId", () => {
     const id = "test-session-id-12345";
     const hash1 = await hashSessionId(id);
     const hash2 = await hashSessionId(id);
+    expect(hash1).not.toBeInstanceOf(Error);
+    expect(hash2).not.toBeInstanceOf(Error);
+    if (hash1 instanceof Error || hash2 instanceof Error) return;
     expect(hash1).toBe(hash2);
     // SHA-256 hex = 64文字
     expect(hash1).toMatch(/^[0-9a-f]{64}$/);
@@ -61,6 +64,9 @@ describe("hashSessionId", () => {
   it("異なる入力で異なるハッシュを生成する", async () => {
     const hash1 = await hashSessionId("session-a");
     const hash2 = await hashSessionId("session-b");
+    expect(hash1).not.toBeInstanceOf(Error);
+    expect(hash2).not.toBeInstanceOf(Error);
+    if (hash1 instanceof Error || hash2 instanceof Error) return;
     expect(hash1).not.toBe(hash2);
   });
 
@@ -71,6 +77,18 @@ describe("hashSessionId", () => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
     expect(await hashSessionId(id)).toBe(expectedHex);
+  });
+
+  it("Web Crypto の失敗を値エラーとして返す", async () => {
+    const digest = vi
+      .spyOn(crypto.subtle, "digest")
+      .mockRejectedValueOnce(new Error("crypto unavailable"));
+
+    const result = await hashSessionId("session-id");
+
+    expect(result).toBeInstanceOf(Error);
+    expect(result).toMatchObject({ name: "SessionCryptoError" });
+    digest.mockRestore();
   });
 });
 

@@ -1,4 +1,11 @@
+import * as errore from "errore";
+
 // オペークセッションIDの生成とハッシュ化ユーティリティ
+
+class SessionCryptoError extends errore.createTaggedError({
+  name: "SessionCryptoError",
+  message: "$message",
+}) {}
 
 // 32バイトのベース64urlエンコードは43文字（パディングなし）
 // これがオペークCookie値の唯一の正しい形式
@@ -11,9 +18,16 @@ export const generateOpaqueSessionId = (): string => {
 };
 
 /** セッションIDの raw 値を SHA-256 でハッシュ化し hex 文字列として返す */
-export const hashSessionId = async (rawId: string): Promise<string> => {
+export const hashSessionId = async (rawId: string): Promise<string | SessionCryptoError> => {
   const encoded = new TextEncoder().encode(rawId);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded).catch(
+    (cause) =>
+      new SessionCryptoError({
+        message: "セッションIDのハッシュ化に失敗しました。",
+        cause,
+      }),
+  );
+  if (hashBuffer instanceof Error) return hashBuffer;
   return Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
