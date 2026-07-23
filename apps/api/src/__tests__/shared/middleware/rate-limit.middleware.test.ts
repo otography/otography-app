@@ -63,6 +63,18 @@ describe("rateLimitByIp", () => {
     expect(await res.json()).toEqual({ ok: true });
   });
 
+  it("bindingが未設定の場合は設定名を含むエラーにする", async () => {
+    const app = new Hono();
+    app.onError((error, c) => c.text(error.message, 500));
+    app.use(rateLimitByIp("MISSING_LIMITER"));
+    app.get("/test", (c) => c.json({ ok: true }));
+
+    const response = await app.request("http://localhost/test", {}, env);
+
+    expect(response.status).toBe(500);
+    expect(await response.text()).toBe("Rate limiter binding MISSING_LIMITER is not configured.");
+  });
+
   it("success=falseの場合、429を返す (VAL-MW-003)", async () => {
     const mockEnv = createMockEnv(async () => ({ success: false }));
     const app = new Hono();

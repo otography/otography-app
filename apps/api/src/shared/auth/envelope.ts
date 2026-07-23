@@ -18,7 +18,7 @@ class EnvelopeError extends errore.createTaggedError({
 // - ct: 暗号文 + GCM tag の hex エンコード（空でない偶数長）
 const ALLOWED_ENVELOPE_KEYS = new Set(["v", "kid", "iv", "ct"]);
 
-const envelopeSchema = type({
+export const credentialEnvelopeSchema = type({
   v: "1",
   kid: type.pipe(type("string"), type("string >= 1")),
   iv: /^[0-9a-f]{24}$/,
@@ -26,12 +26,7 @@ const envelopeSchema = type({
 });
 
 // バージョン付き暗号化エンベロープ
-type CredentialEnvelope = {
-  v: 1;
-  kid: string;
-  iv: string;
-  ct: string;
-};
+export type CredentialEnvelope = typeof credentialEnvelopeSchema.infer;
 
 // 暗号化・復号時の AAD バインディング
 type AadBinding = {
@@ -55,7 +50,7 @@ const validateEnvelope = (raw: unknown): CredentialEnvelope | EnvelopeError => {
       return new EnvelopeError({ message: `エンベロープに未知のフィールドがあります: ${key}` });
     }
   }
-  const result = envelopeSchema(raw);
+  const result = credentialEnvelopeSchema(raw);
   if (result instanceof type.errors) {
     return new EnvelopeError({
       message: "不正なエンベロープ形式です。",
@@ -166,4 +161,4 @@ const decryptCredential = async (
 };
 
 export { encryptCredential, decryptCredential, validateEnvelope };
-export type { CredentialEnvelope, AadBinding };
+export type { AadBinding };

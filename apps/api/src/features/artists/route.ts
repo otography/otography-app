@@ -3,7 +3,7 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Env } from "../../shared/types/env";
-import type { Cursor } from "../../shared/pagination";
+import { parsePaginationQuery } from "../../shared/pagination";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { getArtist, getArtists, registerArtist, syncArtist } from "./usecase";
 import { artistCreateBodySchema } from "./model";
@@ -26,17 +26,12 @@ const artistIdParamValidator = arktypeValidator("param", artistIdParamSchema, (r
 
 const artists = new Hono<Env>()
   .get("/api/artists", async (c) => {
-    const limitParam = c.req.query("limit");
-    const cursorCreatedAt = c.req.query("cursor[createdAt]");
-    const cursorId = c.req.query("cursor[id]");
-
-    const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-    let cursor: Cursor | undefined;
-    if (cursorCreatedAt && cursorId) {
-      cursor = { createdAt: cursorCreatedAt, id: cursorId };
+    const pagination = parsePaginationQuery(c);
+    if (pagination instanceof type.errors) {
+      return badRequestResponse(c, "Please provide valid pagination parameters.");
     }
 
-    const result = await getArtists({ limit, cursor }, c.var.db());
+    const result = await getArtists(pagination, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
     return c.json(result);
   })

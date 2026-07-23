@@ -1,4 +1,5 @@
 import { arktypeValidator } from "@hono/arktype-validator";
+import { type } from "arktype";
 import { Hono } from "hono";
 import {
   badRequestResponse,
@@ -33,8 +34,11 @@ const favoriteSongs = new Hono<Env>()
       return unauthorizedResponse(c, "ログインしていません。");
     }
 
-    const { limit, cursor } = parsePaginationQuery(c);
-    const result = await getFavoriteSongs(session, c.var.db(), { limit, cursor });
+    const pagination = parsePaginationQuery(c);
+    if (pagination instanceof type.errors) {
+      return badRequestResponse(c, "ページネーションパラメータが不正です。");
+    }
+    const result = await getFavoriteSongs(session, c.var.db(), pagination);
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -50,8 +54,11 @@ const favoriteSongs = new Hono<Env>()
     }),
     async (c) => {
       const { userId } = c.req.valid("param");
-      const { limit, cursor } = parsePaginationQuery(c);
-      const result = await getPublicFavoriteSongs(userId, c.var.db(), { limit, cursor });
+      const pagination = parsePaginationQuery(c);
+      if (pagination instanceof type.errors) {
+        return badRequestResponse(c, "ページネーションパラメータが不正です。");
+      }
+      const result = await getPublicFavoriteSongs(userId, c.var.db(), pagination);
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);

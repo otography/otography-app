@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { type } from "arktype";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import {
   AccountConflictError,
@@ -23,6 +24,12 @@ const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 
 // Google OAuthスコープ
 const GOOGLE_SCOPES = "openid email profile";
+
+const googleCallbackQuerySchema = type({
+  "code?": "string > 0",
+  "state?": "string > 0",
+  "error?": "string",
+});
 
 /**
  * state JWTの検証エラーから適切なエラーコードを判定する。
@@ -113,9 +120,19 @@ export const googleOAuthRedirect = async (c: Context<Env>) => {
 
 /** Google OAuth コールバック — 認可コードを処理してセッションを作成 */
 export const googleOAuthCallback = async (c: Context<Env>) => {
-  const code = c.req.query("code");
-  const stateParam = c.req.query("state");
-  const googleError = c.req.query("error");
+  const codeParam = c.req.query("code");
+  const stateParamValue = c.req.query("state");
+  const errorParam = c.req.query("error");
+  const query = googleCallbackQuerySchema({
+    ...(codeParam !== undefined ? { code: codeParam } : {}),
+    ...(stateParamValue !== undefined ? { state: stateParamValue } : {}),
+    ...(errorParam !== undefined ? { error: errorParam } : {}),
+  });
+  if (query instanceof type.errors) {
+    return c.redirect(buildErrorRedirect(c.env, "invalid_state"), 302);
+  }
+
+  const { code, state: stateParam, error: googleError } = query;
 
   // Google側でキャンセルや同意失敗があった場合
   // stateがあれば検証してfromを取り出し、エラー時のリダイレクト先に使用する

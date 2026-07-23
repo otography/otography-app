@@ -1,12 +1,7 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
-import {
-  users,
-  userProfiles,
-  type InsertUserValues,
-  type SetupProfileValues,
-  type UpdateUserValues,
-} from "../../shared/db/schema";
+import { users, userProfiles } from "../../shared/db/schema";
 import type { DatabaseOrTransaction } from "../../shared/db";
+import type { InsertUserValues, SetupProfileValues, UpdateUserValues } from "./model";
 
 // Firebase Auth と DB の同期は、限定的な SECURITY DEFINER 関数に閉じ込める。
 export const insertUser = async (tx: DatabaseOrTransaction, values: InsertUserValues) => {

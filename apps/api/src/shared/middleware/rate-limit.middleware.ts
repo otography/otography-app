@@ -9,6 +9,19 @@ interface RateLimiterBinding {
   limit: (opts: { key: string }) => Promise<{ success: boolean }>;
 }
 
+const getRateLimiter = (bindings: Env["Bindings"], limiterName: string): RateLimiterBinding => {
+  const binding: unknown = (bindings as Record<string, unknown>)[limiterName];
+  if (
+    typeof binding !== "object" ||
+    binding === null ||
+    !("limit" in binding) ||
+    typeof binding.limit !== "function"
+  ) {
+    throw new Error(`Rate limiter binding ${limiterName} is not configured.`);
+  }
+  return binding as RateLimiterBinding;
+};
+
 /**
  * IPアドレスをキーとしたレートリミットミドルウェアファクトリ
  * getConnInfo(c).remote.address をキーに使用する
@@ -16,7 +29,7 @@ interface RateLimiterBinding {
 export const rateLimitByIp = (limiterName: string) =>
   createMiddleware<Env>(async (c, next) => {
     const ip = getConnInfo(c).remote.address ?? "unknown";
-    const limiter = c.env[limiterName as keyof Env["Bindings"]] as unknown as RateLimiterBinding;
+    const limiter = getRateLimiter(c.env, limiterName);
     const { success } = await limiter.limit({ key: ip });
     if (!success) {
       return problemResponse(
@@ -41,7 +54,7 @@ export const rateLimitByUser = (limiterName: string) =>
       return unauthorizedResponse(c, "You are not logged in.");
     }
 
-    const limiter = c.env[limiterName as keyof Env["Bindings"]] as unknown as RateLimiterBinding;
+    const limiter = getRateLimiter(c.env, limiterName);
     const { success } = await limiter.limit({ key: session.sub });
 
     if (!success) {

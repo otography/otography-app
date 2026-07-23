@@ -18,7 +18,7 @@ import {
   unauthorizedResponse,
 } from "../../shared/errors/error-response";
 import type { Env } from "../../shared/types/env";
-import { setupProfileSchema, updateUserSchema } from "../../shared/db/schema";
+import { setupProfileSchema, updateUserSchema } from "./model";
 import {
   getProfile,
   setupProfile,
