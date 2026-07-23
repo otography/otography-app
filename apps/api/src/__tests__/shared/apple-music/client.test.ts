@@ -13,7 +13,7 @@ import { fetchArtist, fetchSong } from "../../../shared/apple-music/client";
 describe("Apple Music client", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.generateDeveloperToken.mockResolvedValue("developer-token");
+    mocks.generateDeveloperToken.mockResolvedValue("header.payload.signature");
   });
 
   afterEach(() => {
@@ -41,7 +41,7 @@ describe("Apple Music client", () => {
       `https://api.music.apple.com/v1/catalog/jp/${resource}/id%2Fwith%20space${query}`,
     );
     expect(init).toMatchObject({
-      headers: { Authorization: "Bearer developer-token" },
+      headers: { Authorization: expect.stringMatching(/^Bearer [\w-]+\.[\w-]+\.[\w-]+$/) },
     });
   });
 
