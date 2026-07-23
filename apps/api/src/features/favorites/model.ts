@@ -1,5 +1,5 @@
 import { type } from "arktype";
-import type { Cursor } from "../shared/pagination";
+import type { Cursor } from "../../shared/pagination";
 
 /** Apple Music ID パスパラメータスキーマ */
 export const appleMusicIdParamSchema = type({
@@ -11,18 +11,18 @@ export const userIdParamSchema = type({
   userId: "string.uuid",
 });
 
-/** ページネーションクエリパラメータをパースするヘルパー */
+/** お気に入り一覧で共通のページネーションクエリ契約 */
 export const parsePaginationQuery = (c: {
   req: { query: (key: string) => string | undefined };
 }) => {
   const limitParam = c.req.query("limit");
   const cursorCreatedAt = c.req.query("cursor[createdAt]");
   const cursorId = c.req.query("cursor[id]");
+  const cursor: Cursor | undefined =
+    cursorCreatedAt && cursorId ? { createdAt: cursorCreatedAt, id: cursorId } : undefined;
 
-  const limit = limitParam ? parseInt(limitParam, 10) : undefined;
-  let cursor: Cursor | undefined;
-  if (cursorCreatedAt && cursorId) {
-    cursor = { createdAt: cursorCreatedAt, id: cursorId };
-  }
-  return { limit, cursor };
+  return {
+    limit: limitParam ? parseInt(limitParam, 10) : undefined,
+    cursor,
+  };
 };

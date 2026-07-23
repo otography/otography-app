@@ -4,7 +4,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import { fetchArtist } from "../../shared/apple-music";
 import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
-import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { artists } from "../../shared/db/schema";
 import { toDbError } from "../../shared/db/postgres-error";
 import { withRls } from "../../shared/db/rls";
@@ -16,6 +15,7 @@ import {
   listFavoriteArtistsPublic,
 } from "./repository";
 import type { AddFavoriteArtistInput } from "./model";
+import { deleteFavorite, getFavoritePage } from "../favorites/usecase";
 
 // お気に入りアーティスト一覧取得
 export const getFavoriteArtists = async (
@@ -23,34 +23,13 @@ export const getFavoriteArtists = async (
   db: Database,
   pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
-  const limit = normalizeLimit(pagination?.limit);
-  const result = await withRls(db, session, async (tx, userId) => {
-    return listFavoriteArtists(tx, userId, { limit, cursor: pagination?.cursor });
+  return getFavoritePage({
+    pagination,
+    load: (page) => withRls(db, session, (tx, userId) => listFavoriteArtists(tx, userId, page)),
+    errorMessage: "お気に入りアーティストの取得に失敗しました。",
+    getFavoriteId: (row) => row.favorite.artistId,
+    mapResource: (row) => ({ artist: row.artist }),
   });
-
-  if (result instanceof Error) {
-    return toDbError(result, "お気に入りアーティストの取得に失敗しました。");
-  }
-
-  const paginationMeta = buildPaginationMeta(
-    result.map((row) => ({
-      id: row.favorite.artistId,
-      createdAt: row.favorite.createdAt,
-    })),
-    limit,
-  );
-  const trimmed = trimItems(result, limit);
-
-  return {
-    favorites: trimmed.map((row) => ({
-      artist: row.artist,
-      comment: row.favorite.comment,
-      emoji: row.favorite.emoji,
-      color: row.favorite.color,
-      addedAt: row.favorite.createdAt,
-    })),
-    pagination: paginationMeta,
-  };
 };
 
 // 他人のお気に入りアーティスト一覧取得（RLS 不要）
@@ -59,32 +38,13 @@ export const getPublicFavoriteArtists = async (
   db: Database,
   pagination?: { limit?: number; cursor?: Cursor | null },
 ) => {
-  const limit = normalizeLimit(pagination?.limit);
-  const result = await listFavoriteArtistsPublic(db, userId, {
-    limit,
-    cursor: pagination?.cursor,
-  }).catch((e) => toDbError(e, "お気に入りアーティストの取得に失敗しました。"));
-  if (result instanceof Error) return result;
-
-  const paginationMeta = buildPaginationMeta(
-    result.map((row) => ({
-      id: row.favorite.artistId,
-      createdAt: row.favorite.createdAt,
-    })),
-    limit,
-  );
-  const trimmed = trimItems(result, limit);
-
-  return {
-    favorites: trimmed.map((row) => ({
-      artist: row.artist,
-      comment: row.favorite.comment,
-      emoji: row.favorite.emoji,
-      color: row.favorite.color,
-      addedAt: row.favorite.createdAt,
-    })),
-    pagination: paginationMeta,
-  };
+  return getFavoritePage({
+    pagination,
+    load: (page) => listFavoriteArtistsPublic(db, userId, page),
+    errorMessage: "お気に入りアーティストの取得に失敗しました。",
+    getFavoriteId: (row) => row.favorite.artistId,
+    mapResource: (row) => ({ artist: row.artist }),
+  });
 };
 
 // お気に入りアーティスト登録
@@ -156,23 +116,13 @@ export const deleteFavoriteArtist = async (
   appleMusicId: string,
   db: Database,
 ) => {
-  const result = await withRls(db, session, async (tx, userId) => {
-    const artist = await findArtistByAppleMusicId(tx, appleMusicId);
-    if (!artist) return [];
-
-    return removeFavoriteArtist(tx, userId, artist.id);
+  return deleteFavorite({
+    session,
+    appleMusicId,
+    db,
+    findResource: findArtistByAppleMusicId,
+    remove: removeFavoriteArtist,
+    errorMessage: "お気に入りアーティストの削除に失敗しました。",
+    notFoundMessage: "お気に入りアーティストが見つかりません。",
   });
-
-  if (result instanceof Error) {
-    return toDbError(result, "お気に入りアーティストの削除に失敗しました。");
-  }
-
-  if (result.length === 0) {
-    return new DbError({
-      message: "お気に入りアーティストが見つかりません。",
-      statusCode: 404,
-    });
-  }
-
-  return { deleted: true };
 };

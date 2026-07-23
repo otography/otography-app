@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ArkErrors } from "arktype";
 import {
   buildPaginationMeta,
+  createPage,
   cursorSchema,
   normalizeLimit,
   paginationInputSchema,
@@ -87,6 +88,24 @@ describe("trimItems", () => {
     const items = [1, 2, 3];
 
     expect(trimItems(items, 2)).toEqual([1, 2]);
+  });
+});
+
+describe("createPage", () => {
+  it("derives metadata from source rows before mapping the visible items", () => {
+    const rows = [
+      { id: "3", createdAt: "2026-01-03", value: 30 },
+      { id: "2", createdAt: "2026-01-02", value: 20 },
+      { id: "1", createdAt: "2026-01-01", value: 10 },
+    ];
+
+    expect(createPage(rows, 2, (row) => row.value)).toEqual({
+      items: [30, 20],
+      pagination: {
+        hasNext: true,
+        nextCursor: { id: "2", createdAt: "2026-01-02" },
+      },
+    });
   });
 });
 

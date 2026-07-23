@@ -17,7 +17,7 @@ import {
   appleMusicIdParamSchema,
   userIdParamSchema,
   parsePaginationQuery,
-} from "../favorite-shared";
+} from "../favorites/model";
 import {
   getFavoriteArtists,
   getPublicFavoriteArtists,

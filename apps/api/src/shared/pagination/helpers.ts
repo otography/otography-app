@@ -37,3 +37,31 @@ export const trimItems = <T>(items: T[], requestedLimit: number): T[] => {
   }
   return items;
 };
+
+type CursorSource = { createdAt: string; id: string };
+
+export function createPage<T extends CursorSource, U>(
+  rows: T[],
+  requestedLimit: number,
+  mapItem: (row: T) => U,
+): { items: U[]; pagination: PaginationMeta };
+export function createPage<T, U>(
+  rows: T[],
+  requestedLimit: number,
+  mapItem: (row: T) => U,
+  getCursorSource: (row: T) => CursorSource,
+): { items: U[]; pagination: PaginationMeta };
+/** LIMIT + 1 の行から、公開項目とページネーションメタデータを同時に生成 */
+export function createPage<T, U>(
+  rows: T[],
+  requestedLimit: number,
+  mapItem: (row: T) => U,
+  getCursorSource?: (row: T) => CursorSource,
+) {
+  const cursorRows = getCursorSource ? rows.map(getCursorSource) : (rows as (T & CursorSource)[]);
+
+  return {
+    items: trimItems(rows, requestedLimit).map(mapItem),
+    pagination: buildPaginationMeta(cursorRows, requestedLimit),
+  };
+}
