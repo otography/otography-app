@@ -1,6 +1,6 @@
 import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import { DbError } from "@repo/errors";
+import { AppleMusicError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -363,7 +363,7 @@ describe("artists endpoints", () => {
 
   it("POST /api/artists returns 502 when Apple Music API fails", async () => {
     vi.mocked(fetchArtist).mockResolvedValue(
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music API からアーティスト情報を取得できませんでした。",
         statusCode: 502,
       }),
@@ -502,7 +502,7 @@ describe("artists endpoints", () => {
 
   it("PATCH /api/artists/:id returns 502 when Apple Music API fails", async () => {
     vi.mocked(fetchArtist).mockResolvedValue(
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music API からアーティスト情報を取得できませんでした。",
         statusCode: 502,
       }),

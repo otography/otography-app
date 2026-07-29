@@ -60,6 +60,7 @@ import {
   GoogleTokenExchangeError,
   FirebaseIdpSigninError,
   AccountConflictError,
+  AppleMusicError,
 } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 import { formatErrorResponse } from "../../../shared/errors/error-response";
@@ -103,6 +104,44 @@ describe("formatErrorResponse", () => {
           detail: "Missing field.",
         },
         statusCode: 400,
+      });
+    });
+  });
+
+  describe("AppleMusicError", () => {
+    it("AppleMusicError(404) を正しい RFC 9457 形式に変換する", () => {
+      const error = new AppleMusicError({
+        message: "指定されたアーティストが見つかりません。",
+        statusCode: 404,
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result).toMatchObject({
+        body: {
+          type: "https://api.otography.com/errors/not-found",
+          title: "Not Found",
+          status: 404,
+          detail: "指定されたアーティストが見つかりません。",
+        },
+        statusCode: 404,
+      });
+      expect(result).not.toHaveProperty("clearCookie");
+    });
+
+    it("AppleMusicError デフォルト(502) を bad-gateway に変換する", () => {
+      const error = new AppleMusicError({
+        message: "Apple Music API からアーティスト情報を取得できませんでした。",
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result).toMatchObject({
+        body: {
+          type: "https://api.otography.com/errors/bad-gateway",
+          title: "Bad Gateway",
+          status: 502,
+          detail: "Apple Music API からアーティスト情報を取得できませんでした。",
+        },
+        statusCode: 502,
       });
     });
   });

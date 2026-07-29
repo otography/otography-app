@@ -1,4 +1,4 @@
-import { DbError } from "@repo/errors";
+import { AppleMusicError } from "@repo/errors";
 import { type, type ArkErrors } from "arktype";
 import { generateDeveloperToken } from "./token";
 
@@ -8,7 +8,7 @@ const appleMusicArtistSchema = type({
   attributes: { name: "string" },
 });
 
-// Apple Music API の楽曲情報（include=artists 時に attributes も取得）
+// Apple Music API の楽曲情報（include=artists 時に relationships も取得）
 const appleMusicSongArtistSchema = type({
   id: "string",
   type: "'artists'",
@@ -31,7 +31,8 @@ const appleMusicSongSchema = type({
   },
 });
 
-const catalogResponseSchema = type({ data: "unknown[]" });
+// Apple Music Catalog API の共通エンベロープ
+const catalogEnvelopeSchema = type({ "data?": "unknown[]" });
 
 type AppleMusicArtist = typeof appleMusicArtistSchema.infer;
 type AppleMusicSong = typeof appleMusicSongSchema.infer;
@@ -44,7 +45,7 @@ type CatalogLookupOptions<T> = {
   query?: string;
   notFoundMessage: string;
   unavailableMessage: string;
-  schema: (input: unknown) => T[] | ArkErrors;
+  schema: (input: unknown) => T | ArkErrors;
 };
 
 // Apple Music Catalog API の lookup 共通契約
@@ -55,10 +56,10 @@ const fetchCatalogResource = async <T>({
   notFoundMessage,
   unavailableMessage,
   schema,
-}: CatalogLookupOptions<T>) => {
+}: CatalogLookupOptions<T>): Promise<T | AppleMusicError> => {
   const token = await generateDeveloperToken().catch(
     (e) =>
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music トークンの生成に失敗しました。",
         statusCode: 502,
         cause: e,
@@ -75,65 +76,58 @@ const fetchCatalogResource = async <T>({
     },
   ).catch(
     (e) =>
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music API のリクエストに失敗しました。",
         statusCode: 502,
         cause: e,
       }),
   );
-
   if (response instanceof Error) return response;
 
   if (!response.ok) {
     if (response.status === 404) {
-      return new DbError({
-        message: notFoundMessage,
-        statusCode: 404,
-      });
+      return new AppleMusicError({ message: notFoundMessage, statusCode: 404 });
     }
-    return new DbError({
-      message: unavailableMessage,
-      statusCode: 502,
-    });
+    return new AppleMusicError({ message: unavailableMessage, statusCode: 502 });
   }
 
   const body = await response.json().catch(
     (e) =>
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music API レスポンスのパースに失敗しました。",
         statusCode: 502,
         cause: e,
-      }),
+      }) as unknown as Promise<unknown>,
   );
-  if (body instanceof Error) return body;
+  if (body instanceof AppleMusicError) return body;
 
-  const responseBody = catalogResponseSchema(body);
-  if (responseBody instanceof type.errors) {
-    return new DbError({
-      message: "Apple Music API レスポンスの形式が不正です。",
+  // エンベロープ検証
+  const envelope = catalogEnvelopeSchema(body);
+  if (envelope instanceof type.errors) {
+    return new AppleMusicError({
+      message: `Apple Music API レスポンスが想定スキーマと一致しません: ${envelope.summary}`,
       statusCode: 502,
-      cause: responseBody,
+      cause: envelope,
     });
   }
 
-  const parsedItems = schema(responseBody.data);
-  if (parsedItems instanceof type.errors) {
-    return new DbError({
-      message: "Apple Music API レスポンスの形式が不正です。",
+  // 先頭要素の有無（data 欠落・空配列）
+  const first = envelope.data?.[0];
+  if (!first) {
+    return new AppleMusicError({ message: notFoundMessage, statusCode: 404 });
+  }
+
+  // リソース別スキーマ検証
+  const parsed = schema(first);
+  if (parsed instanceof type.errors) {
+    return new AppleMusicError({
+      message: `Apple Music API レスポンスが想定スキーマと一致しません: ${parsed.summary}`,
       statusCode: 502,
-      cause: parsedItems,
+      cause: parsed,
     });
   }
 
-  const item = parsedItems[0];
-  if (!item) {
-    return new DbError({
-      message: notFoundMessage,
-      statusCode: 404,
-    });
-  }
-
-  return item;
+  return parsed;
 };
 
 // アーティストを lookup で取得
@@ -143,7 +137,7 @@ export const fetchArtist = (appleMusicId: string) =>
     appleMusicId,
     notFoundMessage: "指定されたアーティストが見つかりません。",
     unavailableMessage: "Apple Music API からアーティスト情報を取得できませんでした。",
-    schema: appleMusicArtistSchema.array(),
+    schema: appleMusicArtistSchema,
   });
 
 // 楽曲を lookup で取得
@@ -154,5 +148,5 @@ export const fetchSong = (appleMusicId: string) =>
     query: "?include=artists",
     notFoundMessage: "指定された楽曲が見つかりません。",
     unavailableMessage: "Apple Music API から楽曲情報を取得できませんでした。",
-    schema: appleMusicSongSchema.array(),
+    schema: appleMusicSongSchema,
   });
