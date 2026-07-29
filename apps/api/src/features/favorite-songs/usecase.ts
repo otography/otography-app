@@ -1,13 +1,16 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { and, eq, isNull } from "drizzle-orm";
-import { fetchSong } from "../../shared/apple-music";
+import { fetchSong, toSongInput } from "../../shared/apple-music";
 import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
-import { songs } from "../../shared/db/schema";
 import { toDbError } from "../../shared/db/postgres-error";
 import { withRls } from "../../shared/db/rls";
-import { findSongByAppleMusicId, createSongFromAppleMusic } from "../songs/repository";
+import { findOrCreateArtists } from "../artists/repository";
+import {
+  createSongFull,
+  findSongByAppleMusicId,
+  songExistsByAppleMusicId,
+} from "../songs/repository";
 import {
   addFavoriteSong,
   removeFavoriteSong,
@@ -53,30 +56,21 @@ export const registerFavoriteSong = async (
   input: AddFavoriteSongInput,
   db: Database,
 ) => {
-  // トランザクション外で DB を確認し、未登録なら事前に Apple Music API から取得
-  const existing = await db
-    .select({ id: songs.id })
-    .from(songs)
-    .where(and(eq(songs.appleMusicId, input.appleMusicId), isNull(songs.deletedAt)))
-    .limit(1)
-    .catch((e) => toDbError(e, "楽曲の検索に失敗しました。"));
-  if (existing instanceof Error) return existing;
+  // トランザクション外で曲存在チェック（不要なAPI呼び出しを回避）
+  const songExists = await songExistsByAppleMusicId(db, input.appleMusicId).catch((e) =>
+    toDbError(e, "楽曲の検索に失敗しました。"),
+  );
+  if (songExists instanceof Error) return songExists;
 
-  const songData = await (async () => {
-    if (existing.length > 0) return null;
+  let songInput: Awaited<ReturnType<typeof toSongInput>> | null = null;
+  if (!songExists) {
+    const apiResponse = await fetchSong(input.appleMusicId);
+    if (apiResponse instanceof Error) return apiResponse;
+    songInput = toSongInput(apiResponse);
+    if (songInput instanceof Error) return songInput;
+  }
 
-    const appleMusicSong = await fetchSong(input.appleMusicId);
-    if (appleMusicSong instanceof Error) return appleMusicSong;
-
-    return {
-      title: appleMusicSong.attributes.name,
-      durationInMillis: appleMusicSong.attributes.durationInMillis,
-      isrc: appleMusicSong.attributes.isrc,
-    };
-  })();
-  if (songData instanceof Error) return songData;
-
-  // トランザクション内では DB 操作のみ
+  // トランザクション内: 曲 find-or-create + お気に入り登録
   const result = await withRls(db, session, async (tx, userId) => {
     const found = await findSongByAppleMusicId(tx, input.appleMusicId);
     if (found) {
@@ -90,24 +84,25 @@ export const registerFavoriteSong = async (
       return rows[0] ?? null;
     }
 
-    if (!songData) {
-      return new DbError({
-        message: "楽曲情報の取得に失敗しました。",
-      });
+    if (!songInput) {
+      return new DbError({ message: "楽曲情報の取得に失敗しました。" });
     }
 
-    const created = await createSongFromAppleMusic(
-      tx,
-      input.appleMusicId,
-      songData.title,
-      songData.durationInMillis,
-      songData.isrc,
+    const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
+      toDbError(e, "アーティストの解決に失敗しました。"),
     );
-    if (!created[0]) {
+    if (artistIds instanceof Error) return artistIds;
+
+    const song = await createSongFull(tx, {
+      songValues: songInput.songValues,
+      artistIds,
+      genreNames: songInput.genreNames,
+    });
+    if (!song) {
       return new DbError({ message: "楽曲の作成に失敗しました。" });
     }
 
-    const rows = await addFavoriteSong(tx, userId, created[0].id, {
+    const rows = await addFavoriteSong(tx, userId, song.id, {
       comment: input.comment,
       emoji: input.emoji,
       color: input.color,

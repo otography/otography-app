@@ -169,29 +169,3 @@ export const findSongByAppleMusicId = async (tx: DatabaseTransaction, appleMusic
     .limit(1);
   return rows[0] ?? null;
 };
-
-// 楽曲を新規作成（Apple Music API から取得した情報を使用）
-export const createSongFromAppleMusic = async (
-  tx: DatabaseTransaction,
-  appleMusicId: string,
-  title: string,
-  durationInMillis?: number,
-  isrc?: string,
-) => {
-  return tx
-    .insert(songs)
-    .values({
-      title,
-      appleMusicId,
-      length: durationInMillis != null ? Math.round(durationInMillis / 1000) : undefined,
-      isrcs: isrc,
-    })
-    .onConflictDoUpdate({
-      target: songs.appleMusicId,
-      set: {
-        title,
-        deletedAt: null,
-      },
-    })
-    .returning(songColumns);
-};
