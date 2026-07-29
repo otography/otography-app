@@ -12,13 +12,8 @@ import { songs } from "./features/songs";
 import { postLikes } from "./features/post-likes";
 import { posts } from "./features/posts";
 import { user } from "./features/user";
-import { clearOpaqueSessionCookie } from "./shared/auth/opaque-cookie";
-import {
-  createProblemInstance,
-  formatErrorResponse,
-  problemResponse,
-} from "./shared/errors/error-response";
-import { logError } from "./shared/logging/structured-log";
+import { globalErrorHandler } from "./shared/errors/global-error-handler";
+import { problemResponse } from "./shared/errors/error-response";
 import { authSessionMiddleware, dbMiddleware } from "./shared/middleware";
 import type { Env } from "./shared/types/env";
 
@@ -45,20 +40,7 @@ const app = new Hono<Env>()
   .use("/api/artists/*", authSessionMiddleware())
   .use("/api/songs/*", authSessionMiddleware())
   .use("/api/me/*", authSessionMiddleware())
-  .onError((err, c) => {
-    logError(err, c.req.path);
-    const { body, statusCode, clearCookie } = formatErrorResponse(err, {
-      instance: createProblemInstance(),
-    });
-
-    if (clearCookie) {
-      clearOpaqueSessionCookie(c);
-    }
-
-    return c.body(JSON.stringify(body), statusCode, {
-      "Content-Type": "application/problem+json",
-    });
-  })
+  .onError(globalErrorHandler)
   .notFound((c) => {
     return problemResponse(c, "not-found", "Not found.");
   })
