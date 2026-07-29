@@ -22,4 +22,5 @@ export type Bindings = {
   AUTH_SIGNUP_RATE_LIMITER: RateLimit;
   AUTH_GOOGLE_RATE_LIMITER: RateLimit;
   CONTENT_RATE_LIMITER: RateLimit;
+  APPLE_MUSIC_TOKEN_RATE_LIMITER: RateLimit;
 };

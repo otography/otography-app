@@ -56,6 +56,14 @@
         "period": 60,
       },
     },
+    {
+      "name": "APPLE_MUSIC_TOKEN_RATE_LIMITER",
+      "namespace_id": "1006",
+      "simple": {
+        "limit": 10,
+        "period": 60,
+      },
+    },
   ],
   "env": {
     "dev": {
@@ -104,6 +112,14 @@
           "namespace_id": "1005",
           "simple": {
             "limit": 30,
+            "period": 60,
+          },
+        },
+        {
+          "name": "APPLE_MUSIC_TOKEN_RATE_LIMITER",
+          "namespace_id": "1006",
+          "simple": {
+            "limit": 10,
             "period": 60,
           },
         },
@@ -158,6 +174,14 @@
           "namespace_id": "1005",
           "simple": {
             "limit": 30,
+            "period": 60,
+          },
+        },
+        {
+          "name": "APPLE_MUSIC_TOKEN_RATE_LIMITER",
+          "namespace_id": "1006",
+          "simple": {
+            "limit": 10,
             "period": 60,
           },
         },
