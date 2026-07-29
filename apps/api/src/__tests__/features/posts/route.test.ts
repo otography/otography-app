@@ -439,4 +439,61 @@ describe("posts endpoints", () => {
       detail: "You are not logged in.",
     });
   });
+
+  describe("GET /api/posts pagination validation", () => {
+    const ISO_DATE = "2026-01-01T00:00:00.000Z";
+    const VALID_UUID = "019f1234-5678-7000-8000-123456789abc";
+
+    it("?limit=abc → 400 (Problem Details)", async () => {
+      const res = await testRequest("/api/posts?limit=abc");
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ status: 400 });
+    });
+
+    it("?limit=0 → 400", async () => {
+      const res = await testRequest("/api/posts?limit=0");
+
+      expect(res.status).toBe(400);
+    });
+
+    it("?limit=101 → 400", async () => {
+      const res = await testRequest("/api/posts?limit=101");
+
+      expect(res.status).toBe(400);
+    });
+
+    it("?cursor[createdAt]=garbage&cursor[id]=<uuid> → 400", async () => {
+      const res = await testRequest(
+        `/api/posts?cursor[createdAt]=garbage&cursor[id]=${VALID_UUID}`,
+      );
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ status: 400 });
+    });
+
+    it("?cursor[createdAt]=<iso> (id 欠落) → 400", async () => {
+      const res = await testRequest(`/api/posts?cursor[createdAt]=${ISO_DATE}`);
+
+      expect(res.status).toBe(400);
+    });
+
+    it("?limit=2&cursor[createdAt]=<iso>&cursor[id]=<uuid> → 200 (pg テキスト形式も許可)", async () => {
+      mockDbWithTransaction({
+        select: createSelectChainWithLikes([]),
+      });
+
+      const pgDate = "2026-01-01 00:00:00.123+00";
+      const res = await testRequest(
+        `/api/posts?limit=2&cursor[createdAt]=${encodeURIComponent(pgDate)}&cursor[id]=${VALID_UUID}`,
+      );
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({
+        posts: [],
+        pagination: { hasNext: false, nextCursor: null },
+      });
+    });
+  });
 });

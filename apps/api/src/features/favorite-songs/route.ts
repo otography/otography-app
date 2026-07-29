@@ -1,5 +1,4 @@
 import { arktypeValidator } from "@hono/arktype-validator";
-import { type } from "arktype";
 import { Hono } from "hono";
 import {
   badRequestResponse,
@@ -13,12 +12,9 @@ import {
   rateLimitByUser,
 } from "../../shared/middleware";
 import type { Env } from "../../shared/types/env";
+import { paginationQueryValidator } from "../../shared/pagination";
 import { addFavoriteSongSchema } from "./model";
-import {
-  appleMusicIdParamSchema,
-  userIdParamSchema,
-  parsePaginationQuery,
-} from "../favorites/model";
+import { appleMusicIdParamSchema, userIdParamSchema } from "../favorites/model";
 import {
   getFavoriteSongs,
   getPublicFavoriteSongs,
@@ -28,17 +24,14 @@ import {
 
 const favoriteSongs = new Hono<Env>()
   // 自分のお気に入り楽曲一覧取得
-  .get("/api/me/favorites/songs", requireAuthMiddleware(), async (c) => {
+  .get("/api/me/favorites/songs", requireAuthMiddleware(), paginationQueryValidator, async (c) => {
     const session = getAuthSession(c);
     if (!session) {
       return unauthorizedResponse(c, "ログインしていません。");
     }
 
-    const pagination = parsePaginationQuery(c);
-    if (pagination instanceof type.errors) {
-      return badRequestResponse(c, "ページネーションパラメータが不正です。");
-    }
-    const result = await getFavoriteSongs(session, c.var.db(), pagination);
+    const { limit, cursor } = c.req.valid("query");
+    const result = await getFavoriteSongs(session, c.var.db(), { limit, cursor });
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);
@@ -52,13 +45,11 @@ const favoriteSongs = new Hono<Env>()
         return badRequestResponse(c, "無効なユーザーIDです。");
       }
     }),
+    paginationQueryValidator,
     async (c) => {
       const { userId } = c.req.valid("param");
-      const pagination = parsePaginationQuery(c);
-      if (pagination instanceof type.errors) {
-        return badRequestResponse(c, "ページネーションパラメータが不正です。");
-      }
-      const result = await getPublicFavoriteSongs(userId, c.var.db(), pagination);
+      const { limit, cursor } = c.req.valid("query");
+      const result = await getPublicFavoriteSongs(userId, c.var.db(), { limit, cursor });
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);

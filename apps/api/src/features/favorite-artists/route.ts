@@ -1,5 +1,4 @@
 import { arktypeValidator } from "@hono/arktype-validator";
-import { type } from "arktype";
 import { Hono } from "hono";
 import {
   badRequestResponse,
@@ -13,12 +12,9 @@ import {
   rateLimitByUser,
 } from "../../shared/middleware";
 import type { Env } from "../../shared/types/env";
+import { paginationQueryValidator } from "../../shared/pagination";
 import { addFavoriteArtistSchema } from "./model";
-import {
-  appleMusicIdParamSchema,
-  userIdParamSchema,
-  parsePaginationQuery,
-} from "../favorites/model";
+import { appleMusicIdParamSchema, userIdParamSchema } from "../favorites/model";
 import {
   getFavoriteArtists,
   getPublicFavoriteArtists,
@@ -28,21 +24,23 @@ import {
 
 const favoriteArtists = new Hono<Env>()
   // 自分のお気に入りアーティスト一覧取得
-  .get("/api/me/favorites/artists", requireAuthMiddleware(), async (c) => {
-    const session = getAuthSession(c);
-    if (!session) {
-      return unauthorizedResponse(c, "ログインしていません。");
-    }
+  .get(
+    "/api/me/favorites/artists",
+    requireAuthMiddleware(),
+    paginationQueryValidator,
+    async (c) => {
+      const session = getAuthSession(c);
+      if (!session) {
+        return unauthorizedResponse(c, "ログインしていません。");
+      }
 
-    const pagination = parsePaginationQuery(c);
-    if (pagination instanceof type.errors) {
-      return badRequestResponse(c, "ページネーションパラメータが不正です。");
-    }
-    const result = await getFavoriteArtists(session, c.var.db(), pagination);
-    if (result instanceof Error) return respondWithError(result, c);
+      const { limit, cursor } = c.req.valid("query");
+      const result = await getFavoriteArtists(session, c.var.db(), { limit, cursor });
+      if (result instanceof Error) return respondWithError(result, c);
 
-    return c.json(result);
-  })
+      return c.json(result);
+    },
+  )
 
   // 他人のお気に入りアーティスト一覧取得（読み取り専用）
   .get(
@@ -52,13 +50,11 @@ const favoriteArtists = new Hono<Env>()
         return badRequestResponse(c, "無効なユーザーIDです。");
       }
     }),
+    paginationQueryValidator,
     async (c) => {
       const { userId } = c.req.valid("param");
-      const pagination = parsePaginationQuery(c);
-      if (pagination instanceof type.errors) {
-        return badRequestResponse(c, "ページネーションパラメータが不正です。");
-      }
-      const result = await getPublicFavoriteArtists(userId, c.var.db(), pagination);
+      const { limit, cursor } = c.req.valid("query");
+      const result = await getPublicFavoriteArtists(userId, c.var.db(), { limit, cursor });
       if (result instanceof Error) return respondWithError(result, c);
 
       return c.json(result);

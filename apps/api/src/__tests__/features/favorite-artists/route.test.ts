@@ -357,4 +357,22 @@ describe("Favorite Artists endpoints", () => {
       expect(res.status).toBe(401);
     });
   });
+
+  describe("pagination validation", () => {
+    it("GET /api/me/favorites/artists?limit=abc → 400", async () => {
+      const res = await testRequest("/api/me/favorites/artists?limit=abc");
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ status: 400 });
+    });
+
+    it("GET /api/users/:userId/favorites/artists?limit=abc → 400", async () => {
+      const res = await testRequest(
+        "/api/users/8f648f36-5be1-4af1-bf5d-cf8ebf211111/favorites/artists?limit=abc",
+      );
+
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ status: 400 });
+    });
+  });
 });

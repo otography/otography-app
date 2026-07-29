@@ -615,4 +615,11 @@ describe("songs endpoints", () => {
       detail: "Please provide a valid song id.",
     });
   });
+
+  it("GET /api/songs?limit=abc → 400 (pagination validator wired)", async () => {
+    const res = await testRequest("/api/songs?limit=abc");
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ status: 400 });
+  });
 });

@@ -6,7 +6,6 @@ import {
   cursorSchema,
   normalizeLimit,
   paginationInputSchema,
-  parsePaginationQuery,
   trimItems,
   DEFAULT_LIMIT,
   MAX_LIMIT,
@@ -162,25 +161,5 @@ describe("paginationInputSchema (arktype)", () => {
     const result = paginationInputSchema({ limit: 100 });
 
     expect(result).not.toBeInstanceOf(Error);
-  });
-});
-
-describe("parsePaginationQuery", () => {
-  it.each(["abc", "10abc", "0", "101", "-1"])("limit=%s を拒否する", (limit) => {
-    const result = parsePaginationQuery({
-      req: { query: (key) => (key === "limit" ? limit : undefined) },
-    });
-
-    expect(isArkErrors(result)).toBe(true);
-  });
-
-  it("片方だけのcursorを拒否する", () => {
-    const result = parsePaginationQuery({
-      req: {
-        query: (key) => (key === "cursor[createdAt]" ? "2026-01-01T00:00:00.000Z" : undefined),
-      },
-    });
-
-    expect(isArkErrors(result)).toBe(true);
   });
 });

@@ -3,7 +3,7 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import { csrfProtection, requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import type { Env } from "../../shared/types/env";
-import { parsePaginationQuery } from "../../shared/pagination";
+import { paginationQueryValidator } from "../../shared/pagination";
 import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
 import { songCreateBodySchema } from "./model";
 import { getSong, getSongs, registerSong, syncSong } from "./usecase";
@@ -25,13 +25,10 @@ const songIdParamValidator = arktypeValidator("param", songIdParamSchema, (resul
 });
 
 const songs = new Hono<Env>()
-  .get("/api/songs", async (c) => {
-    const pagination = parsePaginationQuery(c);
-    if (pagination instanceof type.errors) {
-      return badRequestResponse(c, "Please provide valid pagination parameters.");
-    }
+  .get("/api/songs", paginationQueryValidator, async (c) => {
+    const { limit, cursor } = c.req.valid("query");
 
-    const result = await getSongs(pagination, c.var.db());
+    const result = await getSongs({ limit, cursor }, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
     return c.json(result);
   })
