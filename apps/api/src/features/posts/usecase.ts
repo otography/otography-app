@@ -94,6 +94,9 @@ export const getPost = async (
   return { post };
 };
 
+// レース検知用 sentinel: tx 内で楽曲が見つからず、事前 fetch もしていない場合に返す
+const songMissingInTx = Symbol("song-missing-in-tx");
+
 export const registerPost = async (
   payload: PostCreateDbModel,
   session: DecodedIdToken,
@@ -105,43 +108,68 @@ export const registerPost = async (
   );
   if (songExists instanceof Error) return songExists;
 
-  let songInput: Awaited<ReturnType<typeof toSongInput>> | null = null;
-  if (!songExists) {
+  // Apple Music から取得して songInput を組み立てる（初回・リトライで共用）
+  const prepareSongInput = async () => {
     const apiResponse = await fetchSong(payload.appleMusicId);
     if (apiResponse instanceof Error) return apiResponse;
-    songInput = toSongInput(apiResponse);
-    if (songInput instanceof Error) return songInput;
+    return toSongInput(apiResponse);
+  };
+
+  let songInput: Exclude<ReturnType<typeof toSongInput>, Error> | null = null;
+  if (!songExists) {
+    const prepared = await prepareSongInput();
+    if (prepared instanceof Error) return prepared;
+    songInput = prepared;
   }
 
-  // トランザクション内: 曲 find-or-create + 投稿作成
-  const result = await withRls(db, session, async (tx, userId) => {
-    let songId: string;
+  // tx 本体をローカル関数化（リトライで再利用）
+  const runTransaction = () =>
+    withRls(db, session, async (tx, userId) => {
+      let songId: string;
 
-    const found = await findSongByAppleMusicId(tx, payload.appleMusicId);
-    if (found) {
-      songId = found.id;
-    } else {
-      if (!songInput) {
-        return new DbError({ message: "Failed to resolve song information." });
+      const found = await findSongByAppleMusicId(tx, payload.appleMusicId);
+      if (found) {
+        songId = found.id;
+      } else {
+        // 存在チェック後に soft-delete されたレース
+        if (!songInput) return songMissingInTx;
+        const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
+          toDbError(e, "Failed to resolve artists."),
+        );
+        if (artistIds instanceof Error) return artistIds;
+
+        const song = await createSongFull(tx, {
+          songValues: songInput.songValues,
+          artistIds,
+          genreNames: songInput.genreNames,
+        });
+        if (!song) {
+          return new DbError({ message: "Failed to create song." });
+        }
+        songId = song.id;
       }
-      const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
-        toDbError(e, "Failed to resolve artists."),
-      );
-      if (artistIds instanceof Error) return artistIds;
 
-      const song = await createSongFull(tx, {
-        songValues: songInput.songValues,
-        artistIds,
-        genreNames: songInput.genreNames,
-      });
-      if (!song) {
-        return new DbError({ message: "Failed to create song." });
-      }
-      songId = song.id;
-    }
+      return createPost(tx, {
+        songId,
+        userId,
+        content: payload.content,
+      } satisfies PostInsertDbModel);
+    });
 
-    return createPost(tx, { songId, userId, content: payload.content } satisfies PostInsertDbModel);
-  });
+  let result = await runTransaction();
+
+  // レース検知時: トランザクション外で fetch → 1 回だけ再実行
+  // createSongFull は onConflictDoUpdate(deletedAt: null) の冪等 upsert なので再実行時は解決する
+  if (result === songMissingInTx) {
+    const prepared = await prepareSongInput();
+    if (prepared instanceof Error) return prepared;
+    songInput = prepared;
+    result = await runTransaction();
+  }
+  if (result === songMissingInTx) {
+    // songInput を用意して再実行したため到達しない想定（型 narrowing のための防御的ガード）
+    return new DbError({ message: "Failed to resolve song information." });
+  }
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;

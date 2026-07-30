@@ -50,6 +50,9 @@ export const getPublicFavoriteSongs = async (
   });
 };
 
+// レース検知用 sentinel: tx 内で楽曲が見つからず、事前 fetch もしていない場合に返す
+const songMissingInTx = Symbol("song-missing-in-tx");
+
 // お気に入り楽曲登録
 export const registerFavoriteSong = async (
   session: DecodedIdToken,
@@ -62,19 +65,53 @@ export const registerFavoriteSong = async (
   );
   if (songExists instanceof Error) return songExists;
 
-  let songInput: Awaited<ReturnType<typeof toSongInput>> | null = null;
-  if (!songExists) {
+  // Apple Music から取得して songInput を組み立てる（初回・リトライで共用）
+  const prepareSongInput = async () => {
     const apiResponse = await fetchSong(input.appleMusicId);
     if (apiResponse instanceof Error) return apiResponse;
-    songInput = toSongInput(apiResponse);
-    if (songInput instanceof Error) return songInput;
+    return toSongInput(apiResponse);
+  };
+
+  let songInput: Exclude<ReturnType<typeof toSongInput>, Error> | null = null;
+  if (!songExists) {
+    const prepared = await prepareSongInput();
+    if (prepared instanceof Error) return prepared;
+    songInput = prepared;
   }
 
-  // トランザクション内: 曲 find-or-create + お気に入り登録
-  const result = await withRls(db, session, async (tx, userId) => {
-    const found = await findSongByAppleMusicId(tx, input.appleMusicId);
-    if (found) {
-      const rows = await addFavoriteSong(tx, userId, found.id, {
+  // tx 本体をローカル関数化（リトライで再利用）
+  const runTransaction = () =>
+    withRls(db, session, async (tx, userId) => {
+      const found = await findSongByAppleMusicId(tx, input.appleMusicId);
+      if (found) {
+        const rows = await addFavoriteSong(tx, userId, found.id, {
+          comment: input.comment,
+          emoji: input.emoji,
+          color: input.color,
+        });
+        if (rows instanceof Error) return rows;
+
+        return rows[0] ?? null;
+      }
+
+      // 存在チェック後に soft-delete されたレース
+      if (!songInput) return songMissingInTx;
+
+      const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
+        toDbError(e, "アーティストの解決に失敗しました。"),
+      );
+      if (artistIds instanceof Error) return artistIds;
+
+      const song = await createSongFull(tx, {
+        songValues: songInput.songValues,
+        artistIds,
+        genreNames: songInput.genreNames,
+      });
+      if (!song) {
+        return new DbError({ message: "楽曲の作成に失敗しました。" });
+      }
+
+      const rows = await addFavoriteSong(tx, userId, song.id, {
         comment: input.comment,
         emoji: input.emoji,
         color: input.color,
@@ -82,35 +119,22 @@ export const registerFavoriteSong = async (
       if (rows instanceof Error) return rows;
 
       return rows[0] ?? null;
-    }
-
-    if (!songInput) {
-      return new DbError({ message: "楽曲情報の取得に失敗しました。" });
-    }
-
-    const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
-      toDbError(e, "アーティストの解決に失敗しました。"),
-    );
-    if (artistIds instanceof Error) return artistIds;
-
-    const song = await createSongFull(tx, {
-      songValues: songInput.songValues,
-      artistIds,
-      genreNames: songInput.genreNames,
     });
-    if (!song) {
-      return new DbError({ message: "楽曲の作成に失敗しました。" });
-    }
 
-    const rows = await addFavoriteSong(tx, userId, song.id, {
-      comment: input.comment,
-      emoji: input.emoji,
-      color: input.color,
-    });
-    if (rows instanceof Error) return rows;
+  let result = await runTransaction();
 
-    return rows[0] ?? null;
-  });
+  // レース検知時: トランザクション外で fetch → 1 回だけ再実行
+  // createSongFull は onConflictDoUpdate(deletedAt: null) の冪等 upsert なので再実行時は解決する
+  if (result === songMissingInTx) {
+    const prepared = await prepareSongInput();
+    if (prepared instanceof Error) return prepared;
+    songInput = prepared;
+    result = await runTransaction();
+  }
+  if (result === songMissingInTx) {
+    // songInput を用意して再実行したため到達しない想定（型 narrowing のための防御的ガード）
+    return new DbError({ message: "楽曲情報の取得に失敗しました。" });
+  }
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;
