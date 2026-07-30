@@ -33,8 +33,9 @@ const app = new Hono<Env>()
   .use("*", secureHeaders())
   .use("/api/*", dbMiddleware())
   // authSessionMiddlewareは認証セッションを解決するミドルウェア
-  // health, apple-music等の公開ルートでは不要なため、必要なパスのみに適用
+  // 公開ルートは health ごとに個別対応。公開サーフェスは public-surface テストの許可リストで管理。
   .use("/api/auth/*", authSessionMiddleware())
+  .use("/api/apple-music/*", authSessionMiddleware())
   .use("/api/posts/*", authSessionMiddleware())
   .use("/api/user/*", authSessionMiddleware())
   .use("/api/artists/*", authSessionMiddleware())

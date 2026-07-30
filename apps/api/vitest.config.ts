@@ -8,6 +8,12 @@ const TEST_KEY_RING = JSON.stringify({
   keys: [{ id: "test-key-1", hex: "a".repeat(64) }],
 });
 
+// テスト用 Apple Music 秘密鍵（P-256 PKCS8 PEM）
+// base64 でエンコードして保存し、実行時にデコードする（ターミナルでのマスキングを回避）
+const TEST_APPLE_PRIVATE_KEY_B64 =
+  "LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JR0hBZ0VBTUJNR0J5cUdTTTQ5QWdFR0NDcUdTTTQ5QXdFSEJHMHdhd0lCQVFRZ0p3SzNRN3dwd2VoUVZ3Q2QKMnZ5NmNrdnFtMmlmZkd2OEM2QnZGQ3pwVUlpaFJBTkNBQVQ1eUEyeGRjSGxtY0FEN1lhQ0E5azR3cE41YUpGSwo5VllVNWw0ZUZTbTIvQ0NTa2NVS0JKUjVCMDhFZ1dieGo5WVVLNnIwR3RhbjdxM3B5Zlg3RUdKQQotLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tCg==";
+const TEST_APPLE_PRIVATE_KEY = Buffer.from(TEST_APPLE_PRIVATE_KEY_B64, "base64").toString("utf-8");
+
 // wrangler.jsonc の vars を env.dev/production に分けたため、
 // トップレベル vars が空になりテスト環境にバインドされなくなった。
 // dev 環境と同じ値 + secrets のダミーを miniflare.bindings で注入する。
@@ -18,6 +24,10 @@ const testBindings = {
   FIREBASE_PROJECT_ID: "otography-676f1",
   AUTH_COOKIE_DOMAIN: "localhost",
   GOOGLE_OAUTH_REDIRECT_URI: "http://localhost:3000/api/auth/google/callback",
+  // Apple Music developer token 署名用（テスト専用の使い捨て鍵）
+  APPLE_KEY_ID: "TESTKEY1234",
+  APPLE_TEAM_ID: "TESTTEAM12",
+  APPLE_PRIVATE_KEY: TEST_APPLE_PRIVATE_KEY,
   // secrets（CI 環境用ダミー）
   FIREBASE_CLIENT_EMAIL: "test@example.iam.gserviceaccount.com",
   FIREBASE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\ntest\n-----END PRIVATE KEY-----\n",

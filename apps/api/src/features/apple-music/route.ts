@@ -1,17 +1,26 @@
 import { Hono } from "hono";
-import { cache } from "hono/cache";
-import { generateDeveloperToken } from "../../shared/apple-music/token";
+import { generateWebDeveloperToken } from "../../shared/apple-music/token";
+import { requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
+import { respondWithError } from "../../shared/errors/error-response";
 import type { Env } from "../../shared/types/env";
 
 const appleMusic = new Hono<Env>().get(
   "/api/apple-music/token",
-  cache({
-    cacheName: "apple-music-token",
-    cacheControl: "public, s-maxage=82800", // 23h（token TTL 24h - margin 1h）
-  }),
+  // センシティブなトークン応答をすべて no-store にする（401/429 エラー含む）
+  async (c, next) => {
+    c.header("Cache-Control", "no-store");
+    await next();
+  },
+  requireAuthMiddleware(),
+  rateLimitByUser("APPLE_MUSIC_TOKEN_RATE_LIMITER"),
   async (c) => {
-    const developerToken = await generateDeveloperToken();
-    return c.json({ developerToken });
+    const result = await generateWebDeveloperToken(
+      [c.env.APP_FRONTEND_URL].filter((o) => o !== ""),
+    );
+    if (result instanceof Error) {
+      return respondWithError(result, c);
+    }
+    return c.json({ developerToken: result });
   },
 );
 
