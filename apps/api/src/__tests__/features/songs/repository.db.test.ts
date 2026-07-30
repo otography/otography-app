@@ -166,6 +166,31 @@ describe("genres と song_genres の同期", () => {
     expect(linkedGenres).toEqual([{ name: "Rock" }]);
   });
 
+  it("upsert で length/isrcs が null の場合、既存の非 null 値を上書きしない", async () => {
+    // Given: length=200, isrcs="EXISTING" で楽曲作成
+    const { id: songId } = await createSong(db, { appleMusicId: "am-preserve-meta" });
+    await db.update(songs).set({ length: 200, isrcs: "EXISTING" }).where(eq(songs.id, songId));
+
+    // When: 同じ appleMusicId で length=null, isrcs=null で createSongFull を呼ぶ
+    const result = await db.transaction(async (tx) =>
+      createSongFull(tx, {
+        songValues: {
+          title: "Updated Title",
+          appleMusicId: "am-preserve-meta",
+          length: null,
+          isrcs: null,
+        },
+        artistIds: [],
+        genreNames: [],
+      }),
+    );
+
+    // Then: 既存の length/isrcs が保持される（null で上書きされない）
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(200);
+    expect(result!.isrcs).toBe("EXISTING");
+  });
+
   afterAll(async () => {
     await sql.end();
   });

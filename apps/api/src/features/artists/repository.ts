@@ -115,11 +115,12 @@ export const findOrCreateArtists = async (
   }
 
   // 全アーティストの Apple Music ID で一括 SELECT
+  // soft-delete 済み artist は除外し、非表示の song_artists 紐付けを防ぐ
   const appleMusicIds = artistEntries.map((a) => a.appleMusicId);
   const found = await db
     .select({ id: artists.id })
     .from(artists)
-    .where(inArray(artists.appleMusicId, appleMusicIds));
+    .where(and(inArray(artists.appleMusicId, appleMusicIds), isNull(artists.deletedAt)));
 
   return found.map((r) => r.id);
 };

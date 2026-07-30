@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
@@ -99,8 +99,9 @@ export const createSongFull = async (
       target: songs.appleMusicId,
       set: {
         title: songValues.title,
-        length: songValues.length,
-        isrcs: songValues.isrcs,
+        // null で既存値を上書きしない（Apple Music のメタション欠落時のデータ消失を防ぐ）
+        length: sql`COALESCE(EXCLUDED.length, ${songs.length})`,
+        isrcs: sql`COALESCE(EXCLUDED.isrcs, ${songs.isrcs})`,
         deletedAt: null,
       },
     })

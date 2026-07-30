@@ -81,4 +81,23 @@ describe("findOrCreateArtists", () => {
       .where(eq(artists.id, deleted.id));
     expect(rows[0]?.deletedAt).toBeNull();
   });
+
+  it("名前空エントリの soft-delete 済み artist は ID を返さない（非表示紐付けを防ぐ）", async () => {
+    // Given: artist 作成 → soft-delete
+    const deleted = await createArtist(db, { appleMusicId: "am-deleted-no-name" });
+    await db
+      .update(artists)
+      .set({ deletedAt: new Date().toISOString() })
+      .where(eq(artists.id, deleted.id));
+
+    // When: 名前空エントリで findOrCreateArtists を呼ぶ（upsert skip → deletedAt はそのまま）
+    const ids = await findOrCreateArtists(db, [
+      { appleMusicId: "am-deleted-no-name", name: "" },
+      { appleMusicId: "am-active", name: "Active Artist" },
+    ]);
+
+    // Then: soft-delete 済み artist の ID は含まれない
+    expect(ids).not.toContain(deleted.id);
+    expect(ids).toHaveLength(1);
+  });
 });

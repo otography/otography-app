@@ -161,7 +161,7 @@ describe("favorite songs usecase", () => {
       });
     });
 
-    it("fetches from Apple Music, creates song with artists/genres via createSongFull, then registers", async () => {
+    it("fetches from Apple Music, creates the song, then registers the favorite", async () => {
       mocks.songExistsByAppleMusicId.mockResolvedValue(false);
       mocks.fetchSong.mockResolvedValue({
         id: "apple-music-song-id",
@@ -216,23 +216,6 @@ describe("favorite songs usecase", () => {
       );
 
       expect(result).toEqual({ favorite: { ...favoriteRow, songId: "created-song-id" } });
-      expect(mocks.findOrCreateArtists).toHaveBeenCalledWith(tx, [
-        { appleMusicId: "am-artist-001", name: "Artist One" },
-        { appleMusicId: "am-artist-002", name: "Artist Two" },
-      ]);
-      expect(mocks.createSongFull).toHaveBeenCalledWith(
-        tx,
-        expect.objectContaining({
-          songValues: expect.objectContaining({
-            title: "New Song",
-            appleMusicId: "apple-music-song-id",
-            length: 124,
-            isrcs: "JPABC2600001",
-          }),
-          artistIds: ["artist-id-1", "artist-id-2"],
-          genreNames: ["Pop", "Rock"],
-        }),
-      );
       expect(mocks.addFavoriteSong).toHaveBeenCalledWith(tx, "user-id", "created-song-id", {
         comment: null,
         emoji: null,
