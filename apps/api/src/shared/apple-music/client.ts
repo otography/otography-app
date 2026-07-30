@@ -91,13 +91,13 @@ const fetchCatalogResource = async <T>({
     return new AppleMusicError({ message: unavailableMessage, statusCode: 502 });
   }
 
-  const body = await response.json().catch(
+  const body: unknown = await response.json().catch(
     (e) =>
       new AppleMusicError({
         message: "Apple Music API レスポンスのパースに失敗しました。",
         statusCode: 502,
         cause: e,
-      }) as unknown as Promise<unknown>,
+      }),
   );
   if (body instanceof AppleMusicError) return body;
 
