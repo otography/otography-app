@@ -1,6 +1,6 @@
 import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import { DbError } from "@repo/errors";
+import { AppleMusicError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -210,6 +210,7 @@ describe("songs endpoints", () => {
   it("POST /api/songs creates song from appleMusicId", async () => {
     vi.mocked(fetchSong).mockResolvedValue({
       id: "am-new-song-1",
+      type: "songs",
       attributes: {
         name: "New Song",
         durationInMillis: 240000,
@@ -293,6 +294,7 @@ describe("songs endpoints", () => {
   it("POST /api/songs auto-creates unknown artists", async () => {
     vi.mocked(fetchSong).mockResolvedValue({
       id: "am-new-song-2",
+      type: "songs",
       attributes: {
         name: "New Song with New Artist",
         durationInMillis: 200000,
@@ -368,6 +370,7 @@ describe("songs endpoints", () => {
   it("POST /api/songs returns 409 when appleMusicId is already registered", async () => {
     vi.mocked(fetchSong).mockResolvedValue({
       id: "am-duplicate-song",
+      type: "songs",
       attributes: { name: "Duplicate Song", genreNames: [] },
     });
 
@@ -401,6 +404,7 @@ describe("songs endpoints", () => {
   it("POST /api/songs returns 500 for unrelated DB errors", async () => {
     vi.mocked(fetchSong).mockResolvedValue({
       id: "am-broken-song",
+      type: "songs",
       attributes: { name: "Broken Song", genreNames: [] },
     });
 
@@ -458,7 +462,7 @@ describe("songs endpoints", () => {
 
   it("POST /api/songs returns 502 when Apple Music API fails", async () => {
     vi.mocked(fetchSong).mockResolvedValue(
-      new DbError({
+      new AppleMusicError({
         message: "Apple Music API から楽曲情報を取得できませんでした。",
         statusCode: 502,
       }),
@@ -485,6 +489,7 @@ describe("songs endpoints", () => {
   it("PATCH /api/songs/:id syncs song from Apple Music API", async () => {
     vi.mocked(fetchSong).mockResolvedValue({
       id: "am-existing-song",
+      type: "songs",
       attributes: {
         name: "Updated Song",
         durationInMillis: 220000,

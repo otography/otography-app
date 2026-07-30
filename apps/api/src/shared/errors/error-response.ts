@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import {
   AuthRestError,
   DbError,
+  AppleMusicError,
   RlsError,
   OAuthExchangeError,
   GoogleTokenExchangeError,
@@ -123,6 +124,11 @@ export const formatErrorResponse = (
 
   // DbError（ユーザー向けメッセージ）
   if (error instanceof DbError) {
+    return mapProblemSlug(error.statusCode, error.message, error.problemSlug);
+  }
+
+  // AppleMusicError（Apple Music API エラー、ユーザー向けメッセージ）
+  if (error instanceof AppleMusicError) {
     return mapProblemSlug(error.statusCode, error.message, error.problemSlug);
   }
 

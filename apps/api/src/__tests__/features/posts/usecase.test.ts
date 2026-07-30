@@ -1,6 +1,6 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { describe, expect, it, vi } from "vitest";
-import { DbError, RlsError } from "@repo/errors";
+import { AppleMusicError, DbError, RlsError } from "@repo/errors";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
 const mocks = vi.hoisted(() => ({
@@ -189,7 +189,7 @@ describe("posts usecase — registerPost", () => {
 
   it("returns Apple Music API errors before opening a transaction", async () => {
     mocks.songExistsByAppleMusicId.mockResolvedValue(false);
-    const apiError = new DbError({
+    const apiError = new AppleMusicError({
       message: "指定された楽曲が見つかりません。",
       statusCode: 404,
     });

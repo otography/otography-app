@@ -48,6 +48,9 @@
  *
  * マッピングテーブル:
  * 19. 全8ステータスコードの type/title マッピングが正しい
+ *
+ * セキュリティ境界 (MUS-33): AppleMusicError の固定メッセージ検証
+ * 20. schema mismatch 由来の AppleMusicError → RFC 9457 detail は固定メッセージのみ（内部 summary を含まない）
  */
 import { describe, expect, it } from "vitest";
 import { HTTPException } from "hono/http-exception";
@@ -60,6 +63,7 @@ import {
   GoogleTokenExchangeError,
   FirebaseIdpSigninError,
   AccountConflictError,
+  AppleMusicError,
 } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
 import { formatErrorResponse } from "../../../shared/errors/error-response";
@@ -104,6 +108,62 @@ describe("formatErrorResponse", () => {
         },
         statusCode: 400,
       });
+    });
+  });
+
+  describe("AppleMusicError", () => {
+    it("AppleMusicError(404) を正しい RFC 9457 形式に変換する", () => {
+      const error = new AppleMusicError({
+        message: "指定されたアーティストが見つかりません。",
+        statusCode: 404,
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result).toMatchObject({
+        body: {
+          type: "https://api.otography.com/errors/not-found",
+          title: "Not Found",
+          status: 404,
+          detail: "指定されたアーティストが見つかりません。",
+        },
+        statusCode: 404,
+      });
+      expect(result).not.toHaveProperty("clearCookie");
+    });
+
+    it("AppleMusicError デフォルト(502) を bad-gateway に変換する", () => {
+      const error = new AppleMusicError({
+        message: "Apple Music API からアーティスト情報を取得できませんでした。",
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result).toMatchObject({
+        body: {
+          type: "https://api.otography.com/errors/bad-gateway",
+          title: "Bad Gateway",
+          status: 502,
+          detail: "Apple Music API からアーティスト情報を取得できませんでした。",
+        },
+        statusCode: 502,
+      });
+    });
+
+    it("schema mismatch 由来の固定メッセージが RFC 9457 detail にそのまま出る（内部 summary は漏れない）", () => {
+      // client.ts の schema mismatch パスが生成するのと同じ固定メッセージと cause 構成
+      const arkErrorsLike = { summary: "data[0].attributes.name must be a string (was missing)" };
+      const error = new AppleMusicError({
+        message: "Apple Music API レスポンスの形式が不正です。",
+        statusCode: 502,
+        cause: arkErrorsLike,
+      });
+      const result = formatErrorResponse(error);
+
+      expect(result.body.detail).toBe("Apple Music API レスポンスの形式が不正です。");
+      // 内部検証詳細が detail に漏れないことを保証
+      expect(result.body.detail).not.toContain("summary");
+      expect(result.body.detail).not.toContain("name");
+      expect(result.body.detail).not.toContain("attributes");
+      expect(result.body.detail).not.toContain("must be");
     });
   });
 
