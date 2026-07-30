@@ -30,16 +30,19 @@ import { fetchArtist, fetchSong } from "../../../shared/apple-music/client";
  * 4. HTTP 500 → AppleMusicError 502、fetchFailed メッセージ
  * 5. fetch reject → AppleMusicError 502、リクエスト失敗メッセージ、cause 保持
  * 6. response.text() reject → AppleMusicError 502、読み取り失敗メッセージ、cause 保持（非同期境界）
- * 7. malformed JSON → AppleMusicError 502 スキーマ不一致（string.json.parse が ArkErrors に統合）
- * 8. エンベロープ不一致（例: { data: "x" }）→ AppleMusicError 502 スキーマ不一致メッセージ
- * 9. 先頭要素の必須属性欠落（例: attributes.name 無し）→ AppleMusicError 502、arktype summary を含む
+ * 7. malformed JSON → AppleMusicError 502 固定メッセージ（形式不正）、cause に ArkErrors 保持
+ * 8. エンベロープ不一致（例: { data: "x" }）→ AppleMusicError 502 固定メッセージ、cause 保持
+ * 9. 先頭要素の必須属性欠落（例: attributes.name 無し）→ AppleMusicError 502 固定メッセージ、cause 保持
  * 10. data: [] 空配列のみ → AppleMusicError 404 notFound メッセージ
- * 11. data 欠落（エンベロープに data 無し）→ AppleMusicError 502 スキーマ不一致メッセージ
+ * 11. data 欠落（エンベロープに data 無し）→ AppleMusicError 502 固定メッセージ、cause 保持
  * 12. generateDeveloperToken reject → AppleMusicError 502 トークンメッセージ
  * 13. Apple Music ID の URL エンコード（artist / song 各々）
- * 14. 回帰: アーティスト type 不一致（例: type: "songs"）→ AppleMusicError 502
- * 15. 回帰: 楽曲 type 不一致（例: type: "artists"）→ AppleMusicError 502
- * 16. 回帰: 配列内の不正要素（2件目が不正）→ AppleMusicError 502 スキーマ不一致（配列全体検証）
+ * 14. 回帰: アーティスト type 不一致（例: type: "songs"）→ AppleMusicError 502 固定メッセージ、cause 保持
+ * 15. 回帰: 楽曲 type 不一致（例: type: "artists"）→ AppleMusicError 502 固定メッセージ、cause 保持
+ * 16. 回帰: 配列内の不正要素（2件目が不正）→ AppleMusicError 502 固定メッセージ、cause 保持
+ *
+ * セキュリティ要件: schema mismatch の message は固定・非技術的文言とし、
+ * ArkType summary / path / 期待型を含めない。ArkErrors は cause に保持する。
  */
 describe("Apple Music client", () => {
   beforeEach(() => {
@@ -188,19 +191,25 @@ describe("Apple Music client", () => {
     expect((result as AppleMusicError).cause).toBe(textError);
   });
 
-  it("malformed JSON → AppleMusicError(502) スキーマ不一致 (string.json.parse が ArkErrors に統合)", async () => {
+  it("malformed JSON → AppleMusicError(502) 固定メッセージ（形式不正）、cause に ArkErrors 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("invalid json", { status: 200 }));
 
     const result = await fetchArtist("id-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    expect((result as AppleMusicError).message).toContain(
-      "Apple Music API レスポンスが想定スキーマと一致しません",
-    );
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    // ArkType summary / path がユーザー向け message に漏れないことを保証
+    expect((result as AppleMusicError).message).not.toContain("JSON");
+    expect((result as AppleMusicError).message).not.toContain("summary");
+    // ArkErrors は cause に保持される
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 
-  it("エンベロープ不一致 → AppleMusicError(502) スキーマ不一致メッセージ", async () => {
+  it("エンベロープ不一致 → AppleMusicError(502) 固定メッセージ、cause 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ data: "not-an-array" }), { status: 200 }),
     );
@@ -208,13 +217,15 @@ describe("Apple Music client", () => {
     const result = await fetchArtist("id-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    expect((result as AppleMusicError).message).toContain(
-      "Apple Music API レスポンスが想定スキーマと一致しません",
-    );
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 
-  it("先頭要素の必須属性欠落 → AppleMusicError(502) arktype summary を含む", async () => {
+  it("先頭要素の必須属性欠落 → AppleMusicError(502) 固定メッセージ、cause に ArkErrors 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({ data: [{ id: "artist-1", attributes: {} }] }), { status: 200 }),
     );
@@ -222,10 +233,16 @@ describe("Apple Music client", () => {
     const result = await fetchArtist("id-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    const message = (result as AppleMusicError).message;
-    expect(message).toContain("Apple Music API レスポンスが想定スキーマと一致しません");
-    expect(message).toContain("name");
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    // arktype の path 情報が message に漏れないことを保証
+    expect((result as AppleMusicError).message).not.toContain("name");
+    expect((result as AppleMusicError).message).not.toContain("attributes");
+    // ArkErrors は cause に保持される
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 
   it.each([
@@ -249,7 +266,7 @@ describe("Apple Music client", () => {
     ["artist", fetchArtist],
     ["song", fetchSong],
   ] as const)(
-    "data 欠落（エンベロープに data 無し）→ AppleMusicError(502) スキーマ不一致 (%s)",
+    "data 欠落（エンベロープに data 無し）→ AppleMusicError(502) 固定メッセージ、cause 保持 (%s)",
     async (_, lookup) => {
       vi.spyOn(globalThis, "fetch").mockResolvedValue(
         new Response(JSON.stringify({}), { status: 200 }),
@@ -258,10 +275,12 @@ describe("Apple Music client", () => {
       const result = await lookup("id-1");
 
       expect(result).toBeInstanceOf(AppleMusicError);
-      expect(result).toMatchObject({ statusCode: 502 });
-      expect((result as AppleMusicError).message).toContain(
-        "Apple Music API レスポンスが想定スキーマと一致しません",
-      );
+      expect(result).toMatchObject({
+        statusCode: 502,
+        message: "Apple Music API レスポンスの形式が不正です。",
+      });
+      expect((result as AppleMusicError).cause).toBeDefined();
+      expect((result as AppleMusicError).cause).toHaveProperty("summary");
     },
   );
 
@@ -306,7 +325,7 @@ describe("Apple Music client", () => {
     );
   });
 
-  it("回帰: アーティスト type 不一致 → AppleMusicError(502)", async () => {
+  it("回帰: アーティスト type 不一致 → AppleMusicError(502) 固定メッセージ、cause 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -319,14 +338,17 @@ describe("Apple Music client", () => {
     const result = await fetchArtist("artist-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    expect((result as AppleMusicError).message).toContain(
-      "Apple Music API レスポンスが想定スキーマと一致しません",
-    );
-    expect((result as AppleMusicError).message).toContain("type");
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    // arktype の path 情報が message に漏れないことを保証
+    expect((result as AppleMusicError).message).not.toContain("type");
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 
-  it("回帰: 楽曲 type 不一致 → AppleMusicError(502)", async () => {
+  it("回帰: 楽曲 type 不一致 → AppleMusicError(502) 固定メッセージ、cause 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -345,14 +367,16 @@ describe("Apple Music client", () => {
     const result = await fetchSong("song-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    expect((result as AppleMusicError).message).toContain(
-      "Apple Music API レスポンスが想定スキーマと一致しません",
-    );
-    expect((result as AppleMusicError).message).toContain("type");
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    expect((result as AppleMusicError).message).not.toContain("type");
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 
-  it("回帰: 配列内の不正要素（2件目が不正）→ AppleMusicError(502) スキーマ不一致", async () => {
+  it("回帰: 配列内の不正要素（2件目が不正）→ AppleMusicError(502) 固定メッセージ、cause 保持", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -368,10 +392,13 @@ describe("Apple Music client", () => {
     const result = await fetchArtist("artist-1");
 
     expect(result).toBeInstanceOf(AppleMusicError);
-    expect(result).toMatchObject({ statusCode: 502 });
-    expect((result as AppleMusicError).message).toContain(
-      "Apple Music API レスポンスが想定スキーマと一致しません",
-    );
-    expect((result as AppleMusicError).message).toContain("attributes");
+    expect(result).toMatchObject({
+      statusCode: 502,
+      message: "Apple Music API レスポンスの形式が不正です。",
+    });
+    // arktype の path 情報が message に漏れないことを保証
+    expect((result as AppleMusicError).message).not.toContain("attributes");
+    expect((result as AppleMusicError).cause).toBeDefined();
+    expect((result as AppleMusicError).cause).toHaveProperty("summary");
   });
 });

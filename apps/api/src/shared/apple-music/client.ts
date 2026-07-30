@@ -134,8 +134,10 @@ const fetchCatalogResource = async <K extends EndpointKey>(
   // malformed JSON は string.json.parse が ArkErrors に変換する。
   const parsed = config.responseSchema(text);
   if (parsed instanceof type.errors) {
+    // ユーザー向け message は固定・非技術的な文言とし、ArkType の summary / path /
+    // 期待型などの内部検証詳細は含めない。ArkErrors は cause に保持する。
     return new AppleMusicError({
-      message: `Apple Music API レスポンスが想定スキーマと一致しません: ${parsed.summary}`,
+      message: "Apple Music API レスポンスの形式が不正です。",
       statusCode: 502,
       cause: parsed,
     });
