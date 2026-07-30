@@ -13,7 +13,7 @@ import {
   requireAuthMiddleware,
 } from "../../shared/middleware";
 import type { Env } from "../../shared/types/env";
-import { parsePaginationQuery } from "../../shared/pagination";
+import { paginationQueryValidator } from "../../shared/pagination";
 import { postInsertSchema, postUpdateSchema } from "./model";
 import { getPost, getPosts, modifyPost, registerPost, removePost } from "./usecase";
 
@@ -40,15 +40,11 @@ const postUpdateBodyValidator = arktypeValidator("json", postUpdateSchema, (resu
 });
 
 const posts = new Hono<Env>()
-  .get("/api/posts", async (c) => {
+  .get("/api/posts", paginationQueryValidator, async (c) => {
     const session = getAuthSession(c);
+    const { limit, cursor } = c.req.valid("query");
 
-    const pagination = parsePaginationQuery(c);
-    if (pagination instanceof type.errors) {
-      return badRequestResponse(c, "Please provide valid pagination parameters.");
-    }
-
-    const result = await getPosts(session, pagination, c.var.db());
+    const result = await getPosts(session, { limit, cursor }, c.var.db());
     if (result instanceof Error) return respondWithError(result, c);
 
     return c.json(result);

@@ -6,7 +6,6 @@ import {
   cursorSchema,
   normalizeLimit,
   paginationInputSchema,
-  parsePaginationQuery,
   trimItems,
   DEFAULT_LIMIT,
   MAX_LIMIT,
@@ -120,6 +119,15 @@ describe("cursorSchema (arktype)", () => {
     expect(result).not.toBeInstanceOf(Error);
   });
 
+  it("PostgreSQL形式のcreatedAtを受け入れる", () => {
+    const result = cursorSchema({
+      createdAt: "2026-01-01 00:00:00.123+00",
+      id: "019f1234-5678-7000-8000-123456789abc",
+    });
+
+    expect(isArkErrors(result)).toBe(false);
+  });
+
   it("不正な id を拒否する", () => {
     const result = cursorSchema({
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -162,25 +170,5 @@ describe("paginationInputSchema (arktype)", () => {
     const result = paginationInputSchema({ limit: 100 });
 
     expect(result).not.toBeInstanceOf(Error);
-  });
-});
-
-describe("parsePaginationQuery", () => {
-  it.each(["abc", "10abc", "0", "101", "-1"])("limit=%s を拒否する", (limit) => {
-    const result = parsePaginationQuery({
-      req: { query: (key) => (key === "limit" ? limit : undefined) },
-    });
-
-    expect(isArkErrors(result)).toBe(true);
-  });
-
-  it("片方だけのcursorを拒否する", () => {
-    const result = parsePaginationQuery({
-      req: {
-        query: (key) => (key === "cursor[createdAt]" ? "2026-01-01T00:00:00.000Z" : undefined),
-      },
-    });
-
-    expect(isArkErrors(result)).toBe(true);
   });
 });

@@ -557,4 +557,11 @@ describe("artists endpoints", () => {
 
     expect(res.status).toBe(404);
   });
+
+  it("GET /api/artists?limit=abc → 400 (pagination validator wired)", async () => {
+    const res = await testRequest("/api/artists?limit=abc");
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ status: 400 });
+  });
 });

@@ -1,5 +1,4 @@
 import { type } from "arktype";
-export { parsePaginationQuery } from "../../shared/pagination";
 
 /** Apple Music ID パスパラメータスキーマ */
 export const appleMusicIdParamSchema = type({
