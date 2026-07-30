@@ -6,7 +6,7 @@ export const MAX_LIMIT = 100;
 
 /** カーソル位置を示す（createdAt + id の複合キー） */
 export const cursorSchema = type({
-  createdAt: "string.date.iso",
+  createdAt: "string.date",
   id: "string.uuid",
 });
 

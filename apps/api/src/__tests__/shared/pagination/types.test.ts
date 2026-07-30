@@ -119,6 +119,15 @@ describe("cursorSchema (arktype)", () => {
     expect(result).not.toBeInstanceOf(Error);
   });
 
+  it("PostgreSQL形式のcreatedAtを受け入れる", () => {
+    const result = cursorSchema({
+      createdAt: "2026-01-01 00:00:00.123+00",
+      id: "019f1234-5678-7000-8000-123456789abc",
+    });
+
+    expect(isArkErrors(result)).toBe(false);
+  });
+
   it("不正な id を拒否する", () => {
     const result = cursorSchema({
       createdAt: "2026-01-01T00:00:00.000Z",
