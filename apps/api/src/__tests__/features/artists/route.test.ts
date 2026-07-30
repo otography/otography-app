@@ -217,6 +217,7 @@ describe("artists endpoints", () => {
   it("POST /api/artists creates artist from appleMusicId", async () => {
     vi.mocked(fetchArtist).mockResolvedValue({
       id: "am-new-artist-1",
+      type: "artists",
       attributes: {
         name: "New Artist",
       },
@@ -271,6 +272,7 @@ describe("artists endpoints", () => {
   it("POST /api/artists returns 409 when appleMusicId is already registered", async () => {
     vi.mocked(fetchArtist).mockResolvedValue({
       id: "am-duplicate-artist",
+      type: "artists",
       attributes: { name: "Duplicate Artist" },
     });
 
@@ -306,6 +308,7 @@ describe("artists endpoints", () => {
   it("POST /api/artists returns 500 for unrelated DB errors", async () => {
     vi.mocked(fetchArtist).mockResolvedValue({
       id: "am-broken-artist",
+      type: "artists",
       attributes: { name: "Broken Artist" },
     });
 
@@ -390,6 +393,7 @@ describe("artists endpoints", () => {
   it("PATCH /api/artists/:id syncs artist from Apple Music API", async () => {
     vi.mocked(fetchArtist).mockResolvedValue({
       id: "am-existing-artist",
+      type: "artists",
       attributes: {
         name: "Synced Artist",
       },
