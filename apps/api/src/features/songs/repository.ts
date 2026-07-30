@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
@@ -99,8 +99,9 @@ export const createSongFull = async (
       target: songs.appleMusicId,
       set: {
         title: songValues.title,
-        length: songValues.length,
-        isrcs: songValues.isrcs,
+        // null で既存値を上書きしない（Apple Music のメタション欠落時のデータ消失を防ぐ）
+        length: sql`COALESCE(EXCLUDED.length, ${songs.length})`,
+        isrcs: sql`COALESCE(EXCLUDED.isrcs, ${songs.isrcs})`,
         deletedAt: null,
       },
     })
@@ -168,30 +169,4 @@ export const findSongByAppleMusicId = async (tx: DatabaseTransaction, appleMusic
     .where(and(eq(songs.appleMusicId, appleMusicId), isNull(songs.deletedAt)))
     .limit(1);
   return rows[0] ?? null;
-};
-
-// 楽曲を新規作成（Apple Music API から取得した情報を使用）
-export const createSongFromAppleMusic = async (
-  tx: DatabaseTransaction,
-  appleMusicId: string,
-  title: string,
-  durationInMillis?: number,
-  isrc?: string,
-) => {
-  return tx
-    .insert(songs)
-    .values({
-      title,
-      appleMusicId,
-      length: durationInMillis != null ? Math.round(durationInMillis / 1000) : undefined,
-      isrcs: isrc,
-    })
-    .onConflictDoUpdate({
-      target: songs.appleMusicId,
-      set: {
-        title,
-        deletedAt: null,
-      },
-    })
-    .returning(songColumns);
 };
