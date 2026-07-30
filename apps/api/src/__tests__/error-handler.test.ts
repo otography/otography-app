@@ -1,5 +1,8 @@
 /**
- * テストリスト: グローバルエラーハンドラー (.onError) + .notFound()
+ * テストリスト: グローバルエラーハンドラー (globalErrorHandler) + .notFound()
+ *
+ * ハンドラは apps/api/src/shared/errors/global-error-handler.ts に抽出した実物を使用する。
+ * 以前のインラインコピーテストはバグを見逃したため、実物を import して検証する。
  *
  * Content-Type:
  * 1. 全エラーで Content-Type: application/problem+json が返る
@@ -9,6 +12,7 @@
  *
  * AuthError (clearCookie):
  * 3. AuthError(clearCookie:true) で Set-Cookie ヘッダーが otography_session をクリア
+ * 3a. HTTPSでは __Host-otography_session を Secure + Path=/ + Domain なしでクリア
  * 4. AuthError(clearCookie:false) で Set-Cookie なし
  *
  * RlsError:
@@ -27,19 +31,16 @@ import { describe, expect, it, vi } from "vitest";
 import { Hono } from "hono";
 import { DbError, RlsError } from "@repo/errors";
 import { AuthError } from "@repo/errors/server";
-import {
-  createProblemInstance,
-  formatErrorResponse,
-  problemResponse,
-} from "../shared/errors/error-response";
-import { logError } from "../shared/logging/structured-log";
-// テスト用に固定のCookie名（開発環境と同じ）
+import { problemResponse } from "../shared/errors/error-response";
+import { globalErrorHandler } from "../shared/errors/global-error-handler";
+import type { Env } from "../shared/types/env";
+
+// テスト環境(HTTP)では isSecureRequest が false になり dev 用 Cookie 名が使われる
 const SESSION_COOKIE_NAME = "otography_session";
-import { deleteCookie } from "hono/cookie";
 
 // グローバルエラーハンドラーを適用したテスト用アプリを構築
 const createTestApp = () => {
-  const app = new Hono();
+  const app = new Hono<Env>();
 
   // テスト用ルート: 各種エラーをスロー
   app.get("/test/db-error", () => {
@@ -72,21 +73,8 @@ const createTestApp = () => {
     throw new Error("Database connection failed: password=secret");
   });
 
-  // onError: formatErrorResponse + logError
-  app.onError((err, c) => {
-    logError(err, c.req.path);
-    const { body, statusCode, clearCookie } = formatErrorResponse(err, {
-      instance: createProblemInstance(),
-    });
-
-    if (clearCookie) {
-      deleteCookie(c, SESSION_COOKIE_NAME, { path: "/" });
-    }
-
-    return c.body(JSON.stringify(body), statusCode, {
-      "Content-Type": "application/problem+json",
-    });
-  });
+  // 抽出した実物のハンドラを適用（インラインコピー廃止）
+  app.onError(globalErrorHandler);
 
   // notFound: registry 経由で RFC 9457 404 を返す
   app.notFound((c) => {
@@ -146,6 +134,24 @@ describe("グローバルエラーハンドラー", () => {
       // クリアされた Cookie は値が空または maxAge=0
       expect(sessionCookie).toBeDefined();
       expect(sessionCookie).toMatch(/otography_session=;/);
+    });
+
+    it("HTTPSでは __Host-otography_session を Secure + Path=/ + Domain なしでクリア", async () => {
+      const app = createTestApp();
+
+      // https: スキームでリクエストし、isSecureRequest を true にする
+      const res = await app.request("https://localhost/test/auth-clear-cookie");
+
+      expect(res.status).toBe(401);
+      const setCookie = res.headers.getSetCookie();
+      const hostCookie = setCookie.find((c: string) => c.startsWith("__Host-otography_session="));
+      expect(hostCookie).toBeDefined();
+      // __Host- プレフィックスCookieの削除には Secure と Path=/ が必須
+      expect(hostCookie).toMatch(/__Host-otography_session=;/);
+      expect(hostCookie).toMatch(/Path=\//);
+      expect(hostCookie).toMatch(/Secure/);
+      // __Host- プレフィックスCookieは Domain 属性を禁止
+      expect(hostCookie?.toLowerCase()).not.toMatch(/domain=/);
     });
 
     it("AuthError(clearCookie:false) で Set-Cookie なし", async () => {

@@ -37,5 +37,7 @@ export const setOpaqueSessionCookie = (c: Context, opaqueId: string): void => {
 export const clearOpaqueSessionCookie = (c: Context): void => {
   const isSecure = isSecureRequest(c);
   const cookieName = getSessionCookieName(isSecure);
-  deleteCookie(c, cookieName, { path: "/" });
+  // __Host- プレフィックスCookieの削除には Secure と Path=/ が必須。
+  // 設定時と同じ secure 属性を渡さないとブラウザに拒否される。
+  deleteCookie(c, cookieName, { path: "/", secure: isSecure });
 };
