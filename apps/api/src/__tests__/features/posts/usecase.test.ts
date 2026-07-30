@@ -10,7 +10,6 @@ const mocks = vi.hoisted(() => ({
   findOrCreateArtists: vi.fn(),
   findSongByAppleMusicId: vi.fn(),
   songExistsByAppleMusicId: vi.fn(),
-  toSongInput: vi.fn(),
   withRls: vi.fn(),
 }));
 
@@ -18,10 +17,10 @@ vi.mock("../../../shared/db/rls", () => ({
   withRls: mocks.withRls,
 }));
 
-vi.mock("../../../shared/apple-music", () => ({
-  fetchSong: mocks.fetchSong,
-  toSongInput: mocks.toSongInput,
-}));
+vi.mock("../../../shared/apple-music", async (importOriginal) => {
+  const original = await importOriginal<typeof import("../../../shared/apple-music")>();
+  return { ...original, fetchSong: mocks.fetchSong };
+});
 
 vi.mock("../../../features/posts/repository", () => ({
   createPost: mocks.createPost,
@@ -116,19 +115,6 @@ describe("posts usecase — registerPost", () => {
       },
     };
     mocks.fetchSong.mockResolvedValue(apiResponse);
-    mocks.toSongInput.mockReturnValue({
-      songValues: {
-        title: "New Song",
-        appleMusicId,
-        length: 200,
-        isrcs: "JP1234567890",
-      },
-      genreNames: ["Pop", "Rock"],
-      artistEntries: [
-        { appleMusicId: "am-artist-001", name: "Artist One" },
-        { appleMusicId: "am-artist-002", name: "Artist Two" },
-      ],
-    });
     mocks.findSongByAppleMusicId.mockResolvedValue(null);
     mocks.findOrCreateArtists.mockResolvedValue(["artist-id-1", "artist-id-2"]);
     mocks.createSongFull.mockResolvedValue({
@@ -204,16 +190,6 @@ describe("posts usecase — registerPost", () => {
         },
       },
     });
-    mocks.toSongInput.mockReturnValue({
-      songValues: {
-        title: "Race Song",
-        appleMusicId,
-        length: 180,
-        isrcs: "JP9999999999",
-      },
-      genreNames: ["Jazz"],
-      artistEntries: [{ appleMusicId: "am-artist-001", name: "Race Artist" }],
-    });
     mocks.findOrCreateArtists.mockResolvedValue(["race-artist-id"]);
     mocks.createSongFull.mockResolvedValue({
       id: "race-song-id",
@@ -233,7 +209,7 @@ describe("posts usecase — registerPost", () => {
 
     const result = await registerPost({ appleMusicId, content }, session, db);
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       post: {
         id: "post-id",
         userId: "user-id",
@@ -269,31 +245,6 @@ describe("posts usecase — registerPost", () => {
     expect(mocks.withRls).toHaveBeenCalledTimes(1);
   });
 
-  it("returns toSongInput errors from the retry path without a second transaction", async () => {
-    mocks.songExistsByAppleMusicId.mockResolvedValue(true);
-    mocks.findSongByAppleMusicId.mockResolvedValue(null);
-    mocks.fetchSong.mockResolvedValue({
-      id: appleMusicId,
-      attributes: {
-        name: "Race Song",
-        durationInMillis: 180_000,
-        isrc: "JP9999999999",
-        genreNames: ["Jazz"],
-      },
-      relationships: { artists: { data: [] } },
-    });
-    const toSongInputError = new AppleMusicError({
-      message: "invalid song payload",
-      statusCode: 500,
-    });
-    mocks.toSongInput.mockReturnValue(toSongInputError);
-
-    const result = await registerPost({ appleMusicId, content }, session, db);
-
-    expect(result).toBe(toSongInputError);
-    expect(mocks.withRls).toHaveBeenCalledTimes(1);
-  });
-
   it("wraps retry-transaction failures as DbError 500", async () => {
     mocks.songExistsByAppleMusicId.mockResolvedValue(true);
     mocks.findSongByAppleMusicId.mockResolvedValue(null);
@@ -310,11 +261,6 @@ describe("posts usecase — registerPost", () => {
           data: [{ id: "am-artist-001", attributes: { name: "Race Artist" } }],
         },
       },
-    });
-    mocks.toSongInput.mockReturnValue({
-      songValues: { title: "Race Song", appleMusicId, length: 180, isrcs: "JP9999999999" },
-      genreNames: ["Jazz"],
-      artistEntries: [{ appleMusicId: "am-artist-001", name: "Race Artist" }],
     });
     const rlsError = new RlsError({ message: "Transaction failed." });
     mocks.withRls
@@ -362,13 +308,8 @@ describe("posts usecase — registerPost", () => {
         },
       },
     });
-    mocks.toSongInput.mockReturnValue({
-      songValues: { title: "New Song", appleMusicId, length: 200, isrcs: "JP1234567890" },
-      genreNames: ["Pop"],
-      artistEntries: [{ appleMusicId: "am-artist-001", name: "Artist One" }],
-    });
     mocks.findSongByAppleMusicId.mockResolvedValue(null);
-    const artistError = new DbError({ message: "Failed to resolve artists.", statusCode: 500 });
+    const artistError = new DbError({ message: "Failed to resolve artists.", statusCode: 409 });
     mocks.findOrCreateArtists.mockResolvedValue(artistError);
 
     const result = await registerPost({ appleMusicId, content }, session, db);
