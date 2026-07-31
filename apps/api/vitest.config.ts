@@ -22,7 +22,6 @@ const testBindings = {
   APP_FRONTEND_URL: "http://localhost:3000",
   FIREBASE_API_KEY: "test-firebase-api-key",
   FIREBASE_PROJECT_ID: "otography-676f1",
-  AUTH_COOKIE_DOMAIN: "localhost",
   GOOGLE_OAUTH_REDIRECT_URI: "http://localhost:3000/api/auth/google/callback",
   // Apple Music developer token 署名用（テスト専用の使い捨て鍵）
   APPLE_KEY_ID: "TESTKEY1234",

@@ -1,5 +1,4 @@
 export type Bindings = {
-  AUTH_COOKIE_DOMAIN: string | undefined;
   AUTH_OAUTH_STATE_SECRET: string;
   // セッション暗号化キーリング（JSON文字列）
   // 本番: Cloudflare Secrets Store 経由（SecretsStoreSecret）
