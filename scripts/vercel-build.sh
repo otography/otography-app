@@ -54,7 +54,6 @@ bunx wrangler versions upload \
   --preview-alias "$api_alias" \
   --message "$deploy_message" \
   --var "APP_FRONTEND_URL:${web_url}" \
-  --var "AUTH_COOKIE_DOMAIN:" \
   --var "GOOGLE_OAUTH_REDIRECT_URI:${web_url}/api/auth/google/callback"
 
 echo "Building web with NEXT_PUBLIC_API_URL=${api_url}"
