@@ -1,6 +1,8 @@
-import { AppleMusicError } from "@repo/errors";
+import { AppleMusicError, AppleMusicRateLimitError } from "@repo/errors";
 import { type } from "arktype";
 import { generateDeveloperToken } from "./token";
+
+const APPLE_MUSIC_TIMEOUT_MS = 5000;
 
 // Apple Music API のアーティスト情報
 // 公式 Resource 仕様: type は必須（アーティストは常に "artists"）。
@@ -82,7 +84,7 @@ type EndpointResult<K extends EndpointKey> =
 const fetchCatalogResource = async <K extends EndpointKey>(
   resource: K,
   appleMusicId: string,
-): Promise<EndpointResult<K> | AppleMusicError> => {
+): Promise<EndpointResult<K> | AppleMusicError | AppleMusicRateLimitError> => {
   const config = ENDPOINT_MAP[resource];
   const token = await generateDeveloperToken().catch(
     (e) =>
@@ -100,6 +102,7 @@ const fetchCatalogResource = async <K extends EndpointKey>(
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      signal: AbortSignal.timeout(APPLE_MUSIC_TIMEOUT_MS),
     },
   ).catch(
     (e) =>
@@ -110,6 +113,12 @@ const fetchCatalogResource = async <K extends EndpointKey>(
       }),
   );
   if (response instanceof Error) return response;
+
+  if (response.status === 429) {
+    return new AppleMusicRateLimitError({
+      retryAfter: response.headers.get("Retry-After"),
+    });
+  }
 
   if (!response.ok) {
     if (response.status === 404) {
