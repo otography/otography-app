@@ -1,0 +1,23 @@
+{
+  "skill_name": "agentic-testing",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I need to add a new feature: a user can update their display name from the account page. The API endpoint POST /api/user/profile takes { displayName: string } and returns 200 with the updated profile. Write the tests I need.",
+      "expected_output": "The skill should guide toward: behavior-focused tests (status code, response shape, navigation), contract tests (request/response format), and warn against testing internal implementation details or mock call arguments.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "We have a utility function that formats dates: formatDate(date: Date, locale: string): string. It uses Intl.DateTimeFormat internally. What tests should I write?",
+      "expected_output": "The skill should guide toward: testing the pure function's input/output behavior (various locales, edge cases), NOT testing Intl.DateTimeFormat internals (library behavior). Layer 1 deterministic foundation test.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Our React component calls api.auth['sign-in'].$post() and shows a loading spinner. We have tests that check expect(mockSignInPost).toHaveBeenCalledWith({ json: { email, password } }). Should we keep these?",
+      "expected_output": "The skill should recommend removing mock call argument assertions (R1/R5/Core Principle) and replacing with behavior tests: spinner appears, navigation happens on success, error message shows on failure.",
+      "files": []
+    }
+  ]
+}

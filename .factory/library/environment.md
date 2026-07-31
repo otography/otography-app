@@ -22,7 +22,6 @@ Environment variables, external dependencies, and setup notes.
 | `FIREBASE_PROJECT_ID`       | **Existing**    | Firebase project ID.                                                       |
 | `DATABASE_URL`              | **Existing**    | PostgreSQL connection string.                                              |
 | `APP_FRONTEND_URL`          | **Existing**    | Frontend URL for CORS and redirects (http://localhost:3000).               |
-| `AUTH_COOKIE_DOMAIN`        | **Existing**    | Cookie domain (localhost in dev).                                          |
 
 ## Google Cloud Console Setup
 
