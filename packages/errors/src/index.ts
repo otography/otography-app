@@ -19,5 +19,5 @@ export {
 } from "./oauth-errors";
 export { RlsError } from "./rls-error";
 export { DbError } from "./db-error";
-export { AppleMusicError } from "./apple-music-error";
+export { AppleMusicError, AppleMusicRateLimitError } from "./apple-music-error";
 export type { DomainProblemSlug, ProblemSlug, StatusProblemSlug } from "./problem-slug";

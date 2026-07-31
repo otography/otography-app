@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AppleMusicError } from "@repo/errors";
+import { AppleMusicError, AppleMusicRateLimitError } from "@repo/errors";
 
 const mocks = vi.hoisted(() => ({
   generateDeveloperToken: vi.fn(),
@@ -40,6 +40,9 @@ import { fetchArtist, fetchSong } from "../../../shared/apple-music/client";
  * 14. 回帰: アーティスト type 不一致（例: type: "songs"）→ AppleMusicError 502 固定メッセージ、cause 保持
  * 15. 回帰: 楽曲 type 不一致（例: type: "artists"）→ AppleMusicError 502 固定メッセージ、cause 保持
  * 16. 回帰: 配列内の不正要素（2件目が不正）→ AppleMusicError 502 固定メッセージ、cause 保持
+ * 17. fetchArtist / fetchSong は 5000ms の timeout signal を fetch に渡す
+ * 18. HTTP 429 + Retry-After → AppleMusicRateLimitError(503)、retryAfter を保持
+ * 19. HTTP 429 + Retry-After なし → AppleMusicRateLimitError(503)、retryAfter は null
  *
  * セキュリティ要件: schema mismatch の message は固定・非技術的文言とし、
  * ArkType summary / path / 期待型を含めない。ArkErrors は cause に保持する。
@@ -132,6 +135,34 @@ describe("Apple Music client", () => {
   });
 
   it.each([
+    [
+      "artist",
+      fetchArtist,
+      { id: "artist-1", type: "artists", attributes: { name: "Test Artist" } },
+    ],
+    [
+      "song",
+      fetchSong,
+      {
+        id: "song-1",
+        type: "songs",
+        attributes: { name: "Test Song", genreNames: ["Pop"] },
+      },
+    ],
+  ] as const)("fetch%s は 5000ms の timeout signal を fetch に渡す", async (_, lookup, data) => {
+    const signal = new AbortController().signal;
+    const timeoutSpy = vi.spyOn(AbortSignal, "timeout").mockReturnValue(signal);
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(JSON.stringify({ data: [data] }), { status: 200 }));
+
+    await lookup(data.id);
+
+    expect(timeoutSpy).toHaveBeenCalledWith(5000);
+    expect(fetchMock.mock.calls[0]![1]).toMatchObject({ signal });
+  });
+
+  it.each([
     ["artist", fetchArtist, "指定されたアーティストが見つかりません。"],
     ["song", fetchSong, "指定された楽曲が見つかりません。"],
   ] as const)(
@@ -145,6 +176,29 @@ describe("Apple Music client", () => {
       expect(result).toMatchObject({ statusCode: 404, message });
     },
   );
+
+  it("HTTP 429 + Retry-After → AppleMusicRateLimitError(503)、retryAfter を保持", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("{}", {
+        status: 429,
+        headers: { "Retry-After": "120" },
+      }),
+    );
+
+    const result = await fetchArtist("id-1");
+
+    expect(result).toBeInstanceOf(AppleMusicRateLimitError);
+    expect(result).toMatchObject({ statusCode: 503, retryAfter: "120" });
+  });
+
+  it("HTTP 429 + Retry-After なし → AppleMusicRateLimitError(503)、retryAfter は null", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("{}", { status: 429 }));
+
+    const result = await fetchSong("id-1");
+
+    expect(result).toBeInstanceOf(AppleMusicRateLimitError);
+    expect(result).toMatchObject({ statusCode: 503, retryAfter: null });
+  });
 
   it.each([
     ["artist", fetchArtist, "Apple Music API からアーティスト情報を取得できませんでした。"],

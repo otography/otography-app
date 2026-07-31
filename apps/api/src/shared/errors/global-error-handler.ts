@@ -10,7 +10,7 @@ import type { Env } from "../types/env";
 // 設定時と削除時の属性（path 等）を一貫させる。
 export const globalErrorHandler: ErrorHandler<Env> = (err, c) => {
   logError(err, c.req.path);
-  const { body, statusCode, clearCookie } = formatErrorResponse(err, {
+  const { body, statusCode, clearCookie, headers } = formatErrorResponse(err, {
     instance: createProblemInstance(),
   });
 
@@ -20,5 +20,6 @@ export const globalErrorHandler: ErrorHandler<Env> = (err, c) => {
 
   return c.body(JSON.stringify(body), statusCode, {
     "Content-Type": "application/problem+json",
+    ...headers,
   });
 };

@@ -4,6 +4,7 @@ import {
   AuthRestError,
   DbError,
   AppleMusicError,
+  AppleMusicRateLimitError,
   RlsError,
   OAuthExchangeError,
   GoogleTokenExchangeError,
@@ -33,6 +34,7 @@ type ErrorMapping = {
   body: ProblemDetails;
   statusCode: ErrorStatusCode;
   clearCookie?: boolean;
+  headers?: Record<string, string>;
 };
 
 type FormatErrorOptions = {
@@ -127,6 +129,14 @@ export const formatErrorResponse = (
     return mapProblemSlug(error.statusCode, error.message, error.problemSlug);
   }
 
+  // Apple Music API の upstream rate limit は 503 と Retry-After に変換する。
+  if (error instanceof AppleMusicRateLimitError) {
+    return {
+      ...mapProblemSlug(error.statusCode, error.message),
+      ...(error.retryAfter ? { headers: { "Retry-After": error.retryAfter } } : {}),
+    };
+  }
+
   // AppleMusicError（Apple Music API エラー、ユーザー向けメッセージ）
   if (error instanceof AppleMusicError) {
     return mapProblemSlug(error.statusCode, error.message, error.problemSlug);
@@ -200,10 +210,11 @@ export const unauthorizedResponse = (c: Context, detail: string) => {
  * ルートハンドラ内の `if (result instanceof Error)` パターンを簡潔にする。
  */
 export const respondWithError = (error: Error, c: Context): Response => {
-  const { body, statusCode } = formatErrorResponse(error, {
+  const { body, statusCode, headers } = formatErrorResponse(error, {
     instance: createProblemInstance(),
   });
   return c.body(JSON.stringify(body), statusCode, {
     "Content-Type": "application/problem+json",
+    ...headers,
   });
 };
