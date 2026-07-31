@@ -1,6 +1,6 @@
 import { type Context } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import { AppleMusicError } from "@repo/errors";
+import { AppleMusicError, AppleMusicRateLimitError } from "@repo/errors";
 import { testRequest } from "../../helpers/test-client";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -19,6 +19,8 @@ import { createDrizzleConstraintError } from "../../helpers/postgres-error";
  * 7. POST /api/artists → 500 (その他 DB エラー、RlsError ラップ経由) → internal-error
  * 8. POST /api/artists → 400 (不正な payload / 空の appleMusicId) → bad-request
  * 9. POST /api/artists → 502 (Apple Music API エラー) → bad-gateway
+ * 9a. POST /api/artists → 503 (Apple Music API 429) + Retry-After
+ * 9b. POST /api/artists → 503 (Retry-After なし) では retry 情報を捏造しない
  *
  * PATCH（Apple Music 再同期。ボディ不要）:
  * 10. PATCH /api/artists/:id → 200 (既存行の appleMusicId で fetchArtist が呼ばれる)
@@ -388,6 +390,43 @@ describe("artists endpoints", () => {
       status: 502,
       detail: "Apple Music API からアーティスト情報を取得できませんでした。",
     });
+  });
+
+  it("POST /api/artists returns 503 + Retry-After when Apple Music API is rate limited", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue(new AppleMusicRateLimitError({ retryAfter: "120" }));
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {},
+      end: async () => undefined,
+    } as never);
+
+    const res = await testRequest("/api/artists", {
+      method: "POST",
+      body: { appleMusicId: "am-rate-limited" },
+    });
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get("retry-after")).toBe("120");
+    expect(await res.json()).toMatchObject({
+      type: "https://api.otography.com/errors/service-unavailable",
+      title: "Service Unavailable",
+      status: 503,
+    });
+  });
+
+  it("POST /api/artists omits Retry-After when Apple Music does not provide it", async () => {
+    vi.mocked(fetchArtist).mockResolvedValue(new AppleMusicRateLimitError({ retryAfter: null }));
+    vi.mocked(createDbClient).mockReturnValue({
+      db: {},
+      end: async () => undefined,
+    } as never);
+
+    const res = await testRequest("/api/artists", {
+      method: "POST",
+      body: { appleMusicId: "am-rate-limited" },
+    });
+
+    expect(res.status).toBe(503);
+    expect(res.headers.has("retry-after")).toBe(false);
   });
 
   it("PATCH /api/artists/:id syncs artist from Apple Music API", async () => {
