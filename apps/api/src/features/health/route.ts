@@ -6,7 +6,6 @@ import { checkFirebase } from "./checks/firebase";
 import { checkAppleMusic } from "./checks/apple-music";
 import { aggregateStatus, type HealthChecks } from "./aggregate";
 
-// キー付きで並列解決することで Promise.all のタプル順序依存を排除する
 async function resolveChecks(c: Context<Env>): Promise<HealthChecks> {
   const [database, firebase, appleMusic] = await Promise.all([
     checkDatabase(c.var.db()),
