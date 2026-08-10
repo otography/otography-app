@@ -349,7 +349,7 @@ describe("favorite songs usecase", () => {
 
       expect(result).toBeInstanceOf(DbError);
       expect(result).toMatchObject({
-        message: "アーティストの解決に失敗しました。",
+        message: "アーティスト情報の解決に失敗しました。",
         statusCode: 500,
         cause,
       });
