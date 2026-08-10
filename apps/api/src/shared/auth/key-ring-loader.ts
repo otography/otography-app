@@ -2,6 +2,7 @@ import * as errore from "errore";
 import { env } from "cloudflare:workers";
 import { validateKeyRing, parseKeyRingJson, type EncryptCtx, KeyRingError } from "./key-ring";
 import type { Bindings } from "../types/bindings";
+import { bytesToHex } from "./hex-utils";
 
 // Cloudflare Secrets Store シークレットバインディングの型
 // 本番: SecretsStoreSecret（.get() で値を取得）
@@ -47,11 +48,6 @@ const getKeyRingBinding = (): KeyRingBinding | KeyRingError => {
   }
   return new KeyRingError({ message: "AUTH_SESSION_KEY_RING の型が不正です。" });
 };
-
-const bytesToHex = (bytes: Uint8Array): string =>
-  Array.from(bytes)
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
 
 // 同じ key ID の鍵素材が更新された場合も検知できるよう、設定全体を不可逆に指紋化する。
 const computeFingerprint = async (json: string) => {

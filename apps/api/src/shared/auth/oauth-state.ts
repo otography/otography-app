@@ -1,5 +1,8 @@
 import * as jose from "jose";
 import { OAuthStateError } from "@repo/errors";
+import { OAUTH_NONCE_COOKIE_NAME } from "./cookies";
+
+export { OAUTH_NONCE_COOKIE_NAME };
 
 // OAuth state JWTの設定
 const STATE_JWT_ALG = "HS256";
@@ -12,9 +15,6 @@ export type OAuthStatePayload = {
   redirect: string;
   from?: string;
 };
-
-/** OAuth state用のnonceを保持するcookie名（__Host-プレフィックスなし、HTTP localhostでも動作） */
-export const OAUTH_NONCE_COOKIE_NAME = "otography_oauth_nonce";
 
 type GeneratedOAuthState = {
   nonce: string;

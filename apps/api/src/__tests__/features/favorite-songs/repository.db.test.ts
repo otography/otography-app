@@ -1,5 +1,4 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createSong, createUser } from "../../helpers/db/fixtures";
@@ -17,7 +16,7 @@ describe("addFavoriteSong", () => {
     await sql.end();
   });
 
-  it("同じ楽曲を2回お気に入り登録しようとすると409エラーを返す", async () => {
+  it("同じ楽曲を2回お気に入り登録しようとすると onConflictDoNothing により空配列を返す（409化は usecase 層の責務）", async () => {
     // Given
     const user = await createUser(db);
     const song = await createSong(db);
@@ -33,11 +32,7 @@ describe("addFavoriteSong", () => {
       });
 
       // Then
-      expect(result).toBeInstanceOf(DbError);
-      expect(result).toMatchObject({
-        message: "この楽曲は既にお気に入りに登録されています。",
-        statusCode: 409,
-      });
+      expect(result).toEqual([]);
     });
   });
 });

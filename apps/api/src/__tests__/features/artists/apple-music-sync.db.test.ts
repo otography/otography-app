@@ -1,6 +1,6 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
-import { findOrCreateArtists } from "../../../features/artists/repository";
+import { findOrCreateArtists } from "../../../features/artists/apple-music-sync";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createArtist } from "../../helpers/db/fixtures";
 import { artists } from "../../../shared/db/schema";

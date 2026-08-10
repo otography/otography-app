@@ -35,7 +35,7 @@ vi.mock("../../../features/songs/repository", () => ({
   songExistsByAppleMusicId: mocks.songExistsByAppleMusicId,
 }));
 
-vi.mock("../../../features/artists/repository", () => ({
+vi.mock("../../../features/artists/apple-music-sync", () => ({
   findOrCreateArtists: mocks.findOrCreateArtists,
 }));
 
@@ -399,6 +399,57 @@ describe("favorite songs usecase", () => {
       );
 
       expect(result).toBe(error);
+    });
+
+    it("returns a 409 domain error when addFavoriteSong ignores a duplicate via onConflictDoNothing", async () => {
+      mocks.findSongByAppleMusicId.mockResolvedValue({ id: "song-id" });
+      mocks.addFavoriteSong.mockResolvedValue([]);
+
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
+
+      expect(result).toBeInstanceOf(DbError);
+      expect(result).toMatchObject({
+        message: "この楽曲は既にお気に入りに登録されています。",
+        statusCode: 409,
+        problemSlug: "favorite-song-already-exists",
+      });
+    });
+
+    it("returns a 409 DbError when addFavoriteSong rejects with the primary-key constraint violation", async () => {
+      const { createDrizzleConstraintError } = await import("../../helpers/postgres-error");
+      const constraintError = createDrizzleConstraintError({
+        constraintName: "favorite_songs_pkey",
+        query: 'insert into "favorite_songs"',
+      });
+      mocks.findSongByAppleMusicId.mockResolvedValue({ id: "song-id" });
+      mocks.addFavoriteSong.mockRejectedValue(constraintError);
+
+      const result = await registerFavoriteSong(
+        session,
+        {
+          appleMusicId: "apple-music-song-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
+
+      expect(result).toBeInstanceOf(DbError);
+      expect(result).toMatchObject({
+        message: "この楽曲は既にお気に入りに登録されています。",
+        statusCode: 409,
+        cause: constraintError,
+      });
     });
 
     it("wraps RLS failures as the favorite-song registration error", async () => {

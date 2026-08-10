@@ -1,4 +1,4 @@
-import { and, desc, eq, getColumns, inArray, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, isNull } from "drizzle-orm";
 import { artists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
@@ -58,11 +58,25 @@ export const updateArtistById = async (
 };
 
 // appleMusicId でアーティストを検索（soft-deleted 除外）
-const artistLookupColumns = {
+// apple-music-sync.ts の createArtistFromAppleMusic からも参照される
+export const artistLookupColumns = {
   id: artists.id,
   name: artists.name,
   appleMusicId: artists.appleMusicId,
 } as const;
+
+// appleMusicId でアーティストの存在確認（soft-deleted 除外、軽量）
+export const artistExistsByAppleMusicId = async (
+  db: DatabaseOrTransaction,
+  appleMusicId: string,
+) => {
+  const rows = await db
+    .select({ id: artists.id })
+    .from(artists)
+    .where(and(eq(artists.appleMusicId, appleMusicId), isNull(artists.deletedAt)))
+    .limit(1);
+  return rows.length > 0;
+};
 
 export const findArtistByAppleMusicId = async (tx: DatabaseTransaction, appleMusicId: string) => {
   const rows = await tx
@@ -71,56 +85,4 @@ export const findArtistByAppleMusicId = async (tx: DatabaseTransaction, appleMus
     .where(and(eq(artists.appleMusicId, appleMusicId), isNull(artists.deletedAt)))
     .limit(1);
   return rows[0] ?? null;
-};
-
-// アーティストを新規作成（Apple Music API から取得した情報を使用）
-export const createArtistFromAppleMusic = async (
-  tx: DatabaseTransaction,
-  appleMusicId: string,
-  name: string,
-) => {
-  return tx
-    .insert(artists)
-    .values({ name, appleMusicId })
-    .onConflictDoUpdate({
-      target: artists.appleMusicId,
-      set: {
-        name,
-        deletedAt: null,
-      },
-    })
-    .returning(artistLookupColumns);
-};
-
-// アーティストをバッチで find-or-create し、DB上のID配列を返す
-export const findOrCreateArtists = async (
-  db: DatabaseOrTransaction,
-  artistEntries: { appleMusicId: string; name: string }[],
-) => {
-  if (artistEntries.length === 0) return [];
-
-  // 未登録アーティストを一括 INSERT
-  const newArtists = artistEntries.filter((a) => a.name);
-  if (newArtists.length > 0) {
-    await db
-      .insert(artists)
-      .values(newArtists.map((a) => ({ name: a.name, appleMusicId: a.appleMusicId })))
-      .onConflictDoUpdate({
-        target: artists.appleMusicId,
-        set: {
-          name: sql`EXCLUDED.name`,
-          deletedAt: null,
-        },
-      });
-  }
-
-  // 全アーティストの Apple Music ID で一括 SELECT
-  // soft-delete 済み artist は除外し、非表示の song_artists 紐付けを防ぐ
-  const appleMusicIds = artistEntries.map((a) => a.appleMusicId);
-  const found = await db
-    .select({ id: artists.id })
-    .from(artists)
-    .where(and(inArray(artists.appleMusicId, appleMusicIds), isNull(artists.deletedAt)));
-
-  return found.map((r) => r.id);
 };

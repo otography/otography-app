@@ -1,4 +1,5 @@
 import * as errore from "errore";
+import { bytesToHex } from "./hex-utils";
 
 // オペークセッションIDの生成とハッシュ化ユーティリティ
 
@@ -28,9 +29,7 @@ export const hashSessionId = async (rawId: string): Promise<string | SessionCryp
       }),
   );
   if (hashBuffer instanceof Error) return hashBuffer;
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return bytesToHex(new Uint8Array(hashBuffer));
 };
 
 /**

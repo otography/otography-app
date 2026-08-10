@@ -1,62 +1,13 @@
-import { type } from "arktype";
-import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
-import type { Context } from "hono";
-import { AuthRestError } from "@repo/errors";
-import { AuthError } from "@repo/errors/server";
-import { signInWithPassword, signUpWithPassword } from "../../shared/firebase/firebase-rest";
 import { csrfProtection, rateLimitByIp } from "../../shared/middleware";
 import { clearOpaqueSessionCookie, setOpaqueSessionCookie } from "../../shared/auth/opaque-cookie";
-import { getEncryptCtx } from "../../shared/auth/key-ring-loader";
-import { issueSession } from "../../shared/auth/session-service";
-import { revokeSession } from "../../shared/auth/session-repository";
-import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
-import { badRequestResponse, respondWithError } from "../../shared/errors/error-response";
-import { domainAuthError } from "../../shared/errors/domain-error";
+import { respondWithError } from "../../shared/errors/error-response";
 import type { Env } from "../../shared/types/env";
-import { createUserRecord } from "../user/usecase";
+import { credentialsValidator } from "./model/credentials";
+import { handleAuthError } from "./lib/auth-error-response";
+import { signInWithEmail, signUpWithEmail } from "./usecase/email-signin";
+import { signOut } from "./usecase/sign-out";
 import { googleOAuthRedirect, googleOAuthCallback } from "./lib/google";
-
-const credentialsBodySchema = type({
-  email: type.pipe(type("string.trim"), type("string.lower"), type("string.email")),
-  password: "string >= 6",
-});
-
-const credentialsValidator = arktypeValidator("json", credentialsBodySchema, (result, c) => {
-  if (!result.success) {
-    return badRequestResponse(
-      c,
-      "Please provide a valid email address and a password with at least 6 characters.",
-    );
-  }
-});
-
-const handleAuthError = (error: AuthError | AuthRestError, c: Context<Env>) => {
-  if (error.statusCode >= 500) {
-    console.error("Auth request failed.", errorLogFields(error));
-  }
-
-  if ("clearCookie" in error && error.clearCookie) {
-    clearOpaqueSessionCookie(c);
-  }
-
-  return respondWithError(error, c);
-};
-
-// 暗号化コンテキストを取得（失敗時はエラーレスポンス）
-const getCtxOrError = async () => {
-  const ctx = await getEncryptCtx();
-  if (ctx instanceof Error) {
-    console.error("暗号化コンテキストの初期化に失敗しました。", { message: ctx.message });
-    return new AuthError({
-      message: "Session encryption not configured.",
-      code: "encryption-config-error",
-      statusCode: 500,
-      cause: ctx,
-    });
-  }
-  return ctx;
-};
 
 const auth = new Hono<Env>()
   .post(
@@ -66,62 +17,16 @@ const auth = new Hono<Env>()
     credentialsValidator,
     async (c) => {
       const { email, password } = c.req.valid("json");
-      console.info("Email sign-in started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
-
-      const result = await signInWithPassword(c.env.FIREBASE_API_KEY, email, password);
-      if (result instanceof Error) {
-        console.warn("Email sign-in failed before session creation.", {
-          statusCode: result.statusCode,
-          message: result.message,
-        });
-        return handleAuthError(
-          new AuthError({
-            message: result.message,
-            code: "sign-in-failed",
-            statusCode: result.statusCode,
-            cause: result,
-          }),
-          c,
-        );
-      }
-      console.info("Email sign-in authenticated with Firebase.", {
-        firebaseId: maskIdentifier(result.localId),
-      });
-
-      // DBにユーザーレコード作成（先に作成、失敗時はセッションを発行しない）
-      const userRecord = await createUserRecord({ firebaseId: result.localId }, c.var.db());
-      if (userRecord instanceof Error) return handleAuthError(userRecord, c);
-      console.info("Email sign-in user record ensured.", {
-        firebaseId: maskIdentifier(result.localId),
-      });
-
-      // 暗号化コンテキスト取得
-      const ctx = await getCtxOrError();
-      if (ctx instanceof Error) return handleAuthError(ctx, c);
-
-      // サーバーセッションを発行
-      const issued = await issueSession({
-        firebaseIdToken: result.idToken,
-        firebaseRefreshToken: result.refreshToken,
-        userId: userRecord.id,
+      const result = await signInWithEmail({
+        apiKey: c.env.FIREBASE_API_KEY,
+        email,
+        password,
         db: c.var.db(),
-        ctx,
       });
-      if (issued instanceof Error) {
-        return handleAuthError(
-          new AuthError({
-            message: issued.message,
-            code: "session-issuance-failed",
-            statusCode: 500,
-            cause: issued,
-          }),
-          c,
-        );
-      }
+      if (result instanceof Error) return handleAuthError(result, c);
 
       // オペークCookieのみを設定（Firebaseクレデンシャルはブラウザに置かない）
-      setOpaqueSessionCookie(c, issued.opaqueId);
-      console.info("Email sign-in completed.", { firebaseId: maskIdentifier(result.localId) });
+      setOpaqueSessionCookie(c, result.opaqueId);
       return c.json({ message: "Signed in successfully." }, 200);
     },
   )
@@ -132,69 +37,15 @@ const auth = new Hono<Env>()
     credentialsValidator,
     async (c) => {
       const { email, password } = c.req.valid("json");
-      console.info("Email sign-up started.", { emailDomain: email.split("@")[1] ?? "[unknown]" });
-
-      const signUpResult = await signUpWithPassword(c.env.FIREBASE_API_KEY, email, password);
-      if (signUpResult instanceof Error) {
-        console.warn("Email sign-up failed before session creation.", {
-          statusCode: signUpResult.statusCode,
-          message: signUpResult.message,
-        });
-        const error =
-          signUpResult.statusCode === 409
-            ? domainAuthError({
-                slug: "email-already-registered",
-                message: signUpResult.message,
-                code: "sign-up-failed",
-                cause: signUpResult,
-              })
-            : new AuthError({
-                message: signUpResult.message,
-                code: "sign-up-failed",
-                statusCode: signUpResult.statusCode,
-                cause: signUpResult,
-              });
-        return handleAuthError(error, c);
-      }
-      console.info("Email sign-up created Firebase account.", {
-        firebaseId: maskIdentifier(signUpResult.localId),
-      });
-
-      // DBにユーザーレコード作成
-      const userRecord = await createUserRecord({ firebaseId: signUpResult.localId }, c.var.db());
-      if (userRecord instanceof Error) return handleAuthError(userRecord, c);
-      console.info("Email sign-up user record created.", {
-        firebaseId: maskIdentifier(signUpResult.localId),
-      });
-
-      // 暗号化コンテキスト取得
-      const ctx = await getCtxOrError();
-      if (ctx instanceof Error) return handleAuthError(ctx, c);
-
-      // サーバーセッションを発行
-      const issued = await issueSession({
-        firebaseIdToken: signUpResult.idToken,
-        firebaseRefreshToken: signUpResult.refreshToken,
-        userId: userRecord.id,
+      const result = await signUpWithEmail({
+        apiKey: c.env.FIREBASE_API_KEY,
+        email,
+        password,
         db: c.var.db(),
-        ctx,
       });
-      if (issued instanceof Error) {
-        return handleAuthError(
-          new AuthError({
-            message: issued.message,
-            code: "session-issuance-failed",
-            statusCode: 500,
-            cause: issued,
-          }),
-          c,
-        );
-      }
+      if (result instanceof Error) return handleAuthError(result, c);
 
-      setOpaqueSessionCookie(c, issued.opaqueId);
-      console.info("Email sign-up completed.", {
-        firebaseId: maskIdentifier(signUpResult.localId),
-      });
+      setOpaqueSessionCookie(c, result.opaqueId);
       return c.json({ message: "Account created successfully." }, 201);
     },
   )
@@ -210,20 +61,9 @@ const auth = new Hono<Env>()
     }
 
     // sessionCtx からセッションIDを取得して無効化（再ハッシュ/再照会なし #3）
-    const revokeResult = await revokeSession(c.var.db(), sessionCtx.sessionId);
-    if (revokeResult instanceof Error) {
-      console.error("サインアウト時のセッション無効化に失敗しました。", {
-        message: revokeResult.message,
-      });
-      return respondWithError(
-        new AuthError({
-          message: "Failed to sign out.",
-          code: "session-revocation-failed",
-          statusCode: 500,
-          cause: revokeResult,
-        }),
-        c,
-      );
+    const result = await signOut({ db: c.var.db(), sessionId: sessionCtx.sessionId });
+    if (result instanceof Error) {
+      return respondWithError(result, c);
     }
 
     clearOpaqueSessionCookie(c);

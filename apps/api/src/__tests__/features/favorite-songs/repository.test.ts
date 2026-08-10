@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { DbError } from "@repo/errors";
 import { addFavoriteSong } from "../../../features/favorite-songs/repository";
 import { createDrizzleConstraintError } from "../../helpers/postgres-error";
 
@@ -48,7 +47,7 @@ describe("favorite songs repository", () => {
     expect(mock.onConflictDoNothing).toHaveBeenCalledOnce();
   });
 
-  it("returns 409 DbError when duplicate favorite rows are ignored by on conflict", async () => {
+  it("returns an empty array when a duplicate favorite is ignored by onConflictDoNothing", async () => {
     const mock = createInsertTx({ rows: [] });
 
     const result = await addFavoriteSong(mock.tx, "user-id", "song-id", {
@@ -57,35 +56,26 @@ describe("favorite songs repository", () => {
       color: null,
     });
 
-    expect(result).toBeInstanceOf(DbError);
-    expect(result).toMatchObject({
-      message: "この楽曲は既にお気に入りに登録されています。",
-      statusCode: 409,
-    });
+    expect(result).toEqual([]);
   });
 
-  it("returns 409 DbError when postgres still reports the primary-key violation", async () => {
+  it("propagates the raw error when postgres still reports the primary-key violation (normalization is the usecase's responsibility)", async () => {
     const error = createDrizzleConstraintError({
       constraintName: "favorite_songs_pkey",
       query: 'insert into "favorite_songs"',
     });
     const mock = createInsertTx({ error });
 
-    const result = await addFavoriteSong(mock.tx, "user-id", "song-id", {
-      comment: null,
-      emoji: null,
-      color: null,
-    });
-
-    expect(result).toBeInstanceOf(DbError);
-    expect(result).toMatchObject({
-      message: "この楽曲は既にお気に入りに登録されています。",
-      statusCode: 409,
-      cause: error,
-    });
+    await expect(
+      addFavoriteSong(mock.tx, "user-id", "song-id", {
+        comment: null,
+        emoji: null,
+        color: null,
+      }),
+    ).rejects.toBe(error);
   });
 
-  it("returns a generic 400 DbError for unrelated foreign-key insert failures", async () => {
+  it("propagates the raw error for unrelated foreign-key insert failures", async () => {
     const error = createDrizzleConstraintError({
       code: "23503",
       constraintName: "favorite_songs_song_id_songs_id_fkey",
@@ -93,17 +83,12 @@ describe("favorite songs repository", () => {
     });
     const mock = createInsertTx({ error });
 
-    const result = await addFavoriteSong(mock.tx, "user-id", "missing-song-id", {
-      comment: null,
-      emoji: null,
-      color: null,
-    });
-
-    expect(result).toBeInstanceOf(DbError);
-    expect(result).toMatchObject({
-      message: "お気に入り楽曲の登録に失敗しました。",
-      statusCode: 400,
-      cause: error,
-    });
+    await expect(
+      addFavoriteSong(mock.tx, "user-id", "missing-song-id", {
+        comment: null,
+        emoji: null,
+        color: null,
+      }),
+    ).rejects.toBe(error);
   });
 });

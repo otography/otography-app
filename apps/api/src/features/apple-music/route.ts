@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { generateWebDeveloperToken } from "../../shared/apple-music/token";
+import { generateWebDeveloperToken } from "../../shared/apple-music";
 import { requireAuthMiddleware, rateLimitByUser } from "../../shared/middleware";
 import { respondWithError } from "../../shared/errors/error-response";
 import type { Env } from "../../shared/types/env";

@@ -1,6 +1,5 @@
 import { env } from "cloudflare:workers";
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { AuthError } from "@repo/errors/server";
 import type { Database } from "../db";
 import {
   verifySessionCookie,
@@ -14,14 +13,17 @@ import {
   getCurrentSessionById,
   touchSession,
   refreshSessionCredentials,
-  revokeSession,
-  getSessionsByKeyVersion,
   countSessionsByKeyVersion,
   type ServerSession,
   type SessionCredentials,
 } from "./session-repository";
 import { encryptCredential, decryptCredential, type AadBinding } from "./envelope";
 import type { EncryptCtx } from "./key-ring";
+import { generateOpaqueSessionId, hashSessionId } from "./session-crypto";
+import { terminalSessionError, safeRevokeSession } from "./session-errors";
+import { lazyReEncrypt, batchReEncrypt } from "./session-re-encrypt";
+
+export { batchReEncrypt };
 
 // オペークセッションIDから認証セッションを解決する結果
 type ResolvedSession = {
@@ -44,29 +46,6 @@ type IssuedSession = {
   session: ServerSession;
 };
 
-// セッション終端エラーを AuthError に変換（clearCookie 付き）
-const terminalSessionError = (message: string, code: string, cause?: unknown): AuthError =>
-  new AuthError({
-    message,
-    code,
-    statusCode: 401,
-    clearCookie: true,
-    problemSlug: "session-invalid",
-    ...(cause !== undefined ? { cause } : {}),
-  });
-
-// セッションを無効化し、エラーをログに記録する（ベストエフォート）
-const safeRevokeSession = async (
-  db: Database,
-  sessionId: string,
-  context: string,
-): Promise<void> => {
-  const result = await revokeSession(db, sessionId);
-  if (result instanceof Error) {
-    console.warn(`${context} 後のセッション無効化に失敗しました。`, { message: result.message });
-  }
-};
-
 // 新しいオペークセッションを発行
 export const issueSession = async ({
   firebaseIdToken,
@@ -80,11 +59,9 @@ export const issueSession = async ({
   if (firebaseSessionCookie instanceof Error) return firebaseSessionCookie;
 
   // オペークIDを生成
-  const { generateOpaqueSessionId } = await import("./session-crypto");
   const opaqueId = generateOpaqueSessionId();
 
   // AADバインディング用のセッションハッシュを事前計算
-  const { hashSessionId } = await import("./session-crypto");
   const sessionHash = await hashSessionId(opaqueId);
   if (sessionHash instanceof Error) return sessionHash;
 
@@ -134,7 +111,6 @@ export const resolveSession = async (
   if (session === null) return null;
 
   // 暗号化クレデンシャルを復号
-  const { hashSessionId } = await import("./session-crypto");
   const sessionHash = await hashSessionId(opaqueId);
   if (sessionHash instanceof Error) return sessionHash;
   const sessionBinding: AadBinding = {
@@ -344,138 +320,6 @@ const recoverFromCasConflict = async (
   }
 
   return { claims, session: current };
-};
-
-// 古いキーで暗号化されたクレデンシャルをアクティブキーで再暗号化（ベストエフォート、エラー伝播 #17）
-const lazyReEncrypt = async (
-  db: Database,
-  session: ServerSession,
-  ctx: EncryptCtx,
-  plaintextSession: string,
-  plaintextRefresh: string,
-  sessionHash: string,
-): Promise<void> => {
-  const sessionBinding: AadBinding = {
-    sessionHash,
-    userId: session.userId,
-    purpose: "session",
-  };
-  const refreshBinding: AadBinding = {
-    sessionHash,
-    userId: session.userId,
-    purpose: "refresh",
-  };
-
-  const reEncryptedSession = await encryptCredential(ctx, plaintextSession, sessionBinding);
-  if (reEncryptedSession instanceof Error) {
-    console.warn("遅延再暗号化: セッションクレデンシャル暗号化失敗。", {
-      message: reEncryptedSession.message,
-    });
-    return;
-  }
-  const reEncryptedRefresh = await encryptCredential(ctx, plaintextRefresh, refreshBinding);
-  if (reEncryptedRefresh instanceof Error) {
-    console.warn("遅延再暗号化: リフレッシュトークン暗号化失敗。", {
-      message: reEncryptedRefresh.message,
-    });
-    return;
-  }
-
-  const newCredentials: SessionCredentials = {
-    encryptedSessionCredential: reEncryptedSession,
-    encryptedRefreshToken: reEncryptedRefresh,
-    keyVersion: ctx.activeKeyId,
-  };
-
-  const result = await refreshSessionCredentials(db, session.id, session.version, newCredentials);
-  if (result instanceof Error) {
-    console.warn("遅延再暗号化: DB更新失敗。", { message: result.message });
-  }
-};
-
-// バッチ再暗号化結果（構造化エラーレポート #16）
-type BatchReEncryptResult = {
-  reEncrypted: number;
-  errors: { sessionId: string; reason: string }[];
-};
-
-// バッチ再暗号化（古いキーで暗号化された全アクティブセッションを再暗号化、#16）
-export const batchReEncrypt = async (
-  db: Database,
-  ctx: EncryptCtx,
-  oldKeyId: string,
-  batchSize: number = 50,
-): Promise<BatchReEncryptResult | Error> => {
-  const sessions = await getSessionsByKeyVersion(db, oldKeyId, batchSize);
-  if (sessions instanceof Error) return sessions;
-
-  const errors: { sessionId: string; reason: string }[] = [];
-  let count = 0;
-
-  for (const session of sessions) {
-    const sessionBinding: AadBinding = {
-      sessionHash: session.sessionHash,
-      userId: session.userId,
-      purpose: "session",
-    };
-    const refreshBinding: AadBinding = {
-      sessionHash: session.sessionHash,
-      userId: session.userId,
-      purpose: "refresh",
-    };
-
-    // 古いキーで復号
-    const plaintextSession = await decryptCredential(
-      ctx,
-      session.encryptedSessionCredential,
-      sessionBinding,
-    );
-    if (plaintextSession instanceof Error) {
-      errors.push({ sessionId: session.id, reason: `復号失敗: ${plaintextSession.message}` });
-      continue;
-    }
-    const plaintextRefresh = await decryptCredential(
-      ctx,
-      session.encryptedRefreshToken,
-      refreshBinding,
-    );
-    if (plaintextRefresh instanceof Error) {
-      errors.push({ sessionId: session.id, reason: `復号失敗: ${plaintextRefresh.message}` });
-      continue;
-    }
-
-    // アクティブキーで再暗号化
-    const reEncryptedSession = await encryptCredential(ctx, plaintextSession, sessionBinding);
-    if (reEncryptedSession instanceof Error) {
-      errors.push({ sessionId: session.id, reason: `再暗号化失敗: ${reEncryptedSession.message}` });
-      continue;
-    }
-    const reEncryptedRefresh = await encryptCredential(ctx, plaintextRefresh, refreshBinding);
-    if (reEncryptedRefresh instanceof Error) {
-      errors.push({ sessionId: session.id, reason: `再暗号化失敗: ${reEncryptedRefresh.message}` });
-      continue;
-    }
-
-    const newCredentials: SessionCredentials = {
-      encryptedSessionCredential: reEncryptedSession,
-      encryptedRefreshToken: reEncryptedRefresh,
-      keyVersion: ctx.activeKeyId,
-    };
-
-    // CAS安全更新: 競合時はスキップ（勝者が既に更新済み）
-    const result = await refreshSessionCredentials(db, session.id, session.version, newCredentials);
-    if (result instanceof Error) {
-      errors.push({ sessionId: session.id, reason: `DB更新失敗: ${result.message}` });
-      continue;
-    }
-    if (result === null) {
-      // CAS競合: 既に別のリクエストが更新済み（スキップ）
-      continue;
-    }
-    count++;
-  }
-
-  return { reEncrypted: count, errors };
 };
 
 // 指定キーで残存するアクティブセッション数をカウント（ローテーション完了確認用 #16）

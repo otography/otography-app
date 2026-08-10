@@ -2,7 +2,6 @@ import { arktypeValidator } from "@hono/arktype-validator";
 import { Hono } from "hono";
 import type { Context } from "hono";
 import { AuthError } from "@repo/errors/server";
-import { revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
 import {
   csrfProtection,
   getAuthSession,
@@ -10,8 +9,7 @@ import {
   requireFreshSessionMiddleware,
 } from "../../shared/middleware";
 import { clearOpaqueSessionCookie } from "../../shared/auth/opaque-cookie";
-import { revokeAllUserSessions } from "../../shared/auth/session-repository";
-import { errorLogFields } from "../../shared/logging/redaction";
+import { errorLogFields } from "../../shared/logging/log-format";
 import {
   badRequestResponse,
   respondWithError,
@@ -23,15 +21,19 @@ import {
   getProfile,
   setupProfile,
   updateProfile,
-  deleteAccount,
+  teardownUserAccount,
   getPublicProfile,
 } from "./usecase";
 
+// clearCookie 指定があればオペークセッションCookieを削除してからエラーレスポンスを返す
 const handleUserError = (error: AuthError, c: Context<Env>) => {
   console.warn("User route returned error.", {
     path: c.req.path,
     ...errorLogFields(error),
   });
+  if (error.clearCookie) {
+    clearOpaqueSessionCookie(c);
+  }
   return respondWithError(error, c);
 };
 
@@ -109,46 +111,11 @@ const user = new Hono<Env>()
         return unauthorizedResponse(c, "You are not logged in.");
       }
 
-      // 削除より先に全認証情報を失効させる。途中失敗時に削除済みアカウントへ
-      // 有効なセッションだけが残る状態を作らない。
-      const revokeResult = await revokeAllUserSessions(c.var.db(), sessionCtx.userId);
-      if (revokeResult instanceof Error) {
-        return handleUserError(
-          new AuthError({
-            message: "Failed to revoke active sessions.",
-            code: "session-revocation-failed",
-            statusCode: 500,
-            cause: revokeResult,
-          }),
-          c,
-        );
-      }
+      // 認証失効（全セッション失効・Firebaseトークン無効化）とアカウント論理削除の
+      // オーケストレーションは usecase 層に集約されている。
+      const result = await teardownUserAccount(session, sessionCtx.userId, c.var.db());
+      if (result instanceof Error) return handleUserError(result, c);
 
-      // Firebase 側でもリフレッシュトークンを無効化（アカウント削除境界でのみ実行 #2）
-      if (session.sub) {
-        const firebaseResult = await revokeRefreshTokens(session.sub);
-        if (firebaseResult instanceof Error) {
-          clearOpaqueSessionCookie(c);
-          return handleUserError(
-            new AuthError({
-              message: "Failed to revoke authentication credentials.",
-              code: "firebase-token-revocation-failed",
-              statusCode: 500,
-              cause: firebaseResult,
-            }),
-            c,
-          );
-        }
-      }
-
-      // 認証情報をすべて無効化できた場合にのみアカウントを論理削除する。
-      const result = await deleteAccount(session, c.var.db());
-      if (result instanceof Error) {
-        clearOpaqueSessionCookie(c);
-        return handleUserError(result, c);
-      }
-
-      // Cookie削除
       clearOpaqueSessionCookie(c);
       return c.json({ message: "Account deleted." }, 200);
     },

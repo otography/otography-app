@@ -5,7 +5,24 @@ import { getEncryptCtx } from "../auth/key-ring-loader";
 import { resolveSession } from "../auth/session-service";
 import { isValidOpaqueCookieValue } from "../auth/session-crypto";
 import { respondWithError, unauthorizedResponse } from "../errors/error-response";
+import type { Context } from "hono";
 import type { Env } from "../types/env";
+
+// resolveSession の失敗結果（Error | null）に応じて、必要ならオペークCookieを破棄する。
+// - Error かつ回復不能（AuthError.clearCookie）: Cookieを破棄
+// - null（セッション不在・期限切れ）: Cookieを破棄
+// - 一時的なError（DB障害など）: Cookieは保持し再試行可能にする
+// resolved後にnext()するかエラーレスポンスを返すかは呼び出し側の認証要件によって異なるため、
+// ここではCookie破棄の判定のみを共通化する（authSessionMiddleware / requireFreshSessionMiddleware で重複していたロジック）。
+const handleSessionError = (c: Context<Env>, resolved: Error | null) => {
+  if (resolved instanceof AuthError && resolved.clearCookie) {
+    clearOpaqueSessionCookie(c);
+    return;
+  }
+  if (resolved === null) {
+    clearOpaqueSessionCookie(c);
+  }
+};
 
 // 全認証ルートに適用するミドルウェア。
 // オペークCookieからサーバーセッションを解決し、authSession に Firebase claims を、
@@ -42,9 +59,7 @@ export const authSessionMiddleware = () =>
     if (resolved instanceof Error) {
       // 端末側で回復不能な認証エラーだけCookieを破棄する。
       // DB・鍵管理などの一時障害では再試行可能なCookieを保持する。
-      if (resolved instanceof AuthError && resolved.clearCookie) {
-        clearOpaqueSessionCookie(c);
-      }
+      handleSessionError(c, resolved);
       c.set("authError", resolved);
       console.warn("セッション解決に失敗しました。", { message: resolved.message });
       await next();
@@ -53,7 +68,7 @@ export const authSessionMiddleware = () =>
 
     if (resolved === null) {
       // セッションが見つからない、または期限切れ → Cookieをクリア
-      clearOpaqueSessionCookie(c);
+      handleSessionError(c, resolved);
       await next();
       return;
     }
@@ -116,13 +131,11 @@ export const requireFreshSessionMiddleware = () =>
 
     const resolved = await resolveSession(opaqueId, c.var.db(), ctxResult, true);
     if (resolved instanceof Error) {
-      if (resolved instanceof AuthError && resolved.clearCookie) {
-        clearOpaqueSessionCookie(c);
-      }
+      handleSessionError(c, resolved);
       return respondWithError(resolved, c);
     }
     if (resolved === null) {
-      clearOpaqueSessionCookie(c);
+      handleSessionError(c, resolved);
       return unauthorizedResponse(c, "You are not logged in.");
     }
 

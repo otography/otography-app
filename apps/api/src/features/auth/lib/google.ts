@@ -2,22 +2,15 @@ import type { Context } from "hono";
 import { type } from "arktype";
 import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import {
-  AccountConflictError,
-  FirebaseIdpSigninError,
-  GoogleTokenExchangeError,
-  OAuthStateError,
-} from "@repo/errors";
-import {
   generateOAuthState,
   verifyOAuthState,
   OAUTH_NONCE_COOKIE_NAME,
 } from "../../../shared/auth/oauth-state";
-import { exchangeGoogleCode, signInWithGoogleIdp } from "../../../shared/firebase/firebase-google";
 import { setOpaqueSessionCookie } from "../../../shared/auth/opaque-cookie";
-import { getEncryptCtx } from "../../../shared/auth/key-ring-loader";
-import { issueSession } from "../../../shared/auth/session-service";
-import { createUserRecord } from "../../user/usecase";
 import type { Env } from "../../../shared/types/env";
+import { signInWithGoogleOAuth } from "../usecase/oauth-signin";
+import { safeRedirectPath, isSafeRedirectPath } from "./redirect";
+import { getOAuthErrorCode, getStateErrorCode } from "./google-oauth-errors";
 
 // Google OAuth 認可エンドポイント
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -32,43 +25,13 @@ const googleCallbackQuerySchema = type({
 });
 
 /**
- * state JWTの検証エラーから適切なエラーコードを判定する。
- * ラップされた元エラー（cause）の型・nameを確認し、
- * 期限切れと明確に判定できる場合のみ expired_state を返す。
- */
-const isExpiredError = (value: unknown): boolean => {
-  if (!(value instanceof Error)) return false;
-  return (
-    value.name === "JWTExpired" || (value as Error & { code?: string }).code === "ERR_JWT_EXPIRED"
-  );
-};
-
-const getStateErrorCode = (error: OAuthStateError): string => {
-  if (isExpiredError(error.cause) || isExpiredError(error)) {
-    return "expired_state";
-  }
-  return "invalid_state";
-};
-
-/**
- * 外部サービスのエラーから適切なエラーコードへのマッピング。
- * エラーの型（instanceof）に基づいて一意に決定する。
- */
-const getOAuthErrorCode = (error: Error): string => {
-  if (error instanceof AccountConflictError) return "account_exists";
-  if (error instanceof GoogleTokenExchangeError) return "oauth_failed";
-  if (error instanceof FirebaseIdpSigninError) return "firebase_auth_failed";
-  return "oauth_failed";
-};
-
-/**
  * エラーリダイレクトURLを構築する。
  * OAuth エラー時のリダイレクト先は state 内の from フィールドで決定する。
  * from が未指定の場合は /login にフォールバックする。
  * オープンリダイレクト防止のため、from は相対パスのみ許可する。
  */
 const buildErrorRedirect = (env: Env["Bindings"], errorCode: string, from?: string): string => {
-  const safeFrom = from?.startsWith("/") && !from.startsWith("//") ? from : "/login";
+  const safeFrom = safeRedirectPath(from, "/login");
   const url = new URL(safeFrom, env.APP_FRONTEND_URL);
   url.searchParams.set("error", errorCode);
   return url.toString();
@@ -79,8 +42,7 @@ export const googleOAuthRedirect = async (c: Context<Env>) => {
   const redirectParam = c.req.query("redirect");
   const rawFromParam = c.req.query("from");
   // オープンリダイレクト防止: from は相対パスのみ許可
-  const fromParam =
-    rawFromParam?.startsWith("/") && !rawFromParam.startsWith("//") ? rawFromParam : undefined;
+  const fromParam = isSafeRedirectPath(rawFromParam) ? rawFromParam : undefined;
 
   // OAuth state JWTを生成（CSRF対策 + リダイレクト先保持）
   const stateResult = await generateOAuthState(
@@ -174,49 +136,18 @@ export const googleOAuthCallback = async (c: Context<Env>) => {
     return c.redirect(buildErrorRedirect(c.env, "invalid_state", errorPage), 302);
   }
 
-  // Google認可コードをトークンと交換（redirect_uriは環境変数から取得）
-  const callbackUrl = c.env.GOOGLE_OAUTH_REDIRECT_URI;
-  const googleTokens = await exchangeGoogleCode({
+  // Google認可コード交換 → Firebase IdPサインイン → ユーザーレコード作成 → セッション発行
+  const issued = await signInWithGoogleOAuth({
+    firebaseApiKey: c.env.FIREBASE_API_KEY,
     clientId: c.env.GOOGLE_CLIENT_ID,
     clientSecret: c.env.GOOGLE_CLIENT_SECRET,
     code,
-    redirectUri: callbackUrl,
-  });
-  if (googleTokens instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(googleTokens), errorPage), 302);
-  }
-
-  // Firebase signInWithIdpでGoogle IDトークンを認証
-  const firebaseResult = await signInWithGoogleIdp({
-    firebaseApiKey: c.env.FIREBASE_API_KEY,
-    googleIdToken: googleTokens.id_token,
+    redirectUri: c.env.GOOGLE_OAUTH_REDIRECT_URI,
     requestUri: c.env.APP_FRONTEND_URL,
-  });
-  if (firebaseResult instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(firebaseResult), errorPage), 302);
-  }
-
-  // ユーザーレコード作成（冪等: 既存なら何もしない）
-  const userRecord = await createUserRecord({ firebaseId: firebaseResult.localId }, c.var.db());
-  if (userRecord instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
-  }
-
-  // サーバーセッションを発行
-  const ctx = await getEncryptCtx();
-  if (ctx instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
-  }
-
-  const issued = await issueSession({
-    firebaseIdToken: firebaseResult.idToken,
-    firebaseRefreshToken: firebaseResult.refreshToken,
-    userId: userRecord.id,
     db: c.var.db(),
-    ctx,
   });
   if (issued instanceof Error) {
-    return c.redirect(buildErrorRedirect(c.env, "session_failed", errorPage), 302);
+    return c.redirect(buildErrorRedirect(c.env, getOAuthErrorCode(issued), errorPage), 302);
   }
 
   // オペークCookieのみを設定
@@ -229,8 +160,6 @@ export const googleOAuthCallback = async (c: Context<Env>) => {
   });
 
   // リダイレクト先はstateに保持されたパスを使用（オープンリダイレクト防止で相対パスのみ許可）
-  const redirectPath = statePayload.redirect;
-  const safeRedirect =
-    redirectPath?.startsWith("/") && !redirectPath.startsWith("//") ? redirectPath : "/account";
+  const safeRedirect = safeRedirectPath(statePayload.redirect, "/account");
   return c.redirect(new URL(safeRedirect, c.env.APP_FRONTEND_URL).toString(), 302);
 };
