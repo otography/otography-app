@@ -1,4 +1,4 @@
-import { errorLogFields } from "./redaction";
+import { errorLogFields } from "./log-format";
 
 /**
  * エラーを構造化 JSON としてログ出力する

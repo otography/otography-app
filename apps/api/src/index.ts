@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
 import { appleMusic } from "./features/apple-music";
 import { auth } from "./features/auth";
@@ -14,33 +13,46 @@ import { posts } from "./features/posts";
 import { user } from "./features/user";
 import { globalErrorHandler } from "./shared/errors/global-error-handler";
 import { problemResponse } from "./shared/errors/error-response";
-import { authSessionMiddleware, dbMiddleware } from "./shared/middleware";
+import { authSessionMiddleware, corsMiddleware, dbMiddleware } from "./shared/middleware";
+import type { MiddlewareHandler } from "hono";
 import type { Env } from "./shared/types/env";
 
 export type { Env };
 
-const app = new Hono<Env>()
-  .use("/api/*", async (c, next) => {
-    const middleware = cors({
-      origin: c.env.APP_FRONTEND_URL,
-      allowHeaders: ["Content-Type"],
-      allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-      credentials: true,
-    });
+// authSessionMiddleware を適用する保護対象パスのprefix。
+// 新規のprotected featureを追加する場合はこの配列に1行追加するだけでよい。
+const PROTECTED_PREFIXES = [
+  "/api/auth",
+  "/api/apple-music",
+  "/api/posts",
+  "/api/user",
+  "/api/artists",
+  "/api/songs",
+  "/api/me",
+] as const;
 
+const isProtectedPath = (path: string) =>
+  PROTECTED_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+
+// 保護対象パスにのみ authSessionMiddleware を適用するラッパー。
+// 公開ルート（health など）は次のミドルウェアへ素通しする。
+// 公開サーフェスは public-surface テストの許可リストで管理。
+const protectedAuthSession = (): MiddlewareHandler<Env> => {
+  const middleware = authSessionMiddleware();
+  return async (c, next) => {
+    if (!isProtectedPath(c.req.path)) {
+      await next();
+      return;
+    }
     return middleware(c, next);
-  })
+  };
+};
+
+const app = new Hono<Env>()
+  .use("/api/*", corsMiddleware)
   .use("*", secureHeaders())
   .use("/api/*", dbMiddleware())
-  // authSessionMiddlewareは認証セッションを解決するミドルウェア
-  // 公開ルートは health ごとに個別対応。公開サーフェスは public-surface テストの許可リストで管理。
-  .use("/api/auth/*", authSessionMiddleware())
-  .use("/api/apple-music/*", authSessionMiddleware())
-  .use("/api/posts/*", authSessionMiddleware())
-  .use("/api/user/*", authSessionMiddleware())
-  .use("/api/artists/*", authSessionMiddleware())
-  .use("/api/songs/*", authSessionMiddleware())
-  .use("/api/me/*", authSessionMiddleware())
+  .use("/api/*", protectedAuthSession())
   .onError(globalErrorHandler)
   .notFound((c) => {
     return problemResponse(c, "not-found", "Not found.");

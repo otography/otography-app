@@ -32,7 +32,7 @@ vi.mock("../../../features/songs/repository", () => ({
   songExistsByAppleMusicId: mocks.songExistsByAppleMusicId,
 }));
 
-vi.mock("../../../features/artists/repository", () => ({
+vi.mock("../../../features/artists/apple-music-sync", () => ({
   findOrCreateArtists: mocks.findOrCreateArtists,
 }));
 

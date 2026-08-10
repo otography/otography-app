@@ -3,7 +3,6 @@ import { artists, favoriteArtists } from "../../shared/db/schema";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
-import { toDbError } from "../../shared/db/postgres-error";
 import type { FavoriteArtistValues } from "./model";
 
 const favoriteArtistColumns = getColumns(favoriteArtists);
@@ -14,74 +13,9 @@ const artistColumns = {
   appleMusicId: artists.appleMusicId,
 } as const;
 
-const toAddFavoriteArtistError = (error: unknown) => {
-  return toDbError(error, "お気に入りアーティストの登録に失敗しました。", {
-    constraints: ["favorite_artists_pkey"],
-  });
-};
-
 // お気に入りアーティスト一覧取得（ページネーション対応）
+// private/public でクエリ内容は同一のため、tx/db いずれも受け取れるようにしている
 export const listFavoriteArtists = async (
-  tx: DatabaseTransaction,
-  userId: string,
-  pagination?: { limit?: number; cursor?: Cursor | null },
-) => {
-  const { cursor } = pagination ?? {};
-  const conditions = [eq(favoriteArtists.userId, userId)];
-
-  if (cursor) {
-    conditions.push(cursorWhereClause(favoriteArtists.createdAt, favoriteArtists.artistId, cursor));
-  }
-
-  return withPagination(
-    tx
-      .select({
-        favorite: favoriteArtistColumns,
-        artist: artistColumns,
-      })
-      .from(favoriteArtists)
-      .innerJoin(artists, and(eq(favoriteArtists.artistId, artists.id), isNull(artists.deletedAt)))
-      .where(and(...conditions))
-      .orderBy(desc(favoriteArtists.createdAt), desc(favoriteArtists.artistId))
-      .$dynamic(),
-    pagination,
-  );
-};
-
-// お気に入りアーティスト登録
-export const addFavoriteArtist = async (
-  tx: DatabaseTransaction,
-  userId: string,
-  artistId: string,
-  values: FavoriteArtistValues,
-) => {
-  const result = await tx
-    .insert(favoriteArtists)
-    .values({
-      userId,
-      artistId,
-      ...values,
-    })
-    .returning(favoriteArtistColumns)
-    .catch(toAddFavoriteArtistError);
-
-  return result;
-};
-
-// お気に入りアーティスト削除（artistId 指定）
-export const removeFavoriteArtist = async (
-  tx: DatabaseTransaction,
-  userId: string,
-  artistId: string,
-) => {
-  return tx
-    .delete(favoriteArtists)
-    .where(and(eq(favoriteArtists.userId, userId), eq(favoriteArtists.artistId, artistId)))
-    .returning({ artistId: favoriteArtists.artistId });
-};
-
-// 他人のお気に入りアーティスト一覧取得（RLS 不要、読み取り専用、ページネーション対応）
-export const listFavoriteArtistsPublic = async (
   db: DatabaseOrTransaction,
   userId: string,
   pagination?: { limit?: number; cursor?: Cursor | null },
@@ -106,4 +40,37 @@ export const listFavoriteArtistsPublic = async (
       .$dynamic(),
     pagination,
   );
+};
+
+// お気に入りアーティスト登録
+// 重複時は onConflictDoNothing により空配列を返す（エラー正規化は usecase 層の責務）
+export const addFavoriteArtist = async (
+  tx: DatabaseTransaction,
+  userId: string,
+  artistId: string,
+  values: FavoriteArtistValues,
+) => {
+  return tx
+    .insert(favoriteArtists)
+    .values({
+      userId,
+      artistId,
+      ...values,
+    })
+    .onConflictDoNothing({
+      target: [favoriteArtists.userId, favoriteArtists.artistId],
+    })
+    .returning(favoriteArtistColumns);
+};
+
+// お気に入りアーティスト削除（artistId 指定）
+export const removeFavoriteArtist = async (
+  tx: DatabaseTransaction,
+  userId: string,
+  artistId: string,
+) => {
+  return tx
+    .delete(favoriteArtists)
+    .where(and(eq(favoriteArtists.userId, userId), eq(favoriteArtists.artistId, artistId)))
+    .returning({ artistId: favoriteArtists.artistId });
 };

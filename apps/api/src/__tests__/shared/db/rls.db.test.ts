@@ -4,7 +4,7 @@ import { RlsError } from "@repo/errors";
 import { createTestDb, createTestSql, resetPublicTables } from "../../helpers/db/client";
 import { createArtist, createGenre, createSong, createUser } from "../../helpers/db/fixtures";
 import { withAnonymousRole, withAuthenticatedRole } from "../../../shared/db/rls";
-import { findOrCreateArtists } from "../../../features/artists/repository";
+import { findOrCreateArtists } from "../../../features/artists/apple-music-sync";
 import { createSongFull } from "../../../features/songs/repository";
 import {
   artists,

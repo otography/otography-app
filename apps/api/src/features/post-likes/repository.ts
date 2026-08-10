@@ -1,8 +1,22 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, exists, sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
 import type { DatabaseOrTransaction, DatabaseTransaction } from "../../shared/db";
 import { toDbError } from "../../shared/db/postgres-error";
-import { postLikes } from "../../shared/db/schema";
+import { postLikes, posts } from "../../shared/db/schema";
+
+// いいね情報のスカラーサブクエリ（groupBy 不要、自己完結）。
+// posts feature からも利用される（listPostsWithLikes / findPostByIdWithLikes での結合用）。
+export const likeFields = (db: DatabaseOrTransaction, userId: string | null) => ({
+  likeCount: db.$count(postLikes, eq(postLikes.postId, posts.id)),
+  isLiked: userId
+    ? exists(
+        db
+          .select()
+          .from(postLikes)
+          .where(and(eq(postLikes.postId, posts.id), eq(postLikes.userId, userId))),
+      ).as("isLiked")
+    : sql<boolean>`false`.as("isLiked"),
+});
 
 // いいねトグル（1クエリ: 同一user/postを直列化し、DELETE 0件ならINSERT）
 export const togglePostLike = async (

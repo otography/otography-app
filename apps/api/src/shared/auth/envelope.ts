@@ -2,6 +2,7 @@ import * as errore from "errore";
 import { type } from "arktype";
 import type { EncryptCtx } from "./key-ring";
 import { KeyRingError } from "./key-ring";
+import { bytesToHex, hexToBytes } from "./hex-utils";
 
 export type { EncryptCtx };
 
@@ -73,20 +74,6 @@ const buildAad = (binding: AadBinding): Uint8Array =>
   new TextEncoder().encode(
     `${binding.sessionHash}|${binding.userId}|${binding.purpose}|${ENVELOPE_VERSION}`,
   );
-
-const bytesToHex = (bytes: Uint8Array): string =>
-  Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-// hex → Uint8Array（厳格な入力検証付き）
-const hexToBytes = (hex: string): Uint8Array => {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < hex.length; i += 2) {
-    bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
-  }
-  return bytes;
-};
 
 // クレデンシャルを暗号化し、バージョン付きエンベロープを返す
 const encryptCredential = async (

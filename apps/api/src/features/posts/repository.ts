@@ -1,8 +1,9 @@
-import { and, desc, eq, exists, getColumns, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getColumns, isNull, sql } from "drizzle-orm";
 import type { DatabaseOrTransaction } from "../../shared/db";
 import { cursorWhereClause, withPagination } from "../../shared/pagination";
 import type { Cursor } from "../../shared/pagination";
-import { postLikes, posts, userProfiles } from "../../shared/db/schema";
+import { posts, userProfiles } from "../../shared/db/schema";
+import { likeFields } from "../post-likes/repository";
 import type { PostInsertDbModel, PostUpdateDbModel } from "./model";
 
 const { deletedAt: _, ...postColumns } = getColumns(posts);
@@ -11,19 +12,6 @@ const authorColumns = {
   username: userProfiles.username,
   name: userProfiles.name,
 } as const;
-
-// いいね情報のスカラーサブクエリ（groupBy 不要、自己完結）
-const likeFields = (db: DatabaseOrTransaction, userId: string | null) => ({
-  likeCount: db.$count(postLikes, eq(postLikes.postId, posts.id)),
-  isLiked: userId
-    ? exists(
-        db
-          .select()
-          .from(postLikes)
-          .where(and(eq(postLikes.postId, posts.id), eq(postLikes.userId, userId))),
-      ).as("isLiked")
-    : sql<boolean>`false`.as("isLiked"),
-});
 
 // 投稿一覧をいいね情報付きで1クエリで取得（ページネーション対応）
 export const listPostsWithLikes = async (

@@ -1,14 +1,20 @@
 import { DbError, RlsError } from "@repo/errors";
-import type { DatabaseOrTransaction, Database } from "../../shared/db";
+import type { DatabaseOrTransaction, Database, DatabaseTransaction } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withAuthenticatedRole } from "../../shared/db/rls";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
 import { domainDbError } from "../../shared/errors/domain-error";
-import { findOrCreateArtists } from "../artists/repository";
+import { findOrCreateArtists } from "../artists/apple-music-sync";
 import type { SongCreateBody } from "./model";
-import { createSongFull, findSongById, listSongs, updateSongFull } from "./repository";
+import {
+  createSongFull,
+  findSongByAppleMusicId,
+  findSongById,
+  listSongs,
+  updateSongFull,
+} from "./repository";
 
 const SONG_APPLE_MUSIC_ID_KEY = "songs_apple_music_id_key";
 
@@ -34,6 +40,43 @@ const normalizeSongDbError = (error: unknown, fallbackMessage: string) => {
     return toSongAppleMusicIdError(error.cause, fallbackMessage);
   }
   return toSongAppleMusicIdError(error, fallbackMessage);
+};
+
+// レース検知用 sentinel: tx 内で楽曲が見つからず、事前 fetch もしていない場合に返す
+export const songMissingInTx = Symbol("song-missing-in-tx");
+
+// トランザクション内で楽曲を find-or-create する（artist 解決含む）。
+// 呼び出し元（posts/usecase.ts 等）はトランザクション外で存在チェック・Apple Music
+// フェッチを行い、songInput（未取得なら null）を渡す。既存曲が見つからず songInput も
+// 無い場合は songMissingInTx を返すので、呼び出し元でレース検知・リトライを行うこと。
+export const resolveOrCreateSong = async (
+  tx: DatabaseTransaction,
+  appleMusicId: string,
+  songInput: Exclude<ReturnType<typeof toSongInput>, Error> | null,
+): Promise<{ songId: string } | typeof songMissingInTx | DbError> => {
+  const found = await findSongByAppleMusicId(tx, appleMusicId);
+  if (found) {
+    return { songId: found.id };
+  }
+
+  // 存在チェック後に soft-delete されたレース
+  if (!songInput) return songMissingInTx;
+
+  const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
+    toDbError(e, "Failed to resolve artists."),
+  );
+  if (artistIds instanceof Error) return artistIds;
+
+  const song = await createSongFull(tx, {
+    songValues: songInput.songValues,
+    artistIds,
+    genreNames: songInput.genreNames,
+  });
+  if (!song) {
+    return new DbError({ message: "Failed to create song." });
+  }
+
+  return { songId: song.id };
 };
 
 export const getSongs = async (

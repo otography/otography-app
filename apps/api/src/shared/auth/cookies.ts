@@ -3,6 +3,7 @@ const HOST_PREFIXED_SESSION_COOKIE_NAME = "__Host-otography_session";
 // 開発環境（localhost HTTP）で使用するセッションCookie名
 const DEV_SESSION_COOKIE_NAME = "otography_session";
 
+// OAuth state用のnonceを保持するcookie名（__Host-プレフィックスなし、HTTP localhostでも動作）
 export const OAUTH_NONCE_COOKIE_NAME = "otography_oauth_nonce";
 
 // リクエストがHTTPSかどうかでCookie名を切り替える

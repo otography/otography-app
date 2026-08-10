@@ -1,19 +1,15 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
-import { sql } from "drizzle-orm";
 import { DbError } from "@repo/errors";
-import type { DatabaseOrTransaction, Database } from "../../shared/db";
+import type { Database } from "../../shared/db";
 import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
 import { fetchSong, toSongInput } from "../../shared/apple-music";
 import { domainDbError } from "../../shared/errors/domain-error";
-import { findOrCreateArtists } from "../artists/repository";
-import {
-  createSongFull,
-  findSongByAppleMusicId,
-  songExistsByAppleMusicId,
-} from "../songs/repository";
+import { resolveUserId } from "../../shared/auth/resolve-user-id";
+import { songExistsByAppleMusicId } from "../songs/repository";
+import { resolveOrCreateSong, songMissingInTx } from "../songs/usecase";
 import {
   createPost,
   findPostByIdWithLikes,
@@ -22,24 +18,6 @@ import {
   updatePostById,
 } from "./repository";
 import type { PostCreateDbModel, PostInsertDbModel, PostUpdateDbModel } from "./model";
-
-// Firebase ID → UUID 解決
-const resolveUserId = async (
-  db: DatabaseOrTransaction,
-  firebaseId: string,
-): Promise<string | DbError> => {
-  const rows = await db
-    .execute<{ resolve_firebase_id: string | null }>(sql`select resolve_firebase_id(${firebaseId})`)
-    .catch((e) => toDbError(e, "Failed to resolve user ID."));
-
-  if (rows instanceof Error) return rows;
-  const userId = rows[0]?.resolve_firebase_id;
-  if (!userId) {
-    return new DbError({ message: "User not found in database." });
-  }
-
-  return userId;
-};
 
 export const getPosts = async (
   session: DecodedIdToken | null | undefined,
@@ -94,9 +72,6 @@ export const getPost = async (
   return { post };
 };
 
-// レース検知用 sentinel: tx 内で楽曲が見つからず、事前 fetch もしていない場合に返す
-const songMissingInTx = Symbol("song-missing-in-tx");
-
 export const registerPost = async (
   payload: PostCreateDbModel,
   session: DecodedIdToken,
@@ -125,32 +100,12 @@ export const registerPost = async (
   // tx 本体をローカル関数化（リトライで再利用）
   const runTransaction = () =>
     withRls(db, session, async (tx, userId) => {
-      let songId: string;
-
-      const found = await findSongByAppleMusicId(tx, payload.appleMusicId);
-      if (found) {
-        songId = found.id;
-      } else {
-        // 存在チェック後に soft-delete されたレース
-        if (!songInput) return songMissingInTx;
-        const artistIds = await findOrCreateArtists(tx, songInput.artistEntries).catch((e) =>
-          toDbError(e, "Failed to resolve artists."),
-        );
-        if (artistIds instanceof Error) return artistIds;
-
-        const song = await createSongFull(tx, {
-          songValues: songInput.songValues,
-          artistIds,
-          genreNames: songInput.genreNames,
-        });
-        if (!song) {
-          return new DbError({ message: "Failed to create song." });
-        }
-        songId = song.id;
-      }
+      const resolved = await resolveOrCreateSong(tx, payload.appleMusicId, songInput);
+      if (resolved === songMissingInTx) return songMissingInTx;
+      if (resolved instanceof Error) return resolved;
 
       return createPost(tx, {
-        songId,
+        songId: resolved.songId,
         userId,
         content: payload.content,
       } satisfies PostInsertDbModel);

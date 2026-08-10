@@ -1,19 +1,14 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { and, eq, isNull } from "drizzle-orm";
 import { fetchArtist } from "../../shared/apple-music";
 import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
-import { artists } from "../../shared/db/schema";
 import { toDbError } from "../../shared/db/postgres-error";
+import { domainDbError } from "../../shared/errors/domain-error";
 import { withRls } from "../../shared/db/rls";
-import { findArtistByAppleMusicId, createArtistFromAppleMusic } from "../artists/repository";
-import {
-  addFavoriteArtist,
-  removeFavoriteArtist,
-  listFavoriteArtists,
-  listFavoriteArtistsPublic,
-} from "./repository";
+import { artistExistsByAppleMusicId, findArtistByAppleMusicId } from "../artists/repository";
+import { createArtistFromAppleMusic } from "../artists/apple-music-sync";
+import { addFavoriteArtist, removeFavoriteArtist, listFavoriteArtists } from "./repository";
 import type { AddFavoriteArtistInput } from "./model";
 import { deleteFavorite, getFavoritePage } from "../favorites/usecase";
 
@@ -40,12 +35,30 @@ export const getPublicFavoriteArtists = async (
 ) => {
   return getFavoritePage({
     pagination,
-    load: (page) => listFavoriteArtistsPublic(db, userId, page),
+    load: (page) => listFavoriteArtists(db, userId, page),
     errorMessage: "お気に入りアーティストの取得に失敗しました。",
     getFavoriteId: (row) => row.favorite.artistId,
     mapResource: (row) => ({ artist: row.artist }),
   });
 };
+
+const FAVORITE_ARTIST_PKEY = "favorite_artists_pkey";
+
+// 重複お気に入り登録エラー（onConflictDoNothing により行が挿入されなかった場合に生成）
+const createDuplicateFavoriteArtistError = (cause?: unknown) =>
+  domainDbError({
+    slug: "favorite-artist-already-exists",
+    message: "このアーティストは既にお気に入りに登録されています。",
+    cause,
+  });
+
+// insert 時に postgres 側で制約違反が発生した場合の DbError 正規化。
+// favorite-songs と重複検知戦略を統一: onConflictDoNothing を主戦略とし、
+// 稀に onConflictDoNothing 対象外の理由で例外が飛んできた場合の保険として使う。
+const toAddFavoriteArtistError = (error: unknown) =>
+  toDbError(error, "お気に入りアーティストの登録に失敗しました。", {
+    constraints: [FAVORITE_ARTIST_PKEY],
+  });
 
 // お気に入りアーティスト登録
 export const registerFavoriteArtist = async (
@@ -54,16 +67,13 @@ export const registerFavoriteArtist = async (
   db: Database,
 ) => {
   // トランザクション外で DB を確認し、未登録なら事前に Apple Music API から取得
-  const existing = await db
-    .select({ id: artists.id })
-    .from(artists)
-    .where(and(eq(artists.appleMusicId, input.appleMusicId), isNull(artists.deletedAt)))
-    .limit(1)
-    .catch((e) => toDbError(e, "アーティストの検索に失敗しました。"));
-  if (existing instanceof Error) return existing;
+  const exists = await artistExistsByAppleMusicId(db, input.appleMusicId).catch((e) =>
+    toDbError(e, "アーティストの検索に失敗しました。"),
+  );
+  if (exists instanceof Error) return exists;
 
   let artistName: string | undefined;
-  if (existing.length === 0) {
+  if (!exists) {
     const appleMusicArtist = await fetchArtist(input.appleMusicId);
     if (appleMusicArtist instanceof Error) return appleMusicArtist;
     artistName = appleMusicArtist.attributes.name;
@@ -92,8 +102,9 @@ export const registerFavoriteArtist = async (
       comment: input.comment,
       emoji: input.emoji,
       color: input.color,
-    });
+    }).catch(toAddFavoriteArtistError);
     if (rows instanceof Error) return rows;
+    if (rows.length === 0) return createDuplicateFavoriteArtistError();
 
     return rows[0] ?? null;
   });

@@ -4,6 +4,8 @@ import type { Database } from "../../shared/db";
 import { withAnonymousRole, withAuthenticatedRole, withRls } from "../../shared/db/rls";
 import { toDbError } from "../../shared/db/postgres-error";
 import { domainAuthError } from "../../shared/errors/domain-error";
+import { revokeRefreshTokens } from "../../shared/firebase/firebase-admin";
+import { revokeAllUserSessions } from "../../shared/auth/session-repository";
 import {
   insertUser,
   selectCurrentUser,
@@ -12,7 +14,8 @@ import {
   updateUserDetails,
   softDeleteUser,
 } from "./repository";
-import { errorLogFields, maskIdentifier } from "../../shared/logging/redaction";
+import { errorLogFields } from "../../shared/logging/log-format";
+import { maskIdentifier } from "../../shared/logging/redaction";
 import type { InsertUserValues, SetupProfileValues, UpdateUserValues } from "./model";
 
 const USERS_USERNAME_KEY = "users_username_key";
@@ -89,6 +92,25 @@ export const createUserRecord = async (values: InsertUserValues, db: Database) =
   return user;
 };
 
+// getProfile の自己修復: DB にユーザーレコードが存在しない場合に作成する
+// （サインアップ後の初回アクセスなどで発生する）
+const ensureUserRecord = async (session: DecodedIdToken, db: Database) => {
+  console.warn("Database user missing during profile fetch; creating it.", {
+    firebaseId: maskIdentifier(session.sub),
+  });
+  const createdUser = await createUserRecord({ firebaseId: session.sub }, db);
+  if (createdUser instanceof Error) return createdUser;
+
+  // createUserRecord の .returning() で全カラム取得済みなので、
+  // selectCurrentUser（withRls 経由の RLS トランザクション）を再試行せず
+  // 直接その結果を使う。RLS トランザクションの失敗による 500 を回避する。
+  console.info("Using created user record directly.", {
+    firebaseId: maskIdentifier(session.sub),
+    userId: maskIdentifier(createdUser.id),
+  });
+  return [createdUser];
+};
+
 // 自分のプロフィールを取得
 export const getProfile = async (session: DecodedIdToken, db: Database) => {
   console.info("Fetching current user profile.", { firebaseId: maskIdentifier(session.sub) });
@@ -100,24 +122,7 @@ export const getProfile = async (session: DecodedIdToken, db: Database) => {
   }
 
   const result =
-    initialResult instanceof Error
-      ? await (async () => {
-          console.warn("Database user missing during profile fetch; creating it.", {
-            firebaseId: maskIdentifier(session.sub),
-          });
-          const createdUser = await createUserRecord({ firebaseId: session.sub }, db);
-          if (createdUser instanceof Error) return createdUser;
-
-          // createUserRecord の .returning() で全カラム取得済みなので、
-          // selectCurrentUser（withRls 経由の RLS トランザクション）を再試行せず
-          // 直接その結果を使う。RLS トランザクションの失敗による 500 を回避する。
-          console.info("Using created user record directly.", {
-            firebaseId: maskIdentifier(session.sub),
-            userId: maskIdentifier(createdUser.id),
-          });
-          return [createdUser];
-        })()
-      : initialResult;
+    initialResult instanceof Error ? await ensureUserRecord(session, db) : initialResult;
 
   if (result instanceof Error) {
     console.error("Profile fetch failed after self-heal.", errorLogFields(result));
@@ -226,8 +231,8 @@ export const updateProfile = async (
   };
 };
 
-// アカウントを論理削除
-export const deleteAccount = async (session: DecodedIdToken, db: Database) => {
+// アカウントを論理削除（teardownUserAccount からのみ呼ばれる内部ヘルパー）
+const deleteAccount = async (session: DecodedIdToken, db: Database) => {
   const result = await withRls(db, session, (tx, userId) => softDeleteUser(tx, userId));
   if (result instanceof Error) {
     return toAuthDbError(result, "Failed to delete account.");
@@ -243,6 +248,55 @@ export const deleteAccount = async (session: DecodedIdToken, db: Database) => {
   }
 
   return { deleted: true };
+};
+
+// アカウント削除の認証失効オーケストレーション。
+// セッション全失効 → Firebase リフレッシュトークン無効化 → アカウント論理削除の順で実行する。
+// 削除より先に全認証情報を失効させることで、途中失敗時に削除済みアカウントへ
+// 有効なセッションだけが残る状態を作らない。
+export const teardownUserAccount = async (
+  session: DecodedIdToken,
+  userId: string,
+  db: Database,
+) => {
+  const revokeResult = await revokeAllUserSessions(db, userId);
+  if (revokeResult instanceof Error) {
+    return new AuthError({
+      message: "Failed to revoke active sessions.",
+      code: "session-revocation-failed",
+      statusCode: 500,
+      cause: revokeResult,
+    });
+  }
+
+  // Firebase 側でもリフレッシュトークンを無効化（アカウント削除境界でのみ実行）
+  if (session.sub) {
+    const firebaseResult = await revokeRefreshTokens(session.sub);
+    if (firebaseResult instanceof Error) {
+      return new AuthError({
+        message: "Failed to revoke authentication credentials.",
+        code: "firebase-token-revocation-failed",
+        statusCode: 500,
+        cause: firebaseResult,
+        clearCookie: true,
+      });
+    }
+  }
+
+  // 認証情報をすべて無効化できた場合にのみアカウントを論理削除する。
+  const result = await deleteAccount(session, db);
+  if (result instanceof Error) {
+    return new AuthError({
+      message: result.message,
+      code: result.code,
+      statusCode: result.statusCode,
+      problemSlug: result.problemSlug,
+      cause: result,
+      clearCookie: true,
+    });
+  }
+
+  return result;
 };
 
 // 公開プロフィールを取得（username で検索）

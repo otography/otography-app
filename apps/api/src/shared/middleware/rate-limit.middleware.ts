@@ -2,25 +2,8 @@ import { createMiddleware } from "hono/factory";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { getAuthSession } from "../auth/auth-session";
 import { problemResponse, respondWithError, unauthorizedResponse } from "../errors/error-response";
+import { getRateLimiter } from "./rate-limiter-binding";
 import type { Env } from "../types/env";
-
-/** レートリミットバインディングの呼び出しインターフェース */
-interface RateLimiterBinding {
-  limit: (opts: { key: string }) => Promise<{ success: boolean }>;
-}
-
-const getRateLimiter = (bindings: Env["Bindings"], limiterName: string) => {
-  const binding: unknown = (bindings as Record<string, unknown>)[limiterName];
-  if (
-    typeof binding !== "object" ||
-    binding === null ||
-    !("limit" in binding) ||
-    typeof binding.limit !== "function"
-  ) {
-    return new Error(`Rate limiter binding ${limiterName} is not configured.`);
-  }
-  return binding as RateLimiterBinding;
-};
 
 /**
  * IPアドレスをキーとしたレートリミットミドルウェアファクトリ
