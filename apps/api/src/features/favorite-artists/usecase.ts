@@ -1,13 +1,17 @@
 import type { DecodedIdToken } from "@repo/firebase-auth-rest/auth";
 import { DbError } from "@repo/errors";
-import { fetchArtist } from "../../shared/apple-music";
+import { fetchArtist, toArtistInput, type ArtistInput } from "../../shared/apple-music";
+import {
+  catalogEntityMissingInTx,
+  resolveArtistInTx,
+  withRaceRetry,
+} from "../../shared/apple-music-catalog";
 import type { Database } from "../../shared/db";
 import type { Cursor } from "../../shared/pagination";
 import { toDbError } from "../../shared/db/postgres-error";
 import { domainDbError } from "../../shared/errors/domain-error";
 import { withRls } from "../../shared/db/rls";
 import { artistExistsByAppleMusicId, findArtistByAppleMusicId } from "../artists/repository";
-import { createArtistFromAppleMusic } from "../artists/apple-music-sync";
 import { addFavoriteArtist, removeFavoriteArtist, listFavoriteArtists } from "./repository";
 import type { AddFavoriteArtistInput } from "./model";
 import { deleteFavorite, getFavoritePage } from "../favorites/usecase";
@@ -72,42 +76,48 @@ export const registerFavoriteArtist = async (
   );
   if (exists instanceof Error) return exists;
 
-  let artistName: string | undefined;
-  if (!exists) {
+  // Apple Music から取得して artistInput を組み立てる（初回・リトライで共用）
+  const prepareArtistInput = async () => {
     const appleMusicArtist = await fetchArtist(input.appleMusicId);
     if (appleMusicArtist instanceof Error) return appleMusicArtist;
-    artistName = appleMusicArtist.attributes.name;
+    return toArtistInput(appleMusicArtist);
+  };
+
+  let artistInput: ArtistInput | null = null;
+  if (!exists) {
+    const prepared = await prepareArtistInput();
+    if (prepared instanceof Error) return prepared;
+    artistInput = prepared;
   }
 
-  // トランザクション内では DB 操作のみ
-  const result = await withRls(db, session, async (tx, userId) => {
-    let artistId: string;
-    const found = await findArtistByAppleMusicId(tx, input.appleMusicId);
-    if (found) {
-      artistId = found.id;
-    } else {
-      if (!artistName) {
-        return new DbError({
-          message: "アーティスト情報の取得に失敗しました。",
-        });
-      }
-      const created = await createArtistFromAppleMusic(tx, input.appleMusicId, artistName);
-      if (!created[0]) {
-        return new DbError({ message: "アーティストの作成に失敗しました。" });
-      }
-      artistId = created[0].id;
-    }
+  const outcome = await withRaceRetry({
+    attempt: () =>
+      withRls(db, session, async (tx, userId) => {
+        const resolved = await resolveArtistInTx(tx, input.appleMusicId, artistInput);
+        if (resolved === catalogEntityMissingInTx) return catalogEntityMissingInTx;
+        if (resolved instanceof Error) return resolved;
 
-    const rows = await addFavoriteArtist(tx, userId, artistId, {
-      comment: input.comment,
-      emoji: input.emoji,
-      color: input.color,
-    }).catch(toAddFavoriteArtistError);
-    if (rows instanceof Error) return rows;
-    if (rows.length === 0) return createDuplicateFavoriteArtistError();
+        const rows = await addFavoriteArtist(tx, userId, resolved.artistId, {
+          comment: input.comment,
+          emoji: input.emoji,
+          color: input.color,
+        }).catch(toAddFavoriteArtistError);
+        if (rows instanceof Error) return rows;
+        if (rows.length === 0) return createDuplicateFavoriteArtistError();
 
-    return rows[0] ?? null;
+        return rows[0] ?? null;
+      }),
+    // createArtistFromAppleMusic は onConflictDoUpdate(deletedAt: null) の冪等 upsert なので再実行時は解決する
+    recover: async () => {
+      const prepared = await prepareArtistInput();
+      if (prepared instanceof Error) return prepared;
+      artistInput = prepared;
+    },
+    fallbackErrorMessage: "アーティスト情報の取得に失敗しました。",
   });
+
+  if (!outcome.recovered) return outcome.error;
+  const result = outcome.value;
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;

@@ -290,10 +290,20 @@ describe("favorite artists usecase", () => {
       expect(mocks.withRls).not.toHaveBeenCalled();
     });
 
-    it("returns a defensive 500 when the artist disappears between the pre-check and the transaction", async () => {
+    it("detects a soft-delete race between existence check and transaction, retries once, and succeeds", async () => {
       // 事前チェックでは存在確認できたが、tx 内では見つからない（soft-delete レース）
       mocks.artistExistsByAppleMusicId.mockResolvedValue(true);
       mocks.findArtistByAppleMusicId.mockResolvedValue(null);
+      mocks.fetchArtist.mockResolvedValue({
+        id: "apple-music-artist-id",
+        attributes: { name: "Race Artist" },
+      });
+      mocks.createArtistFromAppleMusic.mockResolvedValue([
+        { id: "created-artist-id", name: "Race Artist", appleMusicId: "apple-music-artist-id" },
+      ]);
+      mocks.addFavoriteArtist.mockResolvedValue([
+        { ...favoriteRow, artistId: "created-artist-id" },
+      ]);
 
       const result = await registerFavoriteArtist(
         session,
@@ -306,12 +316,33 @@ describe("favorite artists usecase", () => {
         db,
       );
 
-      expect(result).toBeInstanceOf(DbError);
-      expect(result).toMatchObject({
-        message: "アーティスト情報の取得に失敗しました。",
-        statusCode: 500,
+      expect(result).toEqual({ favorite: { ...favoriteRow, artistId: "created-artist-id" } });
+      expect(mocks.withRls).toHaveBeenCalledTimes(2);
+      expect(mocks.fetchArtist).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns fetchArtist errors from the retry path without a second transaction", async () => {
+      mocks.artistExistsByAppleMusicId.mockResolvedValue(true);
+      mocks.findArtistByAppleMusicId.mockResolvedValue(null);
+      const apiError = new DbError({
+        message: "指定されたアーティストが見つかりません。",
+        statusCode: 404,
       });
-      expect(mocks.fetchArtist).not.toHaveBeenCalled();
+      mocks.fetchArtist.mockResolvedValue(apiError);
+
+      const result = await registerFavoriteArtist(
+        session,
+        {
+          appleMusicId: "apple-music-artist-id",
+          comment: null,
+          emoji: null,
+          color: null,
+        },
+        db,
+      );
+
+      expect(result).toBe(apiError);
+      expect(mocks.withRls).toHaveBeenCalledTimes(1);
     });
 
     it("wraps RLS failures as the favorite-artist registration error", async () => {

@@ -1,5 +1,7 @@
 import { fetchSong } from "./client";
 
+export type SongInput = Exclude<ReturnType<typeof toSongInput>, Error>;
+
 // Apple Music API レスポンスからDB挿入値を構築
 export const toSongInput = (apiResponse: Awaited<ReturnType<typeof fetchSong>>) => {
   if (apiResponse instanceof Error) return apiResponse;

@@ -5,11 +5,15 @@ import { toDbError } from "../../shared/db/postgres-error";
 import { withAnonymousRole, withRls } from "../../shared/db/rls";
 import type { Cursor } from "../../shared/pagination";
 import { buildPaginationMeta, normalizeLimit, trimItems } from "../../shared/pagination";
-import { fetchSong, toSongInput } from "../../shared/apple-music";
+import { fetchSong, toSongInput, type SongInput } from "../../shared/apple-music";
+import {
+  catalogEntityMissingInTx,
+  resolveSongInTx,
+  withRaceRetry,
+} from "../../shared/apple-music-catalog";
 import { domainDbError } from "../../shared/errors/domain-error";
 import { resolveUserId } from "../../shared/auth/resolve-user-id";
 import { songExistsByAppleMusicId } from "../songs/repository";
-import { resolveOrCreateSong, songMissingInTx } from "../songs/usecase";
 import {
   createPost,
   findPostByIdWithLikes,
@@ -90,41 +94,37 @@ export const registerPost = async (
     return toSongInput(apiResponse);
   };
 
-  let songInput: Exclude<ReturnType<typeof toSongInput>, Error> | null = null;
+  let songInput: SongInput | null = null;
   if (!songExists) {
     const prepared = await prepareSongInput();
     if (prepared instanceof Error) return prepared;
     songInput = prepared;
   }
 
-  // tx 本体をローカル関数化（リトライで再利用）
-  const runTransaction = () =>
-    withRls(db, session, async (tx, userId) => {
-      const resolved = await resolveOrCreateSong(tx, payload.appleMusicId, songInput);
-      if (resolved === songMissingInTx) return songMissingInTx;
-      if (resolved instanceof Error) return resolved;
+  const outcome = await withRaceRetry({
+    attempt: () =>
+      withRls(db, session, async (tx, userId) => {
+        const resolved = await resolveSongInTx(tx, payload.appleMusicId, songInput);
+        if (resolved === catalogEntityMissingInTx) return catalogEntityMissingInTx;
+        if (resolved instanceof Error) return resolved;
 
-      return createPost(tx, {
-        songId: resolved.songId,
-        userId,
-        content: payload.content,
-      } satisfies PostInsertDbModel);
-    });
+        return createPost(tx, {
+          songId: resolved.songId,
+          userId,
+          content: payload.content,
+        } satisfies PostInsertDbModel);
+      }),
+    // createSongFull は onConflictDoUpdate(deletedAt: null) の冪等 upsert なので再実行時は解決する
+    recover: async () => {
+      const prepared = await prepareSongInput();
+      if (prepared instanceof Error) return prepared;
+      songInput = prepared;
+    },
+    fallbackErrorMessage: "Failed to resolve song information.",
+  });
 
-  let result = await runTransaction();
-
-  // レース検知時: トランザクション外で fetch → 1 回だけ再実行
-  // createSongFull は onConflictDoUpdate(deletedAt: null) の冪等 upsert なので再実行時は解決する
-  if (result === songMissingInTx) {
-    const prepared = await prepareSongInput();
-    if (prepared instanceof Error) return prepared;
-    songInput = prepared;
-    result = await runTransaction();
-  }
-  if (result === songMissingInTx) {
-    // songInput を用意して再実行したため到達しない想定（型 narrowing のための防御的ガード）
-    return new DbError({ message: "Failed to resolve song information." });
-  }
+  if (!outcome.recovered) return outcome.error;
+  const result = outcome.value;
 
   if (result instanceof Error) {
     if (result instanceof DbError && result.statusCode !== 500) return result;
