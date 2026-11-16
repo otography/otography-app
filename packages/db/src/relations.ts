@@ -1,11 +1,20 @@
 import { defineRelations } from "drizzle-orm";
 import * as schema from "./schema/index.ts";
 
+// 削除・非表示ではない投稿だけを返す条件。投稿の一覧を返すリレーションには、既定でこの条件を付ける。
+const visiblePost = { deletedAt: { isNull: true }, hiddenAt: { isNull: true } } as const;
+
+// 次の表には、意図してリレーションを定義していない。
+// - postIpLogs：API の応答に絶対に含めないため。with で誤って読み出せないようにする
+// - reports：管理画面の API を作るときに定義する（通報者と通報されたユーザーはどちらも users を指すので alias が要る）
 export const relations = defineRelations(schema, (r) => ({
   users: {
     sessions: r.many.sessions(),
     accounts: r.many.accounts(),
-    posts: r.many.posts(),
+    // 削除・非表示ではない投稿。プロフィールなど、他人に見せる一覧で使う
+    posts: r.many.posts({ from: r.users.id, to: r.posts.userId, where: visiblePost }),
+    // 削除・非表示を含むすべての投稿。本人の履歴や管理画面など、条件を自分で決める場合だけ使う
+    allPosts: r.many.posts({ from: r.users.id, to: r.posts.userId }),
     likes: r.many.likes(),
     favoriteSongs: r.many.favoriteSongs(),
     favoriteArtists: r.many.favoriteArtists(),
@@ -17,7 +26,8 @@ export const relations = defineRelations(schema, (r) => ({
     user: r.one.users({ from: r.accounts.userId, to: r.users.id, optional: false }),
   },
   songs: {
-    posts: r.many.posts(),
+    // 「曲で探す」で使う。削除・非表示の投稿は含めない
+    posts: r.many.posts({ from: r.songs.isrc, to: r.posts.songIsrc, where: visiblePost }),
   },
   favoriteSongs: {
     user: r.one.users({ from: r.favoriteSongs.userId, to: r.users.id, optional: false }),
