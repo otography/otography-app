@@ -1,5 +1,5 @@
 import { createClient } from "@libsql/client";
-import { eq, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeAll, describe, expect, test } from "vite-plus/test";
@@ -93,6 +93,37 @@ describe("schema", () => {
     // JSON の中に入る経路（codec の hex 変換）でもベクトルに戻る
     expect(user?.posts[0]?.embedding?.embedding.slice(0, 7)).toEqual(vector(0).slice(0, 7));
     expect(user?.posts[2]?.embedding).toBeNull();
+  });
+
+  test("リレーションの posts は削除・非表示の投稿を返さず、allPosts は返す", async () => {
+    await db.insert(posts).values([
+      {
+        id: "deleted",
+        userId: "u1",
+        songIsrc: "JPAB01234567",
+        content: "x",
+        deletedAt: new Date(),
+      },
+      { id: "hidden", userId: "u1", songIsrc: "JPAB01234567", content: "y", hiddenAt: new Date() },
+    ]);
+    const ids = (rows: { id: string }[] | undefined) => rows?.map((p) => p.id).sort();
+
+    const user = await db.query.users.findFirst({
+      where: { id: "u1" },
+      columns: { id: true },
+      with: { posts: { columns: { id: true } }, allPosts: { columns: { id: true } } },
+    });
+    expect(ids(user?.posts)).toEqual(["post1", "post2", "post3"]);
+    expect(ids(user?.allPosts)).toEqual(["deleted", "hidden", "post1", "post2", "post3"]);
+
+    const song = await db.query.songs.findFirst({
+      where: { isrc: "JPAB01234567" },
+      columns: { isrc: true },
+      with: { posts: { columns: { id: true } } },
+    });
+    expect(ids(song?.posts)).toEqual(["post1", "post2", "post3"]);
+
+    await db.delete(posts).where(inArray(posts.id, ["deleted", "hidden"]));
   });
 
   test("投稿を消すと埋め込みも消える", async () => {

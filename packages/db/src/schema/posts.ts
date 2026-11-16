@@ -6,6 +6,7 @@ import { createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
 import { songs } from "./music.ts";
 
 // 一覧系のクエリは必ず「deleted_at IS NULL AND hidden_at IS NULL」を条件に入れる。
+// リレーション（users.posts、songs.posts）には、この条件が既定で付いている（relations.ts）。
 
 export const posts = snakeCase.table(
   "posts",
