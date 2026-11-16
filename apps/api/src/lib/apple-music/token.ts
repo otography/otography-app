@@ -1,6 +1,6 @@
-import * as errore from "errore";
 import * as jose from "jose";
-import { requireEnv } from "../../lib/env.ts";
+import { requireEnv } from "../env.ts";
+import { DeveloperTokenError } from "./errors.ts";
 
 // 開発者トークンの作り方は docs/adr/0010-sign-apple-music-developer-token-in-worker.md を参照。
 const TOKEN_LIFETIME_SECONDS = 12 * 60 * 60;
@@ -10,12 +10,6 @@ const teamId = requireEnv("APPLE_TEAM_ID");
 const keyId = requireEnv("APPLE_KEY_ID");
 // ダッシュボードで 1 行にして登録した場合に備え、\\n を改行に戻す。
 const privateKeyPem = requireEnv("APPLE_MUSIC_PRIVATE_KEY").replaceAll("\\n", "\n");
-
-export class DeveloperTokenError extends errore.createTaggedError({
-  name: "DeveloperTokenError",
-  message:
-    "Apple Music の開発者トークンを作れませんでした。APPLE_TEAM_ID、APPLE_KEY_ID、APPLE_MUSIC_PRIVATE_KEY の値を確認してください",
-}) {}
 
 export type DeveloperToken = { token: string; expiresAt: number };
 

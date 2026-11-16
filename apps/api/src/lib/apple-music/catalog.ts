@@ -1,52 +1,16 @@
-import * as errore from "errore";
-import { z } from "zod";
+import {
+  AppleMusicRequestError,
+  AppleMusicRateLimitError,
+  AppleSongNotFoundError,
+  type FetchCatalogSongError,
+  SongWithoutIsrcError,
+} from "./errors.ts";
+import { catalogSongsResponse } from "./schemas.ts";
 
 // ストアフロントと言語は jp・日本語に固定する（設計ドキュメントの決定 25）。
 const API_BASE = "https://api.music.apple.com/v1";
 const STOREFRONT = "jp";
 const LANGUAGE = "ja";
-
-export class AppleMusicRequestError extends errore.createTaggedError({
-  name: "AppleMusicRequestError",
-  message: "Apple Music API へのリクエストが失敗しました（$path）",
-}) {}
-
-export class AppleMusicRateLimitError extends errore.createTaggedError({
-  name: "AppleMusicRateLimitError",
-  message:
-    "Apple Music API のリクエスト数の上限を超えました。しばらく待ってから、もう一度試してください",
-}) {}
-
-export class AppleSongNotFoundError extends errore.createTaggedError({
-  name: "AppleSongNotFoundError",
-  message: "Apple Music に曲 $songId が見つかりません。曲を検索し直してください",
-}) {}
-
-export class SongWithoutIsrcError extends errore.createTaggedError({
-  name: "SongWithoutIsrcError",
-  message: "曲 $songId には ISRC がないので選べません。別の曲を選んでください",
-}) {}
-
-// 使う属性だけを検証する。表示用の属性は、欠けていても保存できるように省略可にする。
-const catalogSongsResponse = z.object({
-  data: z.array(
-    z.object({
-      id: z.string(),
-      attributes: z.object({
-        name: z.string().optional(),
-        artistName: z.string().optional(),
-        albumName: z.string().optional(),
-        durationInMillis: z.number().optional(),
-        artwork: z.object({ url: z.string() }).optional(),
-        url: z.string().optional(),
-        isrc: z.string().optional(),
-      }),
-      relationships: z
-        .object({ artists: z.object({ data: z.array(z.object({ id: z.string() })) }) })
-        .optional(),
-    }),
-  ),
-});
 
 /** Apple Music のカタログから取得した曲。songs テーブルの列に合わせた形。 */
 export type CatalogSong = {
@@ -60,12 +24,6 @@ export type CatalogSong = {
   url: string | null;
   artistIds: string[];
 };
-
-export type FetchCatalogSongError =
-  | AppleMusicRequestError
-  | AppleMusicRateLimitError
-  | AppleSongNotFoundError
-  | SongWithoutIsrcError;
 
 /** Apple Music のカタログ ID で曲を 1 つ取得する。アーティストの ID も一緒に取る。 */
 export async function fetchCatalogSong({

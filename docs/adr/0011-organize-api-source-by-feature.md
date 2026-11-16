@@ -1,11 +1,12 @@
 # API のソースは、機能ごとのフォルダに分けて置く
 
-`apps/api/src` のファイルは、層（ルート、処理、スキーマ）ごとではなく、機能（認証、ユーザー、曲など）ごとのフォルダに分けて置く。どの機能にも属さないもの（環境変数の読み込み、DB への接続）は `lib/` に置く。`src/` の直下には、各機能のルートをつなぐ `index.ts` だけを置く。1 つの機能を変更するときに読み書きするファイルを、1 つのフォルダに集めるためである。
+`apps/api/src` のファイルは、層（ルート、処理、スキーマ）ごとではなく、機能（認証、ユーザー、曲など）ごとのフォルダに分けて置く。どの機能にも属さないもの（環境変数の読み込み、DB への接続、外部のサービスの API を呼ぶ処理）は `lib/` に置く。`src/` の直下には、各機能のルートをつなぐ `index.ts` だけを置く。1 つの機能を変更するときに読み書きするファイルを、1 つのフォルダに集めるためである。
 
 ## 前提
 
 - これから、投稿、お気に入り、プロフィール、通報、管理者の操作の API を追加する。
 - 1 つの機能は、ルート、処理（DB や外部の API を使うもの）、入出力のスキーマ、テストからなる。
+- 外部のサービスの API（Apple Music API など）を呼ぶ処理は、複数の機能が使う。たとえば、Apple Music API は、曲の取得とアーティストの取得の両方で使う。
 - 2026-11-17 の時点では、`src/` の直下に `auth.ts`、`db.ts`、`env.ts`、`songs.ts`、`index.ts` があり、セッションのミドルウェアは `middleware/`、`/api/me` のスキーマは `schemas/`、Apple Music の処理は `apple-music/` にあった。すべてのルートは `index.ts` に直接書いていた。
 
 ## 理由
@@ -28,6 +29,10 @@ src/
   lib/
     env.ts                  … requireEnv
     db.ts                   … Turso への接続
+    apple-music/
+      token.ts、catalog.ts  … Apple Music API の開発者トークンとカタログの取得
+      errors.ts             … Apple Music API のエラー
+      schemas.ts            … Apple Music API の応答のスキーマ
   auth/
     auth.ts                 … Better Auth のインスタンス
     session.ts              … sessionMiddleware、requireAuth
@@ -37,11 +42,17 @@ src/
   songs/
     routes.ts               … GET /api/music/token
     find-or-fetch.ts        … findOrFetchSong
-    apple-music/
-      token.ts、catalog.ts  … Apple Music API の開発者トークンとカタログの取得
+    errors.ts               … 曲の読み書きのエラー
 ```
 
-- 機能のフォルダには、必要に応じて `routes.ts`（ルート）、`schemas.ts`（入出力のスキーマ）、処理のファイルを置く。処理のファイルには、処理の内容を表す名前（`find-or-fetch.ts` など）を付ける。
+- 機能のフォルダには、必要に応じて次のファイルを置く。
+  - `routes.ts`：ルート
+  - `schemas.ts`：zod のスキーマ（API の入出力、外部の API の応答）
+  - `errors.ts`：`errore.createTaggedError` で定義したエラーと、関数が返すエラーの共用体型
+  - 処理のファイル：処理の内容を表す名前（`find-or-fetch.ts` など）を付ける。処理のファイルには、エラーの定義と zod のスキーマを書かない。
+- 処理のファイルからエラーの定義とスキーマを分けるのは、処理のファイルを読むときに処理の流れだけを読めるようにするためである。また、ルートがエラーの種類ごとに HTTP のステータスを決めるときや、テストがエラーの種類を確かめるときに、処理のファイルではなく `errors.ts` を読み込めば済むためでもある。
+- `lib/` の中のフォルダ（`lib/apple-music/` など）も、同じ規則でファイルを分ける。
+- 外部のサービスの API を呼ぶ処理を `lib/` に置くのは、特定の機能のフォルダに置くと、他の機能がその機能のフォルダから読み込むことになるからである。たとえば、アーティストの機能が `songs/` から Apple Music の処理を読み込むことになる。
 - テストは `apps/api/tests` の下に、`src` と同じフォルダ構成で置く（例：`tests/songs/find-or-fetch.test.ts`）。
 - `/api/auth/*` と `sessionMiddleware` は、すべてのルートの前に適用する必要があるので、`index.ts` に書く。
 

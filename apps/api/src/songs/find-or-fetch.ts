@@ -1,18 +1,8 @@
 import { songs } from "db";
-import * as errore from "errore";
-import type { CatalogSong, FetchCatalogSongError } from "./apple-music/catalog.ts";
+import type { CatalogSong } from "../lib/apple-music/catalog.ts";
+import type { FetchCatalogSongError } from "../lib/apple-music/errors.ts";
 import type { Database } from "../lib/db.ts";
-
-export class SongQueryError extends errore.createTaggedError({
-  name: "SongQueryError",
-  message: "曲 $isrc の読み書きに失敗しました",
-}) {}
-
-export class SongConflictError extends errore.createTaggedError({
-  name: "SongConflictError",
-  message:
-    "曲 $isrc（Apple の ID $appleSongId）を保存できませんでした。同じ Apple の ID が別の ISRC で保存されています",
-}) {}
+import { SongConflictError, SongQueryError } from "./errors.ts";
 
 const findSong = ({ db, isrc }: { db: Database; isrc: string }) =>
   db.query.songs
