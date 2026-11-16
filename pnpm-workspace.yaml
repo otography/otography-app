@@ -8,6 +8,9 @@ catalogMode: prefer
 catalog:
   "@hono/zod-validator": ^0.9.1
   "@libsql/client": ^0.18.0
+  "@stylexjs/eslint-plugin": ^0.19.2
+  "@stylexjs/stylex": ^0.19.2
+  "@stylexjs/unplugin": ^0.19.2
   "@types/node": ^24
   drizzle-kit: 1.0.0-rc.5
   drizzle-orm: 1.0.0-rc.5
