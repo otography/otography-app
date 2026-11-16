@@ -10,6 +10,7 @@ catalog:
   "@types/node": ^24
   drizzle-kit: 1.0.0-rc.5
   drizzle-orm: 1.0.0-rc.5
+  errore: ^0.14.1
   typescript: ^7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@1.6.0
   vite-plus: 1.6.0
