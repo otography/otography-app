@@ -35,6 +35,9 @@ export const songs = snakeCase.table(
   ],
 );
 
+/** songs の 1 行（SELECT の結果）。 */
+export type Song = typeof songs.$inferSelect;
+
 /** 誰かがお気に入りにしたアーティストだけを保存する。 */
 export const artists = snakeCase.table(
   "artists",

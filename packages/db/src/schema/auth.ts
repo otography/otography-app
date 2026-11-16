@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, snakeCase, text } from "drizzle-orm/sqlite-core";
-import { USER_BIO_MAX } from "../constants.ts";
+import { USER_BIO_MAX, USER_NAME_MAX } from "../constants.ts";
 
 // Better Auth のコアスキーマ。`auth generate --adapter drizzle --dialect sqlite`（auth@1.7.25）の
 // 出力に合わせている。列・型・NOT NULL・DEFAULT・外部キーは CLI の出力どおり。
@@ -17,7 +17,8 @@ export const users = snakeCase.table(
   "users",
   {
     id: text().primaryKey(), // 内部ID。API の応答や URL には出さない
-    name: text().notNull(), // 表示名。重複可。長さは API で検証する
+    // 表示名。重複可。length は drizzle-orm/zod が API の入力の検証に使う。DB では下の CHECK で守る。
+    name: text({ length: USER_NAME_MAX }).notNull(),
     email: text().notNull().unique(),
     emailVerified: integer({ mode: "boolean" }).default(false).notNull(),
     image: text(), // このサービスでは使わない
@@ -30,7 +31,7 @@ export const users = snakeCase.table(
     // user.additionalFields（このサービス独自）
     // publicId は required: true, input: false, defaultValue でサーバー側が生成する
     publicId: text().notNull().unique(), // URL 用のランダムな公開ID（/u/:publicId）
-    bio: text(),
+    bio: text({ length: USER_BIO_MAX }),
     suspendedAt: timestamp(), // 管理者による停止
     // 退会。立てた時点で name・bio・お気に入り・ログイン連携を消し、email を無効な値に置き換える。
     // 行そのものは 90 日後にバッチが物理削除し、CASCADE で投稿なども消える。
@@ -38,6 +39,10 @@ export const users = snakeCase.table(
   },
   (t) => [
     // このサービス独自
+    check(
+      "users_name_length",
+      sql`length(${t.name}) between 1 and ${sql.raw(String(USER_NAME_MAX))}`,
+    ),
     check(
       "users_bio_length",
       sql`${t.bio} is null or length(${t.bio}) <= ${sql.raw(String(USER_BIO_MAX))}`,
