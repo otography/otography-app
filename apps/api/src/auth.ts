@@ -5,6 +5,16 @@ import { accounts, sessions, users, verifications } from "db";
 import { db } from "./db.ts";
 import { requireEnv } from "./env.ts";
 
+/** Google が発行したトークンとその期限を NULL にする。 */
+const withoutOAuthTokens = <T extends object>(account: T) => ({
+  ...account,
+  accessToken: null,
+  refreshToken: null,
+  idToken: null,
+  accessTokenExpiresAt: null,
+  refreshTokenExpiresAt: null,
+});
+
 // 初期化の CPU 時間をリクエストごとに使わないよう、モジュールの最上位で 1 回だけ作る。
 // BETTER_AUTH_SECRET と BETTER_AUTH_URL は、Better Auth が process.env から読む。
 export const auth = betterAuth({
@@ -34,12 +44,22 @@ export const auth = betterAuth({
       deletedAt: { type: "date", required: false, input: false },
     },
   },
+  account: {
+    // Google のトークンは保存しない（databaseHooks.account を参照）。ログインのたびに account の行を更新する必要も無い。
+    updateAccountOnSignIn: false,
+  },
   session: {
     // セッションの確認のたびに DB を読まないよう、署名付きのクッキーに 5 分間保存する。
     // そのため、ログアウトや利用停止が他の端末に反映されるまで最大 5 分かかる。
     cookieCache: { enabled: true, maxAge: 5 * 60, strategy: "compact" },
   },
   databaseHooks: {
+    // ログインの後に Google の API を使わないので、Google が発行したトークンを DB に保存しない。
+    // DB の中身が漏れても、Google のアカウントに使えるトークンが含まれないようにする。
+    account: {
+      create: { before: async (account) => ({ data: withoutOAuthTokens(account) }) },
+      update: { before: async (account) => ({ data: withoutOAuthTokens(account) }) },
+    },
     session: {
       create: {
         // 利用停止中・退会済みのユーザーにはセッションを作らない（ログインを拒否する）。
