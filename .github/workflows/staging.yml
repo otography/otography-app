@@ -46,7 +46,7 @@ jobs:
         id: deploy
         run: |
           vp run api#deploy:staging 2>&1 | tee deploy.log
-          url=$(grep -o 'https://staging-[a-z0-9-]*\.workers\.dev' deploy.log | head -n 1)
+          url=$(grep -o 'https://staging-[a-z0-9.-]*\.workers\.dev' deploy.log | head -n 1)
           if [ -z "$url" ]; then
             echo "::error::staging の URL がデプロイの出力に見つかりません（デプロイが中断された可能性があります）"
             exit 1
