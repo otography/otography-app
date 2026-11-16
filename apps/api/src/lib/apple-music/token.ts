@@ -1,6 +1,7 @@
 import * as jose from "jose";
 import { requireEnv } from "../env.ts";
 import { DeveloperTokenError } from "./errors.ts";
+import { normalizePkcs8Pem } from "./private-key.ts";
 
 // 開発者トークンの作り方は docs/adr/0010-sign-apple-music-developer-token-in-worker.md を参照。
 const TOKEN_LIFETIME_SECONDS = 12 * 60 * 60;
@@ -8,8 +9,7 @@ const RENEW_BEFORE_SECONDS = 60 * 60;
 
 const teamId = requireEnv("APPLE_TEAM_ID");
 const keyId = requireEnv("APPLE_KEY_ID");
-// ダッシュボードで 1 行にして登録した場合に備え、\\n を改行に戻す。
-const privateKeyPem = requireEnv("APPLE_MUSIC_PRIVATE_KEY").replaceAll("\\n", "\n");
+const privateKeyPem = normalizePkcs8Pem(requireEnv("APPLE_MUSIC_PRIVATE_KEY"));
 
 export type DeveloperToken = { token: string; expiresAt: number };
 
