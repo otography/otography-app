@@ -5,7 +5,7 @@ import {
   AppleSongNotFoundError,
   SongWithoutIsrcError,
   fetchCatalogSong,
-} from "../src/apple-music/catalog.ts";
+} from "../../../src/songs/apple-music/catalog.ts";
 
 const songResponse = (attributes: Record<string, unknown>) => ({
   data: [

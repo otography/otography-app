@@ -17,7 +17,7 @@ const config = defineConfig({
   server: {
     proxy: {
       // Host ヘッダーを書き換えない（localhost:3000 のまま API に渡す）。
-      // API の Better Auth は、Host からアプリの URL を決めるため（apps/api/src/auth.ts の baseURL）。
+      // API の Better Auth は、Host からアプリの URL を決めるため（apps/api/src/auth/auth.ts の baseURL）。
       "/api": { target: "http://localhost:8787", changeOrigin: false },
     },
   },

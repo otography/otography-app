@@ -4,7 +4,7 @@ Better Auth の `session.cookieCache` を有効にし、保存する期間（`ma
 
 ## 前提
 
-- ログインが必要な API は、リクエストのたびにセッションを確かめる（`apps/api/src/middleware/session.ts` の `auth.api.getSession()`）。
+- ログインが必要な API は、リクエストのたびにセッションを確かめる（`apps/api/src/auth/session.ts` の `auth.api.getSession()`）。
 - クッキーキャッシュが無い場合、`getSession()` はリクエストのたびに DB の `sessions` テーブルを読む。DB（Turso）にはネットワークを通して接続する。
 - 設計ドキュメントは、セッションのクッキーキャッシュで DB の参照を減らすと定めている。
 
@@ -23,6 +23,6 @@ Better Auth の `session.cookieCache` を有効にし、保存する期間（`ma
 ## この決定による影響
 
 - ある端末でログアウトしても、ほかの端末では最大 5 分間ログインしたままになる。セッションを取り消した場合も同じである。
-- 利用停止にしたユーザーも、最大 5 分間は API を使える。セッションのミドルウェアは `suspendedAt` を確かめるが、クッキーキャッシュの間は、キャッシュした時点の値を見るからである。ただし、利用停止にした後の新しいログインは、セッションを作る前に DB を確かめるので、すぐに拒否される（`apps/api/src/auth.ts` の `databaseHooks.session.create.before`）。
+- 利用停止にしたユーザーも、最大 5 分間は API を使える。セッションのミドルウェアは `suspendedAt` を確かめるが、クッキーキャッシュの間は、キャッシュした時点の値を見るからである。ただし、利用停止にした後の新しいログインは、セッションを作る前に DB を確かめるので、すぐに拒否される（`apps/api/src/auth/auth.ts` の `databaseHooks.session.create.before`）。
 - 5 分の遅れを許せない処理（退会など）では、`getSession()` に `disableCookieCache: true` を指定して、DB を読む。
 - この 5 分の遅れは、Better Auth のドキュメントの記載から導いたものであり、実際に確かめてはいない（2026-11-16 時点）。

@@ -23,7 +23,7 @@ Better Auth の `baseURL` には固定の URL ではなく `allowedHosts` を指
 
 ## 実装
 
-- `apps/api/src/auth.ts`
+- `apps/api/src/auth/auth.ts`
   - `baseURL`：`allowedHosts` は `app.otography.workers.dev`、`*-app.otography.workers.dev`、`localhost:3000`。`fallback` は本番の URL。
   - `plugins`：`OAUTH_PROXY_SECRET` が設定された環境（本番と Preview）だけで `oAuthProxy` を有効にする。ローカルでは設定しないので、ローカルは自分のリダイレクト URI（`http://localhost:3000/api/auth/callback/google`）で直接ログインする。ローカルのログインを本番に頼らないためである。
 - `apps/website/vite.config.ts`：開発サーバーのプロキシで `changeOrigin: false` を指定する。Vite のプロキシを文字列で書くと `Host` ヘッダーが `localhost:8787` に書き換わり、ローカルなのに本番の URL が使われたからである（2026-11-17 に確認）。

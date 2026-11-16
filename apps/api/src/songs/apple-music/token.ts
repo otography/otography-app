@@ -1,6 +1,6 @@
 import * as errore from "errore";
 import * as jose from "jose";
-import { requireEnv } from "../env.ts";
+import { requireEnv } from "../../lib/env.ts";
 
 // 開発者トークンの作り方は docs/adr/0010-sign-apple-music-developer-token-in-worker.md を参照。
 const TOKEN_LIFETIME_SECONDS = 12 * 60 * 60;

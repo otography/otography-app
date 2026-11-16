@@ -3,8 +3,8 @@ import { betterAuth } from "better-auth";
 import { generateRandomString } from "better-auth/crypto";
 import { oAuthProxy } from "better-auth/plugins";
 import { accounts, sessions, users, verifications } from "db";
-import { db } from "./db.ts";
-import { requireEnv } from "./env.ts";
+import { db } from "../lib/db.ts";
+import { requireEnv } from "../lib/env.ts";
 
 const PRODUCTION_HOST = "app.otography.workers.dev";
 const PRODUCTION_URL = `https://${PRODUCTION_HOST}`;
