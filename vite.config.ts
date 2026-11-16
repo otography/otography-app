@@ -5,8 +5,9 @@ export default defineConfig({
     "*": "vp check --fix",
   },
   fmt: {
-    // drizzle-kit が生成するスナップショットは整形しない
-    ignorePatterns: ["**/migrations/**/snapshot.json"],
+    // ツールが生成するファイルは整形しない。
+    // routeTree.gen.ts は開発サーバーが起動中に書き直すので、整形すると差分が出続ける。
+    ignorePatterns: ["**/migrations/**/snapshot.json", "**/routeTree.gen.ts"],
   },
   // run.cache は設定せず、Vite+ の既定（package.json のスクリプトはキャッシュしない）にしている。
   // db:migrate や deploy のようにデータベースや外部のサービスを変更するスクリプトがキャッシュされると、
