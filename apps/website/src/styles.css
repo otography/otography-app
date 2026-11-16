@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* StyleX はビルド時に、このファイル（アプリのルートで読み込む CSS）の末尾に、集めたスタイルを追記する。 */
 
 * {
   box-sizing: border-box;
@@ -12,4 +12,5 @@ body,
 
 body {
   margin: 0;
+  font-family: system-ui, sans-serif;
 }
