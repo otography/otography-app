@@ -31,6 +31,8 @@ jobs:
           node-version: "24"
           cache: true
 
+      # Workers の型（.cloudflare/types）は Git に入れていないので、vp check の前に生成する。
+      - run: vp run api#typecheck
       - run: vp check
       - run: vp test
 
