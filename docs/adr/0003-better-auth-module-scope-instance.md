@@ -34,3 +34,6 @@
 - `cloudflare.config.ts` で `bindings.secret()` を 1 つでも宣言すると、宣言していない `.env` の値は Worker に渡らない（2026-11-16 のローカル検証で、宣言していなかった `BETTER_AUTH_URL` が渡らなかった）。環境変数を追加するときは、`cloudflare.config.ts` にも宣言する。
 - Better Auth の CLI（`auth check schema` など）は、`apps/api/src/auth/auth.ts` をそのまま読める。CLI は Node で動くので、`process.env` から値を読む書き方であれば、Workers 専用のモジュールを読み込まずに済むからである。
 - インスタンスを作る処理の CPU 時間は、デプロイした後に測る。10ms に収まらない場合は、この決定を見直す。
+  - 2026-11-17 に Workers Logs で計測したところ、新しい isolate での最初の `/api/me` の CPU 時間は 13〜26 ミリ秒で、同じ isolate での 2 回目以降は 1〜5 ミリ秒だった。最初のリクエストは 10 ミリ秒を超えたが、エラーにならなかった。Cloudflare のドキュメント（https://developers.cloudflare.com/workers/platform/limits/#cpu-time ）によると、isolate ごとに、上限をたまに超える程度は許容され、上限を超え続けた場合に終了させられる。最初のリクエストだけが上限を超える状態は、これにあたらないので、この決定は変えない。
+  - `cf workers check` でローカルの起動時の CPU プロファイルを取ると、時間の多くはスクリプトの解析と、Drizzle のリレーションの定義の処理（`processRelations`、`toSnakeCase` など）だった。
+- `betterAuth` は `better-auth/minimal` から読み込む。Better Auth のインストールの説明が、Drizzle などのアダプターを使う場合に推奨している読み込み方であり、使わない Kysely のアダプターがバンドルに入らない。2026-11-17 の計測では、バンドルは 2.67 MB から 2.11 MB（gzip 後は 561 KB から 462 KB）に減った。ローカルでの起動時の CPU 時間（5 回の中央値）は、どちらも約 47 ミリ秒で、変わらなかった。
