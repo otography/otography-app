@@ -1,9 +1,13 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { betterAuth } from "better-auth";
 import { generateRandomString } from "better-auth/crypto";
+import { oAuthProxy } from "better-auth/plugins";
 import { accounts, sessions, users, verifications } from "db";
 import { db } from "./db.ts";
 import { requireEnv } from "./env.ts";
+
+const PRODUCTION_HOST = "app.otography.workers.dev";
+const PRODUCTION_URL = `https://${PRODUCTION_HOST}`;
 
 /** Google が発行したトークンとその期限を NULL にする。 */
 const withoutOAuthTokens = <T extends object>(account: T) => ({
@@ -16,8 +20,20 @@ const withoutOAuthTokens = <T extends object>(account: T) => ({
 });
 
 // 初期化の CPU 時間をリクエストごとに使わないよう、モジュールの最上位で 1 回だけ作る。
-// BETTER_AUTH_SECRET と BETTER_AUTH_URL は、Better Auth が process.env から読む。
+// BETTER_AUTH_SECRET は、Better Auth が process.env から読む。
 export const auth = betterAuth({
+  // アプリの URL は、リクエストのホスト名から決める。ホスト名が allowedHosts に無ければ fallback を使う。
+  // 本番（app）、Preview（<Preview 名>-app）、ローカル（Vite の開発サーバー）の URL がそれぞれ違うため。
+  baseURL: {
+    allowedHosts: [PRODUCTION_HOST, "*-app.otography.workers.dev", "localhost:3000"],
+    fallback: PRODUCTION_URL,
+  },
+  // Preview の URL は Preview ごとに変わるが、Google にはリダイレクト URI を完全一致で登録する必要がある。
+  // そこで Preview のログインは本番を経由させ、Google には本番の URI だけを登録する（ADR 0008）。
+  // OAUTH_PROXY_SECRET を設定した環境（本番と Preview）だけで有効にする。ローカルは自分の URI で直接ログインする。
+  plugins: process.env.OAUTH_PROXY_SECRET
+    ? [oAuthProxy({ productionURL: PRODUCTION_URL, secret: process.env.OAUTH_PROXY_SECRET })]
+    : [],
   database: drizzleAdapter(db, {
     provider: "sqlite",
     usePlural: true,
