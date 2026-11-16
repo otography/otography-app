@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { requireAuth, type SessionEnv } from "../auth/session.ts";
-import { getDeveloperToken } from "./apple-music/token.ts";
+import { getDeveloperToken } from "../lib/apple-music/token.ts";
 
 export const musicRoutes = new Hono<SessionEnv>()
   // MusicKit JS（ブラウザでの曲の検索と試聴）に渡す開発者トークン。リクエストのオリジンでだけ使える。

@@ -3,11 +3,11 @@ import { relations } from "db";
 import { drizzle } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, test } from "vite-plus/test";
+import type { CatalogSong } from "../../src/lib/apple-music/catalog.ts";
 import {
   AppleSongNotFoundError,
-  type CatalogSong,
   type FetchCatalogSongError,
-} from "../../src/songs/apple-music/catalog.ts";
+} from "../../src/lib/apple-music/errors.ts";
 import type { Database } from "../../src/lib/db.ts";
 import { findOrFetchSong } from "../../src/songs/find-or-fetch.ts";
 

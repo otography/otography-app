@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vite-plus/test";
+import { fetchCatalogSong } from "../../../src/lib/apple-music/catalog.ts";
 import {
   AppleMusicRateLimitError,
   AppleMusicRequestError,
   AppleSongNotFoundError,
   SongWithoutIsrcError,
-  fetchCatalogSong,
-} from "../../../src/songs/apple-music/catalog.ts";
+} from "../../../src/lib/apple-music/errors.ts";
 
 const songResponse = (attributes: Record<string, unknown>) => ({
   data: [
