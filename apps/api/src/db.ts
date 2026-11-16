@@ -12,3 +12,5 @@ export const db = drizzle({
   }),
   relations,
 });
+
+export type Database = typeof db;

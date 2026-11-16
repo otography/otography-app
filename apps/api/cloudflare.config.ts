@@ -28,6 +28,10 @@ export default defineConfig(() => ({
       TURSO_AUTH_TOKEN: bindings.secret(),
       // 本番と Preview で同じ値にする。ローカルでは設定しない（apps/api/src/auth.ts の plugins を参照）
       OAUTH_PROXY_SECRET: bindings.secret(),
+      // Apple Music API の開発者トークンを署名する鍵（Media Services を有効にした鍵）
+      APPLE_TEAM_ID: bindings.secret(),
+      APPLE_KEY_ID: bindings.secret(),
+      APPLE_MUSIC_PRIVATE_KEY: bindings.secret(),
     },
   },
 }));
