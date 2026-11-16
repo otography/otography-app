@@ -15,7 +15,7 @@ Google でログインしたときに Google が発行するトークン（ア�
 
 ## 実装
 
-- `apps/api/src/auth.ts` の `databaseHooks.account.create.before` と `databaseHooks.account.update.before` で、トークンと有効期限を NULL にしたデータを返す。Better Auth は、`before` が返したデータを元のデータの代わりに保存する。
+- `apps/api/src/auth/auth.ts` の `databaseHooks.account.create.before` と `databaseHooks.account.update.before` で、トークンと有効期限を NULL にしたデータを返す。Better Auth は、`before` が返したデータを元のデータの代わりに保存する。
 - `account.updateAccountOnSignIn` を `false` にする。初期設定では、Better Auth はログインのたびに `accounts` の行を Google から受け取った最新のトークンで更新する。トークンを保存しないので、この更新は要らない。
 
 ## 検討した他の案

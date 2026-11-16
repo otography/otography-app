@@ -31,10 +31,10 @@ Apple Music API の開発者トークンは、署名済みのトークンをシ�
 
 ## 実装
 
-- `apps/api/src/apple-music/token.ts`
+- `apps/api/src/songs/apple-music/token.ts`
   - `getDeveloperToken({ origin })`：`origin` が `null` なら Worker 用、文字列ならブラウザ用のトークンを返す。キャッシュのキーは `origin` である。
   - 秘密鍵は、最初に使うときに 1 回だけ読み込む。
-- `apps/api/src/index.ts`：`GET /api/music/token`（ログインが必要）は、リクエストの URL のオリジンを `origin` にしたトークンを返す。応答はキャッシュさせない（`Cache-Control: private, no-store`）。
+- `apps/api/src/songs/routes.ts`：`GET /api/music/token`（ログインが必要）は、リクエストの URL のオリジンを `origin` にしたトークンを返す。応答はキャッシュさせない（`Cache-Control: private, no-store`）。
 - シークレット：`APPLE_TEAM_ID`、`APPLE_KEY_ID`、`APPLE_MUSIC_PRIVATE_KEY`（Media Services を有効にした鍵の `.p8` の中身）。
 
 ## 検討した他の案

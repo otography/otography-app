@@ -7,9 +7,9 @@ import {
   AppleSongNotFoundError,
   type CatalogSong,
   type FetchCatalogSongError,
-} from "../src/apple-music/catalog.ts";
-import type { Database } from "../src/db.ts";
-import { findOrFetchSong } from "../src/songs.ts";
+} from "../../src/songs/apple-music/catalog.ts";
+import type { Database } from "../../src/lib/db.ts";
+import { findOrFetchSong } from "../../src/songs/find-or-fetch.ts";
 
 const catalogSong = (overrides: Partial<CatalogSong> = {}): CatalogSong => ({
   isrc: "JPAB01234567",
@@ -39,7 +39,7 @@ beforeEach(async () => {
   const client = createClient({ url: ":memory:" });
   const local = drizzle({ client, relations });
   await migrate(local, {
-    migrationsFolder: new URL("../../../packages/db/migrations", import.meta.url).pathname,
+    migrationsFolder: new URL("../../../../packages/db/migrations", import.meta.url).pathname,
   });
   db = local as unknown as Database;
 });

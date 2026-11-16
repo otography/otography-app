@@ -1,6 +1,6 @@
 # Better Auth のインスタンスを、リクエストごとではなくモジュールの最上位で 1 回だけ作る
 
-`apps/api/src/auth.ts` は、Better Auth のインスタンス（`betterAuth()` の戻り値）をモジュールの最上位で 1 回だけ作り、同じ isolate が受けるすべてのリクエストで使い回す。インスタンスが使う環境変数とシークレットは、Hono の `c.env` からではなく `process.env` から読む。この形を選んだ理由は 2 つある。1 つ目は、リクエストごとに作ると、インスタンスを作る処理の CPU 時間をすべてのリクエストで使うことである。2 つ目は、Better Auth の公式の Cloudflare ガイドがこの形を示していることである。
+`apps/api/src/auth/auth.ts` は、Better Auth のインスタンス（`betterAuth()` の戻り値）をモジュールの最上位で 1 回だけ作り、同じ isolate が受けるすべてのリクエストで使い回す。インスタンスが使う環境変数とシークレットは、Hono の `c.env` からではなく `process.env` から読む。この形を選んだ理由は 2 つある。1 つ目は、リクエストごとに作ると、インスタンスを作る処理の CPU 時間をすべてのリクエストで使うことである。2 つ目は、Better Auth の公式の Cloudflare ガイドがこの形を示していることである。
 
 ## 前提
 
@@ -30,7 +30,7 @@
 ## この決定による影響
 
 - Cloudflare のドキュメント（https://developers.cloudflare.com/workers/runtime-apis/bindings/ ）によると、コードを変えずにバインディング（シークレットを含む）だけを変えてデプロイした場合、Cloudflare は動いている isolate を使い続けることがある。その場合、古いシークレットで作ったインスタンスが残る。そのため、シークレットを変えた後は、コードを含めてデプロイし直す。
-- API のコードは、環境変数とシークレットを `process.env` から読む（`apps/api/src/env.ts` の `requireEnv`）。
+- API のコードは、環境変数とシークレットを `process.env` から読む（`apps/api/src/lib/env.ts` の `requireEnv`）。
 - `cloudflare.config.ts` で `bindings.secret()` を 1 つでも宣言すると、宣言していない `.env` の値は Worker に渡らない（2026-11-16 のローカル検証で、宣言していなかった `BETTER_AUTH_URL` が渡らなかった）。環境変数を追加するときは、`cloudflare.config.ts` にも宣言する。
-- Better Auth の CLI（`auth check schema` など）は、`apps/api/src/auth.ts` をそのまま読める。CLI は Node で動くので、`process.env` から値を読む書き方であれば、Workers 専用のモジュールを読み込まずに済むからである。
+- Better Auth の CLI（`auth check schema` など）は、`apps/api/src/auth/auth.ts` をそのまま読める。CLI は Node で動くので、`process.env` から値を読む書き方であれば、Workers 専用のモジュールを読み込まずに済むからである。
 - インスタンスを作る処理の CPU 時間は、デプロイした後に測る。10ms に収まらない場合は、この決定を見直す。

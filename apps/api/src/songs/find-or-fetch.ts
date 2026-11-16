@@ -1,7 +1,7 @@
 import { songs } from "db";
 import * as errore from "errore";
 import type { CatalogSong, FetchCatalogSongError } from "./apple-music/catalog.ts";
-import type { Database } from "./db.ts";
+import type { Database } from "../lib/db.ts";
 
 export class SongQueryError extends errore.createTaggedError({
   name: "SongQueryError",

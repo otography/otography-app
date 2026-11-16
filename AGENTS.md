@@ -35,4 +35,4 @@ release. Add a tool name to select part of the graph. For example, run
 - TypeScript のエラー処理は [errore](https://errore.org) の方式に従う。想定される失敗は例外として投げず、`Error | T` の値として返し、呼び出し側は `instanceof Error` で分岐する。
 - `import * as errore from "errore"` で読み込み、ドメインのエラーは `errore.createTaggedError` で定義する。
 - 例外を投げるライブラリ（`fetch`、Drizzle、`jose` など）を呼ぶ箇所では、`.catch((e) => new XxxError({ cause: e }))` か `errore.try` で値に変換する。
-- 例外として残すのは、起動時の設定不備（`apps/api/src/env.ts` の `requireEnv`）だけである。理由は docs/adr/0009-errors-as-values-with-errore.md に書いた。
+- 例外として残すのは、起動時の設定不備（`apps/api/src/lib/env.ts` の `requireEnv`）だけである。理由は docs/adr/0009-errors-as-values-with-errore.md に書いた。
