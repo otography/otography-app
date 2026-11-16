@@ -9,7 +9,7 @@ import {
   type FetchCatalogSongError,
 } from "../../src/lib/apple-music/errors.ts";
 import type { Database } from "../../src/lib/db.ts";
-import { findOrFetchSong } from "../../src/songs/find-or-fetch.ts";
+import { getOrCreateSong } from "../../src/songs/repository.ts";
 
 const catalogSong = (overrides: Partial<CatalogSong> = {}): CatalogSong => ({
   isrc: "JPAB01234567",
@@ -44,11 +44,11 @@ beforeEach(async () => {
   db = local as unknown as Database;
 });
 
-describe("findOrFetchSong", () => {
+describe("getOrCreateSong", () => {
   test("未保存の曲は Apple から取得し、Apple が返した ISRC で保存する", async () => {
     const { calls, fetchSong } = fakeFetchSong(catalogSong({ isrc: "JPAB09999999" }));
 
-    const song = await findOrFetchSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
+    const song = await getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
 
     expect(calls).toEqual(["100"]);
     if (song instanceof Error) throw song;
@@ -60,7 +60,7 @@ describe("findOrFetchSong", () => {
   });
 
   test("保存済みの曲は Apple を呼ばずに返す（ISRC の大文字・小文字は区別しない）", async () => {
-    await findOrFetchSong({
+    await getOrCreateSong({
       db,
       songId: "100",
       isrc: "JPAB01234567",
@@ -68,7 +68,7 @@ describe("findOrFetchSong", () => {
     });
     const { calls, fetchSong } = fakeFetchSong(new AppleSongNotFoundError({ songId: "200" }));
 
-    const song = await findOrFetchSong({ db, songId: "200", isrc: "jpab01234567", fetchSong });
+    const song = await getOrCreateSong({ db, songId: "200", isrc: "jpab01234567", fetchSong });
 
     expect(calls).toEqual([]);
     if (song instanceof Error) throw song;
@@ -78,7 +78,7 @@ describe("findOrFetchSong", () => {
   test("Apple から取得できないときは、そのエラーを返して何も保存しない", async () => {
     const { fetchSong } = fakeFetchSong(new AppleSongNotFoundError({ songId: "100" }));
 
-    const song = await findOrFetchSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
+    const song = await getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
 
     expect(song).toBeInstanceOf(AppleSongNotFoundError);
     expect(await db.query.songs.findMany()).toEqual([]);
@@ -86,8 +86,8 @@ describe("findOrFetchSong", () => {
 
   test("同じ曲が同時に保存されても、保存済みの行を返す", async () => {
     const results = await Promise.all([
-      findOrFetchSong({ db, songId: "100", isrc: "JPAB01234567", ...fakeFetchSong(catalogSong()) }),
-      findOrFetchSong({ db, songId: "100", isrc: "JPAB01234567", ...fakeFetchSong(catalogSong()) }),
+      getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", ...fakeFetchSong(catalogSong()) }),
+      getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", ...fakeFetchSong(catalogSong()) }),
     ]);
 
     for (const song of results) {
