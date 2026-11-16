@@ -1,4 +1,4 @@
-import { favoriteSongs, users } from "db";
+import { favoriteArtists, favoriteSongs, users } from "db";
 import { eq } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { UserQueryError } from "./errors.ts";
@@ -67,6 +67,26 @@ export const replaceFavoriteSongs = ({
     ? db.batch([
         remove,
         db.insert(favoriteSongs).values(items.map((item) => ({ ...item, userId }))),
+      ])
+    : db.batch([remove]);
+  return result.then(() => null).catch((e) => new UserQueryError({ cause: e }));
+};
+
+/** お気に入りのアーティストを一覧ごと置き換える。曲と同じく、削除と追加を 1 つの batch で行う。 */
+export const replaceFavoriteArtists = ({
+  db,
+  userId,
+  items,
+}: {
+  db: Database;
+  userId: string;
+  items: Omit<typeof favoriteArtists.$inferInsert, "userId">[];
+}) => {
+  const remove = db.delete(favoriteArtists).where(eq(favoriteArtists.userId, userId));
+  const result = items.length
+    ? db.batch([
+        remove,
+        db.insert(favoriteArtists).values(items.map((item) => ({ ...item, userId }))),
       ])
     : db.batch([remove]);
   return result.then(() => null).catch((e) => new UserQueryError({ cause: e }));

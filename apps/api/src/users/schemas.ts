@@ -1,4 +1,4 @@
-import { FAVORITE_LIMIT, favoriteArtists, favoriteSongs, songs, users } from "db";
+import { FAVORITE_LIMIT, artists, favoriteArtists, favoriteSongs, songs, users } from "db";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
 import { artistOutput } from "../artists/schemas.ts";
@@ -36,6 +36,23 @@ const favoriteSongInsert = createInsertSchema(favoriteSongs, {
   emoji: (schema) => schema.refine(isSingleEmoji, "絵文字は 1 つだけ選べます"),
 });
 const songInsert = createInsertSchema(songs);
+
+const favoriteArtistInsert = createInsertSchema(favoriteArtists, {
+  comment: (schema) => schema.trim().transform((value) => value || null),
+  emoji: (schema) => schema.refine(isSingleEmoji, "絵文字は 1 つだけ選べます"),
+});
+const artistInsert = createInsertSchema(artists);
+
+/** PUT /api/me/favorite-artists の入力。配列の順がそのまま並び順になる。 */
+export const replaceFavoriteArtistsInput = z.object({
+  items: z
+    .array(
+      favoriteArtistInsert
+        .pick({ comment: true, emoji: true, color: true })
+        .extend({ artistId: artistInsert.shape.id }),
+    )
+    .max(FAVORITE_LIMIT),
+});
 
 /** PUT /api/me/favorite-songs の入力。配列の順がそのまま並び順になる。 */
 export const replaceFavoriteSongsInput = z.object({

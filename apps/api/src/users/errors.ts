@@ -20,6 +20,11 @@ export class ProfileOutputError extends errore.createTaggedError({
   message: "ユーザー $publicId のプロフィールを応答の形に変換できませんでした",
 }) {}
 
+export class DuplicateFavoriteArtistError extends errore.createTaggedError({
+  name: "DuplicateFavoriteArtistError",
+  message: "同じアーティスト（$artistId）が 2 回選ばれています。重複を外してください",
+}) {}
+
 export class DuplicateFavoriteSongError extends errore.createTaggedError({
   name: "DuplicateFavoriteSongError",
   message: "同じ曲（ISRC $isrc）が 2 回選ばれています。重複を外してください",
