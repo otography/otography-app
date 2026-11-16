@@ -139,6 +139,15 @@ CREATE TABLE `likes` (
 	CONSTRAINT `fk_likes_post_id_posts_id_fk` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE
 );
 --> statement-breakpoint
+CREATE TABLE `post_embeddings` (
+	`post_id` text PRIMARY KEY,
+	`embedding` F16_BLOB(2048) NOT NULL,
+	`model` text NOT NULL,
+	`created_at` integer NOT NULL,
+	`updated_at` integer NOT NULL,
+	CONSTRAINT `fk_post_embeddings_post_id_posts_id_fk` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE
+);
+--> statement-breakpoint
 CREATE TABLE `posts` (
 	`id` text PRIMARY KEY,
 	`user_id` text NOT NULL,
@@ -146,8 +155,6 @@ CREATE TABLE `posts` (
 	`content` text NOT NULL,
 	`like_count` integer DEFAULT 0 NOT NULL,
 	`impression_count` integer DEFAULT 0 NOT NULL,
-	`embedding` F16_BLOB(2048),
-	`embedding_model` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	`deleted_at` integer,
@@ -171,7 +178,8 @@ CREATE INDEX `reports_reporter_idx` ON `reports` (`reporter_id`);--> statement-b
 CREATE INDEX `artists_fetched_at_idx` ON `artists` (`fetched_at`);--> statement-breakpoint
 CREATE INDEX `songs_fetched_at_idx` ON `songs` (`fetched_at`);--> statement-breakpoint
 CREATE INDEX `likes_post_idx` ON `likes` (`post_id`);--> statement-breakpoint
+CREATE INDEX `post_embeddings_vector_idx` ON `post_embeddings` (libsql_vector_idx("embedding", 'metric=cosine', 'compress_neighbors=float1bit', 'max_neighbors=32'));--> statement-breakpoint
+CREATE INDEX `post_embeddings_model_idx` ON `post_embeddings` (`model`);--> statement-breakpoint
 CREATE INDEX `posts_song_created_idx` ON `posts` (`song_isrc`,`created_at`);--> statement-breakpoint
 CREATE INDEX `posts_user_created_idx` ON `posts` (`user_id`,`created_at`);--> statement-breakpoint
-CREATE INDEX `posts_deleted_at_idx` ON `posts` (`deleted_at`);--> statement-breakpoint
-CREATE INDEX `posts_embedding_idx` ON `posts` (libsql_vector_idx("embedding", 'metric=cosine', 'compress_neighbors=float1bit', 'max_neighbors=32')) WHERE "posts"."embedding" is not null;
+CREATE INDEX `posts_deleted_at_idx` ON `posts` (`deleted_at`);

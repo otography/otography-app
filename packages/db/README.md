@@ -18,6 +18,10 @@ vp run db#db:check                      # マイグレーションの整合性�
 vp test                                 # メモリ上の libSQL にマイグレーションを当ててテスト
 ```
 
+## ベクトル検索
+
+投稿の埋め込みは `posts` ではなく `post_embeddings`（1 対 1）に置く。`vector_top_k('post_embeddings_vector_idx', …)` が返す id は `post_embeddings` の rowid なので、`post_embeddings.rowid` で結合してから `posts` に結合する。
+
 ## 認証テーブル（Better Auth）
 
 `src/schema/auth.ts` は `auth generate` の出力を土台に、書き方を `snakeCase.table()` に揃え、独自のインデックスと CHECK 制約を足したもの。
