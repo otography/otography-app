@@ -2,12 +2,17 @@ import { zValidator } from "@hono/zod-validator";
 import * as errore from "errore";
 import { Hono } from "hono";
 import { requireAuth, type SessionEnv } from "../auth/session.ts";
-import { fetchSong } from "../lib/apple-music/client.ts";
+import { fetchArtist, fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
 import { UserNotFoundError } from "./errors.ts";
-import { replaceFavoriteSongsInput, updateProfileInput } from "./schemas.ts";
+import {
+  replaceFavoriteArtistsInput,
+  replaceFavoriteSongsInput,
+  updateProfileInput,
+} from "./schemas.ts";
 import { getMe } from "./usecases/get-me.ts";
 import { getProfile } from "./usecases/get-profile.ts";
+import { replaceFavoriteArtistsOfUser } from "./usecases/replace-favorite-artists.ts";
 import { replaceFavoriteSongsOfUser } from "./usecases/replace-favorite-songs.ts";
 import { updateProfile } from "./usecases/update-profile.ts";
 
@@ -76,6 +81,43 @@ export const usersRoutes = new Hono<SessionEnv>()
     }
     return c.json(profile);
   })
+  // お気に入りのアーティストを一覧ごと置き換える。
+  .put(
+    "/me/favorite-artists",
+    requireAuth,
+    zValidator("json", replaceFavoriteArtistsInput, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: "入力が正しくありません", issues: result.error.issues }, 400);
+      }
+    }),
+    async (c) => {
+      const profile = await replaceFavoriteArtistsOfUser({
+        db,
+        fetchArtist,
+        userId: c.get("user").id,
+        input: c.req.valid("json"),
+      });
+      if (profile instanceof Error) {
+        const { status, error } = errore.matchErrorPartial<
+          typeof profile,
+          { status: 400 | 422 | 500 | 503; error: string }
+        >(
+          profile,
+          {
+            DuplicateFavoriteArtistError: (e) => ({ status: 400, error: e.message }),
+            AppleArtistNotFoundError: (e) => ({ status: 422, error: e.message }),
+            AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
+          },
+          (e) => {
+            console.error(e);
+            return { status: 500, error: INTERNAL_ERROR };
+          },
+        );
+        return c.json({ error }, status);
+      }
+      return c.json(profile);
+    },
+  )
   // 他のユーザーのプロフィール。
   .get("/users/:publicId", requireAuth, async (c) => {
     const profile = await getProfile({ db, publicId: c.req.param("publicId") });

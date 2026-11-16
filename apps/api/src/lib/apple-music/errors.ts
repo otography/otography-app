@@ -27,6 +27,17 @@ export class SongWithoutIsrcError extends errore.createTaggedError({
   message: "曲 $songId には ISRC がないので選べません。別の曲を選んでください",
 }) {}
 
+export class AppleArtistNotFoundError extends errore.createTaggedError({
+  name: "AppleArtistNotFoundError",
+  message:
+    "Apple Music にアーティスト $artistId が見つかりません。アーティストを検索し直してください",
+}) {}
+
+export type FetchCatalogArtistError =
+  | AppleMusicRequestError
+  | AppleMusicRateLimitError
+  | AppleArtistNotFoundError;
+
 export type FetchCatalogSongError =
   | AppleMusicRequestError
   | AppleMusicRateLimitError

@@ -52,3 +52,6 @@ export const artists = snakeCase.table(
   },
   (t) => [index("artists_fetched_at_idx").on(t.fetchedAt)],
 );
+
+/** artists の 1 行（SELECT の結果）。 */
+export type Artist = typeof artists.$inferSelect;
