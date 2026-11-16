@@ -1,0 +1,71 @@
+# プルリクエストごとに、変更を staging（Worker の Preview「staging」と staging の Turso）に反映し、
+# 確認用の URL をプルリクエストにコメントする。理由は docs/adr/0015-deploy-from-github-actions.md を参照。
+name: Staging
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+# staging は 1 つしかないので、反映は 1 つずつ行い、途中で取り消さない（マイグレーションの途中で止めないため）。
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  deploy:
+    # フォークからのプルリクエストにはシークレットを渡さない。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      CF_SEND_TELEMETRY: "false"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - run: vp check
+      - run: vp test
+
+      - name: Migrate the staging database
+        run: vp run db#db:migrate
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+      - name: Deploy the staging Preview
+        id: deploy
+        run: |
+          vp run api#deploy:staging 2>&1 | tee deploy.log
+          url=$(grep -o 'https://staging-[a-z0-9-]*\.workers\.dev' deploy.log | head -n 1)
+          if [ -z "$url" ]; then
+            echo "::error::staging の URL がデプロイの出力に見つかりません（デプロイが中断された可能性があります）"
+            exit 1
+          fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Comment the staging URL
+        run: |
+          gh pr comment "$PR" --edit-last --create-if-none --body "$(cat <<EOF
+          ### staging に反映しました
+          - URL: $URL
+          - コミット: $SHA
+          - マイグレーション: staging の DB に適用済み
+          EOF
+          )"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          URL: ${{ steps.deploy.outputs.url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
