@@ -1,5 +1,5 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
-import { betterAuth } from "better-auth";
+import { betterAuth } from "better-auth/minimal";
 import { oAuthProxy } from "better-auth/plugins";
 import { accounts, sessions, users, verifications } from "db";
 import { db } from "../lib/db.ts";
