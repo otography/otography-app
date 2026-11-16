@@ -10,33 +10,53 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
+import { Route as UPublicIdRouteImport } from './routes/u/$publicId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsProfileRoute = SettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UPublicIdRoute = UPublicIdRouteImport.update({
+  id: '/u/$publicId',
+  path: '/u/$publicId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/settings/profile': typeof SettingsProfileRoute
+  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/settings/profile' | '/u/$publicId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/settings/profile' | '/u/$publicId'
+  id: '__root__' | '/' | '/settings/profile' | '/u/$publicId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsProfileRoute: typeof SettingsProfileRoute
+  UPublicIdRoute: typeof UPublicIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +68,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/profile': {
+      id: '/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SettingsProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/u/$publicId': {
+      id: '/u/$publicId'
+      path: '/u/$publicId'
+      fullPath: '/u/$publicId'
+      preLoaderRoute: typeof UPublicIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsProfileRoute: SettingsProfileRoute,
+  UPublicIdRoute: UPublicIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

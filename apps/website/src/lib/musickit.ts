@@ -17,6 +17,16 @@ export type AppleSong = {
   };
 };
 
+/** Apple Music API のカタログのアーティスト（使う属性だけ）。 */
+export type AppleArtist = {
+  id: string;
+  attributes: {
+    name: string;
+    artwork?: { url: string };
+    genreNames?: string[];
+  };
+};
+
 type MusicKitInstance = {
   api: {
     music: <T>(path: string, query?: Record<string, string | number>) => Promise<{ data: T }>;
@@ -119,6 +129,16 @@ export async function searchSongs(term: string) {
     { term, types: "songs", limit: 10, l: "ja" },
   );
   return data.results.songs?.data ?? [];
+}
+
+/** アーティストを検索する。ストアフロントは jp に固定する（API と同じ）。 */
+export async function searchArtists(term: string) {
+  const music = await getMusicKit();
+  const { data } = await music.api.music<{ results: { artists?: { data: AppleArtist[] } } }>(
+    "/v1/catalog/jp/search",
+    { term, types: "artists", limit: 10, l: "ja" },
+  );
+  return data.results.artists?.data ?? [];
 }
 
 /** ジャケット画像の URL のテンプレート（{w}x{h}）に大きさを入れる。 */
