@@ -19,6 +19,7 @@
     "@tanstack/react-router-devtools": "1.167.3",
     "api": "workspace:*",
     "better-auth": "^1.7.25",
+    "db": "workspace:*",
     "hono": "^4.13.18",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

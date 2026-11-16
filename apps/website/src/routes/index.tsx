@@ -1,40 +1,29 @@
 import * as stylex from "@stylexjs/stylex";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { client } from "#/lib/api";
 import { authClient } from "#/lib/auth-client";
+import { CreatePostComposer } from "#/posts/CreatePostComposer";
 import { colors, radius, space } from "#/styles/tokens.stylex";
 
 export const Route = createFileRoute("/")({ component: Home });
 
-type Me = { name: string; publicId: string };
-
-// ログインの動作を確かめるための仮の画面。
 function Home() {
-  const [me, setMe] = useState<Me | null | undefined>(undefined);
+  const queryClient = useQueryClient();
+  const me = useQuery({
+    queryKey: ["me"],
+    // 200 ならログイン中、401 なら未ログイン（API の /api/me）。
+    queryFn: async () => {
+      const res = await client.api.me.$get();
+      return res.ok ? res.json() : null;
+    },
+  });
 
-  useEffect(() => {
-    void client.api.me.$get().then(async (res) => setMe(res.ok ? await res.json() : null));
-  }, []);
+  if (me.isPending) return <p {...stylex.props(styles.page)}>読み込み中…</p>;
 
-  if (me === undefined) return <p {...stylex.props(styles.page)}>読み込み中…</p>;
-
-  return (
-    <div {...stylex.props(styles.page, styles.stack)}>
-      {me ? (
-        <>
-          <p>
-            {me.name}（{me.publicId}）としてログイン中
-          </p>
-          <button
-            type="button"
-            {...stylex.props(styles.button)}
-            onClick={() => void authClient.signOut().then(() => setMe(null))}
-          >
-            ログアウト
-          </button>
-        </>
-      ) : (
+  if (!me.data) {
+    return (
+      <div {...stylex.props(styles.page)}>
         <button
           type="button"
           {...stylex.props(styles.button)}
@@ -42,7 +31,27 @@ function Home() {
         >
           Google でログイン
         </button>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div {...stylex.props(styles.page, styles.stack)}>
+      <header {...stylex.props(styles.header)}>
+        <span {...stylex.props(styles.muted)}>{me.data.name} としてログイン中</span>
+        <button
+          type="button"
+          {...stylex.props(styles.button)}
+          onClick={() =>
+            void authClient
+              .signOut()
+              .then(() => queryClient.invalidateQueries({ queryKey: ["me"] }))
+          }
+        >
+          ログアウト
+        </button>
+      </header>
+      <CreatePostComposer />
     </div>
   );
 }
@@ -55,8 +64,16 @@ const styles = stylex.create({
   stack: {
     display: "flex",
     flexDirection: "column",
-    gap: space.md,
+    gap: space.lg,
     alignItems: "flex-start",
+  },
+  header: {
+    display: "flex",
+    gap: space.md,
+    alignItems: "center",
+  },
+  muted: {
+    color: colors.textMuted,
   },
   button: {
     paddingBlock: space.sm,
