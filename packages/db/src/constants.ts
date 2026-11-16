@@ -21,6 +21,11 @@ export const FAVORITE_COMMENT_MAX = 100;
 export const USER_NAME_MAX = 50;
 export const USER_BIO_MAX = 300;
 
+/** 投稿の本文の上限（文字数。Unicode のコードポイントで数える）。 */
+export const POST_CONTENT_MAX = 140;
+/** ISRC の長さ。 */
+export const ISRC_LENGTH = 12;
+
 export const EMBEDDING_DIMENSIONS = 2048;
 /** モデル名 + 埋め込む文の組み立て方の版。本文だけを埋め込む。 */
 export const EMBEDDING_MODEL = "plamo-1b:v1";

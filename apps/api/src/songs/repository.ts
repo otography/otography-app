@@ -1,6 +1,5 @@
 import { songs } from "db";
 import type { CatalogSong } from "../lib/apple-music/catalog.ts";
-import type { FetchCatalogSongError } from "../lib/apple-music/errors.ts";
 import type { Database } from "../lib/db.ts";
 import { SongConflictError, SongQueryError } from "./errors.ts";
 
@@ -33,7 +32,7 @@ async function saveSong({ db, song }: { db: Database; song: CatalogSong }) {
  * 投稿やお気に入りで選ばれた曲を返す。songs に ISRC の行があれば Apple Music を呼ばない。
  * なければ songId で Apple Music から取得し、Apple が返した ISRC を主キーにして保存する。
  */
-export async function getOrCreateSong({
+export async function getOrCreateSong<FetchError extends Error>({
   db,
   songId,
   isrc,
@@ -42,7 +41,7 @@ export async function getOrCreateSong({
   db: Database;
   songId: string;
   isrc: string;
-  fetchSong: (songId: string) => Promise<FetchCatalogSongError | CatalogSong>;
+  fetchSong: (songId: string) => Promise<FetchError | CatalogSong>;
 }) {
   const existing = await findSong({ db, isrc: isrc.toUpperCase() });
   if (existing instanceof Error) return existing;
