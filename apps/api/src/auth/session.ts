@@ -2,6 +2,7 @@ import { createMiddleware } from "hono/factory";
 import { auth } from "./auth.ts";
 
 type Session = typeof auth.$Infer.Session;
+export type SessionUser = Session["user"];
 
 export type SessionEnv = {
   Variables: {
@@ -19,8 +20,13 @@ export const sessionMiddleware = createMiddleware<SessionEnv>(async (c, next) =>
   await next();
 });
 
-/** 未ログインのリクエストに 401 を返す。sessionMiddleware の後に使う。 */
-export const requireAuth = createMiddleware<SessionEnv>(async (c, next) => {
+/**
+ * 未ログインのリクエストに 401 を返す。sessionMiddleware の後に使う。
+ * この後のハンドラーでは、c.var.user と c.var.session が null でない型になる。
+ */
+export const requireAuth = createMiddleware<{
+  Variables: { user: SessionUser; session: Session["session"] };
+}>(async (c, next) => {
   if (!c.get("user")) return c.json({ error: "unauthorized" }, 401);
   await next();
 });

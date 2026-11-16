@@ -33,7 +33,7 @@ async function saveSong({ db, song }: { db: Database; song: CatalogSong }) {
  * 投稿やお気に入りで選ばれた曲を返す。songs に ISRC の行があれば Apple Music を呼ばない。
  * なければ songId で Apple Music から取得し、Apple が返した ISRC を主キーにして保存する。
  */
-export async function findOrFetchSong({
+export async function getOrCreateSong({
   db,
   songId,
   isrc,
