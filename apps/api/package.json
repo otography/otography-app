@@ -1,0 +1,27 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "cf dev",
+    "build": "cf build",
+    "deploy": "cf deploy",
+    "typecheck": "cf workers types && tsc"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.25",
+    "hono": "^4.13.18",
+    "jose": "^6.2.17",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "beta",
+    "cf": "^1.0.0-beta.32",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
