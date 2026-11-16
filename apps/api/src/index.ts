@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getDeveloperToken } from "./apple-music/token.ts";
 import { auth } from "./auth.ts";
 import { requireAuth, type SessionEnv, sessionMiddleware } from "./middleware/session.ts";
 import { meSchema } from "./schemas/user.ts";
@@ -10,7 +11,20 @@ const app = new Hono<SessionEnv>()
   .all("/api/auth/*", (c) => auth.handler(c.req.raw))
   .use("/api/*", sessionMiddleware)
   // SPA は、200 ならログイン中、401 なら未ログインと判断する。
-  .get("/api/me", requireAuth, (c) => c.json(meSchema.parse(c.get("user"))));
+  .get("/api/me", requireAuth, (c) => c.json(meSchema.parse(c.get("user"))))
+  // MusicKit JS（ブラウザでの曲の検索と試聴）に渡す開発者トークン。リクエストのオリジンでだけ使える。
+  .get("/api/music/token", requireAuth, async (c) => {
+    const token = await getDeveloperToken({ origin: new URL(c.req.url).origin });
+    if (token instanceof Error) {
+      console.error(token);
+      return c.json(
+        { error: "Apple Music を使う準備ができませんでした。時間をおいて再読み込みしてください" },
+        500,
+      );
+    }
+    c.header("Cache-Control", "private, no-store");
+    return c.json(token);
+  });
 
 export type AppType = typeof app;
 export type { Auth } from "./auth.ts";
