@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "./auth.ts";
 import { requireAuth, type SessionEnv, sessionMiddleware } from "./middleware/session.ts";
+import { meSchema } from "./schemas/user.ts";
 
 const app = new Hono<SessionEnv>()
   // Better Auth の初期値のパス。Google ログインの開始・コールバック・ログアウトなどを扱う。
@@ -9,17 +10,7 @@ const app = new Hono<SessionEnv>()
   .all("/api/auth/*", (c) => auth.handler(c.req.raw))
   .use("/api/*", sessionMiddleware)
   // SPA は、200 ならログイン中、401 なら未ログインと判断する。
-  .get("/api/me", requireAuth, (c) => {
-    const user = c.get("user")!;
-    return c.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      image: user.image ?? null,
-      publicId: user.publicId,
-      bio: user.bio ?? null,
-    });
-  });
+  .get("/api/me", requireAuth, (c) => c.json(meSchema.parse(c.get("user"))));
 
 export type AppType = typeof app;
 export type { Auth } from "./auth.ts";
