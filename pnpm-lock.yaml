@@ -296,6 +296,9 @@ importers:
       better-auth:
         specifier: ^1.7.25
         version: 1.7.25(@types/node@24.19.2)(@vitest/browser-preview@5.1.0)(@vitest/ui@5.1.0)(@voidzero-dev/vite-plus-core@1.6.0(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2))(drizzle-kit@1.0.0-rc.5(drizzle-orm@1.0.0-rc.5(@libsql/client@0.18.0)(zod@4.6.7)))(drizzle-orm@1.0.0-rc.5(@libsql/client@0.18.0)(zod@4.6.7))(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(solid-js@1.9.19)(vitest@5.1.0)
+      db:
+        specifier: workspace:*
+        version: link:../../packages/db
       hono:
         specifier: ^4.13.18
         version: 4.13.18
