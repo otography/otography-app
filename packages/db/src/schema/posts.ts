@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, snakeCase, text } from "drizzle-orm/sqlite-core";
-import { EMBEDDING_DIMENSIONS } from "../constants.ts";
+import { check, index, integer, primaryKey, snakeCase, text } from "drizzle-orm/sqlite-core";
+import { EMBEDDING_DIMENSIONS, POST_CONTENT_MAX } from "../constants.ts";
 import { users } from "./auth.ts";
 import { createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
 import { songs } from "./music.ts";
@@ -18,7 +18,8 @@ export const posts = snakeCase.table(
     // 初版は API で必須にする。将来アルバムやプレイリストへの投稿を列追加で足せるよう DB 上は NULL 可。
     songIsrc: text().references(() => songs.isrc, { onDelete: "restrict" }),
 
-    content: text().notNull(),
+    // length は drizzle-orm/zod が API の入力の検証（最大の文字数）に使う。DB では下の CHECK で守る。
+    content: text({ length: POST_CONTENT_MAX }).notNull(),
 
     likeCount: integer().notNull().default(0),
     impressionCount: integer().notNull().default(0),
@@ -32,8 +33,17 @@ export const posts = snakeCase.table(
     index("posts_song_created_idx").on(t.songIsrc, t.createdAt), // 「曲で探す」
     index("posts_user_created_idx").on(t.userId, t.createdAt), // 自分の履歴
     index("posts_deleted_at_idx").on(t.deletedAt), // 物理削除バッチ用
+    check(
+      "posts_content_length",
+      sql`length(${t.content}) between 1 and ${sql.raw(String(POST_CONTENT_MAX))}`,
+    ),
   ],
 );
+
+/** posts の 1 行（SELECT の結果）。 */
+export type Post = typeof posts.$inferSelect;
+/** posts に INSERT する値。 */
+export type NewPost = typeof posts.$inferInsert;
 
 /**
  * 投稿本文の埋め込み（意味検索用）。posts とは 1 対 1 で、行が無い投稿は検索に出ない。

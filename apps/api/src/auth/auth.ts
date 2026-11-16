@@ -1,9 +1,9 @@
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { betterAuth } from "better-auth";
-import { generateRandomString } from "better-auth/crypto";
 import { oAuthProxy } from "better-auth/plugins";
 import { accounts, sessions, users, verifications } from "db";
 import { db } from "../lib/db.ts";
+import { createPublicId } from "../lib/id.ts";
 import { requireEnv } from "../lib/env.ts";
 
 const PRODUCTION_HOST = "app.otography.workers.dev";
@@ -53,7 +53,7 @@ export const auth = betterAuth({
         type: "string",
         required: true,
         input: false,
-        defaultValue: () => generateRandomString(12, "a-z", "0-9"),
+        defaultValue: createPublicId,
       },
       bio: { type: "string", required: false, input: false },
       suspendedAt: { type: "date", required: false, input: false },

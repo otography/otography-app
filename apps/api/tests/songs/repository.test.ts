@@ -1,7 +1,3 @@
-import { createClient } from "@libsql/client";
-import { relations } from "db";
-import { drizzle } from "drizzle-orm/libsql";
-import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, test } from "vite-plus/test";
 import type { CatalogSong } from "../../src/lib/apple-music/catalog.ts";
 import {
@@ -10,6 +6,7 @@ import {
 } from "../../src/lib/apple-music/errors.ts";
 import type { Database } from "../../src/lib/db.ts";
 import { getOrCreateSong } from "../../src/songs/repository.ts";
+import { createTestDb } from "../helpers/db.ts";
 
 const catalogSong = (overrides: Partial<CatalogSong> = {}): CatalogSong => ({
   isrc: "JPAB01234567",
@@ -36,12 +33,7 @@ const fakeFetchSong = (result: FetchCatalogSongError | CatalogSong) => {
 let db: Database;
 
 beforeEach(async () => {
-  const client = createClient({ url: ":memory:" });
-  const local = drizzle({ client, relations });
-  await migrate(local, {
-    migrationsFolder: new URL("../../../../packages/db/migrations", import.meta.url).pathname,
-  });
-  db = local as unknown as Database;
+  db = await createTestDb();
 });
 
 describe("getOrCreateSong", () => {

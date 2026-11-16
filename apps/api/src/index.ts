@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { auth } from "./auth/auth.ts";
 import { type SessionEnv, sessionMiddleware } from "./auth/session.ts";
+import { postsRoutes } from "./posts/routes.ts";
 import { musicRoutes } from "./songs/routes.ts";
 import { usersRoutes } from "./users/routes.ts";
 
@@ -12,7 +13,8 @@ const app = new Hono<SessionEnv>()
   .all("/api/auth/*", (c) => auth.handler(c.req.raw))
   .use("/api/*", sessionMiddleware)
   .route("/api", usersRoutes)
-  .route("/api/music", musicRoutes);
+  .route("/api/music", musicRoutes)
+  .route("/api/posts", postsRoutes);
 
 export type AppType = typeof app;
 export type { Auth } from "./auth/auth.ts";

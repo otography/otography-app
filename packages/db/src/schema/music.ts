@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, index, integer, snakeCase, text } from "drizzle-orm/sqlite-core";
+import { ISRC_LENGTH } from "../constants.ts";
 import { createdAt, timestamp } from "./columns.ts";
 
 // Apple Music のキャッシュ。ストアフロントは jp・日本語に固定。
@@ -9,7 +10,7 @@ import { createdAt, timestamp } from "./columns.ts";
 export const songs = snakeCase.table(
   "songs",
   {
-    isrc: text().primaryKey(), // 版違いを 1 行にまとめる
+    isrc: text({ length: ISRC_LENGTH }).primaryKey(), // 版違いを 1 行にまとめる
     // 再生に使う代表の ID。最初に投稿された版。無効になったら ISRC で引き直して差し替える
     appleSongId: text().notNull().unique(),
 
@@ -29,7 +30,7 @@ export const songs = snakeCase.table(
     createdAt: createdAt(),
   },
   (t) => [
-    check("songs_isrc_format", sql`length(${t.isrc}) = 12`),
+    check("songs_isrc_format", sql`length(${t.isrc}) = ${sql.raw(String(ISRC_LENGTH))}`),
     index("songs_fetched_at_idx").on(t.fetchedAt), // 取り直しバッチ用
   ],
 );
