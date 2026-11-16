@@ -28,25 +28,28 @@ const halfToNumber = (h: number): number => {
 /**
  * libSQL の F16_BLOB(n)。書き込みは vector16()、読み出しは半精度を展開する。
  * F16_BLOB は「2 バイト × 次元数 + 末尾 1 バイト（型の印）」で保存される。
+ *
+ * codec "blob" で Drizzle 組み込みの BLOB 用の変換に乗せる。
+ * - 通常の SELECT：ドライバーの値を Buffer（Workers など Buffer が無い環境では Uint8Array）にそろえる
+ * - リレーショナルクエリ（with）：JSON は BLOB を持てないので hex() で文字列にして取り、バイト列に戻す
+ * どちらも fromDriver にはバイト列で届く。hex(NULL) は空文字になるため、この型の列は NOT NULL で使う。
+ * 判断の理由は docs/adr/0002-vector-column-blob-codec.md を参照。
  */
 export const float16Vector = customType<{
   data: number[];
   config: { dimensions: number };
   configRequired: true;
-  driverData: ArrayBuffer | Uint8Array;
+  driverData: Uint8Array;
 }>({
   dataType(config) {
     return `F16_BLOB(${config.dimensions})`;
   },
+  codec: "blob",
   toDriver(value) {
     return sql`vector16(${JSON.stringify(value)})`;
   },
   fromDriver(value) {
-    // ドライバーによって ArrayBuffer（web）か Uint8Array / Buffer（Node）で返る。
-    const view =
-      value instanceof ArrayBuffer
-        ? new DataView(value)
-        : new DataView(value.buffer, value.byteOffset, value.byteLength);
+    const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
     const length = Math.floor(view.byteLength / 2);
     const out = Array.from<number>({ length });
     for (let i = 0; i < length; i++) out[i] = halfToNumber(view.getUint16(i * 2, true));

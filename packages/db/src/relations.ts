@@ -31,6 +31,10 @@ export const relations = defineRelations(schema, (r) => ({
     author: r.one.users({ from: r.posts.userId, to: r.users.id, optional: false }),
     song: r.one.songs({ from: r.posts.songIsrc, to: r.songs.isrc }),
     likes: r.many.likes(),
+    embedding: r.one.postEmbeddings({ from: r.posts.id, to: r.postEmbeddings.postId }),
+  },
+  postEmbeddings: {
+    post: r.one.posts({ from: r.postEmbeddings.postId, to: r.posts.id, optional: false }),
   },
   likes: {
     user: r.one.users({ from: r.likes.userId, to: r.users.id, optional: false }),

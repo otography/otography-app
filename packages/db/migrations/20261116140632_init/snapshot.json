@@ -1,7 +1,7 @@
 {
   "version": "7",
   "dialect": "sqlite",
-  "id": "48110ebc-e59e-4cc8-9ba5-7153cfa6e3f7",
+  "id": "bcbb643a-716d-4aee-8b9d-aef020ac887f",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -48,6 +48,10 @@
     },
     {
       "name": "likes",
+      "entityType": "tables"
+    },
+    {
+      "name": "post_embeddings",
       "entityType": "tables"
     },
     {
@@ -945,6 +949,56 @@
       "entityType": "columns"
     },
     {
+      "table": "post_embeddings",
+      "name": "post_id",
+      "type": "text",
+      "notNull": false,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "embedding",
+      "type": "F16_BLOB(2048)",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "model",
+      "type": "text",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "created_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "updated_at",
+      "type": "integer",
+      "notNull": true,
+      "autoincrement": false,
+      "default": null,
+      "generated": null,
+      "entityType": "columns"
+    },
+    {
       "table": "posts",
       "name": "id",
       "type": "text",
@@ -1001,26 +1055,6 @@
       "notNull": true,
       "autoincrement": false,
       "default": "0",
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "posts",
-      "name": "embedding",
-      "type": "F16_BLOB(2048)",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
-      "generated": null,
-      "entityType": "columns"
-    },
-    {
-      "table": "posts",
-      "name": "embedding_model",
-      "type": "text",
-      "notNull": false,
-      "autoincrement": false,
-      "default": null,
       "generated": null,
       "entityType": "columns"
     },
@@ -1283,6 +1317,34 @@
       "entityType": "indexes"
     },
     {
+      "table": "post_embeddings",
+      "name": "post_embeddings_vector_idx",
+      "columns": [
+        {
+          "value": "libsql_vector_idx(\"embedding\", 'metric=cosine', 'compress_neighbors=float1bit', 'max_neighbors=32')",
+          "isExpression": true
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "post_embeddings_model_idx",
+      "columns": [
+        {
+          "value": "model",
+          "isExpression": false
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "origin": "manual",
+      "entityType": "indexes"
+    },
+    {
       "table": "posts",
       "name": "posts_song_created_idx",
       "columns": [
@@ -1329,20 +1391,6 @@
       ],
       "isUnique": false,
       "where": null,
-      "origin": "manual",
-      "entityType": "indexes"
-    },
-    {
-      "table": "posts",
-      "name": "posts_embedding_idx",
-      "columns": [
-        {
-          "value": "libsql_vector_idx(\"embedding\", 'metric=cosine', 'compress_neighbors=float1bit', 'max_neighbors=32')",
-          "isExpression": true
-        }
-      ],
-      "isUnique": false,
-      "where": "\"posts\".\"embedding\" is not null",
       "origin": "manual",
       "entityType": "indexes"
     },
@@ -1527,6 +1575,21 @@
       "entityType": "fks"
     },
     {
+      "table": "post_embeddings",
+      "name": "fk_post_embeddings_post_id_posts_id_fk",
+      "columns": [
+        "post_id"
+      ],
+      "tableTo": "posts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "nameExplicit": false,
+      "entityType": "fks"
+    },
+    {
       "table": "posts",
       "name": "fk_posts_user_id_users_id_fk",
       "columns": [
@@ -1654,6 +1717,15 @@
       "name": "songs_pk",
       "columns": [
         "isrc"
+      ],
+      "nameExplicit": false,
+      "entityType": "pks"
+    },
+    {
+      "table": "post_embeddings",
+      "name": "post_embeddings_pk",
+      "columns": [
+        "post_id"
       ],
       "nameExplicit": false,
       "entityType": "pks"
