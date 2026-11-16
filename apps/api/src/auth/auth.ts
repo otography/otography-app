@@ -4,6 +4,7 @@ import { oAuthProxy } from "better-auth/plugins";
 import { accounts, sessions, users, verifications } from "db";
 import { db } from "../lib/db.ts";
 import { createPublicId } from "../lib/id.ts";
+import { toDisplayName } from "../users/display-name.ts";
 import { requireEnv } from "../lib/env.ts";
 
 const PRODUCTION_HOST = "app.otography.workers.dev";
@@ -60,6 +61,8 @@ export const auth = betterAuth({
       deletedAt: { type: "date", required: false, input: false },
     },
   },
+  // 表示名などの変更は PATCH /api/me だけで受け付ける（入力の検証を 1 か所にするため）。
+  disabledPaths: ["/update-user", "/change-email"],
   account: {
     // Google のトークンは保存しない（databaseHooks.account を参照）。ログインのたびに account の行を更新する必要も無い。
     updateAccountOnSignIn: false,
@@ -70,6 +73,11 @@ export const auth = betterAuth({
     cookieCache: { enabled: true, maxAge: 5 * 60, strategy: "compact" },
   },
   databaseHooks: {
+    // 表示名は Google のプロフィールの名前から作られる。DB の CHECK 制約（1〜USER_NAME_MAX 文字）を
+    // 満たさない名前でも登録できるように、作る前に整える。
+    user: {
+      create: { before: async (user) => ({ data: { ...user, name: toDisplayName(user.name) } }) },
+    },
     // ログインの後に Google の API を使わないので、Google が発行したトークンを DB に保存しない。
     // DB の中身が漏れても、Google のアカウントに使えるトークンが含まれないようにする。
     account: {
