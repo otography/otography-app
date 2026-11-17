@@ -1,4 +1,4 @@
-import { bindings, defineConfig } from "cf/config";
+import { bindings, defineConfig, triggers } from "cf/config";
 import * as entrypoint from "./src/index.ts" with { type: "cf-worker" };
 
 // Worker は本番の 1 つだけにし、ステージングはその Worker の Preview（名前は staging）として作る。
@@ -7,7 +7,7 @@ const WORKER_NAME = "app";
 
 // シークレットの値は、ローカルでは .env に書き、デプロイ先ではシークレットとして登録する（.env.example を参照）。
 // secret() を 1 つでも宣言すると、ここで宣言していない .env の値は Worker に渡らない。
-export default defineConfig(() => ({
+export default defineConfig(({ isPreview }) => ({
   worker: {
     name: WORKER_NAME,
     compatibilityDate: "2026-11-13",
@@ -20,6 +20,9 @@ export default defineConfig(() => ({
     // Workers Logs に呼び出しごとの記録（CPU 時間を含む）を残す。
     // OAuth のコールバックの URL には認可コードが入るので、クエリ文字列は記録しない。
     observability: { enabled: true, redactQueryString: true },
+    // 保存期間（90 日）を過ぎた論理削除の行と IP ログを、毎日 3:00（日本時間）に物理削除する。
+    // Preview は Cron トリガーを持てない（cf の Preview のアップロードが triggers を受け付けない）ので、本番だけに付ける。
+    ...(isPreview ? {} : { triggers: [triggers.scheduled({ schedule: "0 18 * * *" })] }),
     env: {
       BETTER_AUTH_SECRET: bindings.secret(),
       GOOGLE_CLIENT_ID: bindings.secret(),
