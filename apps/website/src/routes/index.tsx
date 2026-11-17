@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { authClient } from "#/lib/auth-client";
+import { Landing } from "#/landing/Landing";
 import { CreatePostComposer } from "#/posts/CreatePostComposer";
 import { meQuery } from "#/profiles/queries";
 import { colors, space } from "#/styles/tokens.stylex";
@@ -15,17 +16,7 @@ function Home() {
 
   if (me.isPending) return <p {...stylex.props(styles.page)}>読み込み中…</p>;
 
-  if (!me.data) {
-    return (
-      <div {...stylex.props(styles.page)}>
-        <Button
-          onClick={() => void authClient.signIn.social({ provider: "google", callbackURL: "/" })}
-        >
-          Google でログイン
-        </Button>
-      </div>
-    );
-  }
+  if (!me.data) return <Landing />;
 
   return (
     <div {...stylex.props(styles.page, styles.stack)}>
