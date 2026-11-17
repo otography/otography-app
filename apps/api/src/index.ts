@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { adminRoutes } from "./admin/routes.ts";
 import { auth } from "./auth/auth.ts";
 import { type SessionEnv, sessionMiddleware } from "./auth/session.ts";
 import { postsRoutes } from "./posts/routes.ts";
@@ -16,7 +17,8 @@ const app = new Hono<SessionEnv>()
   .route("/api", usersRoutes)
   .route("/api/music", musicRoutes)
   .route("/api/posts", postsRoutes)
-  .route("/api/reports", reportsRoutes);
+  .route("/api/reports", reportsRoutes)
+  .route("/api/admin", adminRoutes);
 
 export type AppType = typeof app;
 export type { Auth } from "./auth/auth.ts";

@@ -33,6 +33,8 @@ export const users = snakeCase.table(
     publicId: text().notNull().unique(), // URL 用のランダムな公開ID（/u/:publicId）
     bio: text({ length: USER_BIO_MAX }),
     suspendedAt: timestamp(), // 管理者による停止
+    // 管理者か。API からは変えられず、DB の SQL で設定する（docs/adr/0018-admin-flag-in-users.md）。
+    isAdmin: integer({ mode: "boolean" }).default(false).notNull(),
     // 退会。立てた時点で name・bio・お気に入り・ログイン連携を消し、email を無効な値に置き換える。
     // 行そのものは 90 日後にバッチが物理削除し、CASCADE で投稿なども消える。
     deletedAt: timestamp(),

@@ -58,6 +58,7 @@ export const auth = betterAuth({
       },
       bio: { type: "string", required: false, input: false },
       suspendedAt: { type: "date", required: false, input: false },
+      isAdmin: { type: "boolean", required: false, input: false, defaultValue: false },
       deletedAt: { type: "date", required: false, input: false },
     },
   },

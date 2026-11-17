@@ -6,7 +6,6 @@ const visiblePost = { deletedAt: { isNull: true }, hiddenAt: { isNull: true } } 
 
 // 次の表には、意図してリレーションを定義していない。
 // - postIpLogs：API の応答に絶対に含めないため。with で誤って読み出せないようにする
-// - reports：管理画面の API を作るときに定義する（通報者と通報されたユーザーはどちらも users を指すので alias が要る）
 export const relations = defineRelations(schema, (r) => ({
   users: {
     sessions: r.many.sessions(),
@@ -18,6 +17,9 @@ export const relations = defineRelations(schema, (r) => ({
     likes: r.many.likes(),
     favoriteSongs: r.many.favoriteSongs(),
     favoriteArtists: r.many.favoriteArtists(),
+    // 通報者と通報されたユーザーは、どちらも users を指すので alias で区別する。
+    reportsMade: r.many.reports({ alias: "reporter" }),
+    reportsReceived: r.many.reports({ alias: "targetUser" }),
   },
   sessions: {
     user: r.one.users({ from: r.sessions.userId, to: r.users.id, optional: false }),
@@ -45,6 +47,11 @@ export const relations = defineRelations(schema, (r) => ({
   },
   postEmbeddings: {
     post: r.one.posts({ from: r.postEmbeddings.postId, to: r.posts.id, optional: false }),
+  },
+  reports: {
+    reporter: r.one.users({ from: r.reports.reporterId, to: r.users.id, alias: "reporter" }),
+    targetUser: r.one.users({ from: r.reports.targetUserId, to: r.users.id, alias: "targetUser" }),
+    post: r.one.posts({ from: r.reports.postId, to: r.posts.id }),
   },
   likes: {
     user: r.one.users({ from: r.likes.userId, to: r.users.id, optional: false }),
