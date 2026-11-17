@@ -1,36 +1,28 @@
 import * as stylex from "@stylexjs/stylex";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { client } from "#/lib/api";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { authClient } from "#/lib/auth-client";
 import { CreatePostComposer } from "#/posts/CreatePostComposer";
-import { colors, radius, space } from "#/styles/tokens.stylex";
+import { meQuery } from "#/profiles/queries";
+import { colors, space } from "#/styles/tokens.stylex";
+import { Button } from "#/ui/button";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
   const queryClient = useQueryClient();
-  const me = useQuery({
-    queryKey: ["me"],
-    // 200 ならログイン中、401 なら未ログイン（API の /api/me）。
-    queryFn: async () => {
-      const res = await client.api.me.$get();
-      return res.ok ? res.json() : null;
-    },
-  });
+  const me = useQuery(meQuery);
 
   if (me.isPending) return <p {...stylex.props(styles.page)}>読み込み中…</p>;
 
   if (!me.data) {
     return (
       <div {...stylex.props(styles.page)}>
-        <button
-          type="button"
-          {...stylex.props(styles.button)}
+        <Button
           onClick={() => void authClient.signIn.social({ provider: "google", callbackURL: "/" })}
         >
           Google でログイン
-        </button>
+        </Button>
       </div>
     );
   }
@@ -39,17 +31,19 @@ function Home() {
     <div {...stylex.props(styles.page, styles.stack)}>
       <header {...stylex.props(styles.header)}>
         <span {...stylex.props(styles.muted)}>{me.data.name} としてログイン中</span>
-        <button
-          type="button"
-          {...stylex.props(styles.button)}
+        <Link to="/u/$publicId" params={{ publicId: me.data.publicId }}>
+          プロフィール
+        </Link>
+        <Link to="/settings/profile">プロフィールを編集</Link>
+        <Button
           onClick={() =>
             void authClient
               .signOut()
-              .then(() => queryClient.invalidateQueries({ queryKey: ["me"] }))
+              .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
           }
         >
           ログアウト
-        </button>
+        </Button>
       </header>
       <CreatePostComposer />
     </div>
@@ -57,35 +51,8 @@ function Home() {
 }
 
 const styles = stylex.create({
-  page: {
-    padding: space.xl,
-    color: colors.text,
-  },
-  stack: {
-    display: "flex",
-    flexDirection: "column",
-    gap: space.lg,
-    alignItems: "flex-start",
-  },
-  header: {
-    display: "flex",
-    gap: space.md,
-    alignItems: "center",
-  },
-  muted: {
-    color: colors.textMuted,
-  },
-  button: {
-    paddingBlock: space.sm,
-    paddingInline: space.md,
-    cursor: "pointer",
-    backgroundColor: {
-      default: colors.background,
-      ":hover": "#f5f5f5",
-    },
-    borderColor: colors.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: radius.sm,
-  },
+  page: { padding: space.xl, color: colors.text },
+  stack: { display: "flex", flexDirection: "column", gap: space.lg, alignItems: "flex-start" },
+  header: { display: "flex", flexWrap: "wrap", gap: space.md, alignItems: "center" },
+  muted: { color: colors.textMuted },
 });
