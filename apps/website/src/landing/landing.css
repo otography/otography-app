@@ -26,9 +26,13 @@
     padding: 0;
   }
 
+  /*
+   * 旧アプリは body に overflow-x: hidden を付けていた。main に hidden を付けると overflow-y が auto になり、
+   * main が自分のスクロールバーを持つ（下にはみ出す飾りの画像のせいで、ページのスクロールバーと二重に出る）。
+   * clip はスクロールできる領域を作らないので、横のはみ出しだけを切り、縦のスクロールはページに任せる。
+   */
   .landing {
-    max-width: 100vw;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .landing a {
