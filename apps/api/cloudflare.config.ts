@@ -32,6 +32,14 @@ export default defineConfig(() => ({
       APPLE_TEAM_ID: bindings.secret(),
       APPLE_KEY_ID: bindings.secret(),
       APPLE_MUSIC_PRIVATE_KEY: bindings.secret(),
+      // ユーザーごとの回数制限（docs/adr/0017-rate-limit-per-user.md）。namespace はアカウント内で一意の番号。
+      // 回数は Cloudflare の拠点ごとに数えるので、上限は目安である。
+      WRITE_RATE_LIMIT: bindings.rateLimit({
+        namespace: "1001",
+        simple: { limit: 10, period: 60 },
+      }),
+      LIKE_RATE_LIMIT: bindings.rateLimit({ namespace: "1002", simple: { limit: 30, period: 60 } }),
+      READ_RATE_LIMIT: bindings.rateLimit({ namespace: "1003", simple: { limit: 60, period: 60 } }),
     },
   },
 }));

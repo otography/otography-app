@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { requireAuth, type SessionEnv } from "../auth/session.ts";
 import { fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
+import { rateLimit } from "../lib/rate-limit/middleware.ts";
 import { PostNotFoundError } from "./errors.ts";
 import { createPostInput } from "./schemas.ts";
 import { createPost } from "./usecases/create-post.ts";
@@ -18,6 +19,7 @@ export const postsRoutes = new Hono<SessionEnv>()
   .post(
     "/",
     requireAuth,
+    rateLimit("WRITE_RATE_LIMIT"),
     zValidator("json", createPostInput, (result, c) => {
       if (!result.success) {
         return c.json(
@@ -63,7 +65,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     },
   )
   // 投稿 1 件。
-  .get("/:id", requireAuth, async (c) => {
+  .get("/:id", requireAuth, rateLimit("READ_RATE_LIMIT"), async (c) => {
     const post = await getPost({ db, postId: c.req.param("id"), viewerId: c.get("user").id });
     if (post instanceof PostNotFoundError) return c.json({ error: post.message }, 404);
     if (post instanceof Error) {
@@ -73,7 +75,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     return c.json(post);
   })
   // 自分の投稿を削除する。
-  .delete("/:id", requireAuth, async (c) => {
+  .delete("/:id", requireAuth, rateLimit("WRITE_RATE_LIMIT"), async (c) => {
     const deleted = await deletePost({ db, postId: c.req.param("id"), userId: c.get("user").id });
     if (deleted instanceof PostNotFoundError) return c.json({ error: deleted.message }, 404);
     if (deleted instanceof Error) {
@@ -83,7 +85,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     return c.body(null, 204);
   })
   // いいねを付ける。付け済みでも 200 を返す。
-  .put("/:id/like", requireAuth, async (c) => {
+  .put("/:id/like", requireAuth, rateLimit("LIKE_RATE_LIMIT"), async (c) => {
     const like = await setLike({
       db,
       userId: c.get("user").id,
@@ -98,7 +100,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     return c.json(like);
   })
   // いいねを外す。付けていなくても 200 を返す。
-  .delete("/:id/like", requireAuth, async (c) => {
+  .delete("/:id/like", requireAuth, rateLimit("LIKE_RATE_LIMIT"), async (c) => {
     const like = await setLike({
       db,
       userId: c.get("user").id,
