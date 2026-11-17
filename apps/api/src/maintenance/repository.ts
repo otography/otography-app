@@ -1,12 +1,18 @@
-import { sql } from "drizzle-orm";
+import { postIpLogs, posts, users } from "db";
+import { inArray, lt } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { PurgeError } from "./errors.ts";
 
 /** 物理削除する表と、行を選ぶ列。key は行を指す列、since は期限の起点の日時の列。 */
 const targets = {
-  users: { key: "id", since: "deleted_at", label: "ユーザー" },
-  posts: { key: "id", since: "deleted_at", label: "投稿" },
-  post_ip_logs: { key: "post_id", since: "created_at", label: "IP ログ" },
+  users: { table: users, key: users.id, since: users.deletedAt, label: "ユーザー" },
+  posts: { table: posts, key: posts.id, since: posts.deletedAt, label: "投稿" },
+  post_ip_logs: {
+    table: postIpLogs,
+    key: postIpLogs.postId,
+    since: postIpLogs.createdAt,
+    label: "IP ログ",
+  },
 } as const;
 
 /**
@@ -16,7 +22,7 @@ const targets = {
  */
 export const purgeRows = ({
   db,
-  table,
+  table: name,
   cutoff,
   limit,
 }: {
@@ -25,14 +31,10 @@ export const purgeRows = ({
   cutoff: Date;
   limit: number;
 }) => {
-  const { key, since, label } = targets[table];
+  const { table, key, since, label } = targets[name];
   return db
-    .run(
-      sql`delete from ${sql.identifier(table)} where ${sql.identifier(key)} in (
-        select ${sql.identifier(key)} from ${sql.identifier(table)}
-        where ${sql.identifier(since)} < ${cutoff.getTime()} limit ${limit}
-      )`,
-    )
+    .delete(table)
+    .where(inArray(key, db.select({ key }).from(table).where(lt(since, cutoff)).limit(limit)))
     .then((result) => result.rowsAffected)
     .catch((e) => new PurgeError({ target: label, cause: e }));
 };

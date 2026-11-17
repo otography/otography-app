@@ -43,11 +43,11 @@ export const users = snakeCase.table(
     // このサービス独自
     check(
       "users_name_length",
-      sql`length(${t.name}) between 1 and ${sql.raw(String(USER_NAME_MAX))}`,
+      sql`length(${t.name}) between 1 and ${USER_NAME_MAX}`.inlineParams(),
     ),
     check(
       "users_bio_length",
-      sql`${t.bio} is null or length(${t.bio}) <= ${sql.raw(String(USER_BIO_MAX))}`,
+      sql`${t.bio} is null or length(${t.bio}) <= ${USER_BIO_MAX}`.inlineParams(),
     ),
     index("users_deleted_at_idx").on(t.deletedAt), // 物理削除バッチ用
   ],

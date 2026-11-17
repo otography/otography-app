@@ -1,5 +1,5 @@
-import { postEmbeddings, reports, sessions, users, type ReportStatus } from "db";
-import { eq, sql } from "drizzle-orm";
+import { postEmbeddings, posts, reports, sessions, users, type ReportStatus } from "db";
+import { eq } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { AdminQueryError } from "./errors.ts";
 
@@ -55,7 +55,7 @@ export const updateReportStatus = ({
 /**
  * 投稿を非表示にする（hidden が true）か、非表示を解除する。非表示にするときは、埋め込みの行も消す。
  * 変えた投稿の ID を返し、投稿が無ければ null を返す。
- * Drizzle の update は updated_at を自動で更新する。非表示は投稿の内容の変更ではないので、SQL で書く。
+ * 非表示は投稿の内容の変更ではないので、updated_at を変えない（set に列そのものを渡し、$onUpdate を止める）。
  */
 export const updatePostHidden = async ({
   db,
@@ -66,10 +66,11 @@ export const updatePostHidden = async ({
   postId: string;
   hidden: boolean;
 }) => {
-  const hiddenAt = hidden ? Date.now() : null;
-  const update = db.all<{ id: string }>(
-    sql`update posts set hidden_at = ${hiddenAt} where id = ${postId} returning id`,
-  );
+  const update = db
+    .update(posts)
+    .set({ hiddenAt: hidden ? new Date() : null, updatedAt: posts.updatedAt })
+    .where(eq(posts.id, postId))
+    .returning({ id: posts.id });
   const result = await (
     hidden
       ? db.batch([update, db.delete(postEmbeddings).where(eq(postEmbeddings.postId, postId))])

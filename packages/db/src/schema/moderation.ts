@@ -1,11 +1,9 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { check, index, snakeCase, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { REPORT_DETAIL_MAX, REPORT_REASONS, REPORT_STATUSES } from "../constants.ts";
 import { users } from "./auth.ts";
 import { createdAt, timestamp } from "./columns.ts";
 import { posts } from "./posts.ts";
-
-const quoted = (values: readonly string[]) => sql.raw(values.map((v) => `'${v}'`).join(", "));
 
 /**
  * 通報。対象は投稿かユーザー（お気に入りのコメントはユーザーへの通報で扱う）。
@@ -38,11 +36,11 @@ export const reports = snakeCase.table(
     uniqueIndex("reports_open_user_unique")
       .on(t.reporterId, t.targetUserId)
       .where(sql`${t.status} = 'open' and ${t.postId} is null`),
-    check("reports_reason", sql`${t.reason} in (${quoted(REPORT_REASONS)})`),
-    check("reports_status", sql`${t.status} in (${quoted(REPORT_STATUSES)})`),
+    check("reports_reason", inArray(t.reason, REPORT_REASONS).inlineParams()),
+    check("reports_status", inArray(t.status, REPORT_STATUSES).inlineParams()),
     check(
       "reports_detail_length",
-      sql`${t.detail} is null or length(${t.detail}) <= ${sql.raw(String(REPORT_DETAIL_MAX))}`,
+      sql`${t.detail} is null or length(${t.detail}) <= ${REPORT_DETAIL_MAX}`.inlineParams(),
     ),
   ],
 );

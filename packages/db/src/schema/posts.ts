@@ -35,7 +35,7 @@ export const posts = snakeCase.table(
     index("posts_deleted_at_idx").on(t.deletedAt), // 物理削除バッチ用
     check(
       "posts_content_length",
-      sql`length(${t.content}) between 1 and ${sql.raw(String(POST_CONTENT_MAX))}`,
+      sql`length(${t.content}) between 1 and ${POST_CONTENT_MAX}`.inlineParams(),
     ),
   ],
 );

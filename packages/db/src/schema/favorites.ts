@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import {
   type SQLiteColumn,
   check,
@@ -39,11 +39,11 @@ const favoriteConstraints = (
   index(`${table}_target_idx`).on(target), // 対象からの逆引き（RESTRICT の確認など）
   check(
     `${table}_comment_length`,
-    sql`${t.comment} is null or length(${t.comment}) <= ${sql.raw(String(FAVORITE_COMMENT_MAX))}`,
+    sql`${t.comment} is null or length(${t.comment}) <= ${FAVORITE_COMMENT_MAX}`.inlineParams(),
   ),
   check(
     `${table}_color`,
-    sql`${t.color} is null or ${t.color} in (${sql.raw(FAVORITE_COLORS.map((c) => `'${c}'`).join(", "))})`,
+    sql`${t.color} is null or ${inArray(t.color, FAVORITE_COLORS)}`.inlineParams(),
   ),
 ];
 
