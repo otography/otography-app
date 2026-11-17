@@ -4,6 +4,8 @@ import { Hono } from "hono";
 import { requireAuth, type SessionEnv } from "../auth/session.ts";
 import { fetchArtist, fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
+import { listPostsQuery } from "../posts/schemas.ts";
+import { listPostsByAuthor } from "../posts/usecases/list-posts-by-author.ts";
 import { UserNotFoundError } from "./errors.ts";
 import {
   replaceFavoriteArtistsInput,
@@ -127,4 +129,27 @@ export const usersRoutes = new Hono<SessionEnv>()
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(profile);
-  });
+  })
+  // ユーザーの投稿を新しい順に返す。続きは nextCursor を cursor に渡して読む。
+  .get(
+    "/users/:publicId/posts",
+    requireAuth,
+    zValidator("query", listPostsQuery, (result, c) => {
+      if (!result.success) {
+        return c.json({ error: "cursor が正しくありません", issues: result.error.issues }, 400);
+      }
+    }),
+    async (c) => {
+      const page = await listPostsByAuthor({
+        db,
+        publicId: c.req.param("publicId"),
+        viewerId: c.get("user").id,
+        before: c.req.valid("query").cursor ?? null,
+      });
+      if (page instanceof Error) {
+        console.error(page);
+        return c.json({ error: INTERNAL_ERROR }, 500);
+      }
+      return c.json(page);
+    },
+  );

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { SongPicker } from "#/songs/SongPicker";
@@ -97,7 +98,11 @@ function LastPost() {
   if (!state.lastPost) return null;
   return (
     <p role="status" {...stylex.props(styles.success)}>
-      「{state.lastPost.songTitle}」で投稿しました
+      「{state.lastPost.songTitle}」で投稿しました（
+      <Link to="/posts/$postId" params={{ postId: state.lastPost.id }}>
+        投稿を見る
+      </Link>
+      ）
     </p>
   );
 }

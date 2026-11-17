@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PostsPostIdRouteImport } from './routes/posts/$postId'
 import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
 import { Route as UPublicIdRouteImport } from './routes/u/$publicId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PostsPostIdRoute = PostsPostIdRouteImport.update({
+  id: '/posts/$postId',
+  path: '/posts/$postId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsProfileRoute = SettingsProfileRouteImport.update({
@@ -31,30 +37,34 @@ const UPublicIdRoute = UPublicIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/posts/$postId': typeof PostsPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/posts/$postId': typeof PostsPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/posts/$postId': typeof PostsPostIdRoute
   '/settings/profile': typeof SettingsProfileRoute
   '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/settings/profile' | '/u/$publicId'
+  fullPaths: '/' | '/posts/$postId' | '/settings/profile' | '/u/$publicId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/settings/profile' | '/u/$publicId'
-  id: '__root__' | '/' | '/settings/profile' | '/u/$publicId'
+  to: '/' | '/posts/$postId' | '/settings/profile' | '/u/$publicId'
+  id: '__root__' | '/' | '/posts/$postId' | '/settings/profile' | '/u/$publicId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PostsPostIdRoute: typeof PostsPostIdRoute
   SettingsProfileRoute: typeof SettingsProfileRoute
   UPublicIdRoute: typeof UPublicIdRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posts/$postId': {
+      id: '/posts/$postId'
+      path: '/posts/$postId'
+      fullPath: '/posts/$postId'
+      preLoaderRoute: typeof PostsPostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings/profile': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PostsPostIdRoute: PostsPostIdRoute,
   SettingsProfileRoute: SettingsProfileRoute,
   UPublicIdRoute: UPublicIdRoute,
 }
