@@ -7,6 +7,7 @@ import { db } from "../lib/db.ts";
 import { PostNotFoundError } from "./errors.ts";
 import { createPostInput } from "./schemas.ts";
 import { createPost } from "./usecases/create-post.ts";
+import { deletePost } from "./usecases/delete-post.ts";
 import { getPost } from "./usecases/get-post.ts";
 import { setLike } from "./usecases/like-post.ts";
 
@@ -70,6 +71,16 @@ export const postsRoutes = new Hono<SessionEnv>()
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(post);
+  })
+  // 自分の投稿を削除する。
+  .delete("/:id", requireAuth, async (c) => {
+    const deleted = await deletePost({ db, postId: c.req.param("id"), userId: c.get("user").id });
+    if (deleted instanceof PostNotFoundError) return c.json({ error: deleted.message }, 404);
+    if (deleted instanceof Error) {
+      console.error(deleted);
+      return c.json({ error: INTERNAL_ERROR }, 500);
+    }
+    return c.body(null, 204);
   })
   // いいねを付ける。付け済みでも 200 を返す。
   .put("/:id/like", requireAuth, async (c) => {
