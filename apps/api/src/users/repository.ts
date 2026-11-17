@@ -1,5 +1,14 @@
-import { accounts, favoriteArtists, favoriteSongs, sessions, users } from "db";
-import { eq, sql } from "drizzle-orm";
+import {
+  accounts,
+  favoriteArtists,
+  favoriteSongs,
+  likes,
+  postEmbeddings,
+  posts,
+  sessions,
+  users,
+} from "db";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { UserQueryError } from "./errors.ts";
 
@@ -130,18 +139,29 @@ export const softDeleteUser = ({ db, userId }: { db: Database; userId: string })
       db.delete(favoriteArtists).where(eq(favoriteArtists.userId, userId)),
       db.delete(accounts).where(eq(accounts.userId, userId)),
       db.delete(sessions).where(eq(sessions.userId, userId)),
-      db.run(
-        sql`delete from post_embeddings where post_id in (select id from posts where user_id = ${userId})`,
-      ),
-      // いいねを消す前に、このユーザーのいいねを除いた件数で数え直す。updated_at は変えない。
-      db.run(sql`
-        update posts
-        set like_count = (
-          select count(*) from likes where likes.post_id = posts.id and likes.user_id != ${userId}
-        )
-        where id in (select post_id from likes where user_id = ${userId})
-      `),
-      db.run(sql`delete from likes where user_id = ${userId}`),
+      db
+        .delete(postEmbeddings)
+        .where(
+          inArray(
+            postEmbeddings.postId,
+            db.select({ id: posts.id }).from(posts).where(eq(posts.userId, userId)),
+          ),
+        ),
+      // いいねを消す前に、このユーザーのいいねを除いた件数で数え直す。
+      // set に updated_at の列そのものを渡し、$onUpdate を止めて今の値を保つ。
+      db
+        .update(posts)
+        .set({
+          likeCount: db.$count(likes, and(eq(likes.postId, posts.id), ne(likes.userId, userId))),
+          updatedAt: posts.updatedAt,
+        })
+        .where(
+          inArray(
+            posts.id,
+            db.select({ id: likes.postId }).from(likes).where(eq(likes.userId, userId)),
+          ),
+        ),
+      db.delete(likes).where(eq(likes.userId, userId)),
     ])
     .then(() => null)
     .catch((e) => new UserQueryError({ cause: e }));

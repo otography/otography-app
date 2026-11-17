@@ -30,7 +30,7 @@ export const songs = snakeCase.table(
     createdAt: createdAt(),
   },
   (t) => [
-    check("songs_isrc_format", sql`length(${t.isrc}) = ${sql.raw(String(ISRC_LENGTH))}`),
+    check("songs_isrc_format", sql`length(${t.isrc}) = ${ISRC_LENGTH}`.inlineParams()),
     index("songs_fetched_at_idx").on(t.fetchedAt), // 取り直しバッチ用
   ],
 );
