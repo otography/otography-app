@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { POST_CONTENT_MAX } from "db/constants";
 import { type ReactNode, useState } from "react";
 import { client } from "#/lib/api";
@@ -13,6 +13,7 @@ const countCharacters = (text: string) => Array.from(text.trim()).length;
  * 部品（Composer.*）は context の型だけに依存する。
  */
 export function CreatePostProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [song, setSong] = useState<AppleSong | null>(null);
   const [content, setContent] = useState("");
 
@@ -26,6 +27,8 @@ export function CreatePostProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       setSong(null);
       setContent("");
+      // プロフィールの投稿一覧に、新しい投稿を出す。
+      void queryClient.invalidateQueries({ queryKey: ["posts", "author"] });
     },
   });
 
