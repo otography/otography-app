@@ -19,6 +19,7 @@ import { getProfile } from "./usecases/get-profile.ts";
 import { replaceFavoriteArtistsOfUser } from "./usecases/replace-favorite-artists.ts";
 import { replaceFavoriteSongsOfUser } from "./usecases/replace-favorite-songs.ts";
 import { updateProfile } from "./usecases/update-profile.ts";
+import { logError } from "../lib/log.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 
@@ -33,7 +34,7 @@ export const usersRoutes = new Hono<SessionEnv>()
   .get("/me", requireAuth, async (c) => {
     const me = await getMe({ db, userId: c.get("user").id });
     if (me instanceof Error) {
-      console.error(me);
+      logError(me);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(me);
@@ -51,7 +52,7 @@ export const usersRoutes = new Hono<SessionEnv>()
     async (c) => {
       const me = await updateProfile({ db, userId: c.get("user").id, input: c.req.valid("json") });
       if (me instanceof Error) {
-        console.error(me);
+        logError(me);
         return c.json({ error: INTERNAL_ERROR }, 500);
       }
       return c.json(me);
@@ -61,7 +62,7 @@ export const usersRoutes = new Hono<SessionEnv>()
   .delete("/me", requireAuth, rateLimit("WRITE_RATE_LIMIT"), async (c) => {
     const deleted = await deleteAccount({ db, userId: c.get("user").id });
     if (deleted instanceof Error) {
-      console.error(deleted);
+      logError(deleted);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.body(null, 204);
@@ -92,7 +93,7 @@ export const usersRoutes = new Hono<SessionEnv>()
             AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
           },
           (e) => {
-            console.error(e);
+            logError(e);
             return { status: 500, error: INTERNAL_ERROR };
           },
         );
@@ -130,7 +131,7 @@ export const usersRoutes = new Hono<SessionEnv>()
             AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
           },
           (e) => {
-            console.error(e);
+            logError(e);
             return { status: 500, error: INTERNAL_ERROR };
           },
         );
@@ -144,7 +145,7 @@ export const usersRoutes = new Hono<SessionEnv>()
     const profile = await getProfile({ db, publicId: c.req.param("publicId") });
     if (profile instanceof Error) {
       if (profile instanceof UserNotFoundError) return c.json({ error: profile.message }, 404);
-      console.error(profile);
+      logError(profile);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(profile);
@@ -167,7 +168,7 @@ export const usersRoutes = new Hono<SessionEnv>()
         before: c.req.valid("query").cursor ?? null,
       });
       if (page instanceof Error) {
-        console.error(page);
+        logError(page);
         return c.json({ error: INTERNAL_ERROR }, 500);
       }
       return c.json(page);

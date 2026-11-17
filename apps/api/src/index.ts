@@ -8,6 +8,7 @@ import { postsRoutes } from "./posts/routes.ts";
 import { reportsRoutes } from "./reports/routes.ts";
 import { musicRoutes } from "./songs/routes.ts";
 import { usersRoutes } from "./users/routes.ts";
+import { logError } from "./lib/log.ts";
 
 // 機能ごとのルートをつなぐ。フォルダの構成は docs/adr/0011-organize-api-source-by-feature.md を参照。
 const app = new Hono<SessionEnv>()
@@ -31,7 +32,7 @@ export default {
   scheduled: async (controller) => {
     const purged = await purgeExpired({ db, now: new Date(controller.scheduledTime) });
     if (purged instanceof Error) {
-      console.error(purged);
+      logError(purged);
       return;
     }
     console.log("期限を過ぎた行を物理削除しました", purged);
