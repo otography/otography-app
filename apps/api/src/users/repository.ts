@@ -49,10 +49,23 @@ export const updateUser = ({
     .then(() => null)
     .catch((e) => new UserQueryError({ cause: e }));
 
-/**
- * お気に入りの曲を一覧ごと置き換える。削除と追加を 1 つの batch（トランザクション）で行うので、
- * 途中で失敗しても、元の一覧が残る。
- */
+type BatchItem = Parameters<Database["batch"]>[0][number];
+
+// 削除と追加を 1 つの batch（トランザクション）で行う。途中で失敗しても、元の一覧が残る。
+const replaceRows = ({
+  db,
+  remove,
+  insert,
+}: {
+  db: Database;
+  remove: BatchItem;
+  insert: BatchItem | null;
+}) =>
+  (insert ? db.batch([remove, insert]) : db.batch([remove]))
+    .then(() => null)
+    .catch((e) => new UserQueryError({ cause: e }));
+
+/** お気に入りの曲を一覧ごと置き換える。 */
 export const replaceFavoriteSongs = ({
   db,
   userId,
@@ -61,18 +74,16 @@ export const replaceFavoriteSongs = ({
   db: Database;
   userId: string;
   items: Omit<typeof favoriteSongs.$inferInsert, "userId">[];
-}) => {
-  const remove = db.delete(favoriteSongs).where(eq(favoriteSongs.userId, userId));
-  const result = items.length
-    ? db.batch([
-        remove,
-        db.insert(favoriteSongs).values(items.map((item) => ({ ...item, userId }))),
-      ])
-    : db.batch([remove]);
-  return result.then(() => null).catch((e) => new UserQueryError({ cause: e }));
-};
+}) =>
+  replaceRows({
+    db,
+    remove: db.delete(favoriteSongs).where(eq(favoriteSongs.userId, userId)),
+    insert: items.length
+      ? db.insert(favoriteSongs).values(items.map((item) => ({ ...item, userId })))
+      : null,
+  });
 
-/** お気に入りのアーティストを一覧ごと置き換える。曲と同じく、削除と追加を 1 つの batch で行う。 */
+/** お気に入りのアーティストを一覧ごと置き換える。 */
 export const replaceFavoriteArtists = ({
   db,
   userId,
@@ -81,13 +92,11 @@ export const replaceFavoriteArtists = ({
   db: Database;
   userId: string;
   items: Omit<typeof favoriteArtists.$inferInsert, "userId">[];
-}) => {
-  const remove = db.delete(favoriteArtists).where(eq(favoriteArtists.userId, userId));
-  const result = items.length
-    ? db.batch([
-        remove,
-        db.insert(favoriteArtists).values(items.map((item) => ({ ...item, userId }))),
-      ])
-    : db.batch([remove]);
-  return result.then(() => null).catch((e) => new UserQueryError({ cause: e }));
-};
+}) =>
+  replaceRows({
+    db,
+    remove: db.delete(favoriteArtists).where(eq(favoriteArtists.userId, userId)),
+    insert: items.length
+      ? db.insert(favoriteArtists).values(items.map((item) => ({ ...item, userId })))
+      : null,
+  });

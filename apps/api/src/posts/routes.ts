@@ -8,7 +8,7 @@ import { PostNotFoundError } from "./errors.ts";
 import { createPostInput } from "./schemas.ts";
 import { createPost } from "./usecases/create-post.ts";
 import { getPost } from "./usecases/get-post.ts";
-import { likePost, unlikePost } from "./usecases/like-post.ts";
+import { setLike } from "./usecases/like-post.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 
@@ -73,7 +73,12 @@ export const postsRoutes = new Hono<SessionEnv>()
   })
   // いいねを付ける。付け済みでも 200 を返す。
   .put("/:id/like", requireAuth, async (c) => {
-    const like = await likePost({ db, userId: c.get("user").id, postId: c.req.param("id") });
+    const like = await setLike({
+      db,
+      userId: c.get("user").id,
+      postId: c.req.param("id"),
+      liked: true,
+    });
     if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
     if (like instanceof Error) {
       console.error(like);
@@ -83,7 +88,12 @@ export const postsRoutes = new Hono<SessionEnv>()
   })
   // いいねを外す。付けていなくても 200 を返す。
   .delete("/:id/like", requireAuth, async (c) => {
-    const like = await unlikePost({ db, userId: c.get("user").id, postId: c.req.param("id") });
+    const like = await setLike({
+      db,
+      userId: c.get("user").id,
+      postId: c.req.param("id"),
+      liked: false,
+    });
     if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
     if (like instanceof Error) {
       console.error(like);

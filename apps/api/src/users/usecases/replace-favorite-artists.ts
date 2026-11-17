@@ -1,12 +1,12 @@
-import type { Artist } from "db";
 import type { z } from "zod";
 import { getOrCreateArtist } from "../../artists/repository.ts";
 import type { CatalogArtist } from "../../lib/apple-music/catalog.ts";
 import type { Database } from "../../lib/db.ts";
-import { DuplicateFavoriteArtistError, UserQueryError } from "../errors.ts";
-import { findUserById, replaceFavoriteArtists } from "../repository.ts";
+import { DuplicateFavoriteArtistError } from "../errors.ts";
+import { replaceFavoriteArtists } from "../repository.ts";
 import type { replaceFavoriteArtistsInput } from "../schemas.ts";
-import { getProfile } from "./get-profile.ts";
+import { decorationOf } from "./favorite-decoration.ts";
+import { getProfileOfUser } from "./get-profile.ts";
 
 /**
  * ログイン中のユーザーのお気に入りのアーティストを、一覧ごと置き換える。配列の順を並び順にする。
@@ -27,30 +27,21 @@ export async function replaceFavoriteArtistsOfUser<FetchError extends Error>({
   const duplicate = input.items.find((item) => seen.size === seen.add(item.artistId).size);
   if (duplicate) return new DuplicateFavoriteArtistError({ artistId: duplicate.artistId });
 
+  // アーティストを確定させ、保存する行を作る。
   const resolved = await Promise.all(
-    input.items.map((item) => getOrCreateArtist({ db, artistId: item.artistId, fetchArtist })),
+    input.items.map(async (item) => {
+      const artist = await getOrCreateArtist({ db, artistId: item.artistId, fetchArtist });
+      return artist instanceof Error ? artist : { artistId: artist.id, ...decorationOf(item) };
+    }),
   );
-  const artists: Artist[] = [];
-  for (const artist of resolved) {
-    if (artist instanceof Error) return artist;
-    artists.push(artist);
+  const items: Parameters<typeof replaceFavoriteArtists>[0]["items"] = [];
+  for (const [position, row] of resolved.entries()) {
+    if (row instanceof Error) return row;
+    items.push({ ...row, position });
   }
 
-  const replaced = await replaceFavoriteArtists({
-    db,
-    userId,
-    items: input.items.map((item, position) => ({
-      artistId: artists[position]!.id,
-      comment: item.comment ?? null,
-      emoji: item.emoji ?? null,
-      color: item.color ?? null,
-      position,
-    })),
-  });
+  const replaced = await replaceFavoriteArtists({ db, userId, items });
   if (replaced instanceof Error) return replaced;
 
-  const user = await findUserById({ db, userId });
-  if (user instanceof Error) return user;
-  if (!user) return new UserQueryError({ cause: new Error(`ユーザー ${userId} が DB にない`) });
-  return getProfile({ db, publicId: user.publicId });
+  return getProfileOfUser({ db, userId });
 }

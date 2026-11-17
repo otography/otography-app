@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test } from "vite-plus/test";
 import type { Database } from "../../../src/lib/db.ts";
 import { PostNotFoundError } from "../../../src/posts/errors.ts";
 import { getPost } from "../../../src/posts/usecases/get-post.ts";
-import { likePost, unlikePost } from "../../../src/posts/usecases/like-post.ts";
+import { setLike } from "../../../src/posts/usecases/like-post.ts";
 import { listPostsByAuthor } from "../../../src/posts/usecases/list-posts-by-author.ts";
 import { createTestDb } from "../../helpers/db.ts";
 
@@ -36,17 +36,17 @@ beforeEach(async () => {
 const likeCountOf = async (postId: string) =>
   (await db.select().from(posts).where(eq(posts.id, postId)))[0]?.likeCount;
 
-describe("likePost / unlikePost", () => {
+describe("setLike", () => {
   test("いいねを付けると件数が増え、2 回付けても 1 件のまま", async () => {
-    expect(await likePost({ db, userId: "viewer", postId: "post1" })).toEqual({
+    expect(await setLike({ db, userId: "viewer", postId: "post1", liked: true })).toEqual({
       likeCount: 1,
       likedByMe: true,
     });
-    expect(await likePost({ db, userId: "viewer", postId: "post1" })).toEqual({
+    expect(await setLike({ db, userId: "viewer", postId: "post1", liked: true })).toEqual({
       likeCount: 1,
       likedByMe: true,
     });
-    expect(await likePost({ db, userId: "author", postId: "post1" })).toEqual({
+    expect(await setLike({ db, userId: "author", postId: "post1", liked: true })).toEqual({
       likeCount: 2,
       likedByMe: true,
     });
@@ -54,29 +54,29 @@ describe("likePost / unlikePost", () => {
   });
 
   test("いいねを外すと件数が減り、付けていなくても成功する", async () => {
-    await likePost({ db, userId: "viewer", postId: "post1" });
-    expect(await unlikePost({ db, userId: "viewer", postId: "post1" })).toEqual({
+    await setLike({ db, userId: "viewer", postId: "post1", liked: true });
+    expect(await setLike({ db, userId: "viewer", postId: "post1", liked: false })).toEqual({
       likeCount: 0,
       likedByMe: false,
     });
-    expect(await unlikePost({ db, userId: "viewer", postId: "post1" })).toEqual({
+    expect(await setLike({ db, userId: "viewer", postId: "post1", liked: false })).toEqual({
       likeCount: 0,
       likedByMe: false,
     });
   });
 
   test("いいねでは、投稿の updated_at を変えない", async () => {
-    await likePost({ db, userId: "viewer", postId: "post1" });
+    await setLike({ db, userId: "viewer", postId: "post1", liked: true });
     const [post] = await db.select().from(posts).where(eq(posts.id, "post1"));
     expect(post?.updatedAt).toEqual(createdAt);
   });
 
   test("削除・非表示の投稿や、無い投稿には、いいねを保存しない", async () => {
     await db.update(posts).set({ hiddenAt: new Date() }).where(eq(posts.id, "post1"));
-    expect(await likePost({ db, userId: "viewer", postId: "post1" })).toBeInstanceOf(
+    expect(await setLike({ db, userId: "viewer", postId: "post1", liked: true })).toBeInstanceOf(
       PostNotFoundError,
     );
-    expect(await likePost({ db, userId: "viewer", postId: "nothing" })).toBeInstanceOf(
+    expect(await setLike({ db, userId: "viewer", postId: "nothing", liked: true })).toBeInstanceOf(
       PostNotFoundError,
     );
     expect(await db.select().from(likes)).toHaveLength(0);
@@ -86,7 +86,7 @@ describe("likePost / unlikePost", () => {
 
 describe("getPost", () => {
   test("投稿者、曲、件数、閲覧者がいいね済みかを返す", async () => {
-    await likePost({ db, userId: "viewer", postId: "post1" });
+    await setLike({ db, userId: "viewer", postId: "post1", liked: true });
     const post = await getPost({ db, postId: "post1", viewerId: "viewer" });
     if (post instanceof Error) throw post;
     expect(post).toMatchObject({

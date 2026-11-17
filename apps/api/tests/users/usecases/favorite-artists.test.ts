@@ -1,5 +1,5 @@
 import { artists, favoriteArtists } from "db";
-import { beforeEach, describe, expect, test } from "vite-plus/test";
+import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import type { CatalogArtist } from "../../../src/lib/apple-music/catalog.ts";
 import { AppleArtistNotFoundError } from "../../../src/lib/apple-music/errors.ts";
 import type { Database } from "../../../src/lib/db.ts";
@@ -15,12 +15,10 @@ const catalog: Record<string, CatalogArtist> = {
 };
 
 const fakeFetchArtist = () => {
-  const calls: string[] = [];
-  const fetchArtist = async (artistId: string) => {
-    calls.push(artistId);
-    return catalog[artistId] ?? new AppleArtistNotFoundError({ artistId });
-  };
-  return { calls, fetchArtist };
+  const fetchArtist = vi.fn(
+    async (artistId: string) => catalog[artistId] ?? new AppleArtistNotFoundError({ artistId }),
+  );
+  return { calls: fetchArtist.mock.calls, fetchArtist };
 };
 
 const favorites = (items: unknown[]) => replaceFavoriteArtistsInput.parse({ items });
@@ -43,7 +41,7 @@ describe("replaceFavoriteArtistsOfUser", () => {
     });
 
     if (profile instanceof Error) throw profile;
-    expect(calls).toEqual(["a2", "a1"]);
+    expect(calls).toEqual([["a2"], ["a1"]]);
     expect(profile.favoriteArtists.map((f) => [f.artist.name, f.emoji])).toEqual([
       ["アーティスト2", "🎸"],
       ["アーティスト1", null],
