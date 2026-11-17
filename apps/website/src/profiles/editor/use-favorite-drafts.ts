@@ -4,13 +4,11 @@ import type { FavoriteDraft, FavoritesActions } from "./context";
 
 /** お気に入りの一覧の編集（追加・削除・並び替え・飾りの変更）。保存の方法は Provider が決める。 */
 export function useFavoriteDrafts(initial: FavoriteDraft[]) {
-  const [items, setItems] = useState(initial);
-  const [dirty, setDirty] = useState(false);
+  // dirty：保存した内容から変えたか。一覧と同時に変わるので、1 つの state にまとめる。
+  const [state, setState] = useState({ items: initial, dirty: false });
 
-  const change = (next: (items: FavoriteDraft[]) => FavoriteDraft[]) => {
-    setItems(next);
-    setDirty(true);
-  };
+  const change = (next: (items: FavoriteDraft[]) => FavoriteDraft[]) =>
+    setState((previous) => ({ items: next(previous.items), dirty: true }));
 
   const actions: Omit<FavoritesActions, "save"> = {
     add: (draft) =>
@@ -35,12 +33,9 @@ export function useFavoriteDrafts(initial: FavoriteDraft[]) {
   };
 
   /** 保存できたときに、保存した内容を新しい基準にする。 */
-  const reset = (next: FavoriteDraft[]) => {
-    setItems(next);
-    setDirty(false);
-  };
+  const reset = (next: FavoriteDraft[]) => setState({ items: next, dirty: false });
 
-  return { items, dirty, actions, reset };
+  return { ...state, actions, reset };
 }
 
 /** 保存の API に送る飾りの値。空の文字列は送らない（API は NULL として保存する）。 */

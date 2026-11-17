@@ -1,12 +1,12 @@
-import type { Song } from "db";
 import type { z } from "zod";
 import type { CatalogSong } from "../../lib/apple-music/catalog.ts";
 import type { Database } from "../../lib/db.ts";
 import { getOrCreateSong } from "../../songs/repository.ts";
-import { DuplicateFavoriteSongError, UserQueryError } from "../errors.ts";
-import { findUserById, replaceFavoriteSongs } from "../repository.ts";
+import { DuplicateFavoriteSongError } from "../errors.ts";
+import { replaceFavoriteSongs } from "../repository.ts";
 import type { replaceFavoriteSongsInput } from "../schemas.ts";
-import { getProfile } from "./get-profile.ts";
+import { decorationOf } from "./favorite-decoration.ts";
+import { getProfileOfUser } from "./get-profile.ts";
 
 /**
  * ログイン中のユーザーのお気に入りの曲を、一覧ごと置き換える。配列の順を並び順にする。
@@ -23,37 +23,26 @@ export async function replaceFavoriteSongsOfUser<FetchError extends Error>({
   userId: string;
   input: z.output<typeof replaceFavoriteSongsInput>;
 }) {
+  // 曲を確定させ、保存する行を作る。
   const resolved = await Promise.all(
-    input.items.map((item) =>
-      getOrCreateSong({ db, songId: item.songId, isrc: item.isrc, fetchSong }),
-    ),
+    input.items.map(async (item) => {
+      const song = await getOrCreateSong({ db, songId: item.songId, isrc: item.isrc, fetchSong });
+      return song instanceof Error ? song : { songIsrc: song.isrc, ...decorationOf(item) };
+    }),
   );
-  const songs: Song[] = [];
-  for (const song of resolved) {
-    if (song instanceof Error) return song;
-    songs.push(song);
+  const items: Parameters<typeof replaceFavoriteSongs>[0]["items"] = [];
+  for (const [position, row] of resolved.entries()) {
+    if (row instanceof Error) return row;
+    items.push({ ...row, position });
   }
 
   // 入力の ISRC が違っても、Apple が返した ISRC が同じなら同じ曲なので、確定した曲で重複を確かめる。
   const seen = new Set<string>();
-  const duplicate = songs.find((song) => seen.size === seen.add(song.isrc).size);
-  if (duplicate) return new DuplicateFavoriteSongError({ isrc: duplicate.isrc });
+  const duplicate = items.find((item) => seen.size === seen.add(item.songIsrc).size);
+  if (duplicate) return new DuplicateFavoriteSongError({ isrc: duplicate.songIsrc });
 
-  const replaced = await replaceFavoriteSongs({
-    db,
-    userId,
-    items: input.items.map((item, position) => ({
-      songIsrc: songs[position]!.isrc,
-      comment: item.comment ?? null,
-      emoji: item.emoji ?? null,
-      color: item.color ?? null,
-      position,
-    })),
-  });
+  const replaced = await replaceFavoriteSongs({ db, userId, items });
   if (replaced instanceof Error) return replaced;
 
-  const user = await findUserById({ db, userId });
-  if (user instanceof Error) return user;
-  if (!user) return new UserQueryError({ cause: new Error(`ユーザー ${userId} が DB にない`) });
-  return getProfile({ db, publicId: user.publicId });
+  return getProfileOfUser({ db, userId });
 }

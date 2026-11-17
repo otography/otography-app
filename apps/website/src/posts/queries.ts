@@ -24,12 +24,13 @@ export const authorPostsQuery = (publicId: string) =>
     queryFn: async ({ pageParam }) => {
       const res = await client.api.users[":publicId"].posts.$get({
         param: { publicId },
+        // 最初のページは cursor を付けない（initialPageParam の空文字）。
         query: pageParam ? { cursor: pageParam } : {},
       });
       const body = await res.json();
       if ("error" in body) throw new Error(body.error);
       return body;
     },
-    initialPageParam: null as string | null,
-    getNextPageParam: (page) => page.nextCursor,
+    initialPageParam: "",
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });

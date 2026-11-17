@@ -112,48 +112,30 @@ const recountLikes = (db: Database, postId: string) =>
   `);
 
 /**
- * いいねを付け、新しい件数を返す。付け済みなら何もしない。
+ * いいねを付ける（liked が true）か外し（false）、新しい件数を返す。付け済みに付ける・無いものを外す場合は何もしない。
  * 見せてよい投稿でなければ、いいねを保存せずに null を返す。
  */
-export const insertLike = async ({
+export const writeLike = async ({
   db,
   userId,
   postId,
+  liked,
 }: {
   db: Database;
   userId: string;
   postId: string;
+  liked: boolean;
 }) => {
-  const result = await db
-    .batch([
-      db.run(sql`
+  const write = liked
+    ? db.run(sql`
         insert into likes (user_id, post_id, created_at)
         select ${userId}, posts.id, ${Date.now()} from posts
         where posts.id = ${postId} and posts.deleted_at is null and posts.hidden_at is null
         on conflict do nothing
-      `),
-      recountLikes(db, postId),
-    ])
-    .catch((e) => new PostQueryError({ cause: e }));
-  if (result instanceof Error) return result;
-  return result[1][0]?.likeCount ?? null;
-};
-
-/** いいねを外し、新しい件数を返す。見せてよい投稿でなければ null を返す。 */
-export const deleteLike = async ({
-  db,
-  userId,
-  postId,
-}: {
-  db: Database;
-  userId: string;
-  postId: string;
-}) => {
+      `)
+    : db.run(sql`delete from likes where user_id = ${userId} and post_id = ${postId}`);
   const result = await db
-    .batch([
-      db.run(sql`delete from likes where user_id = ${userId} and post_id = ${postId}`),
-      recountLikes(db, postId),
-    ])
+    .batch([write, recountLikes(db, postId)])
     .catch((e) => new PostQueryError({ cause: e }));
   if (result instanceof Error) return result;
   return result[1][0]?.likeCount ?? null;

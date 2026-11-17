@@ -3,29 +3,26 @@ import { client } from "#/lib/api";
 // MusicKit on the Web（v3）のうち、この画面で使う部分だけの型。
 // https://js-cdn.music.apple.com/musickit/v3/docs/
 
+/** Apple Music API のカタログのリソース（曲、アーティストなど）。 */
+type CatalogResource<Attributes> = { id: string; attributes: Attributes };
+
 /** Apple Music API のカタログの曲（使う属性だけ）。 */
-export type AppleSong = {
-  id: string;
-  attributes: {
-    name: string;
-    artistName: string;
-    albumName?: string;
-    artwork?: { url: string };
-    isrc?: string;
-    /** 試聴用の音源（約 30 秒）。 */
-    previews?: { url: string }[];
-  };
-};
+export type AppleSong = CatalogResource<{
+  name: string;
+  artistName: string;
+  albumName?: string;
+  artwork?: { url: string };
+  isrc?: string;
+  /** 試聴用の音源（約 30 秒）。 */
+  previews?: { url: string }[];
+}>;
 
 /** Apple Music API のカタログのアーティスト（使う属性だけ）。 */
-export type AppleArtist = {
-  id: string;
-  attributes: {
-    name: string;
-    artwork?: { url: string };
-    genreNames?: string[];
-  };
-};
+export type AppleArtist = CatalogResource<{
+  name: string;
+  artwork?: { url: string };
+  genreNames?: string[];
+}>;
 
 type MusicKitInstance = {
   api: {
@@ -121,25 +118,28 @@ export function getMusicKit() {
   return instance;
 }
 
-/** 曲を検索する。ストアフロントは jp に固定する（API と同じ）。 */
-export async function searchSongs(term: string) {
+/** 検索の種類と、返るリソースの型。 */
+type SearchTypes = { songs: AppleSong; artists: AppleArtist };
+type SearchResults = { [Type in keyof SearchTypes]?: { data: SearchTypes[Type][] } };
+
+/** カタログを 1 つの種類で検索する。ストアフロントは jp に固定する（API と同じ）。 */
+async function searchCatalog<Type extends keyof SearchTypes>(term: string, type: Type) {
   const music = await getMusicKit();
-  const { data } = await music.api.music<{ results: { songs?: { data: AppleSong[] } } }>(
-    "/v1/catalog/jp/search",
-    { term, types: "songs", limit: 10, l: "ja" },
-  );
-  return data.results.songs?.data ?? [];
+  const { data } = await music.api.music<{ results: SearchResults }>("/v1/catalog/jp/search", {
+    term,
+    types: type,
+    limit: 10,
+    l: "ja",
+  });
+  const results: SearchResults = data.results;
+  return results[type]?.data ?? [];
 }
 
-/** アーティストを検索する。ストアフロントは jp に固定する（API と同じ）。 */
-export async function searchArtists(term: string) {
-  const music = await getMusicKit();
-  const { data } = await music.api.music<{ results: { artists?: { data: AppleArtist[] } } }>(
-    "/v1/catalog/jp/search",
-    { term, types: "artists", limit: 10, l: "ja" },
-  );
-  return data.results.artists?.data ?? [];
-}
+/** 曲を検索する。 */
+export const searchSongs = (term: string) => searchCatalog(term, "songs");
+
+/** アーティストを検索する。 */
+export const searchArtists = (term: string) => searchCatalog(term, "artists");
 
 /** ジャケット画像の URL のテンプレート（{w}x{h}）に大きさを入れる。 */
 export const artworkUrl = (template: string, size: number) =>

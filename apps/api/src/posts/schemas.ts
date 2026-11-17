@@ -35,11 +35,13 @@ export const postViewOutput = createSelectSchema(posts)
  * 一覧の続きを読むための位置。最後の投稿の作成日時（epoch ミリ秒）と ID を「_」でつなぐ。
  * 作成日時が同じ投稿があっても、ID で順序が決まる。
  */
+const cursorPattern = /^(\d+)_([a-z0-9]+)$/;
+
 export const postCursor = z
   .string()
-  .regex(/^\d+_[a-z0-9]+$/)
+  .regex(cursorPattern)
   .transform((value) => {
-    const [ms, id] = value.split("_") as [string, string];
+    const [, ms = "", id = ""] = cursorPattern.exec(value) ?? [];
     return { createdAt: new Date(Number(ms)), id };
   });
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "vite-plus/test";
+import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import type { CatalogSong } from "../../src/lib/apple-music/catalog.ts";
 import {
   AppleSongNotFoundError,
@@ -22,12 +22,8 @@ const catalogSong = (overrides: Partial<CatalogSong> = {}): CatalogSong => ({
 });
 
 const fakeFetchSong = (result: FetchCatalogSongError | CatalogSong) => {
-  const calls: string[] = [];
-  const fetchSong = async (songId: string) => {
-    calls.push(songId);
-    return result;
-  };
-  return { calls, fetchSong };
+  const fetchSong = vi.fn(async (_songId: string) => result);
+  return { calls: fetchSong.mock.calls, fetchSong };
 };
 
 let db: Database;
@@ -42,7 +38,7 @@ describe("getOrCreateSong", () => {
 
     const song = await getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
 
-    expect(calls).toEqual(["100"]);
+    expect(calls).toEqual([["100"]]);
     if (song instanceof Error) throw song;
     expect(song.isrc).toBe("JPAB09999999");
     expect(song.fetchedAt).toBeInstanceOf(Date);
