@@ -4,6 +4,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { AuthorPosts } from "#/posts/AuthorPosts";
 import { ProfileView } from "#/profiles/ProfileView";
 import { meQuery, profileQuery } from "#/profiles/queries";
+import { ReportButton } from "#/reports/ReportButton";
 import { colors, space } from "#/styles/tokens.stylex";
 
 export const Route = createFileRoute("/u/$publicId")({ component: ProfilePage });
@@ -30,7 +31,13 @@ function ProfilePage() {
     <div {...stylex.props(styles.page, styles.stack)}>
       <ProfileView
         profile={profile.data}
-        actions={me.data.publicId === publicId && <Link to="/settings/profile">編集する</Link>}
+        actions={
+          me.data.publicId === publicId ? (
+            <Link to="/settings/profile">編集する</Link>
+          ) : (
+            <ReportButton target={{ publicId }} />
+          )
+        }
       />
       <AuthorPosts publicId={publicId} />
     </div>

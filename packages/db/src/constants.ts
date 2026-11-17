@@ -31,4 +31,15 @@ export const EMBEDDING_DIMENSIONS = 2048;
 export const EMBEDDING_MODEL = "plamo-1b:v1";
 
 export const REPORT_STATUSES = ["open", "resolved", "dismissed"] as const;
+/** 通報の理由。表示する文言は画面側で決める。 */
+export const REPORT_REASONS = [
+  "spam",
+  "harassment",
+  "inappropriate",
+  "impersonation",
+  "other",
+] as const;
+export type ReportReason = (typeof REPORT_REASONS)[number];
+/** 通報の詳細の上限（文字数）。 */
+export const REPORT_DETAIL_MAX = 500;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];

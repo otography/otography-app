@@ -4,6 +4,7 @@ import { artworkUrl } from "#/lib/musickit";
 import { colors, radius, space } from "#/styles/tokens.stylex";
 import { useQuery } from "@tanstack/react-query";
 import { meQuery } from "#/profiles/queries";
+import { ReportButton } from "#/reports/ReportButton";
 import { DeletePostButton } from "./DeletePostButton";
 import { LikeButton } from "./LikeButton";
 import type { PostView } from "./queries";
@@ -61,7 +62,11 @@ export function PostCard({ post }: { post: PostView }) {
       <p {...stylex.props(styles.content)}>{post.content}</p>
       <footer {...stylex.props(styles.footer)}>
         <LikeButton post={post} />
-        {mine && <DeletePostButton postId={post.id} />}
+        {mine ? (
+          <DeletePostButton postId={post.id} />
+        ) : (
+          <ReportButton target={{ postId: post.id }} />
+        )}
       </footer>
     </article>
   );
