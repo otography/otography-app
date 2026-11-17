@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { client } from "#/lib/api";
 import { colors, radius, space } from "#/styles/tokens.stylex";
-import { setLikeInCaches } from "./like-cache";
+import { setLikeInCaches } from "./post-cache";
 import type { PostView } from "./queries";
 
 /**

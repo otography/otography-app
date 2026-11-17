@@ -1,5 +1,5 @@
-import { type NewPost, postIpLogs, posts } from "db";
-import { sql } from "drizzle-orm";
+import { type NewPost, postEmbeddings, postIpLogs, posts } from "db";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { PostInsertError, PostQueryError } from "./errors.ts";
 
@@ -139,4 +139,36 @@ export const writeLike = async ({
     .catch((e) => new PostQueryError({ cause: e }));
   if (result instanceof Error) return result;
   return result[1][0]?.likeCount ?? null;
+};
+
+/**
+ * 本人の投稿を論理削除し、埋め込みの行を消す。消した投稿の ID を返す。
+ * 他人の投稿、無い投稿、削除済みの投稿なら、何もせずに null を返す。
+ */
+export const softDeletePost = async ({
+  db,
+  postId,
+  userId,
+}: {
+  db: Database;
+  postId: string;
+  userId: string;
+}) => {
+  const own = and(eq(posts.id, postId), eq(posts.userId, userId), isNull(posts.deletedAt));
+  const result = await db
+    .batch([
+      db.update(posts).set({ deletedAt: new Date() }).where(own).returning({ id: posts.id }),
+      // 投稿を消せたときだけ、埋め込みも消す（他人の投稿の埋め込みを消さない）。
+      db
+        .delete(postEmbeddings)
+        .where(
+          and(
+            eq(postEmbeddings.postId, postId),
+            sql`exists (select 1 from posts where posts.id = ${postId} and posts.user_id = ${userId})`,
+          ),
+        ),
+    ])
+    .catch((e) => new PostQueryError({ cause: e }));
+  if (result instanceof Error) return result;
+  return result[0][0]?.id ?? null;
 };
