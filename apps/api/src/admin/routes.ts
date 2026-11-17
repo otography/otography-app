@@ -7,6 +7,7 @@ import { requireAdmin } from "./middleware.ts";
 import { listReportsQuery, resolveReportInput } from "./schemas.ts";
 import { listReports } from "./usecases/list-reports.ts";
 import { resolveReport, setPostHidden, setUserSuspended } from "./usecases/moderate.ts";
+import { logError } from "../lib/log.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 
@@ -30,7 +31,7 @@ const toResponse = (error: AdminError) =>
       SelfSuspendError: (e) => ({ status: 400, error: e.message }),
     },
     (e) => {
-      console.error(e);
+      logError(e);
       return { status: 500, error: INTERNAL_ERROR };
     },
   );

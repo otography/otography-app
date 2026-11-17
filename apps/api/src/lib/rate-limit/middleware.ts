@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { createMiddleware } from "hono/factory";
 import type { SessionUser } from "../../auth/session.ts";
 import { RateLimitCheckError } from "./errors.ts";
+import { logWarning } from "../log.ts";
 
 /** cloudflare.config.ts で宣言した回数制限のバインディング。 */
 type Limiter = "WRITE_RATE_LIMIT" | "LIKE_RATE_LIMIT" | "READ_RATE_LIMIT";
@@ -16,7 +17,7 @@ export const rateLimit = (limiter: Limiter) =>
       .limit({ key: c.get("user").id })
       .catch((e) => new RateLimitCheckError({ limiter, cause: e }));
     if (outcome instanceof Error) {
-      console.warn(outcome.message, outcome.cause);
+      logWarning(outcome.message, outcome.cause);
       return next();
     }
     if (!outcome.success) {

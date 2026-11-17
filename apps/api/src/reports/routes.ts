@@ -6,6 +6,7 @@ import { db } from "../lib/db.ts";
 import { rateLimit } from "../lib/rate-limit/middleware.ts";
 import { createReportInput } from "./schemas.ts";
 import { createReport } from "./usecases/create-report.ts";
+import { logError } from "../lib/log.ts";
 
 export const reportsRoutes = new Hono<SessionEnv>()
   // 投稿かユーザーを通報する。同じ対象を重ねて通報しても 204 を返す。
@@ -41,7 +42,7 @@ export const reportsRoutes = new Hono<SessionEnv>()
             SelfReportError: (e) => ({ status: 400, error: e.message }),
           },
           (e) => {
-            console.error(e);
+            logError(e);
             return {
               status: 500,
               error: "通報できませんでした。時間をおいて、もう一度試してください",

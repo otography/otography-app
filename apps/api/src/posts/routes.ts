@@ -11,6 +11,7 @@ import { createPost } from "./usecases/create-post.ts";
 import { deletePost } from "./usecases/delete-post.ts";
 import { getPost } from "./usecases/get-post.ts";
 import { setLike } from "./usecases/like-post.ts";
+import { logError } from "../lib/log.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 
@@ -52,7 +53,7 @@ export const postsRoutes = new Hono<SessionEnv>()
             AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
           },
           (e) => {
-            console.error(e);
+            logError(e);
             return {
               status: 500,
               error: "投稿できませんでした。時間をおいて、もう一度試してください",
@@ -69,7 +70,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     const post = await getPost({ db, postId: c.req.param("id"), viewerId: c.get("user").id });
     if (post instanceof PostNotFoundError) return c.json({ error: post.message }, 404);
     if (post instanceof Error) {
-      console.error(post);
+      logError(post);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(post);
@@ -79,7 +80,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     const deleted = await deletePost({ db, postId: c.req.param("id"), userId: c.get("user").id });
     if (deleted instanceof PostNotFoundError) return c.json({ error: deleted.message }, 404);
     if (deleted instanceof Error) {
-      console.error(deleted);
+      logError(deleted);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.body(null, 204);
@@ -94,7 +95,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     });
     if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
     if (like instanceof Error) {
-      console.error(like);
+      logError(like);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(like);
@@ -109,7 +110,7 @@ export const postsRoutes = new Hono<SessionEnv>()
     });
     if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
     if (like instanceof Error) {
-      console.error(like);
+      logError(like);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }
     return c.json(like);
