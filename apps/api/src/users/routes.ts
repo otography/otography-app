@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { requireAuth, type SessionEnv } from "../auth/session.ts";
 import { fetchArtist, fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
+import { rateLimit } from "../lib/rate-limit/middleware.ts";
 import { listPostsQuery } from "../posts/schemas.ts";
 import { listPostsByAuthor } from "../posts/usecases/list-posts-by-author.ts";
 import { UserNotFoundError } from "./errors.ts";
@@ -40,6 +41,7 @@ export const usersRoutes = new Hono<SessionEnv>()
   .patch(
     "/me",
     requireAuth,
+    rateLimit("WRITE_RATE_LIMIT"),
     zValidator("json", updateProfileInput, (result, c) => {
       if (!result.success) {
         return c.json({ error: "入力が正しくありません", issues: result.error.issues }, 400);
@@ -55,38 +57,45 @@ export const usersRoutes = new Hono<SessionEnv>()
     },
   )
   // お気に入りの曲を一覧ごと置き換える。
-  .put("/me/favorite-songs", requireAuth, favoriteSongsValidator, async (c) => {
-    const profile = await replaceFavoriteSongsOfUser({
-      db,
-      fetchSong,
-      userId: c.get("user").id,
-      input: c.req.valid("json"),
-    });
-    if (profile instanceof Error) {
-      const { status, error } = errore.matchErrorPartial<
-        typeof profile,
-        { status: 400 | 422 | 500 | 503; error: string }
-      >(
-        profile,
-        {
-          DuplicateFavoriteSongError: (e) => ({ status: 400, error: e.message }),
-          AppleSongNotFoundError: (e) => ({ status: 422, error: e.message }),
-          SongWithoutIsrcError: (e) => ({ status: 422, error: e.message }),
-          AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
-        },
-        (e) => {
-          console.error(e);
-          return { status: 500, error: INTERNAL_ERROR };
-        },
-      );
-      return c.json({ error }, status);
-    }
-    return c.json(profile);
-  })
+  .put(
+    "/me/favorite-songs",
+    requireAuth,
+    rateLimit("WRITE_RATE_LIMIT"),
+    favoriteSongsValidator,
+    async (c) => {
+      const profile = await replaceFavoriteSongsOfUser({
+        db,
+        fetchSong,
+        userId: c.get("user").id,
+        input: c.req.valid("json"),
+      });
+      if (profile instanceof Error) {
+        const { status, error } = errore.matchErrorPartial<
+          typeof profile,
+          { status: 400 | 422 | 500 | 503; error: string }
+        >(
+          profile,
+          {
+            DuplicateFavoriteSongError: (e) => ({ status: 400, error: e.message }),
+            AppleSongNotFoundError: (e) => ({ status: 422, error: e.message }),
+            SongWithoutIsrcError: (e) => ({ status: 422, error: e.message }),
+            AppleMusicRateLimitError: (e) => ({ status: 503, error: e.message }),
+          },
+          (e) => {
+            console.error(e);
+            return { status: 500, error: INTERNAL_ERROR };
+          },
+        );
+        return c.json({ error }, status);
+      }
+      return c.json(profile);
+    },
+  )
   // お気に入りのアーティストを一覧ごと置き換える。
   .put(
     "/me/favorite-artists",
     requireAuth,
+    rateLimit("WRITE_RATE_LIMIT"),
     zValidator("json", replaceFavoriteArtistsInput, (result, c) => {
       if (!result.success) {
         return c.json({ error: "入力が正しくありません", issues: result.error.issues }, 400);
@@ -121,7 +130,7 @@ export const usersRoutes = new Hono<SessionEnv>()
     },
   )
   // 他のユーザーのプロフィール。
-  .get("/users/:publicId", requireAuth, async (c) => {
+  .get("/users/:publicId", requireAuth, rateLimit("READ_RATE_LIMIT"), async (c) => {
     const profile = await getProfile({ db, publicId: c.req.param("publicId") });
     if (profile instanceof Error) {
       if (profile instanceof UserNotFoundError) return c.json({ error: profile.message }, 404);
@@ -134,6 +143,7 @@ export const usersRoutes = new Hono<SessionEnv>()
   .get(
     "/users/:publicId/posts",
     requireAuth,
+    rateLimit("READ_RATE_LIMIT"),
     zValidator("query", listPostsQuery, (result, c) => {
       if (!result.success) {
         return c.json({ error: "cursor が正しくありません", issues: result.error.issues }, 400);
