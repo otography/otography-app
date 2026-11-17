@@ -64,6 +64,7 @@ describe("getMe / updateProfile", () => {
       image: null,
       publicId: "abc123def456",
       bio: "よろしく",
+      isAdmin: false,
     });
     expect(await getMe({ db, userId: "u1" })).toEqual(me);
   });

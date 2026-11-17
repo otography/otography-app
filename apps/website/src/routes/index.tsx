@@ -35,6 +35,7 @@ function Home() {
           プロフィール
         </Link>
         <Link to="/settings/profile">プロフィールを編集</Link>
+        {me.data.isAdmin && <Link to="/admin/reports">通報の管理</Link>}
         <Button
           onClick={() =>
             void authClient

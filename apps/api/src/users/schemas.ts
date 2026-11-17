@@ -14,6 +14,7 @@ export const meSchema = createSelectSchema(users).pick({
   image: true,
   publicId: true,
   bio: true,
+  isAdmin: true,
 });
 
 /** PATCH /api/me の入力。送られた項目だけを変える。自己紹介を空にすると NULL にする。 */
