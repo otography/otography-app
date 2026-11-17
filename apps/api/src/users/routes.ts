@@ -13,6 +13,7 @@ import {
   replaceFavoriteSongsInput,
   updateProfileInput,
 } from "./schemas.ts";
+import { deleteAccount } from "./usecases/delete-account.ts";
 import { getMe } from "./usecases/get-me.ts";
 import { getProfile } from "./usecases/get-profile.ts";
 import { replaceFavoriteArtistsOfUser } from "./usecases/replace-favorite-artists.ts";
@@ -56,6 +57,15 @@ export const usersRoutes = new Hono<SessionEnv>()
       return c.json(me);
     },
   )
+  // 退会する。セッションも消すので、この後はログアウトした状態になる。
+  .delete("/me", requireAuth, rateLimit("WRITE_RATE_LIMIT"), async (c) => {
+    const deleted = await deleteAccount({ db, userId: c.get("user").id });
+    if (deleted instanceof Error) {
+      console.error(deleted);
+      return c.json({ error: INTERNAL_ERROR }, 500);
+    }
+    return c.body(null, 204);
+  })
   // お気に入りの曲を一覧ごと置き換える。
   .put(
     "/me/favorite-songs",

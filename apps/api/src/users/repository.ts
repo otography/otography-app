@@ -1,5 +1,5 @@
-import { favoriteArtists, favoriteSongs, users } from "db";
-import { eq } from "drizzle-orm";
+import { accounts, favoriteArtists, favoriteSongs, sessions, users } from "db";
+import { eq, sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { UserQueryError } from "./errors.ts";
 
@@ -100,3 +100,48 @@ export const replaceFavoriteArtists = ({
       ? db.insert(favoriteArtists).values(items.map((item) => ({ ...item, userId })))
       : null,
   });
+
+/** 退会したユーザーの表示名。表示名の CHECK 制約（1 文字以上）を満たすために入れる。 */
+const DELETED_USER_NAME = "退会したユーザー";
+
+/**
+ * 退会の処理を、1 つの batch（トランザクション）で行う。
+ * - users：deleted_at を立て、表示名・自己紹介を消し、メールアドレスを無効な値に置き換える
+ * - お気に入り、ログイン連携（accounts）、セッションを消す
+ * - 投稿の埋め込みを消す（投稿は、投稿者の deleted_at によってすべての画面から消える）
+ * - このユーザーのいいねを消し、いいねしていた投稿の件数を数え直す
+ * 行そのものは 90 日後にバッチが物理削除し、CASCADE で投稿なども消える。
+ */
+export const softDeleteUser = ({ db, userId }: { db: Database; userId: string }) =>
+  db
+    .batch([
+      db
+        .update(users)
+        .set({
+          deletedAt: new Date(),
+          name: DELETED_USER_NAME,
+          bio: null,
+          image: null,
+          // email は UNIQUE なので、ユーザーごとに違う無効な値にする。同じ Google アカウントで作り直せる。
+          email: `deleted-${userId}@invalid`,
+        })
+        .where(eq(users.id, userId)),
+      db.delete(favoriteSongs).where(eq(favoriteSongs.userId, userId)),
+      db.delete(favoriteArtists).where(eq(favoriteArtists.userId, userId)),
+      db.delete(accounts).where(eq(accounts.userId, userId)),
+      db.delete(sessions).where(eq(sessions.userId, userId)),
+      db.run(
+        sql`delete from post_embeddings where post_id in (select id from posts where user_id = ${userId})`,
+      ),
+      // いいねを消す前に、このユーザーのいいねを除いた件数で数え直す。updated_at は変えない。
+      db.run(sql`
+        update posts
+        set like_count = (
+          select count(*) from likes where likes.post_id = posts.id and likes.user_id != ${userId}
+        )
+        where id in (select post_id from likes where user_id = ${userId})
+      `),
+      db.run(sql`delete from likes where user_id = ${userId}`),
+    ])
+    .then(() => null)
+    .catch((e) => new UserQueryError({ cause: e }));

@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { DeleteAccountSection } from "#/profiles/DeleteAccountSection";
 import { FavoriteArtistsEditor } from "#/profiles/FavoriteArtistsEditor";
 import { FavoriteSongsEditor } from "#/profiles/FavoriteSongsEditor";
 import { ProfileFieldsForm } from "#/profiles/ProfileFieldsForm";
@@ -37,6 +38,7 @@ function EditProfilePage() {
       <ProfileFieldsForm name={me.data.name} bio={me.data.bio} />
       <FavoriteSongsEditor profile={profile.data} />
       <FavoriteArtistsEditor profile={profile.data} />
+      <DeleteAccountSection />
     </div>
   );
 }
