@@ -1,3 +1,6 @@
+/* landing-reset（src/landing/landing.css）を、StyleX のレイヤーより先に宣言して、いちばん弱くする。 */
+@layer landing-reset;
+
 /* StyleX はビルド時に、このファイル（アプリのルートで読み込む CSS）の末尾に、集めたスタイルを追記する。 */
 
 * {

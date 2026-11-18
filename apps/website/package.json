@@ -12,6 +12,9 @@
     "preview": "vp preview"
   },
   "dependencies": {
+    "@fontsource-variable/bricolage-grotesque": "catalog:",
+    "@fontsource-variable/figtree": "catalog:",
+    "@fontsource/zen-kaku-gothic-new": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "@tanstack/react-devtools": "0.10.14",
     "@tanstack/react-query": "^5.107.1",
@@ -19,6 +22,7 @@
     "@tanstack/react-router-devtools": "1.167.3",
     "api": "workspace:*",
     "better-auth": "^1.7.25",
+    "budoux": "catalog:",
     "db": "workspace:*",
     "hono": "^4.13.18",
     "react": "^19.2.0",
