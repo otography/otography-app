@@ -1,1 +1,3 @@
 vp staged
+# 使われていないファイル・export・依存を見つける（knip.json）。リポジトリ全体を調べるので、vp staged とは別に実行する。
+vp run knip
