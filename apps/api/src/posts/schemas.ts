@@ -37,7 +37,7 @@ export const postViewOutput = createSelectSchema(posts)
  */
 const cursorPattern = /^(\d+)_([a-z0-9]+)$/;
 
-export const postCursor = z
+const postCursor = z
   .string()
   .regex(cursorPattern)
   .transform((value) => {

@@ -15,7 +15,7 @@ export type FavoriteDraft = {
   color: FavoriteColor | null;
 };
 
-export type FavoritesState = {
+type FavoritesState = {
   items: FavoriteDraft[];
   /** 保存していない変更があるか。 */
   dirty: boolean;
@@ -32,7 +32,7 @@ export type FavoritesActions = {
   save: () => void;
 };
 
-export type FavoritesMeta = {
+type FavoritesMeta = {
   label: string;
   max: number;
   commentMax: number;

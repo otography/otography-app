@@ -2,7 +2,7 @@ import { createContext, use } from "react";
 import type { AppleSong } from "#/lib/musickit";
 
 /** 投稿の入力欄が表示に使う状態。 */
-export type PostComposerState = {
+type PostComposerState = {
   song: AppleSong | null;
   content: string;
   /** 本文の文字数（コードポイントで数える）。 */
@@ -15,14 +15,14 @@ export type PostComposerState = {
 };
 
 /** 投稿の入力欄が状態を変えるための操作。 */
-export type PostComposerActions = {
+type PostComposerActions = {
   selectSong: (song: AppleSong) => void;
   clearSong: () => void;
   updateContent: (content: string) => void;
   submit: () => void;
 };
 
-export type PostComposerMeta = {
+type PostComposerMeta = {
   maxLength: number;
 };
 
