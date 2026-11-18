@@ -35,3 +35,6 @@ dist-ssr
 !.vscode/
 !.vscode/settings.json
 !.vscode/extensions.json
+
+# turso dev のローカルの DB（local.db と、その -wal・-shm などのファイル）
+local.db*
