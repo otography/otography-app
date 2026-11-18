@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignoreBinaries": ["similarity-ts"],
+  "workspaces": {
+    "apps/api": {
+      "entry": ["cloudflare.config.ts"]
+    },
+    "packages/db": {
+      "entry": ["scripts/*.ts"]
+    }
+  }
+}

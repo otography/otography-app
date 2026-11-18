@@ -91,6 +91,12 @@ vp run -r test
 vp run -r build
 ```
 
+- Find unused files, exports and dependencies with [Knip](https://knip.dev) (settings: `knip.json`, also runs in CI):
+
+```bash
+vp run knip
+```
+
 - Detect duplicate code with [similarity-ts](https://github.com/mizchi/similarity) (requires `cargo install similarity-ts`):
 
 ```bash

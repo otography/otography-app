@@ -7,11 +7,13 @@
     "ready": "vp check && vp run -r test && vp run -r build",
     "dev": "vp run website#dev",
     "prepare": "vp config",
+    "knip": "knip",
     "similarity": "similarity-ts apps packages --exclude '**/*.gen.ts' --threshold 0.85 --min-tokens 25 --types --experimental-overlap",
     "similarity:ci": "similarity-ts apps packages --exclude '**/*.gen.ts' --threshold 0.95 --min-tokens 25 --types --fail-on-duplicates"
   },
   "devDependencies": {
     "@stylexjs/eslint-plugin": "catalog:",
+    "knip": "catalog:",
     "vite-plus": "catalog:"
   },
   "devEngines": {

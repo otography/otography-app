@@ -35,6 +35,8 @@ jobs:
       - run: vp run api#typecheck
       - run: vp check
       - run: vp test
+      # 使われていないファイル・export・依存を見つける（knip.json）。
+      - run: vp run knip
 
       - name: Migrate the staging database
         run: vp run db#db:migrate

@@ -2,9 +2,9 @@ import type { Database } from "../../lib/db.ts";
 import { purgeRows } from "../repository.ts";
 
 /** 論理削除した行と IP ログを残す期間（設計ドキュメント）。 */
-export const RETENTION_DAYS = 90;
+const RETENTION_DAYS = 90;
 /** 1 回の実行で、種類ごとに消す行数の上限。残りは翌日の実行で消す。 */
-export const PURGE_LIMIT = 500;
+const PURGE_LIMIT = 500;
 
 /**
  * 保存期間を過ぎた行を物理削除する。1 日 1 回、Cron トリガーから呼ぶ。
