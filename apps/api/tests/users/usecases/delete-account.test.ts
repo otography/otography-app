@@ -54,6 +54,7 @@ beforeEach(async () => {
   await db.insert(postEmbeddings).values({
     postId: "mine",
     embedding: Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.5),
+    norm: 8,
     model: "test",
   });
 });

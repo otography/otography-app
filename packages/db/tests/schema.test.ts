@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, test } from "vite-plus/test";
 import {
   EMBEDDING_DIMENSIONS,
   EMBEDDING_MODEL,
+  embeddingChanges,
   postEmbeddings,
   posts,
   relations,
@@ -18,6 +19,10 @@ const db = drizzle({ client, relations });
 
 const vector = (seed: number) =>
   Array.from({ length: EMBEDDING_DIMENSIONS }, (_, i) => ((i + seed) % 7) / 8 - 0.25);
+const embeddingRow = (postId: string, seed: number) => {
+  const embedding = vector(seed);
+  return { postId, embedding, norm: Math.hypot(...embedding), model: EMBEDDING_MODEL };
+};
 
 beforeAll(async () => {
   await client.execute("PRAGMA foreign_keys = ON");
@@ -38,10 +43,7 @@ beforeAll(async () => {
     { id: "post2", userId: "u1", songIsrc: "JPAB01234567", content: "b" },
     { id: "post3", userId: "u1", songIsrc: "JPAB01234567", content: "c" }, // 埋め込みなし
   ]);
-  await db.insert(postEmbeddings).values([
-    { postId: "post1", embedding: vector(0), model: EMBEDDING_MODEL },
-    { postId: "post2", embedding: vector(3), model: EMBEDDING_MODEL },
-  ]);
+  await db.insert(postEmbeddings).values([embeddingRow("post1", 0), embeddingRow("post2", 3)]);
 });
 
 describe("schema", () => {
@@ -128,13 +130,33 @@ describe("schema", () => {
 
   test("投稿を消すと埋め込みも消える", async () => {
     await db.insert(posts).values({ id: "post4", userId: "u1", content: "d" });
-    await db
-      .insert(postEmbeddings)
-      .values({ postId: "post4", embedding: vector(5), model: EMBEDDING_MODEL });
+    await db.insert(postEmbeddings).values(embeddingRow("post4", 5));
     await db.delete(posts).where(eq(posts.id, "post4"));
     expect(
       await db.select().from(postEmbeddings).where(eq(postEmbeddings.postId, "post4")),
     ).toHaveLength(0);
+  });
+
+  test("埋め込みの追加・更新・削除が、統計の差分ログに記録される", async () => {
+    await db.delete(embeddingChanges);
+    await db.insert(posts).values({ id: "post5", userId: "u1", content: "e" });
+
+    await db.insert(postEmbeddings).values(embeddingRow("post5", 1));
+    await db
+      .update(postEmbeddings)
+      .set({ embedding: vector(2) })
+      .where(eq(postEmbeddings.postId, "post5"));
+    // 投稿の物理削除（ON DELETE CASCADE）で消えた埋め込みも記録される
+    await db.delete(posts).where(eq(posts.id, "post5"));
+
+    const changes = await db.select().from(embeddingChanges).orderBy(embeddingChanges.seq);
+    expect(changes.map((c) => [c.sign, c.embedding.slice(0, 7)])).toEqual([
+      [1, vector(1).slice(0, 7)], // 追加
+      [-1, vector(1).slice(0, 7)], // 更新：前の値を引く
+      [1, vector(2).slice(0, 7)], // 更新：新しい値を足す
+      [-1, vector(2).slice(0, 7)], // 削除
+    ]);
+    expect(changes.every((c) => c.model === EMBEDDING_MODEL)).toBe(true);
   });
 
   test("CHECK 制約で不正な ISRC を弾く", async () => {
