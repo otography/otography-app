@@ -12,7 +12,8 @@
     "check": "vp check",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:check": "drizzle-kit check"
+    "db:check": "drizzle-kit check",
+    "db:seed": "vpx ./scripts/seed.ts"
   },
   "dependencies": {
     "@libsql/client": "catalog:",
