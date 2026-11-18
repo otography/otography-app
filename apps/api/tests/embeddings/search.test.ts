@@ -6,22 +6,12 @@ import type { Metric } from "../../src/embeddings/metric.ts";
 import { searchSimilarPosts } from "../../src/embeddings/search.ts";
 import type { Database } from "../../src/lib/db.ts";
 import { createTestDb } from "../helpers/db.ts";
+import { createGaussian } from "../helpers/random.ts";
 
 const k = EMBEDDING_DIMENSIONS;
 const N = 60;
 
-/** 再現できる乱数（mulberry32 と Box–Muller）。 */
-const createRandom = (seed: number) => {
-  let a = seed;
-  const uniform = () => {
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-  return () => Math.sqrt(-2 * Math.log(uniform() || 1e-12)) * Math.cos(2 * Math.PI * uniform());
-};
-const gaussian = createRandom(42);
+const gaussian = createGaussian(42);
 const randomVector = (scale = 1) => Array.from({ length: k }, () => gaussian() * scale);
 const dot = (a: ArrayLike<number>, b: ArrayLike<number>) => {
   let s = 0;
