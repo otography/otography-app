@@ -1,0 +1,37 @@
+# 埋め込みの統計を取り込み、必要なら計量を作り直す（apps/api/src/embeddings/usecases/refresh-metric.ts）。
+# 計算量が Worker の CPU 時間の上限を超えるので、Cron トリガーではなく GitHub Actions で動かす。
+name: Embedding metric
+
+on:
+  schedule:
+    # 毎日 3:30（日本時間）。3:00 の物理削除（Worker の Cron トリガー）の後に動かす
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.environment }}
+    # 統計の読み書きは 1 本の流れで行う必要があるので、同じ環境では同時に 1 つだけ動かす
+    concurrency:
+      group: embedding-metric-${{ matrix.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+      - run: vp run api#embedding:refresh
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          # 検索の補正を始めるときに、環境の変数（Variables）で true にする。それまでは統計を積み上げるだけ。
+          EMBEDDING_METRIC_PUBLISH: ${{ vars.EMBEDDING_METRIC_PUBLISH }}

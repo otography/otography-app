@@ -10,7 +10,8 @@
     "build": "vp run website#build && cf build",
     "deploy": "vp run website#build && cf deploy",
     "typecheck": "cf workers types && tsc",
-    "deploy:staging": "vp run website#build && cf previews deploy --preview-name staging"
+    "deploy:staging": "vp run website#build && cf previews deploy --preview-name staging",
+    "embedding:refresh": "vpx ./scripts/refresh-embedding-metric.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.25",

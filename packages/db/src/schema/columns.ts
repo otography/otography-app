@@ -15,6 +15,17 @@ export const updatedAt = () =>
     .$defaultFn(() => new Date())
     .$onUpdate(() => new Date());
 
+/**
+ * バイト列をそのまま保存する BLOB。行列などを Float32Array / Float64Array のバイト列にして入れる。
+ * codec "blob" で、読み出しの値を Uint8Array（Node では Buffer）にそろえる。
+ */
+export const bytes = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType() {
+    return "blob";
+  },
+  codec: "blob",
+});
+
 /** IEEE 754 半精度（16bit）を number に戻す。 */
 const halfToNumber = (h: number): number => {
   const sign = h & 0x8000 ? -1 : 1;

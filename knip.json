@@ -3,7 +3,7 @@
   "ignoreBinaries": ["similarity-ts"],
   "workspaces": {
     "apps/api": {
-      "entry": ["cloudflare.config.ts"]
+      "entry": ["cloudflare.config.ts", "scripts/*.ts"]
     },
     "packages/db": {
       "entry": ["scripts/*.ts"]

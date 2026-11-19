@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { check, index, integer, primaryKey, real, snakeCase, text } from "drizzle-orm/sqlite-core";
 import { EMBEDDING_DIMENSIONS, POST_CONTENT_MAX } from "../constants.ts";
 import { users } from "./auth.ts";
-import { createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
+import { bytes, createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
 import { songs } from "./music.ts";
 
 // 一覧系のクエリは必ず「deleted_at IS NULL AND hidden_at IS NULL」を条件に入れる。
@@ -102,6 +102,31 @@ export const embeddingChanges = snakeCase.table(
     model: text().notNull(), // 統計は変換 A の版ごとに持つので、どの版の z かを残す
   },
   (t) => [check("embedding_changes_sign", sql`${t.sign} in (1, -1)`.inlineParams())],
+);
+
+/**
+ * 埋め込みの統計と、そこから作った計量。変換 A の版（post_embeddings.model の値）ごとに 1 行。
+ * バッチ（apps/api/src/embeddings/usecases/refresh-metric.ts）だけが書き、検索は mean、precision、pnorm_column を読む。
+ *
+ * - moments：Σ [z; 1][z; 1]ᵀ の上三角を Float64 で並べたもの。count（行数）と、z の和と 2 次の和が入る
+ * - mean、precision：平均 m（Float32 × k）と逆共分散 P（Float32 × k × k）。version が 0 の間（補正なし）は NULL
+ * - pnorm_column：この計量でのノルムを書いた post_embeddings の列
+ */
+export const embeddingMetrics = snakeCase.table(
+  "embedding_metrics",
+  {
+    model: text().primaryKey(),
+    version: integer().notNull().default(0),
+    moments: bytes().notNull(),
+    mean: bytes(),
+    precision: bytes(),
+    pnormColumn: text({ enum: ["pnorm_a", "pnorm_b"] })
+      .notNull()
+      .default("pnorm_b"),
+    switchedAt: timestamp(), // pnorm_column を切り替えた時刻
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("embedding_metrics_pnorm_column", sql`${t.pnormColumn} in ('pnorm_a', 'pnorm_b')`)],
 );
 
 export const likes = snakeCase.table(
