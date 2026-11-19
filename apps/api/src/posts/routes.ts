@@ -8,6 +8,7 @@ import { rateLimit } from "../lib/rate-limit/middleware.ts";
 import { PostNotFoundError } from "./errors.ts";
 import { createPostInput } from "./schemas.ts";
 import { createPost } from "./usecases/create-post.ts";
+import { embedNewPost } from "../embeddings/worker.ts";
 import { deletePost } from "./usecases/delete-post.ts";
 import { getPost } from "./usecases/get-post.ts";
 import { setLike } from "./usecases/like-post.ts";
@@ -62,6 +63,8 @@ export const postsRoutes = new Hono<SessionEnv>()
         );
         return c.json({ error }, status);
       }
+      // 埋め込みは応答を返した後に作る。失敗しても投稿は成功のままで、埋め込みのバッチが後で補う。
+      c.executionCtx.waitUntil(embedNewPost(post));
       return c.json(post, 201);
     },
   )

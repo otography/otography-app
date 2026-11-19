@@ -31,6 +31,8 @@ export const ISRC_LENGTH = 12;
  * 設計ドキュメント「埋め込みの保存と中心化・白色化の設計」を参照。
  */
 export const EMBEDDING_DIMENSIONS = 256;
+/** モデル（Workers AI の PLaMo-Embedding-1B）が出すベクトル x の次元数。 */
+export const EMBEDDING_INPUT_DIMENSIONS = 2048;
 /** モデル名 + 埋め込む文の組み立て方の版。本文だけを埋め込む。 */
 export const EMBEDDING_MODEL = "plamo-1b:v1";
 
