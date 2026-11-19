@@ -1,0 +1,40 @@
+# 埋め込みの無い投稿の埋め込みを作る（apps/api/scripts/embed-posts.ts）。
+# 投稿時の Worker が作れなかった分を補うため、毎日本番に対して動かす。staging は手動で実行する。
+name: Embed posts
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 対象
+        type: choice
+        options: [staging, production]
+        required: true
+  schedule:
+    # 毎日 3:15（日本時間）。3:30 の統計のバッチ（embedding-metric.yml）の前に動かす
+    - cron: "15 18 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+    concurrency:
+      group: embedding-${{ inputs.environment || 'production' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+      - run: vp run api#embedding:embed-posts
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKERS_AI_API_TOKEN: ${{ secrets.WORKERS_AI_API_TOKEN }}
+          # apps/api/cloudflare.config.ts の X_STORE と同じ名前
+          X_STORE_NAME: ${{ (inputs.environment || 'production') == 'staging' && 'x-store-staging-01' || 'x-store-01' }}

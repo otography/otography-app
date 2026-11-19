@@ -129,6 +129,20 @@ export const embeddingMetrics = snakeCase.table(
   (t) => [check("embedding_metrics_pnorm_column", sql`${t.pnormColumn} in ('pnorm_a', 'pnorm_b')`)],
 );
 
+/**
+ * 埋め込み x（2048 次元）を z（256 次元）に落とす変換 z = Ax + b。model（post_embeddings.model の値）ごとに 1 行。
+ * バッチ（apps/api/scripts/build-transform.ts）が作り、投稿時の Worker と埋め込みのバッチが読む。
+ * - a：A を行優先で並べた Float32（EMBEDDING_DIMENSIONS × EMBEDDING_INPUT_DIMENSIONS、約 2MB）
+ * - b：Float32 × EMBEDDING_DIMENSIONS
+ * 作り直すときは model の値を変えて別の行にし、全件の z を作り直してから検索を切り替える。
+ */
+export const embeddingTransforms = snakeCase.table("embedding_transforms", {
+  model: text().primaryKey(),
+  a: bytes().notNull(),
+  b: bytes().notNull(),
+  createdAt: createdAt(),
+});
+
 export const likes = snakeCase.table(
   "likes",
   {
