@@ -14,10 +14,11 @@ import { decodeHalf, encodeHalf, fromHex, toHex } from "../../src/embeddings/vec
 
 class MissingSettingError extends errore.createTaggedError({
   name: "MissingSettingError",
-  message: "環境変数 $name がありません。GitHub のシークレットか、手元の環境変数に入れてください",
+  message:
+    "環境変数 $variable がありません。GitHub のシークレットか、手元の環境変数に入れてください",
 }) {}
 
-const setting = (name: string) => process.env[name] || new MissingSettingError({ name });
+const setting = (name: string) => process.env[name] || new MissingSettingError({ variable: name });
 
 type ApiResponse<T> = { success: boolean; result: T; errors?: { message: string }[] };
 
