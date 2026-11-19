@@ -33,8 +33,11 @@ export const ISRC_LENGTH = 12;
 export const EMBEDDING_DIMENSIONS = 256;
 /** モデル（Workers AI の PLaMo-Embedding-1B）が出すベクトル x の次元数。 */
 export const EMBEDDING_INPUT_DIMENSIONS = 2048;
-/** モデル名 + 埋め込む文の組み立て方の版。本文だけを埋め込む。 */
-export const EMBEDDING_MODEL = "plamo-1b:v1";
+/**
+ * post_embeddings.model に入れる値。埋め込みのモデルと、x を z に落とす変換の版を表す。
+ * embedding_transforms の行の model と同じ値にする（docs/adr/0020-embedding-pca-without-whitening.md）。
+ */
+export const EMBEDDING_MODEL = "plamo-1b:pca256-v1";
 
 export const REPORT_STATUSES = ["open", "resolved", "dismissed"] as const;
 /** 通報の理由。表示する文言は画面側で決める。 */
