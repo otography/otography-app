@@ -26,7 +26,11 @@ export const POST_CONTENT_MAX = 140;
 /** ISRC の長さ。 */
 export const ISRC_LENGTH = 12;
 
-export const EMBEDDING_DIMENSIONS = 2048;
+/**
+ * 検索に使うベクトル z の次元数。モデルが出す 2048 次元の x を、変換 z = Ax + b で落とした後の次元数。
+ * 設計ドキュメント「埋め込みの保存と中心化・白色化の設計」を参照。
+ */
+export const EMBEDDING_DIMENSIONS = 256;
 /** モデル名 + 埋め込む文の組み立て方の版。本文だけを埋め込む。 */
 export const EMBEDDING_MODEL = "plamo-1b:v1";
 

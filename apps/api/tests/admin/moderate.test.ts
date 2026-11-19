@@ -85,6 +85,7 @@ describe("setPostHidden", () => {
     await db.insert(postEmbeddings).values({
       postId: "post1",
       embedding: Array.from({ length: EMBEDDING_DIMENSIONS }, () => 0.5),
+      norm: 8,
       model: "test",
     });
     expect(await setPostHidden({ db, postId: "post1", hidden: true })).toEqual({ hidden: true });

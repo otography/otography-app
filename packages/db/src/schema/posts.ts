@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, primaryKey, snakeCase, text } from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, real, snakeCase, text } from "drizzle-orm/sqlite-core";
 import { EMBEDDING_DIMENSIONS, POST_CONTENT_MAX } from "../constants.ts";
 import { users } from "./auth.ts";
 import { createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
@@ -47,9 +47,11 @@ export type NewPost = typeof posts.$inferInsert;
 
 /**
  * 投稿本文の埋め込み（意味検索用）。posts とは 1 対 1 で、行が無い投稿は検索に出ない。
+ * embedding は、モデルが出す 2048 次元の x を、変換 z = Ax + b で 256 次元に落としたもの。
+ * 保存した後は書き換えない。統計の変化は、検索時のクエリの変換と並べ直しで補正する。
  *
- * posts に列として持たないのは次の理由から。
- * - 1 行 4KB あり、一覧やリレーショナルクエリで posts を読むたびに転送されてしまう
+ * posts に列として持たないのは次の理由から（docs/adr/0001-post-embeddings-table.md）。
+ * - ベクトルは数百バイトあり、一覧やリレーショナルクエリで posts を読むたびに転送されてしまう
  * - 投稿の後に非同期で作り、モデルを変えたら作り直すので、投稿本体とは更新の流れが違う
  *
  * 削除・非表示にした投稿は行ごと消して、容量とインデックスを解放する。
@@ -62,7 +64,13 @@ export const postEmbeddings = snakeCase.table(
       .primaryKey()
       .references(() => posts.id, { onDelete: "cascade" }),
     embedding: float16Vector({ dimensions: EMBEDDING_DIMENSIONS }).notNull(),
-    model: text().notNull(), // 例：plamo-1b:v1。モデルを変えたらこの値で作り直す対象を探す
+    // ‖z‖。並べ直しの SQL で、コサインから内積を組み立てるのに使う。embedding と一緒に書く
+    norm: real().notNull(),
+    // 新しい計量でのノルム ‖z − m‖_P。2 列を交互に使う。リフレッシュのたびに、バッチが使っていない側を
+    // 全行書いてから切り替えるので、検索中の Worker が古い計量を持っていても、その計量の列が読める
+    pnormA: real(),
+    pnormB: real(),
+    model: text().notNull(), // モデルと変換 A の版。変えたらこの値で作り直す対象を探す
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -73,7 +81,27 @@ export const postEmbeddings = snakeCase.table(
       sql`libsql_vector_idx(${t.embedding}, 'metric=cosine', 'compress_neighbors=float1bit', 'max_neighbors=32')`,
     ),
     index("post_embeddings_model_idx").on(t.model),
+    check("post_embeddings_norm", sql`${t.norm} >= 0`),
   ],
+);
+
+/**
+ * 統計（z の平均と共分散）の差分ログ。post_embeddings のトリガーが、行の追加を +1、削除を −1、
+ * 更新をその両方として書く（トリガーは drizzle-kit が扱えないので、マイグレーション 20261118164753_post_embeddings_256 に手で書いた）。
+ * バッチが読んで統計に足し、同じトランザクションで消す。
+ *
+ * 前回のバッチ以降に増えた行を post_embeddings から読む方式にしないのは、削除を統計から引けないため。
+ * 削除にも消える前の z が要るので、追加のときも z を残す。
+ */
+export const embeddingChanges = snakeCase.table(
+  "embedding_changes",
+  {
+    seq: integer().primaryKey({ autoIncrement: true }),
+    sign: integer().notNull(), // +1 は追加、−1 は削除
+    embedding: float16Vector({ dimensions: EMBEDDING_DIMENSIONS }).notNull(),
+    model: text().notNull(), // 統計は変換 A の版ごとに持つので、どの版の z かを残す
+  },
+  (t) => [check("embedding_changes_sign", sql`${t.sign} in (1, -1)`.inlineParams())],
 );
 
 export const likes = snakeCase.table(
