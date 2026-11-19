@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { SongPicker } from "#/songs/SongPicker";
+import { SimilarPosts } from "../SimilarPosts";
 import { colors, radius, space } from "#/styles/tokens.stylex";
 import { usePostComposer } from "./context";
 
@@ -107,6 +108,13 @@ function LastPost() {
   );
 }
 
+/** 直前の投稿に近い感想。PostCard にボタンがあるので、Frame（form）の外に置く。 */
+function Similar() {
+  const { state } = usePostComposer();
+  if (!state.lastPost) return null;
+  return <SimilarPosts postId={state.lastPost.id} />;
+}
+
 /** 投稿の入力欄の部品。状態と操作は Provider（CreatePostProvider など）から受け取る。 */
 export const Composer = {
   Frame,
@@ -117,6 +125,7 @@ export const Composer = {
   Submit,
   Error: ErrorMessage,
   LastPost,
+  Similar,
 };
 
 const styles = stylex.create({
