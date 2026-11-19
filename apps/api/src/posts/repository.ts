@@ -39,7 +39,7 @@ const visible = {
 // 投稿 1 件として返す列と関連。likes は閲覧者自身のいいねだけを読み、いいね済みかの判定に使う。
 const postColumns = (viewerId: string) =>
   ({
-    columns: { id: true, content: true, likeCount: true, createdAt: true },
+    columns: { id: true, content: true, songIsrc: true, likeCount: true, createdAt: true },
     with: {
       author: { columns: { publicId: true, name: true, image: true } },
       song: true,
@@ -96,6 +96,25 @@ export const findVisiblePostsByAuthor = ({
       ...postColumns(viewerId),
     })
     .catch((e) => new PostQueryError({ cause: e }));
+
+/** 見せてよい投稿を、ID で読む。見せられない投稿は結果に含めない。順序は ids と同じにする。 */
+export const findVisiblePostsByIds = async ({
+  db,
+  ids,
+  viewerId,
+}: {
+  db: Database;
+  ids: string[];
+  viewerId: string;
+}) => {
+  if (ids.length === 0) return [];
+  const rows = await db.query.posts
+    .findMany({ where: { id: { in: ids }, ...visible }, ...postColumns(viewerId) })
+    .catch((e) => new PostQueryError({ cause: e }));
+  if (rows instanceof Error) return rows;
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  return ids.flatMap((id) => byId.get(id) ?? []);
+};
 
 // visible と同じ条件を、update と insert … select の where に書ける形にする。
 const visibleWhere = (db: Database, postId: string) =>

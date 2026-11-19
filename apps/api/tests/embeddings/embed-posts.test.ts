@@ -4,10 +4,11 @@ import { beforeEach, describe, expect, test } from "vite-plus/test";
 import type { Transform } from "../../src/embeddings/transform.ts";
 import { project } from "../../src/embeddings/transform.ts";
 import { embedPosts } from "../../src/embeddings/usecases/embed-posts.ts";
-import type { Embedder, VectorStore } from "../../src/embeddings/vector-store.ts";
+import type { Embedder } from "../../src/embeddings/vector-store.ts";
 import { decodeHalf, encodeHalf, fromHex, toHex } from "../../src/embeddings/vectors.ts";
 import type { Database } from "../../src/lib/db.ts";
 import { createTestDb } from "../helpers/db.ts";
+import { memoryStore } from "../helpers/vector-store.ts";
 import { createGaussian } from "../helpers/random.ts";
 
 const gaussian = createGaussian(3);
@@ -19,19 +20,6 @@ const transform: Transform = {
     () => gaussian() * 0.02,
   ),
   b: Float32Array.from({ length: EMBEDDING_DIMENSIONS }, () => gaussian() * 0.1),
-};
-
-const memoryStore = () => {
-  const rows = new Map<string, Float32Array>();
-  const store: VectorStore = {
-    put: async (items) => {
-      for (const item of items) if (!rows.has(item.postId)) rows.set(item.postId, item.x);
-      return null;
-    },
-    get: async (ids) =>
-      new Map(ids.flatMap((id) => (rows.has(id) ? [[id, rows.get(id)!] as const] : []))),
-  };
-  return { rows, store };
 };
 
 let db: Database;

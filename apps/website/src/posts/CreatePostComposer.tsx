@@ -15,6 +15,7 @@ export function CreatePostComposer() {
         </Composer.Footer>
         <Composer.Error />
       </Composer.Frame>
+      <Composer.Similar />
     </CreatePostProvider>
   );
 }

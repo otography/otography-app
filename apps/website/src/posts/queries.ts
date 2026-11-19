@@ -17,6 +17,33 @@ export const postQuery = (postId: string) =>
     },
   });
 
+/** 投稿に近い感想（3 件）。投稿の直後に出す。includeSameSong が false なら、同じ曲の感想を除く。 */
+export const similarPostsQuery = (postId: string, includeSameSong: boolean) =>
+  queryOptions({
+    queryKey: ["posts", "similar", postId, includeSameSong],
+    queryFn: async () => {
+      const res = await client.api.posts[":id"].similar.$get({
+        param: { id: postId },
+        query: { sameSong: includeSameSong ? "include" : "exclude" },
+      });
+      const body = await res.json();
+      if ("error" in body) throw new Error(body.error);
+      return body.posts;
+    },
+  });
+
+/** 短い言葉に近い感想。 */
+export const searchPostsQuery = (q: string) =>
+  queryOptions({
+    queryKey: ["posts", "search", q],
+    queryFn: async () => {
+      const res = await client.api.posts.search.$get({ query: { q } });
+      const body = await res.json();
+      if ("error" in body) throw new Error(body.error);
+      return body.posts;
+    },
+  });
+
 /** ユーザーの投稿を新しい順に読む。続きは nextCursor で読む。 */
 export const authorPostsQuery = (publicId: string) =>
   infiniteQueryOptions({

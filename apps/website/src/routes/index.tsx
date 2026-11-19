@@ -26,6 +26,7 @@ function Home() {
           プロフィール
         </Link>
         <Link to="/settings/profile">プロフィールを編集</Link>
+        <Link to="/search">感想を探す</Link>
         {me.data.isAdmin && <Link to="/admin/reports">通報の管理</Link>}
         <Button
           onClick={() =>
