@@ -17,7 +17,7 @@ export const findProfileByPublicId = ({ db, publicId }: { db: Database; publicId
   db.query.users
     .findFirst({
       where: { publicId, suspendedAt: { isNull: true }, deletedAt: { isNull: true } },
-      columns: { publicId: true, name: true, bio: true },
+      columns: { publicId: true, name: true, bio: true, image: true },
       with: {
         favoriteSongs: {
           columns: { comment: true, emoji: true, color: true },

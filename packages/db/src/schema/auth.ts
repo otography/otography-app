@@ -21,7 +21,9 @@ export const users = snakeCase.table(
     name: text({ length: USER_NAME_MAX }).notNull(),
     email: text().notNull().unique(),
     emailVerified: integer({ mode: "boolean" }).default(false).notNull(),
-    image: text(), // このサービスでは使わない
+    // アイコンの URL。プロフィールと投稿に公開する。Google の写真は保存せず（apps/api/src/auth/auth.ts）、
+    // 今は公式アカウントの画像（/otography-icon.png）だけが入る
+    image: text(),
     createdAt: timestamp().default(nowMs).notNull(),
     updatedAt: timestamp()
       .default(nowMs)

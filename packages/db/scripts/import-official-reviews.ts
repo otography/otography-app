@@ -39,6 +39,7 @@ const OFFICIAL = {
   email: "official@otography.invalid",
   bio: "otography の公式アカウントです。",
   isAdmin: true,
+  image: "/otography-icon.png", // apps/website/public の画像。Worker の静的アセットとして配信する
 };
 const SPREAD_MS = 90 * 24 * 60 * 60 * 1000;
 const CHUNK = 200;
@@ -92,7 +93,11 @@ const chunks = <T>(items: T[]) =>
     items.slice(i * CHUNK, (i + 1) * CHUNK),
   );
 
-await db.insert(users).values(OFFICIAL).onConflictDoNothing();
+// アイコンは後から足したので、既にある行でも image だけは書き直す。
+await db
+  .insert(users)
+  .values(OFFICIAL)
+  .onConflictDoUpdate({ target: users.id, set: { image: OFFICIAL.image } });
 const fetchedAt = new Date(now);
 for (const part of chunks(data.songs)) {
   await db

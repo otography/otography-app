@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { colors, radius, space } from "#/styles/tokens.stylex";
+import { Avatar } from "#/ui/avatar";
 import { favoriteColorStyles } from "./favorite-colors";
 import type { Profile } from "./queries";
 
@@ -10,7 +11,10 @@ export function ProfileView({ profile, actions }: { profile: Profile; actions?: 
   return (
     <article {...stylex.props(styles.root)}>
       <header {...stylex.props(styles.header)}>
-        <h1 {...stylex.props(styles.name)}>{profile.name}</h1>
+        <div {...stylex.props(styles.identity)}>
+          <Avatar name={profile.name} image={profile.image} size={64} />
+          <h1 {...stylex.props(styles.name)}>{profile.name}</h1>
+        </div>
         {actions}
       </header>
       {profile.bio && <p {...stylex.props(styles.bio)}>{profile.bio}</p>}
@@ -106,6 +110,7 @@ function FavoriteRow({
 const styles = stylex.create({
   root: { display: "flex", flexDirection: "column", gap: space.lg, width: "100%", maxWidth: 640 },
   header: { display: "flex", gap: space.md, alignItems: "center", justifyContent: "space-between" },
+  identity: { display: "flex", gap: space.md, alignItems: "center", minWidth: 0 },
   name: { margin: 0, fontSize: 24 },
   bio: { margin: 0, whiteSpace: "pre-wrap" },
   section: { display: "flex", flexDirection: "column", gap: space.sm },
