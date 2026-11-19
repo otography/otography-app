@@ -1,4 +1,5 @@
 import { ISRC_LENGTH, posts, songs, users } from "db";
+import { POST_CONTENT_MAX } from "db/constants";
 import { createInsertSchema, createSelectSchema } from "drizzle-orm/zod";
 import { z } from "zod";
 import { songOutput } from "../songs/schemas.ts";
@@ -47,6 +48,14 @@ const postCursor = z
 
 export const encodePostCursor = (post: { createdAt: Date; id: string }) =>
   `${post.createdAt.getTime()}_${post.id}`;
+
+/** GET /api/posts/search のクエリ。q は探したい感想を表す短い言葉（投稿の本文と同じ長さまで）。 */
+export const searchPostsQuery = z.object({ q: z.string().trim().min(1).max(POST_CONTENT_MAX) });
+
+/** GET /api/posts/:id/similar のクエリ。初期値は、同じ曲の感想を除く（exclude）。 */
+export const similarPostsQuery = z.object({
+  sameSong: z.enum(["include", "exclude"]).default("exclude"),
+});
 
 /** GET /api/users/:publicId/posts のクエリ。 */
 export const listPostsQuery = z.object({ cursor: postCursor.optional() });

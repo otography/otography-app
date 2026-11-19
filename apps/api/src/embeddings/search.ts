@@ -17,6 +17,7 @@ const vector16 = (v: ArrayLike<number>) => sql`vector16(${JSON.stringify(Array.f
  *
  * ‖z_i‖ は post_embeddings.norm、‖z_i − m‖_P は metric の pnorm 列から読む。
  * metric が null（統計の補正なし）なら、z と z_i のコサインで並べる。
+ * exclude を渡すと、その投稿と、その曲（ISRC）の投稿を結果から除く。
  */
 export async function searchSimilarPosts({
   db,
@@ -24,12 +25,14 @@ export async function searchSimilarPosts({
   metric,
   limit,
   candidates,
+  exclude = null,
 }: {
   db: Database;
   z: ArrayLike<number>;
   metric: Metric | null;
   limit: number;
   candidates: number;
+  exclude?: { postId: string; songIsrc: string | null } | null;
 }) {
   const query = metric ? toQuery(z, metric) : null;
   // u が 0（z が平均と一致する）ときは、どの投稿ともコサインが決まらない
@@ -57,6 +60,8 @@ export async function searchSimilarPosts({
         join ${users} on ${users.id} = ${posts.userId}
         where ${posts.deletedAt} is null and ${posts.hiddenAt} is null
           and ${users.suspendedAt} is null and ${users.deletedAt} is null
+          and ${exclude ? sql`${posts.id} <> ${exclude.postId}` : sql`1`}
+          and ${exclude?.songIsrc ? sql`${posts.songIsrc} is not ${exclude.songIsrc}` : sql`1`}
         order by score desc
         limit ${limit}`,
     )

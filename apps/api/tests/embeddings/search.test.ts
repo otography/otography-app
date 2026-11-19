@@ -1,4 +1,4 @@
-import { postEmbeddings, posts, users } from "db";
+import { postEmbeddings, posts, songs, users } from "db";
 import { EMBEDDING_DIMENSIONS } from "db/constants";
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, test } from "vite-plus/test";
@@ -58,6 +58,7 @@ beforeAll(async () => {
       suspendedAt: new Date(),
     },
   ]);
+  await db.insert(songs).values({ isrc: "JPAB01234567", appleSongId: "1", fetchedAt: new Date() });
   const ids = Array.from({ length: N }, (_, i) => `post${i}`);
   await db.insert(posts).values(
     ids.map((id, i) => ({
@@ -65,6 +66,8 @@ beforeAll(async () => {
       userId: i === 1 ? "banned" : "author",
       content: id,
       hiddenAt: i === 2 ? new Date() : null,
+      // post4〜post6 は同じ曲の投稿
+      songIsrc: i >= 4 && i <= 6 ? "JPAB01234567" : null,
     })),
   );
   await db.insert(postEmbeddings).values(
@@ -129,6 +132,22 @@ describe("searchSimilarPosts", () => {
     const result = await searchSimilarPosts({ db, z, metric: null, limit: 10, candidates: N });
     if (result instanceof Error) throw result;
     expect(result.map((r) => r.postId)).toEqual(expected.map((r) => r.postId));
+  });
+
+  test("exclude を渡すと、その投稿と同じ曲の投稿を除く", async () => {
+    const result = await searchSimilarPosts({
+      db,
+      z: stored.get("post4")!,
+      metric: null,
+      limit: N,
+      candidates: N,
+      exclude: { postId: "post4", songIsrc: "JPAB01234567" },
+    });
+    if (result instanceof Error) throw result;
+    const ids = result.map((r) => r.postId);
+    for (const id of ["post4", "post5", "post6"]) expect(ids).not.toContain(id);
+    // 曲の無い投稿（songIsrc が NULL）は除かない
+    expect(ids).toHaveLength(N - 2 - 3);
   });
 
   test("停止中のユーザーの投稿と、非表示の投稿は返さない", async () => {

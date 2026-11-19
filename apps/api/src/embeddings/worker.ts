@@ -15,7 +15,7 @@ import { decodeHalf, encodeHalf } from "./vectors.ts";
 
 // Worker のバインディング（cloudflare.config.ts の AI と X_STORE）を使う実装。テストからは読み込まない。
 
-const embed: Embedder = async (texts) => {
+export const embed: Embedder = async (texts) => {
   const result = await env.AI.run(EMBEDDING_SOURCE, { text: texts }).catch(
     (e) => new EmbeddingRequestError({ cause: e }),
   );
@@ -41,7 +41,7 @@ const ensureSchema = () => {
   return schemaReady;
 };
 
-const store: VectorStore = {
+export const store: VectorStore = {
   async put(rows) {
     const ready = await ensureSchema();
     if (ready instanceof Error) return ready;
@@ -74,7 +74,8 @@ const store: VectorStore = {
 
 // 変換は約 2MB あるので、isolate ごとに 1 回だけ読む。まだ無い（null）ときは、次の投稿で読み直す。
 let transform: Transform | null = null;
-const currentTransform = async () => {
+/** 今の EMBEDDING_MODEL の変換。まだ作っていなければ null。 */
+export const currentTransform = async () => {
   if (transform) return transform;
   const loaded = await loadTransform({ db, model: EMBEDDING_MODEL });
   if (loaded instanceof Error) return loaded;

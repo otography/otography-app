@@ -25,6 +25,11 @@ export class EmbeddingSaveError extends errore.createTaggedError({
   message: "投稿 $postId の埋め込みを保存できませんでした",
 }) {}
 
+export class EmbeddingUnavailableError extends errore.createTaggedError({
+  name: "EmbeddingUnavailableError",
+  message: "埋め込みの変換 $model がまだ無いので、感想を探せません",
+}) {}
+
 export class EmbeddingSearchError extends errore.createTaggedError({
   name: "EmbeddingSearchError",
   message: "埋め込みで投稿を検索できませんでした",
