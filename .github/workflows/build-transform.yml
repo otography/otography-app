@@ -1,5 +1,5 @@
 # 変換 A（2048 → 256 次元）を作って評価し、Turso に入れる（apps/api/scripts/build-transform.ts）。
-# 手動で実行する。Workers AI の無料枠を約 1,700 Neurons 使うので、staging と本番は別の日に実行してもよい。
+# 手動で実行する。公式アカウントの感想の x（D1）から作るので、先に Embed posts を実行しておく。Workers AI は使わない。
 name: Build embedding transform
 
 on:
