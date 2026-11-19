@@ -1,0 +1,5871 @@
+{
+  "reviews": [
+    {
+      "key": "song_reviews_part5_resolved:186:2",
+      "isrc": "JPB609631901",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:274:1",
+      "isrc": "JPU902604202",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:2:1",
+      "isrc": "JPU902502821",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "trivia"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:23:2",
+      "isrc": "JPPO01509647",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:654:5",
+      "isrc": "JPU902604162",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:46:1",
+      "isrc": "JPTK08800560",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:209:1",
+      "isrc": "JPPO02002791",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:187:5",
+      "isrc": "JPBV09500311",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:15:3",
+      "isrc": "JPU902305217",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:293:1",
+      "isrc": "JPPO02603451",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:216:4",
+      "isrc": "JPPO02604233",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:57:3",
+      "isrc": "JPPO01804452",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:252:5",
+      "isrc": "JPU901702924",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:781:5",
+      "isrc": "JPPC02612535",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "live"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:67:2",
+      "isrc": "JPFH09705930",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:678:2",
+      "isrc": "JPTO09834920",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:103:4",
+      "isrc": "JPI102600628",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:286:5",
+      "isrc": "JPU902601973",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "era", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:628:4",
+      "isrc": "JPB602501660",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:700:1",
+      "isrc": "JPPC08501960",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:101:2",
+      "isrc": "JPCO00910580",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:94:1",
+      "isrc": "JPPO01031520",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:88:3",
+      "isrc": "QT66V2691111",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:612:1",
+      "isrc": "JPPC02513302",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:373:3",
+      "isrc": "JPPO02604373",
+      "aspectPrimary": "live",
+      "aspects": ["live", "vocal", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:78:4",
+      "isrc": "JPES01001461",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:596:1",
+      "isrc": "JPU902503511",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:630:5",
+      "isrc": "JPU901702379",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:810:5",
+      "isrc": "JPB602601665",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "calm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:727:3",
+      "isrc": "JPTO08414420",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:392:4",
+      "isrc": "JPTF02609707",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:475:3",
+      "isrc": "JPKI02615621",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cute"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:30:4",
+      "isrc": "JPWP00700855",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:802:2",
+      "isrc": "QT66U2670448",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:325:2",
+      "isrc": "JPG102600245",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:210:1",
+      "isrc": "JPU902203154",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark"]
+    },
+    {
+      "key": "song_reviews_resolved:73:2:2",
+      "isrc": "JPTO01201961",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "tieup"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:82:1:2",
+      "isrc": "JPVP08902301",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:823:1",
+      "isrc": "QT66T2601445",
+      "aspectPrimary": "live",
+      "aspects": ["live", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:105:1",
+      "isrc": "JP92L2601190",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "memory", "live"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:615:4",
+      "isrc": "JPF700250112",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:62:3:2",
+      "isrc": "JPH209900006",
+      "aspectPrimary": "live",
+      "aspects": ["live", "era", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:241:2",
+      "isrc": "TCJPI1992829",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:96:4",
+      "isrc": "JPU902602545",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:414:1",
+      "isrc": "JPTE02604950",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:779:2",
+      "isrc": "JPPO02604457",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:176:2",
+      "isrc": "JPTE00601820",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:355:3",
+      "isrc": "JPJE01200520",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:115:1",
+      "isrc": "JPWP09701520",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cute", "funny"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:451:1",
+      "isrc": "JPTF02650447",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:281:4",
+      "isrc": "JPU902604484",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:434:2",
+      "isrc": "JPF702600566",
+      "aspectPrimary": "live",
+      "aspects": ["live", "sound"],
+      "moodPrimary": "cute",
+      "moods": ["cute"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:732:1",
+      "isrc": "JPFL08300280",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "era", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:40:1",
+      "isrc": "JPU902102591",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:89:1",
+      "isrc": "JP92E2602204",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:758:5",
+      "isrc": "JPA3C2600367",
+      "aspectPrimary": "live",
+      "aspects": ["live", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:816:5",
+      "isrc": "JPWP02600577",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:77:3",
+      "isrc": "JPWP02601111",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:65:2",
+      "isrc": "JPB602601841",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "live"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "cute"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:752:5",
+      "isrc": "QT66K2581153",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "cute"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:45:5",
+      "isrc": "JPPC09404330",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:2:5",
+      "isrc": "JPPO02602954",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "live"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:15:2:2",
+      "isrc": "JPU902105228",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:613:1",
+      "isrc": "JPPO02604231",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "memory", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:133:1",
+      "isrc": "JPKS00601581",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:39:1",
+      "isrc": "JPP302600640",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:309:4",
+      "isrc": "JPU902602513",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:112:2",
+      "isrc": "JPPO01202628",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:648:1",
+      "isrc": "JPU902502197",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:287:1",
+      "isrc": "JPVI02503652",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:80:5",
+      "isrc": "JPN002600237",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:337:3",
+      "isrc": "JPPO02000610",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "dark", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:30:1",
+      "isrc": "JPPO01623378",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:61:5",
+      "isrc": "JPPC01100003",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:660:4",
+      "isrc": "JPJE00000160",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:234:2",
+      "isrc": "JPU901902002",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:300:1",
+      "isrc": "JPU902600983",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:146:3",
+      "isrc": "JPPC00000849",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:41:4",
+      "isrc": "JPPC02310818",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:264:1",
+      "isrc": "JPBV00400009",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:222:3",
+      "isrc": "TCJPO2170278",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:11:1:2",
+      "isrc": "JPPO01336381",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:631:1",
+      "isrc": "JPPO02503125",
+      "aspectPrimary": "live",
+      "aspects": ["live", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:249:1",
+      "isrc": "JPWP01970489",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:694:3",
+      "isrc": "JPSR08816830",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:114:1",
+      "isrc": "JPF700802201",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:721:5",
+      "isrc": "JPVP08601001",
+      "aspectPrimary": "era",
+      "aspects": ["era", "sound"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:248:5",
+      "isrc": "JPU901902183",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:770:5",
+      "isrc": "JPPC02612304",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "visual"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:681:1",
+      "isrc": "JPPC00801152",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:41:1:2",
+      "isrc": "JPPC09715029",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:401:2",
+      "isrc": "JPI102603481",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "tieup"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:348:5",
+      "isrc": "JPU902304233",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark"]
+    },
+    {
+      "key": "song_reviews_resolved:68:3",
+      "isrc": "QT66V2698780",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:353:5",
+      "isrc": "JPR842000138",
+      "aspectPrimary": "live",
+      "aspects": ["live", "lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:386:5",
+      "isrc": "JP92E2602171",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "calm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:666:1",
+      "isrc": "JPJE09800220",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:39:3:2",
+      "isrc": "JPPO01803632",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cute"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:162:5",
+      "isrc": "JPI809500001",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:22:4",
+      "isrc": "JPTF01304201",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "era"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:603:3",
+      "isrc": "JPPO02304444",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:66:4",
+      "isrc": "JPPO01702932",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:132:1",
+      "isrc": "JPKT00203240",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:35:5",
+      "isrc": "JPU902403558",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:4:3",
+      "isrc": "JPPC01900265",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:47:2",
+      "isrc": "QT66V2654509",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound", "trivia"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:38:1",
+      "isrc": "JPU901800775",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:14:4",
+      "isrc": "JPU902400966",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "visual"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:440:3",
+      "isrc": "JPC102600354",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:372:4",
+      "isrc": "JPU902603881",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:759:1",
+      "isrc": "JPFL02601290",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:288:3",
+      "isrc": "JPU902604124",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:3:1",
+      "isrc": "JPPO02602654",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:68:5",
+      "isrc": "JPKS00901203",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:124:1",
+      "isrc": "JPTK09541101",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:53:1:2",
+      "isrc": "JPKS00400641",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:726:4",
+      "isrc": "JPCO00226560",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "artist"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:43:4:2",
+      "isrc": "JPU902101193",
+      "aspectPrimary": "live",
+      "aspects": ["live", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:655:2",
+      "isrc": "JPU902501176",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics", "trivia"],
+      "moodPrimary": "dark",
+      "moods": ["dark"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:625:3",
+      "isrc": "JPU902204824",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:409:2",
+      "isrc": "JPA602600236",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "funny", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:81:1",
+      "isrc": "JP92N2699065",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "memory"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:20:4",
+      "isrc": "JPU902000634",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics", "sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:60:1",
+      "isrc": "JPPO00817740",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:424:1",
+      "isrc": "JPCO02622020",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "live"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:354:4",
+      "isrc": "JPU902502047",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:462:3",
+      "isrc": "JP92J2604503",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_resolved:34:2:2",
+      "isrc": "JPPO01702921",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:219:5",
+      "isrc": "JPPO02201806",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:833:2",
+      "isrc": "JPB602601920",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:165:4",
+      "isrc": "JPES09400409",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal", "era"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:257:5",
+      "isrc": "JPPO02104849",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:117:5",
+      "isrc": "JPB602600887",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:63:1",
+      "isrc": "JPU902604222",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:63:2",
+      "isrc": "JPBM00805012",
+      "aspectPrimary": "live",
+      "aspects": ["live", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:106:1",
+      "isrc": "JPB590501014",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:744:2",
+      "isrc": "JPFL07800280",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:194:2",
+      "isrc": "JPTF09807203",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark"]
+    },
+    {
+      "key": "song_reviews_resolved:23:2:2",
+      "isrc": "JPJ221200345",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:119:1",
+      "isrc": "JPWP00204321",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:349:1",
+      "isrc": "JPPO01802568",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:76:4",
+      "isrc": "JPU901402542",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:469:4",
+      "isrc": "USA2P2677918",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "moved"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:670:1",
+      "isrc": "JPPO02203986",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:417:1",
+      "isrc": "JPVI02602807",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:195:5",
+      "isrc": "JPTF09810001",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "live", "era"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:34:1",
+      "isrc": "JPVI02603024",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:841:1",
+      "isrc": "QT66T2659208",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "cute"]
+    },
+    {
+      "key": "song_reviews_resolved:76:2",
+      "isrc": "JP92J2604402",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist", "sound"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:605:5",
+      "isrc": "JPP302102013",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cute"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:336:4",
+      "isrc": "JPR842400201",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "calm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:753:2",
+      "isrc": "JPPO02604456",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:44:2",
+      "isrc": "JPPO01505930",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:95:4",
+      "isrc": "JPVI09806960",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:32:1:2",
+      "isrc": "JPU902600004",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:641:5",
+      "isrc": "JPJE09900370",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_resolved:13:1",
+      "isrc": "JPJ222101667",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:223:4",
+      "isrc": "JPPC01902006",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "memory"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:95:3",
+      "isrc": "JPU902601039",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "calm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:147:4",
+      "isrc": "JPB609630802",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "trivia", "era"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:790:1",
+      "isrc": "JPB602601390",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "visual"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:299:5",
+      "isrc": "JPVI02601451",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:52:3",
+      "isrc": "JPTO00001167",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "memory", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:55:1",
+      "isrc": "JPI102603324",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "trivia"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:34:1",
+      "isrc": "JPX832600457",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "trivia"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:39:1",
+      "isrc": "JPB601303818",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:110:2",
+      "isrc": "JPWP02600594",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "live"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:695:4",
+      "isrc": "JPPS09102001",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:488:5",
+      "isrc": "JPV752612831",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:527:1",
+      "isrc": "JPG102602285",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:638:5",
+      "isrc": "JPU902500888",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:623:5",
+      "isrc": "JPPC02412963",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics", "era"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:446:1",
+      "isrc": "JPFL02601340",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:840:4",
+      "isrc": "QT66K2679386",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:712:3",
+      "isrc": "JPCO06910280",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:16:1:2",
+      "isrc": "JPVI01527970",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_resolved:49:2:2",
+      "isrc": "JPSR00601761",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:482:1",
+      "isrc": "JPPO02604074",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:38:2",
+      "isrc": "JPSR09600556",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "era", "trivia"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:69:1:2",
+      "isrc": "JPTO00001523",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:588:1",
+      "isrc": "JPPO01621209",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:218:1",
+      "isrc": "JPP302200613",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:320:3",
+      "isrc": "JPTF02650333",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:27:4",
+      "isrc": "JPU902200233",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "trivia"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:602:4",
+      "isrc": "JPWP01771557",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:366:1",
+      "isrc": "TCJPG2502496",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:244:3",
+      "isrc": "JPU901803148",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "sound", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:379:1",
+      "isrc": "JPVI02602750",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:173:3",
+      "isrc": "JPVP09202404",
+      "aspectPrimary": "era",
+      "aspects": ["era", "vocal", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:441:4",
+      "isrc": "JPWP02601065",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:387:2",
+      "isrc": "JPU902604115",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:69:1",
+      "isrc": "JPB602603042",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:12:1",
+      "isrc": "JPU902604576",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist", "visual"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:1:2",
+      "isrc": "JPU902601399",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:36:1:2",
+      "isrc": "JPTF01402402",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:5:2",
+      "isrc": "JPQ402602710",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:53:1",
+      "isrc": "JPPO02603848",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:505:1",
+      "isrc": "JPT552500999",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "live"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:63:4",
+      "isrc": "JPPO02600991",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:589:4",
+      "isrc": "JPV972400001",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:733:1",
+      "isrc": "JPTA08600010",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:83:2",
+      "isrc": "JPB602602883",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "tieup", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:624:4",
+      "isrc": "TCJPW2370846",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:344:1",
+      "isrc": "TCJPK2087568",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:289:1",
+      "isrc": "JPZ672600039",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist", "era"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:146:1",
+      "isrc": "JPB609701311",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:367:4",
+      "isrc": "JPES00802441",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "funny", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:69:5",
+      "isrc": "JPPO02000671",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:640:1",
+      "isrc": "JPW462404050",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:87:1",
+      "isrc": "JPPO09811680",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:39:1",
+      "isrc": "JPU902201259",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:777:4",
+      "isrc": "JPU902603968",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:766:2",
+      "isrc": "JP92Q2601613",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:21:2",
+      "isrc": "JPPO01414065",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:52:4",
+      "isrc": "JPU902201304",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:313:1",
+      "isrc": "JPU902600895",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:90:4",
+      "isrc": "JPN300802061",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:231:3",
+      "isrc": "JPPO01621596",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:119:3",
+      "isrc": "JPB602601256",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:680:4",
+      "isrc": "JPPO00701060",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:7:1",
+      "isrc": "TCJPA2438357",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "visual", "artist"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:639:1",
+      "isrc": "JPU902502169",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:277:1",
+      "isrc": "JPB602602723",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:622:1",
+      "isrc": "JPB602306869",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal", "memory"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_resolved:31:2:2",
+      "isrc": "JPPO02101873",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:122:1",
+      "isrc": "JPA2T2600008",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual", "tieup"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cute"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:54:1",
+      "isrc": "JPI800000003",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:593:1",
+      "isrc": "JPPO01400154",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics", "era"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:458:1",
+      "isrc": "JPB602602781",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "visual", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cute", "calm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:100:2",
+      "isrc": "JPKI02613538",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:45:3:2",
+      "isrc": "JPTO00401103",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:689:1",
+      "isrc": "JPFH08600410",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:256:2",
+      "isrc": "JPU901700003",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "visual", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:584:5",
+      "isrc": "JPU902002557",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:141:2",
+      "isrc": "JPB601140401",
+      "aspectPrimary": "era",
+      "aspects": ["era", "lyrics", "tieup"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved", "funny"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:72:2",
+      "isrc": "JPCO02607930",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:60:3",
+      "isrc": "JPSR09601204",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:36:2",
+      "isrc": "JPPO02202786",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:404:3",
+      "isrc": "QT66U2667293",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "calm", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:54:1:2",
+      "isrc": "JPTO09245490",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:819:2",
+      "isrc": "JPB602602675",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:312:4",
+      "isrc": "JPU902603754",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:41:4",
+      "isrc": "QT66V2644740",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:60:1",
+      "isrc": "JPU902604380",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:147:1",
+      "isrc": "JPPO01623451",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist", "tieup"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:836:3",
+      "isrc": "JPVI02602156",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_resolved:29:2",
+      "isrc": "JPU901401691",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:702:4",
+      "isrc": "JPKT00202700",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:276:4",
+      "isrc": "JPR652600176",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:767:1",
+      "isrc": "QT66V2696299",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:88:1",
+      "isrc": "JPWP01171074",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:511:1",
+      "isrc": "QT66V2625505",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_resolved:54:2",
+      "isrc": "JPR842600269",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:53:2",
+      "isrc": "JPWP02000820",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:395:2",
+      "isrc": "QT66U2693194",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:297:3",
+      "isrc": "JPP302600588",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:73:5",
+      "isrc": "JPB602601174",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual", "tieup"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:182:3",
+      "isrc": "JPBV01021882",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cute"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:741:1",
+      "isrc": "JPPO00412040",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:713:4",
+      "isrc": "JPVI08600620",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:28:5",
+      "isrc": "JPTF02128201",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:616:1",
+      "isrc": "JPPO02504699",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "bittersweet", "cute"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:66:5",
+      "isrc": "JPPO02604462",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "cute"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:609:1",
+      "isrc": "JPTF00804901",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:650:3",
+      "isrc": "JPU902503567",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:489:2",
+      "isrc": "JPWP02601093",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:92:1",
+      "isrc": "JPU902603982",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cute"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:426:3",
+      "isrc": "JPPO02604470",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:437:1",
+      "isrc": "JPR562600406",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "live"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:321:4",
+      "isrc": "JPPO02202918",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "bittersweet", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:91:1",
+      "isrc": "JPSR00700201",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cute", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:34:3",
+      "isrc": "JPQ400800340",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:333:5",
+      "isrc": "JPU902300267",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal", "tieup"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:245:4",
+      "isrc": "JPA651703790",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "trivia"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark"]
+    },
+    {
+      "key": "song_reviews_resolved:37:2",
+      "isrc": "JPU902404778",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:118:4",
+      "isrc": "JPCR00209660",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual", "trivia"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:282:1",
+      "isrc": "JPU902502822",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:49:4",
+      "isrc": "JPU902604303",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:172:4",
+      "isrc": "JPTO00202516",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:142:5",
+      "isrc": "JPSR08720090",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:37:1",
+      "isrc": "JPCO02620370",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:471:1",
+      "isrc": "JP92Y2616605",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:159:5",
+      "isrc": "JPSR00100421",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound", "era"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:10:2",
+      "isrc": "JPPC02210469",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_resolved:50:1:2",
+      "isrc": "JPPC00000851",
+      "aspectPrimary": "era",
+      "aspects": ["era", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:104:3",
+      "isrc": "JPBV01022711",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:634:1",
+      "isrc": "JPPC02512671",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:111:1",
+      "isrc": "JPTF09710001",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "vocal", "live"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:690:5",
+      "isrc": "JPES08602600",
+      "aspectPrimary": "era",
+      "aspects": ["era", "vocal", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:585:1",
+      "isrc": "JPPO02602730",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:455:1",
+      "isrc": "JP92E2601782",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "vocal", "visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool", "cute"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:402:5",
+      "isrc": "JPVI02602909",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:2:2:2",
+      "isrc": "JPPO02401026",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:642:2",
+      "isrc": "JPWP02500882",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:672:3",
+      "isrc": "JPVI00535020",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:663:1",
+      "isrc": "JPB602602713",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:791:4",
+      "isrc": "QT66L2573282",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_resolved:35:2:2",
+      "isrc": "JPKS09900801",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "memory", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:66:1",
+      "isrc": "JPSR08904840",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "vocal", "trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:45:1",
+      "isrc": "JPPO02604068",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:756:3",
+      "isrc": "QT66U2607453",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "dark",
+      "moods": ["dark"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:643:5",
+      "isrc": "JPVI02503643",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:41:3",
+      "isrc": "JPTF09504801",
+      "aspectPrimary": "era",
+      "aspects": ["era", "vocal", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:230:4",
+      "isrc": "JPPO02602294",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:118:4",
+      "isrc": "JPU902601099",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:798:1",
+      "isrc": "JPB602503668",
+      "aspectPrimary": "era",
+      "aspects": ["era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:291:5",
+      "isrc": "JPPO02604180",
+      "aspectPrimary": "era",
+      "aspects": ["era", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:783:1",
+      "isrc": "JPY392603985",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:184:5",
+      "isrc": "JPBM09701103",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "era"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:120:4",
+      "isrc": "JPPO00419390",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "era"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:6:1",
+      "isrc": "JPR652600076",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "hype"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:812:1",
+      "isrc": "TCJPD2538441",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:656:5",
+      "isrc": "JPJE00300110",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:67:1",
+      "isrc": "JPPO02603787",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist", "tieup"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:84:1",
+      "isrc": "JPVI02601063",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "sound"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:44:1",
+      "isrc": "JPMV09401200",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist", "tieup"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:378:4",
+      "isrc": "JPVI02602718",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:61:2",
+      "isrc": "JPTO09903800",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:26:1",
+      "isrc": "JPB601402195",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "memory"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:65:1",
+      "isrc": "JPTF00410501",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:138:2",
+      "isrc": "JPTO00400943",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:17:1",
+      "isrc": "JPP302600671",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:328:3",
+      "isrc": "JPW462364925",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:371:1",
+      "isrc": "JPB602602267",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "dark"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:381:4",
+      "isrc": "JPN002600274",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:345:4",
+      "isrc": "JPR652100061",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "calm"]
+    },
+    {
+      "key": "song_reviews_resolved:77:2:2",
+      "isrc": "JPES01300421",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:108:5",
+      "isrc": "JPTO08810010",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:183:4",
+      "isrc": "JPVI09728190",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "era"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:394:2",
+      "isrc": "JPVP02622101",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:718:1",
+      "isrc": "JPPO00501230",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:67:1",
+      "isrc": "JPC102600357",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:651:4",
+      "isrc": "JPPC02610993",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:357:1",
+      "isrc": "JPP302500291",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:198:2",
+      "isrc": "JPE409400010",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "tieup", "era"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:370:4",
+      "isrc": "JPP302400873",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:850:5",
+      "isrc": "QT66M2554533",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:85:3",
+      "isrc": "JPPC09323820",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:31:1",
+      "isrc": "JPVI02602239",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:166:1",
+      "isrc": "JPTF09503701",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:296:1",
+      "isrc": "JPPO02604646",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:35:4",
+      "isrc": "JPU901400745",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:760:4",
+      "isrc": "JPY252600144",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:45:1",
+      "isrc": "JPY392604164",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged", "calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:98:5",
+      "isrc": "JPPO09612050",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:121:1",
+      "isrc": "JPMV00000490",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:22:5",
+      "isrc": "JPU902503528",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:36:2",
+      "isrc": "JPPC02612564",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "dark",
+      "moods": ["dark"]
+    },
+    {
+      "key": "song_reviews_resolved:24:3",
+      "isrc": "JPVP01803301",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory", "trivia"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:239:3",
+      "isrc": "JPPO01402002",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:389:4",
+      "isrc": "JPPO02604389",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound", "vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:591:3",
+      "isrc": "JPU902302340",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:28:5",
+      "isrc": "JPB602501206",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_resolved:12:1:2",
+      "isrc": "JPSR00701981",
+      "aspectPrimary": "era",
+      "aspects": ["era", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:105:4",
+      "isrc": "JPC409501301",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:525:2",
+      "isrc": "JPR292500023",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny", "cute"]
+    },
+    {
+      "key": "song_reviews_resolved:75:1",
+      "isrc": "JPWP02601119",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:92:4",
+      "isrc": "JPPO09000230",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:149:2",
+      "isrc": "JPTK09200010",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal", "era"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:214:4",
+      "isrc": "JPU902203702",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:101:4",
+      "isrc": "JPE502600037",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:158:2",
+      "isrc": "JPMV00301650",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "vocal", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:673:4",
+      "isrc": "JPPO01413047",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:72:2:2",
+      "isrc": "JPES00002141",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:47:2",
+      "isrc": "JPB602602816",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:586:5",
+      "isrc": "JPPO02101687",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "warm"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:831:1",
+      "isrc": "TCJPL2564007",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:825:5",
+      "isrc": "JPB602601529",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:220:1",
+      "isrc": "JPU902302059",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:108:1",
+      "isrc": "JPI102600911",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:691:2",
+      "isrc": "JPU902002911",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:492:4",
+      "isrc": "QT66U2686359",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "vocal"],
+      "moodPrimary": "cute",
+      "moods": ["cute"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:113:1",
+      "isrc": "JP92N2609200",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:250:1",
+      "isrc": "JPJ221500777",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "sound", "tieup"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:203:4",
+      "isrc": "JPU901800227",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:757:4",
+      "isrc": "JPU902602204",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "funny"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:749:5",
+      "isrc": "JPC232600040",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "live"],
+      "moodPrimary": "cute",
+      "moods": ["cute"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:772:4",
+      "isrc": "JP92Q2601671",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:57:5",
+      "isrc": "JPPO02601638",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:46:5",
+      "isrc": "JPWP02670543",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:6:1:2",
+      "isrc": "JPVI02403562",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "memory", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:40:2",
+      "isrc": "JPTF00100101",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:384:5",
+      "isrc": "JPU902601234",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:51:3",
+      "isrc": "JPZ922606778",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:368:2",
+      "isrc": "JPQ402506560",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:334:4",
+      "isrc": "JPU902302107",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:191:3",
+      "isrc": "JPTO00000879",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:500:1",
+      "isrc": "JPPO02604168",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:307:2",
+      "isrc": "JPR652600046",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:258:4",
+      "isrc": "JPB601401708",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:145:4",
+      "isrc": "JPU901802328",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:263:2",
+      "isrc": "JPPO02203090",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:658:3",
+      "isrc": "JPT592610833",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "sound"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:283:4",
+      "isrc": "JPPO02603448",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:150:2",
+      "isrc": "JPTO09913980",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:601:1",
+      "isrc": "JPU902401197",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:79:5",
+      "isrc": "JPWP02600722",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:795:1",
+      "isrc": "QT66M2670633",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:6:1",
+      "isrc": "JP92Q2601730",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:329:4",
+      "isrc": "JPPO02501002",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:99:1",
+      "isrc": "JPB600637101",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:23:1",
+      "isrc": "JPB602401388",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "cute", "funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:306:5",
+      "isrc": "JPPO02501622",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:188:1",
+      "isrc": "JPBV01021881",
+      "aspectPrimary": "era",
+      "aspects": ["era", "vocal", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:51:2:2",
+      "isrc": "JPCR01300110",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:707:5",
+      "isrc": "JPVI08503560",
+      "aspectPrimary": "era",
+      "aspects": ["era", "visual", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:636:3",
+      "isrc": "JPVI02403243",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:531:1",
+      "isrc": "QT66V2616464",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "cute"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:279:5",
+      "isrc": "JPVI02602073",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "vocal", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:151:5",
+      "isrc": "JPSR09265359",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist", "era"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:627:1",
+      "isrc": "JPU902501572",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "tieup", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:698:5",
+      "isrc": "JPPC08000530",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:687:5",
+      "isrc": "JPSR07918510",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "memory", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "calm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:600:4",
+      "isrc": "JPPO02502247",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:42:2:2",
+      "isrc": "JPN301400059",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "artist", "live"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:255:5",
+      "isrc": "JPZ921712388",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:363:1",
+      "isrc": "JPP302400868",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:148:5",
+      "isrc": "JPTO09329370",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:109:2",
+      "isrc": "JPKS09801163",
+      "aspectPrimary": "era",
+      "aspects": ["era", "lyrics", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:773:1",
+      "isrc": "JPU902603655",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:728:1",
+      "isrc": "JPVI08201550",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:84:2",
+      "isrc": "JPTF00506601",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "tieup", "era"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:56:1",
+      "isrc": "JPU902603802",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:78:1:2",
+      "isrc": "JPB970200501",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "hype"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:813:4",
+      "isrc": "JP92J2604152",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:49:3",
+      "isrc": "JPWP00502181",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "live"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:135:1",
+      "isrc": "JPU901601601",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:25:4",
+      "isrc": "JPPC02511536",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:238:4",
+      "isrc": "JPPO02001032",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:385:1",
+      "isrc": "QT8CP2675285",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "funny"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:590:4",
+      "isrc": "JPPO02603455",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:133:1",
+      "isrc": "JPT592610402",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:72:1",
+      "isrc": "JPVI00104900",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:4:3",
+      "isrc": "JPU902602693",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:128:4",
+      "isrc": "JPVI09906130",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist", "trivia"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:443:1",
+      "isrc": "JP92L2608050",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:64:4",
+      "isrc": "JPPO00504460",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:25:2",
+      "isrc": "USAT22608078",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist", "live"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:78:1",
+      "isrc": "JPPO02601244",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "tieup"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:782:1",
+      "isrc": "JPU902602701",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "tieup"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:93:2",
+      "isrc": "JPPC09101990",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:29:2",
+      "isrc": "JPU902603948",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:16:4",
+      "isrc": "JPPC02212449",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:618:5",
+      "isrc": "JPPO02303985",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:86:3",
+      "isrc": "JPPO02601176",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "sound", "visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:64:1:2",
+      "isrc": "JPTF09704101",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:97:1",
+      "isrc": "JPTF02650415",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:57:1",
+      "isrc": "JPU902604223",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:316:1",
+      "isrc": "JPPC02612316",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:50:1",
+      "isrc": "JPB609804501",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:422:5",
+      "isrc": "JP92N2698957",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:23:1",
+      "isrc": "JPPO02604171",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:82:1",
+      "isrc": "JPX402600052",
+      "aspectPrimary": "live",
+      "aspects": ["live", "trivia"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:272:1",
+      "isrc": "JPTF02222901",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:549:1",
+      "isrc": "JP92N2625491",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:127:1",
+      "isrc": "JPB602601168",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "live", "vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_resolved:57:2",
+      "isrc": "JPWP02200459",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "live", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:587:2",
+      "isrc": "JPU902000080",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:763:3",
+      "isrc": "JPVI02602633",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:439:2",
+      "isrc": "JPN902602970",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:356:4",
+      "isrc": "JPU902404584",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:338:1",
+      "isrc": "JPPO02301108",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:190:4",
+      "isrc": "JPB609420301",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:710:1",
+      "isrc": "JPPC08200400",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:75:1:2",
+      "isrc": "JPSR00402286",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "era", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:369:2",
+      "isrc": "JPPO02402523",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:829:3",
+      "isrc": "QT66T2641013",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "dark"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:254:1",
+      "isrc": "JPWP01970073",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:391:3",
+      "isrc": "JPVI02602821",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:13:2",
+      "isrc": "JPWP01870687",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:73:1",
+      "isrc": "JPSR01202381",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:149:1",
+      "isrc": "JPB609709201",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "era"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:659:4",
+      "isrc": "QMFME2651227",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:846:1",
+      "isrc": "QZTVM2646179",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:322:1",
+      "isrc": "JPPO02602175",
+      "aspectPrimary": "live",
+      "aspects": ["live", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:676:5",
+      "isrc": "JPU901502766",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:21:2",
+      "isrc": "JPPO02303259",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "encouraged", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:857:1",
+      "isrc": "QT66S2615428",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "cute", "funny"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:33:3",
+      "isrc": "JPU902104201",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:246:1",
+      "isrc": "JPU902002971",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "visual", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:171:1",
+      "isrc": "JPPC09215860",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "era", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:77:3",
+      "isrc": "JPB602601900",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cute", "funny"]
+    },
+    {
+      "key": "song_reviews_resolved:50:1",
+      "isrc": "JPB602602990",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:56:1",
+      "isrc": "JPCO09565760",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "trivia", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:787:5",
+      "isrc": "QT66U2637759",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:28:1",
+      "isrc": "JPQ400600740",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "hype"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:796:5",
+      "isrc": "JPVI02404033",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:637:4",
+      "isrc": "JPPO02503400",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:20:5",
+      "isrc": "JPWP02070235",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:822:4",
+      "isrc": "JPB602602229",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "warm"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:599:3",
+      "isrc": "JPU901602293",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:8:5",
+      "isrc": "JP92N2699057",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "memory", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:33:2",
+      "isrc": "JPR562600250",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:361:2",
+      "isrc": "JPVI00401750",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:12:2",
+      "isrc": "JPB602501972",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:62:1",
+      "isrc": "JPWP02601017",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "visual", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "calm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:221:4",
+      "isrc": "JPU902001053",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "tieup", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:112:4",
+      "isrc": "JP92N2608082",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:13:5",
+      "isrc": "JPPO02603657",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved", "warm"]
+    },
+    {
+      "key": "song_reviews_resolved:74:1",
+      "isrc": "JPC102600255",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:278:2",
+      "isrc": "JPU902602451",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:375:5",
+      "isrc": "JPR652600301",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:360:5",
+      "isrc": "JPPO02300737",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "era", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:54:2",
+      "isrc": "QZ8BZ2513516",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:228:1",
+      "isrc": "JPB601801459",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "memory", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:233:1",
+      "isrc": "JPA651904585",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:765:5",
+      "isrc": "JP92E2602186",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:544:1",
+      "isrc": "JP92J2604305",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:48:4",
+      "isrc": "JPVI01513950",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist", "visual"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "funny", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:132:2",
+      "isrc": "JPY202600025",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "calm"]
+    },
+    {
+      "key": "song_reviews_resolved:15:3",
+      "isrc": "JPU902604311",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:55:5",
+      "isrc": "JPQ402601150",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:5:4",
+      "isrc": "JPPO02601342",
+      "aspectPrimary": "era",
+      "aspects": ["era", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:62:1",
+      "isrc": "QT66V2649043",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:397:5",
+      "isrc": "JPPO02604177",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "era"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "nostalgic", "calm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:406:1",
+      "isrc": "JPPO02604590",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:301:4",
+      "isrc": "JPPO02604161",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "trivia", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:342:5",
+      "isrc": "JPPO02303117",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:314:2",
+      "isrc": "JPPO02603857",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_resolved:7:4",
+      "isrc": "JP92N2699333",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:87:4",
+      "isrc": "JPU902603397",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:71:5",
+      "isrc": "JPX522600022",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:156:4",
+      "isrc": "JPTF09402001",
+      "aspectPrimary": "live",
+      "aspects": ["live", "memory", "era"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:270:2",
+      "isrc": "JPJ220900142",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:229:4",
+      "isrc": "JPU901602597",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:647:3",
+      "isrc": "GXBAV2114934",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:125:2",
+      "isrc": "JPR652600152",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "tieup"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:81:5",
+      "isrc": "JPN100400201",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:123:2",
+      "isrc": "JPPC09705860",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:834:1",
+      "isrc": "QT66T2601151",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "hype"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:704:2",
+      "isrc": "JPTE08004250",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "calm"]
+    },
+    {
+      "key": "song_reviews_resolved:83:2",
+      "isrc": "JPVI00439650",
+      "aspectPrimary": "era",
+      "aspects": ["era", "lyrics", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:5:1:2",
+      "isrc": "JPPO02601177",
+      "aspectPrimary": "visual",
+      "aspects": ["visual"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "funny"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:786:1",
+      "isrc": "QT8CF2646036",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "vocal"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:315:5",
+      "isrc": "JPV972600003",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:40:1",
+      "isrc": "JPTO00701536",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:762:4",
+      "isrc": "QT66V2606323",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:295:1",
+      "isrc": "JPVI02602067",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:817:1",
+      "isrc": "JPTF02650332",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual", "vocal"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:1:5",
+      "isrc": "JPPO00262920",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:180:1",
+      "isrc": "JPTF09606801",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:619:2",
+      "isrc": "JPBV00921040",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:271:5",
+      "isrc": "JPJ222202170",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:484:1",
+      "isrc": "JPPO02603503",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_resolved:35:4",
+      "isrc": "JPR652600256",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:461:4",
+      "isrc": "JPCO02619490",
+      "aspectPrimary": "live",
+      "aspects": ["live", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:595:5",
+      "isrc": "JPPO02501236",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "trivia"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:71:4",
+      "isrc": "JPAM09402930",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:438:2",
+      "isrc": "JPPO02604252",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:652:1",
+      "isrc": "JPU902603484",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:390:4",
+      "isrc": "JPU902603296",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "tieup"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:331:5",
+      "isrc": "JPPO02404187",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:12:1",
+      "isrc": "JPU902603878",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:473:1",
+      "isrc": "JPP302600616",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:626:1",
+      "isrc": "JPPO02303969",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:206:1",
+      "isrc": "JPTF02017001",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics", "visual"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:268:5",
+      "isrc": "TCJPS2296262",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:76:4",
+      "isrc": "JPU902603616",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist", "tieup"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:374:1",
+      "isrc": "JPVI02602956",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:36:1",
+      "isrc": "JPWP02200446",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_resolved:26:1:2",
+      "isrc": "JPTF01506501",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual", "trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:32:4",
+      "isrc": "JPTF02538202",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic", "calm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:213:5",
+      "isrc": "JPPO02201022",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "era", "vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:294:4",
+      "isrc": "JPTF02609201",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:764:1",
+      "isrc": "JPVP02617201",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:181:4",
+      "isrc": "JPES09260369",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "sound"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:692:5",
+      "isrc": "JPSR08327930",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:720:1",
+      "isrc": "JPPC08400490",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:679:4",
+      "isrc": "JPPO01148804",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:611:2",
+      "isrc": "JPU902403965",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_resolved:32:4",
+      "isrc": "JPU902604225",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:396:1",
+      "isrc": "QT8CR2610574",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:425:4",
+      "isrc": "JPF502606134",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics", "vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic", "calm"]
+    },
+    {
+      "key": "song_reviews_resolved:19:5",
+      "isrc": "JPPO02004097",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:352:1",
+      "isrc": "JPR842600300",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:598:4",
+      "isrc": "JPB602002630",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:430:2",
+      "isrc": "QT66U2638834",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:163:1",
+      "isrc": "JPTO09418980",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:91:5",
+      "isrc": "JPPO02603837",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:51:4",
+      "isrc": "JPTF09407301",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:742:1",
+      "isrc": "JPVI07801630",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:70:1",
+      "isrc": "JPTF02650103",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "trivia"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:805:1",
+      "isrc": "JPVI02601662",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:797:2",
+      "isrc": "QT66S2696824",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "visual"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:610:5",
+      "isrc": "JPPO02405571",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:96:3",
+      "isrc": "JPB600540201",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:2:4",
+      "isrc": "JPP302600795",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "sound", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:9:2",
+      "isrc": "JPPO02601373",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist", "live"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:116:2",
+      "isrc": "JPSR00103464",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:58:1",
+      "isrc": "JPC409701137",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:754:1",
+      "isrc": "JPVI02602876",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:43:1",
+      "isrc": "JPU901502466",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "funny"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:431:5",
+      "isrc": "JPR652600274",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:284:5",
+      "isrc": "JPQ402600330",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "live", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:207:1",
+      "isrc": "JPP302000760",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "dark"]
+    },
+    {
+      "key": "song_reviews_resolved:70:1",
+      "isrc": "JPB602602898",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "hype",
+      "moods": ["hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:671:4",
+      "isrc": "JPU902603388",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "funny"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:804:4",
+      "isrc": "JPPO02604188",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:632:5",
+      "isrc": "JPU902503844",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:330:1",
+      "isrc": "JPU902402594",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "dark", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:664:2",
+      "isrc": "JPVI02503230",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "artist", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_resolved:80:1:2",
+      "isrc": "JPPO02003243",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "memory", "vocal"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:107:1",
+      "isrc": "JPPO01076090",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "vocal", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:323:4",
+      "isrc": "JP92N2599206",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "visual"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:453:5",
+      "isrc": "QT66V2661155",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual", "vocal"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:269:1",
+      "isrc": "JPTF01010101",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:141:1",
+      "isrc": "JPU901700644",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:58:2",
+      "isrc": "JPR842600288",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:821:3",
+      "isrc": "QMFME2663692",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "visual"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:14:2",
+      "isrc": "JPY932300634",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:15:4",
+      "isrc": "JPR652000112",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:225:1",
+      "isrc": "JPU901701672",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:117:4",
+      "isrc": "JPTF01413601",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:247:4",
+      "isrc": "JPV971900041",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "memory", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:116:1",
+      "isrc": "JPPO02604236",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "sound", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:170:4",
+      "isrc": "JPVI09726490",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:59:4",
+      "isrc": "JPN300301301",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "trivia"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:646:4",
+      "isrc": "JPU902502916",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:776:1",
+      "isrc": "JPPC02514403",
+      "aspectPrimary": "live",
+      "aspects": ["live", "sound", "lyrics"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:665:5",
+      "isrc": "JP92N2623847",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal", "artist"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:42:3",
+      "isrc": "JPPO02100848",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "warm"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:693:1",
+      "isrc": "JPPC08100150",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:59:3",
+      "isrc": "JPU902601140",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "tieup", "trivia"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "funny", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:179:1",
+      "isrc": "JPSR09400522",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics", "sound"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:769:1",
+      "isrc": "QT66U2695239",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:490:1",
+      "isrc": "JPPO02604542",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:343:2",
+      "isrc": "JPR842400052",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "visual"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:838:1",
+      "isrc": "JPPO02402564",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "cool"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:485:2",
+      "isrc": "USA2P2674498",
+      "aspectPrimary": "sound",
+      "aspects": ["sound"],
+      "moodPrimary": "dark",
+      "moods": ["dark", "bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:380:1",
+      "isrc": "JPWP02671066",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm", "calm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:80:2",
+      "isrc": "JPTO09831500",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "era"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:785:5",
+      "isrc": "QT66Q2693171",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound", "artist"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:60:3",
+      "isrc": "JPVI02602748",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:3:1",
+      "isrc": "JPU902604213",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:76:1",
+      "isrc": "JPJE09700011",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "era", "artist"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:178:4",
+      "isrc": "JPBM00301170",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "calm"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:852:1",
+      "isrc": "QT66K2544900",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "calm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:447:1",
+      "isrc": "JPPO02604594",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "live"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:232:4",
+      "isrc": "JPU901901148",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:302:3",
+      "isrc": "JPB602602429",
+      "aspectPrimary": "live",
+      "aspects": ["live", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:82:5",
+      "isrc": "JPTF02650147",
+      "aspectPrimary": "live",
+      "aspects": ["live", "visual", "vocal"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cute", "dark"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:319:3",
+      "isrc": "JPWP02601090",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "memory", "lyrics"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:722:2",
+      "isrc": "JPE507200001",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "vocal"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:594:2",
+      "isrc": "JPPO02201073",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "vocal"],
+      "moodPrimary": "cute",
+      "moods": ["cute", "encouraged", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:266:3",
+      "isrc": "JPU901400217",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "lyrics", "sound"],
+      "moodPrimary": "funny",
+      "moods": ["funny", "hype"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:63:4",
+      "isrc": "JPPC09223720",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:709:3",
+      "isrc": "JPPC07600050",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:155:3",
+      "isrc": "JPPC09304890",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:703:1",
+      "isrc": "JPKT08401401",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "trivia"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:377:5",
+      "isrc": "JPY392604165",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:99:3",
+      "isrc": "JPB602602124",
+      "aspectPrimary": "live",
+      "aspects": ["live", "vocal", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:837:2",
+      "isrc": "QT66M2634536",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:26:1",
+      "isrc": "JPA3C2600361",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:683:3",
+      "isrc": "JPES00601881",
+      "aspectPrimary": "era",
+      "aspects": ["era", "visual"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:714:5",
+      "isrc": "JPSR07821120",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:429:1",
+      "isrc": "JPVI02602957",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:827:5",
+      "isrc": "QT66T2647152",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "lyrics", "live"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:212:2",
+      "isrc": "JPU902002290",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "lyrics"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:107:2",
+      "isrc": "JPI102602173",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "funny"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:855:2",
+      "isrc": "QT66K2522635",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:251:1",
+      "isrc": "JPU901600853",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:326:5",
+      "isrc": "JPU902501948",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "dark"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:411:1",
+      "isrc": "JPI102603234",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "sound"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:242:5",
+      "isrc": "JPU901704009",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:351:5",
+      "isrc": "JPU902404585",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "sound"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:175:5",
+      "isrc": "JPTF09306301",
+      "aspectPrimary": "era",
+      "aspects": ["era", "artist", "trivia"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_resolved:18:2",
+      "isrc": "JPH201600025",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part11_resolved:736:5",
+      "isrc": "JPAL09900920",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:44:5",
+      "isrc": "JPR652100020",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "warm",
+      "moods": ["warm"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:407:1",
+      "isrc": "JP92N2624554",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "sound"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "cute", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:89:5",
+      "isrc": "JPTF00403301",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "live", "artist"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "hype"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:37:5",
+      "isrc": "JP92N2399035",
+      "aspectPrimary": "live",
+      "aspects": ["live", "artist", "memory"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:160:5",
+      "isrc": "JPTF09805101",
+      "aspectPrimary": "era",
+      "aspects": ["era", "lyrics", "trivia"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_resolved:42:3",
+      "isrc": "JPPO02604029",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "artist"],
+      "moodPrimary": "moved",
+      "moods": ["moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:77:1",
+      "isrc": "JPBV00100142",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "tieup", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cute", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:688:4",
+      "isrc": "JPES08701070",
+      "aspectPrimary": "tieup",
+      "aspects": ["tieup", "live"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "cool"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:653:4",
+      "isrc": "JPPO02601217",
+      "aspectPrimary": "visual",
+      "aspects": ["visual", "memory"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:53:1",
+      "isrc": "JPX522600091",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "lyrics", "sound"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "moved"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:808:1",
+      "isrc": "JPR502604196",
+      "aspectPrimary": "trivia",
+      "aspects": ["trivia", "artist"],
+      "moodPrimary": "funny",
+      "moods": ["funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:332:2",
+      "isrc": "JPPO02400480",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "moved"]
+    },
+    {
+      "key": "song_reviews_part9_resolved:583:4",
+      "isrc": "JPU902105309",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet"]
+    },
+    {
+      "key": "song_reviews_part8_resolved:472:4",
+      "isrc": "JPA2T2600085",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part12_resolved:820:4",
+      "isrc": "QT66S2618320",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "live"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "encouraged"]
+    },
+    {
+      "key": "song_reviews_resolved:79:4",
+      "isrc": "JPKS00800981",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "trivia"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "warm"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:19:1",
+      "isrc": "JPVI01627330",
+      "aspectPrimary": "artist",
+      "aspects": ["artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "moved"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:97:1",
+      "isrc": "JPSR09802161",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "era"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:143:2",
+      "isrc": "JPWP09905780",
+      "aspectPrimary": "era",
+      "aspects": ["era", "memory"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "funny"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:398:4",
+      "isrc": "JPB602602907",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "vocal"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:285:2",
+      "isrc": "JPU902504288",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "trivia"],
+      "moodPrimary": "bittersweet",
+      "moods": ["bittersweet", "funny"]
+    },
+    {
+      "key": "song_reviews_part3_resolved:37:4",
+      "isrc": "JPWP00601825",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "bittersweet", "warm"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:204:3",
+      "isrc": "JPP302300157",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "artist"],
+      "moodPrimary": "cool",
+      "moods": ["cool", "hype"]
+    },
+    {
+      "key": "song_reviews_part7_resolved:304:4",
+      "isrc": "JPPO02602082",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "memory"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "cool"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:260:5",
+      "isrc": "JPU901901328",
+      "aspectPrimary": "artist",
+      "aspects": ["artist", "sound"],
+      "moodPrimary": "moved",
+      "moods": ["moved", "cool"]
+    },
+    {
+      "key": "song_reviews_part5_resolved:153:5",
+      "isrc": "JPFH00200140",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "era", "tieup"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "nostalgic"]
+    },
+    {
+      "key": "song_reviews_part10_resolved:633:2",
+      "isrc": "JPPO02504631",
+      "aspectPrimary": "vocal",
+      "aspects": ["vocal", "tieup"],
+      "moodPrimary": "calm",
+      "moods": ["calm", "moved"]
+    },
+    {
+      "key": "song_reviews_resolved:33:1:2",
+      "isrc": "JPSR00005541",
+      "aspectPrimary": "sound",
+      "aspects": ["sound", "memory", "lyrics"],
+      "moodPrimary": "nostalgic",
+      "moods": ["nostalgic", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part6_resolved:237:5",
+      "isrc": "JPPC01900827",
+      "aspectPrimary": "memory",
+      "aspects": ["memory"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    },
+    {
+      "key": "song_reviews_resolved:73:2",
+      "isrc": "JPPC02612762",
+      "aspectPrimary": "lyrics",
+      "aspects": ["lyrics", "artist"],
+      "moodPrimary": "hype",
+      "moods": ["hype", "bittersweet"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:43:4",
+      "isrc": "JPU902304737",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "lyrics"],
+      "moodPrimary": "warm",
+      "moods": ["warm", "encouraged"]
+    },
+    {
+      "key": "song_reviews_part4_resolved:58:4",
+      "isrc": "JPU902600815",
+      "aspectPrimary": "memory",
+      "aspects": ["memory", "live", "artist"],
+      "moodPrimary": "encouraged",
+      "moods": ["encouraged", "hype"]
+    }
+  ],
+  "queries": [
+    {
+      "text": "歌詞の言葉選びが刺さる",
+      "aspect": "lyrics",
+      "mood": null
+    },
+    {
+      "text": "歌詞に救われた",
+      "aspect": "lyrics",
+      "mood": "encouraged"
+    },
+    {
+      "text": "切ない歌詞に泣いた",
+      "aspect": "lyrics",
+      "mood": "bittersweet"
+    },
+    {
+      "text": "物語のような歌詞",
+      "aspect": "lyrics",
+      "mood": null
+    },
+    {
+      "text": "失恋の歌詞が胸に刺さる",
+      "aspect": "lyrics",
+      "mood": "bittersweet"
+    },
+    {
+      "text": "歌声が透き通っていて綺麗",
+      "aspect": "vocal",
+      "mood": null
+    },
+    {
+      "text": "高音がすごい",
+      "aspect": "vocal",
+      "mood": "cool"
+    },
+    {
+      "text": "優しい歌声に癒やされる",
+      "aspect": "vocal",
+      "mood": "calm"
+    },
+    {
+      "text": "歌唱力に圧倒される",
+      "aspect": "vocal",
+      "mood": "cool"
+    },
+    {
+      "text": "声がかわいい",
+      "aspect": "vocal",
+      "mood": "cute"
+    },
+    {
+      "text": "イントロからかっこいい",
+      "aspect": "sound",
+      "mood": "cool"
+    },
+    {
+      "text": "ベースラインが気持ちいい",
+      "aspect": "sound",
+      "mood": null
+    },
+    {
+      "text": "踊りたくなるビート",
+      "aspect": "sound",
+      "mood": "hype"
+    },
+    {
+      "text": "メロディが心地よい",
+      "aspect": "sound",
+      "mood": "calm"
+    },
+    {
+      "text": "転調にゾクッとした",
+      "aspect": "sound",
+      "mood": null
+    },
+    {
+      "text": "MVの映像が美しい",
+      "aspect": "visual",
+      "mood": null
+    },
+    {
+      "text": "MVの演出が面白い",
+      "aspect": "visual",
+      "mood": "funny"
+    },
+    {
+      "text": "ビジュアルが良すぎる",
+      "aspect": "visual",
+      "mood": "cute"
+    },
+    {
+      "text": "映像の考察が深い",
+      "aspect": "visual",
+      "mood": null
+    },
+    {
+      "text": "ライブで聴きたい",
+      "aspect": "live",
+      "mood": "hype"
+    },
+    {
+      "text": "ライブの熱気を思い出す",
+      "aspect": "live",
+      "mood": null
+    },
+    {
+      "text": "ダンスがかっこいい",
+      "aspect": "live",
+      "mood": "cool"
+    },
+    {
+      "text": "生で観たパフォーマンスが忘れられない",
+      "aspect": "live",
+      "mood": null
+    },
+    {
+      "text": "亡くなった家族を思い出す",
+      "aspect": "memory",
+      "mood": "moved"
+    },
+    {
+      "text": "受験期に支えられた曲",
+      "aspect": "memory",
+      "mood": "encouraged"
+    },
+    {
+      "text": "学生時代の思い出がよみがえる",
+      "aspect": "memory",
+      "mood": "nostalgic"
+    },
+    {
+      "text": "つらい時期を救ってくれた",
+      "aspect": "memory",
+      "mood": "encouraged"
+    },
+    {
+      "text": "失恋した夜に聴いた",
+      "aspect": "memory",
+      "mood": "bittersweet"
+    },
+    {
+      "text": "子どもと一緒に聴いている",
+      "aspect": "memory",
+      "mood": "warm"
+    },
+    {
+      "text": "仕事で疲れた帰り道に聴く",
+      "aspect": "memory",
+      "mood": null
+    },
+    {
+      "text": "アーティストの人柄が好き",
+      "aspect": "artist",
+      "mood": "warm"
+    },
+    {
+      "text": "制作の裏話に驚いた",
+      "aspect": "artist",
+      "mood": null
+    },
+    {
+      "text": "ずっと応援してきた",
+      "aspect": "artist",
+      "mood": null
+    },
+    {
+      "text": "アニメの主題歌として最高",
+      "aspect": "tieup",
+      "mood": null
+    },
+    {
+      "text": "ドラマを観てから聴くと泣ける",
+      "aspect": "tieup",
+      "mood": "moved"
+    },
+    {
+      "text": "映画の余韻と重なる",
+      "aspect": "tieup",
+      "mood": null
+    },
+    {
+      "text": "平成を思い出す懐かしさ",
+      "aspect": "era",
+      "mood": "nostalgic"
+    },
+    {
+      "text": "昔の曲なのに今聴いても新しい",
+      "aspect": "era",
+      "mood": null
+    },
+    {
+      "text": "世代を超えて愛されている",
+      "aspect": "era",
+      "mood": "warm"
+    },
+    {
+      "text": "タイトルの意味の考察",
+      "aspect": "trivia",
+      "mood": null
+    },
+    {
+      "text": "思わず笑ってしまう小ネタ",
+      "aspect": "trivia",
+      "mood": "funny"
+    },
+    {
+      "text": "空耳が面白い",
+      "aspect": "trivia",
+      "mood": "funny"
+    },
+    {
+      "text": "胸が締め付けられるほど切ない",
+      "aspect": null,
+      "mood": "bittersweet"
+    },
+    {
+      "text": "背中を押してくれる応援歌",
+      "aspect": null,
+      "mood": "encouraged"
+    },
+    {
+      "text": "テンションが上がる",
+      "aspect": null,
+      "mood": "hype"
+    },
+    {
+      "text": "聴くと心が落ち着く",
+      "aspect": null,
+      "mood": "calm"
+    },
+    {
+      "text": "笑える曲",
+      "aspect": null,
+      "mood": "funny"
+    },
+    {
+      "text": "懐かしくて涙が出る",
+      "aspect": null,
+      "mood": "nostalgic"
+    },
+    {
+      "text": "号泣した",
+      "aspect": null,
+      "mood": "moved"
+    },
+    {
+      "text": "鳥肌が立つかっこよさ",
+      "aspect": null,
+      "mood": "cool"
+    },
+    {
+      "text": "キュンとする恋の歌",
+      "aspect": null,
+      "mood": "cute"
+    },
+    {
+      "text": "不穏でダークな世界観",
+      "aspect": null,
+      "mood": "dark"
+    },
+    {
+      "text": "温かくて優しい気持ちになる",
+      "aspect": null,
+      "mood": "warm"
+    }
+  ]
+}

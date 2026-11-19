@@ -1,0 +1,37 @@
+# 埋め込みの方式を、観点・感性のラベルで評価する（apps/api/scripts/evaluate-embeddings.ts）。
+# 手動で実行する。先に Embed posts で公式アカウントの感想の x を D1 に入れておく。検索の文 53 個だけ Workers AI で埋め込む。
+name: Evaluate embeddings
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 対象
+        type: choice
+        options: [staging, production]
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'production' }}
+    concurrency:
+      group: embedding-${{ inputs.environment || 'production' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+      - run: vp run api#embedding:evaluate
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKERS_AI_API_TOKEN: ${{ secrets.WORKERS_AI_API_TOKEN }}
+          # apps/api/cloudflare.config.ts の X_STORE と同じ名前
+          X_STORE_NAME: ${{ (inputs.environment || 'production') == 'staging' && 'x-store-staging-01' || 'x-store-01' }}
