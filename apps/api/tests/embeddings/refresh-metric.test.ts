@@ -19,7 +19,7 @@ const k = EMBEDDING_DIMENSIONS;
 const gaussian = createGaussian(11);
 // 変換 A が想定した分布（平均 0、共分散 I）からずれたデータ
 const sample = () => Array.from({ length: k }, (_, i) => 0.4 + gaussian() * (0.5 + i / k));
-const options = { minCount: 300, threshold: 0.05 };
+const options = { minCount: 300, threshold: 0.05, publish: true };
 
 let db: Database;
 
@@ -110,5 +110,22 @@ describe("refreshEmbeddingMetric", () => {
     expect(result).toMatchObject({ refreshed: false, reason: "small_change", version: 1 });
     const [row] = await db.select({ version: embeddingMetrics.version }).from(embeddingMetrics);
     expect(row?.version).toBe(1);
+  }, 30_000);
+
+  test("publish が false なら、統計を積み上げるだけで計量を作らない", async () => {
+    await addEmbeddings(range(0, 400));
+    const result = await refreshEmbeddingMetric({
+      db,
+      now: new Date(),
+      ...options,
+      publish: false,
+    });
+    expect(result).toMatchObject({
+      refreshed: false,
+      reason: "publish_disabled",
+      consumed: 400,
+      count: 400,
+    });
+    expect(await loadMetric({ db, model: EMBEDDING_MODEL })).toBeNull();
   }, 30_000);
 });

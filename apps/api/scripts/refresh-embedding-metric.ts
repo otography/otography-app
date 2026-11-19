@@ -19,7 +19,12 @@ const db = drizzle({
   relations,
 });
 
-const result = await refreshEmbeddingMetric({ db, now: new Date() });
+// 検索の補正を始めるのは、EMBEDDING_METRIC_PUBLISH=true のときだけ（usecases/refresh-metric.ts の publish）。
+const result = await refreshEmbeddingMetric({
+  db,
+  now: new Date(),
+  publish: process.env.EMBEDDING_METRIC_PUBLISH === "true",
+});
 if (result instanceof Error) {
   console.error(result);
   process.exitCode = 1;

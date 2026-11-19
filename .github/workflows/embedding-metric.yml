@@ -33,3 +33,5 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          # 検索の補正を始めるときに、環境の変数（Variables）で true にする。それまでは統計を積み上げるだけ。
+          EMBEDDING_METRIC_PUBLISH: ${{ vars.EMBEDDING_METRIC_PUBLISH }}

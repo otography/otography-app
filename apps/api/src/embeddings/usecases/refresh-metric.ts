@@ -33,6 +33,9 @@ const THRESHOLD = 0.05;
  * 1. 差分ログを統計に足す
  * 2. 公開中の計量があれば、その列がまだ空の行（前回の後に追加された行）に pnorm を書く
  * 3. 新しい計量を作り、公開中の計量との差が閾値を超えていれば、使っていない列に全行の pnorm を書いて切り替える
+ *
+ * publish が false の間は 1 だけを行う（統計を積み上げるが、検索の補正は始めない）。
+ * 初期の投稿は公式アカウントの感想がほとんどで、利用者の投稿の分布とは違うため、十分に溜まってから有効にする。
  */
 export async function refreshEmbeddingMetric({
   db,
@@ -41,6 +44,7 @@ export async function refreshEmbeddingMetric({
   minCount = MIN_COUNT,
   graceMs = GRACE_MS,
   threshold = THRESHOLD,
+  publish,
 }: {
   db: Database;
   now: Date;
@@ -48,12 +52,24 @@ export async function refreshEmbeddingMetric({
   minCount?: number;
   graceMs?: number;
   threshold?: number;
+  publish: boolean;
 }) {
   const state = await readMetricState({ db, model, emptyMoments: emptyMoments() });
   if (state instanceof Error) return state;
 
   const consumed = await consumeChanges({ db, model, moments: state.moments });
   if (consumed instanceof Error) return consumed;
+
+  if (!publish) {
+    return {
+      model,
+      version: state.version,
+      consumed,
+      count: momentsCount(state.moments),
+      refreshed: false,
+      reason: "publish_disabled",
+    } as const;
+  }
 
   const current =
     state.version > 0 && state.mean && state.precision
