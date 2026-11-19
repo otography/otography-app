@@ -78,7 +78,10 @@ export async function restVectorStore(name: string) {
   const created = await query(VECTOR_STORE_SCHEMA);
   if (created instanceof Error) return new VectorStoreError({ cause: created });
 
-  const store: VectorStore & { listIds: () => Promise<VectorStoreError | Set<string>> } = {
+  const store: VectorStore & {
+    listIds: () => Promise<VectorStoreError | Set<string>>;
+    remove: (postIds: string[]) => Promise<VectorStoreError | null>;
+  } = {
     async put(rows) {
       // BLOB は REST API の params で渡せないので、16 進のリテラル（X'..'）で SQL に書く。1 文に 10 行まで。
       const now = Date.now();
@@ -108,6 +111,18 @@ export async function restVectorStore(name: string) {
         }
       }
       return out;
+    },
+    /** 指定した投稿の x を消す（本文を直した投稿の埋め込みを作り直すとき）。 */
+    async remove(postIds) {
+      for (let i = 0; i < postIds.length; i += 100) {
+        const part = postIds.slice(i, i + 100);
+        const result = await query(
+          `DELETE FROM x_vectors WHERE post_id IN (${part.map(() => "?").join(", ")})`,
+          part,
+        );
+        if (result instanceof Error) return new VectorStoreError({ cause: result });
+      }
+      return null;
     },
     async listIds() {
       const result = await query("SELECT post_id FROM x_vectors");

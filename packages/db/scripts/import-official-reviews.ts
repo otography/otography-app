@@ -6,12 +6,15 @@
  *   TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... vp run db#db:import-official-reviews
  *
  * 何度実行しても、同じ行を二重には入れない（主キーが同じ行は飛ばす）。
+ * ただし、データの本文を直した投稿は、DB の本文も書き直す。書き直した投稿の ID を出力するので、
+ * 埋め込みの作り直し（.github/workflows/reembed-posts.yml）に渡す。
  * - 投稿の ID は、データの key から作る（同じ key なら同じ ID になる）
  * - 投稿日時は、実行した時点から過去 90 日に散らす。2 回目以降の実行で入る行はないので、日時も変わらない
  * - 埋め込みは入れない。埋め込みのない投稿は意味検索に出ないだけで、後でバッチが作る（docs/adr/0001-post-embeddings-table.md）
  */
 import { readFile } from "node:fs/promises";
 import { createClient } from "@libsql/client";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { POST_CONTENT_MAX } from "../src/constants.ts";
 import { posts, relations, songs, users } from "../src/index.ts";
@@ -100,17 +103,37 @@ for (const part of chunks(data.songs)) {
     .values(part.map((s) => ({ ...s, fetchedAt })))
     .onConflictDoNothing();
 }
+const existing = new Set(
+  (await db.select({ id: posts.id }).from(posts).where(eq(posts.userId, OFFICIAL.id))).map(
+    (row) => row.id,
+  ),
+);
 let inserted = 0;
+const updated: string[] = [];
 for (const part of chunks(rows)) {
+  // 本文が変わった行だけを書き直す（投稿日時などは変えない）。returning は、入れた行と書き直した行を返す。
   const result = await db
     .insert(posts)
     .values(part)
-    .onConflictDoNothing()
+    .onConflictDoUpdate({
+      target: posts.id,
+      set: { content: sql`excluded.content`, updatedAt: new Date(now) },
+      setWhere: sql`${posts.content} <> excluded.content`,
+    })
     .returning({ id: posts.id });
-  inserted += result.length;
+  for (const { id } of result) {
+    if (existing.has(id)) updated.push(id);
+    else inserted += 1;
+  }
 }
 
 console.log(
   `公式アカウントの感想を入れました（${url.replace(/\/\/.*@/, "//")}）：曲 ${data.songs.length}、投稿 ${inserted} / ${rows.length}（残りは入れ済み）\n` +
+    `本文を書き直した投稿：${updated.length}\n` +
     `プロフィール：/u/${OFFICIAL.publicId}`,
 );
+if (updated.length > 0) {
+  console.log(
+    `埋め込みを作り直す投稿（reembed-posts.yml の post_ids に渡す）：\n${updated.join(",")}`,
+  );
+}

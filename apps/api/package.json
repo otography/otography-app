@@ -13,6 +13,7 @@
     "deploy:staging": "vp run website#build && cf previews deploy --preview-name staging",
     "embedding:refresh": "vpx ./scripts/refresh-embedding-metric.ts",
     "embedding:embed-posts": "vpx ./scripts/embed-posts.ts",
+    "embedding:reembed-posts": "vpx ./scripts/reembed-posts.ts",
     "embedding:build-transform": "vpx ./scripts/build-transform.ts",
     "embedding:evaluate": "vpx ./scripts/evaluate-embeddings.ts"
   },
