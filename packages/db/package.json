@@ -13,7 +13,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:check": "drizzle-kit check",
-    "db:seed": "vpx ./scripts/seed.ts"
+    "db:seed": "vpx ./scripts/seed.ts",
+    "db:import-official-reviews": "vpx ./scripts/import-official-reviews.ts"
   },
   "dependencies": {
     "@libsql/client": "catalog:",

@@ -1,0 +1,34 @@
+# 公式アカウント（/u/otography）と、その曲の感想を DB に入れる（packages/db/scripts/import-official-reviews.ts）。
+# 手動で実行する。先に staging で確かめてから、本番で実行する。何度実行しても、同じ行は二重に入らない。
+name: Import official reviews
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 入れる先
+        type: choice
+        options: [staging, production]
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    # マイグレーションと重ならないように、デプロイと同じ concurrency にする。
+    concurrency:
+      group: ${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+      - run: vp run db#db:import-official-reviews
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
