@@ -26,7 +26,7 @@ export const postOutput = createSelectSchema(posts)
 export const postViewOutput = createSelectSchema(posts)
   .pick({ id: true, content: true, likeCount: true, createdAt: true })
   .extend({
-    author: createSelectSchema(users).pick({ publicId: true, name: true }),
+    author: createSelectSchema(users).pick({ publicId: true, name: true, image: true }),
     song: songOutput.nullable(),
     likedByMe: z.boolean(),
   });

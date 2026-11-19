@@ -77,7 +77,12 @@ export const auth = betterAuth({
     // 表示名は Google のプロフィールの名前から作られる。DB の CHECK 制約（1〜USER_NAME_MAX 文字）を
     // 満たさない名前でも登録できるように、作る前に整える。
     user: {
-      create: { before: async (user) => ({ data: { ...user, name: toDisplayName(user.name) } }) },
+      // Google のプロフィール写真の URL は保存しない。users.image は公開するので、このサービスが用意した画像だけを入れる。
+      create: {
+        before: async (user) => ({
+          data: { ...user, name: toDisplayName(user.name), image: null },
+        }),
+      },
     },
     // ログインの後に Google の API を使わないので、Google が発行したトークンを DB に保存しない。
     // DB の中身が漏れても、Google のアカウントに使えるトークンが含まれないようにする。

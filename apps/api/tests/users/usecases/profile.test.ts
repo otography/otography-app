@@ -115,6 +115,7 @@ describe("replaceFavoriteSongsOfUser", () => {
     expect(profile).toEqual({
       publicId: "abc123def456",
       name: "テスト",
+      image: null,
       bio: null,
       favoriteSongs: [
         {

@@ -41,7 +41,7 @@ const postColumns = (viewerId: string) =>
   ({
     columns: { id: true, content: true, likeCount: true, createdAt: true },
     with: {
-      author: { columns: { publicId: true, name: true } },
+      author: { columns: { publicId: true, name: true, image: true } },
       song: true,
       likes: { columns: { userId: true }, where: { userId: viewerId } },
     },

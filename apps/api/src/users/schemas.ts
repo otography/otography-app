@@ -75,7 +75,7 @@ const favoriteOutput = createSelectSchema(favoriteSongs).pick({
 
 /** GET /api/users/:publicId が返すプロフィール。メールアドレスや内部 ID は含めない。 */
 export const profileOutput = createSelectSchema(users)
-  .pick({ publicId: true, name: true, bio: true })
+  .pick({ publicId: true, name: true, bio: true, image: true })
   .extend({
     favoriteSongs: z.array(favoriteOutput.extend({ song: songOutput })),
     favoriteArtists: z.array(

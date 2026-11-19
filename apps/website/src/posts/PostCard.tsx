@@ -4,6 +4,7 @@ import { artworkUrl } from "#/lib/musickit";
 import { colors, radius, space } from "#/styles/tokens.stylex";
 import { useQuery } from "@tanstack/react-query";
 import { meQuery } from "#/profiles/queries";
+import { Avatar } from "#/ui/avatar";
 import { ReportButton } from "#/reports/ReportButton";
 import { DeletePostButton } from "./DeletePostButton";
 import { LikeButton } from "./LikeButton";
@@ -23,6 +24,7 @@ export function PostCard({ post }: { post: PostView }) {
           params={{ publicId: post.author.publicId }}
           {...stylex.props(styles.author)}
         >
+          <Avatar name={post.author.name} image={post.author.image} size={32} />
           {post.author.name}
         </Link>
         <Link to="/posts/$postId" params={{ postId: post.id }} {...stylex.props(styles.muted)}>
@@ -86,10 +88,17 @@ const styles = stylex.create({
   header: {
     display: "flex",
     gap: space.sm,
-    alignItems: "baseline",
+    alignItems: "center",
     justifyContent: "space-between",
   },
-  author: { fontWeight: 600, color: "inherit" },
+  author: {
+    display: "flex",
+    gap: space.sm,
+    alignItems: "center",
+    minWidth: 0,
+    fontWeight: 600,
+    color: "inherit",
+  },
   song: { display: "flex", gap: space.sm, alignItems: "center" },
   artwork: { borderRadius: radius.sm },
   songMeta: { display: "flex", flexDirection: "column", minWidth: 0 },
