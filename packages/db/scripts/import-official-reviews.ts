@@ -10,12 +10,12 @@
  * - 投稿日時は、実行した時点から過去 90 日に散らす。2 回目以降の実行で入る行はないので、日時も変わらない
  * - 埋め込みは入れない。埋め込みのない投稿は意味検索に出ないだけで、後でバッチが作る（docs/adr/0001-post-embeddings-table.md）
  */
-import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { POST_CONTENT_MAX } from "../src/constants.ts";
 import { posts, relations, songs, users } from "../src/index.ts";
+import { OFFICIAL_USER_ID, officialPostId } from "../src/official-reviews.ts";
 
 type ReviewData = {
   songs: {
@@ -33,7 +33,7 @@ type ReviewData = {
 };
 
 const OFFICIAL = {
-  id: "official-otography",
+  id: OFFICIAL_USER_ID,
   publicId: "otography",
   name: "otography",
   email: "official@otography.invalid",
@@ -54,12 +54,7 @@ const data = JSON.parse(
   await readFile(new URL("../data/official-reviews.json", import.meta.url), "utf8"),
 ) as ReviewData;
 
-// key から、英小文字と数字の 12 文字の ID を作る（apps/api/src/lib/id.ts の ID と同じ形）。
-const postId = (key: string) => {
-  const digest = createHash("sha256").update(`official-reviews:${key}`).digest();
-  const alphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from(digest.subarray(0, 12), (b) => alphabet[b % alphabet.length]).join("");
-};
+const postId = officialPostId;
 
 // DB の CHECK 制約（length()）と同じく、コードポイントで数える。書記素で数えると DB と食い違う。
 // oxlint-disable-next-line typescript/no-misused-spread

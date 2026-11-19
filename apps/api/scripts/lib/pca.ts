@@ -144,3 +144,37 @@ export function topEigen(c: Float64Array, d: number, k: number, iterations = 20)
   }
   return { values: values.slice(0, k), vectors: u };
 }
+
+export type Transform = { a: Float32Array; b: Float32Array };
+
+/**
+ * x の集まりから、射影だけの変換（A = Uᵀ）と、白色化の変換（A = (Λ + τI)^(-1/2) Uᵀ）を作る。b = −Aμ。
+ * τ は全次元の平均の分散。件数が少なく、分散の小さい方向の推定が不安定なので、足してから割る（収縮）。
+ */
+export function fitTransforms(rows: Float32Array[], D: number, K: number) {
+  const { mean, c } = covariance(rows, D);
+  const { values, vectors } = topEigen(c, D, K);
+  let total = 0;
+  for (let i = 0; i < D; i++) total += c[i * D + i]!;
+  const tau = total / D;
+  const build = (scaleOf: (r: number) => number): Transform => {
+    const a = new Float32Array(K * D);
+    const b = new Float32Array(K);
+    for (let r = 0; r < K; r++) {
+      const scale = scaleOf(r);
+      let bias = 0;
+      for (let j = 0; j < D; j++) {
+        const v = vectors[r * D + j]! * scale;
+        a[r * D + j] = v;
+        bias -= v * mean[j]!;
+      }
+      b[r] = bias;
+    }
+    return { a, b };
+  };
+  return {
+    explained: values.reduce((s, v) => s + v, 0) / total,
+    pca: build(() => 1),
+    white: build((r) => 1 / Math.sqrt(values[r]! + tau)),
+  };
+}

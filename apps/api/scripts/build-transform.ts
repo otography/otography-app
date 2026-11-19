@@ -24,7 +24,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { float32Bytes } from "../src/embeddings/vectors.ts";
 import { restVectorStore } from "./lib/cloudflare.ts";
-import { covariance, topEigen } from "./lib/pca.ts";
+import { fitTransforms, type Transform } from "./lib/pca.ts";
 
 const OFFICIAL_USER_ID = "official-otography";
 const D = EMBEDDING_INPUT_DIMENSIONS;
@@ -71,37 +71,6 @@ const isTest = (isrc: string) =>
 const train = items.filter((item) => !isTest(item.isrc));
 const test = items.filter((item) => isTest(item.isrc));
 
-type Transform = { a: Float32Array; b: Float32Array };
-
-/** x の集まりから、射影だけの変換と、白色化（収縮つき）の変換を作る。 */
-function fit(rows: Float32Array[]) {
-  const { mean, c } = covariance(rows, D);
-  const { values, vectors } = topEigen(c, D, K);
-  let total = 0;
-  for (let i = 0; i < D; i++) total += c[i * D + i]!;
-  const tau = total / D;
-  const build = (scaleOf: (r: number) => number): Transform => {
-    const a = new Float32Array(K * D);
-    const b = new Float32Array(K);
-    for (let r = 0; r < K; r++) {
-      const scale = scaleOf(r);
-      let bias = 0;
-      for (let j = 0; j < D; j++) {
-        const v = vectors[r * D + j]! * scale;
-        a[r * D + j] = v;
-        bias -= v * mean[j]!;
-      }
-      b[r] = bias;
-    }
-    return { a, b };
-  };
-  return {
-    explained: values.reduce((s, v) => s + v, 0) / total,
-    pca: build(() => 1),
-    white: build((r) => 1 / Math.sqrt(values[r]! + tau)),
-  };
-}
-
 const projectWith = (t: Transform) => (x: Float32Array) => {
   const z = new Float64Array(K);
   for (let r = 0; r < K; r++) {
@@ -143,7 +112,11 @@ function evaluate(set: typeof items, vectorOf: (x: Float32Array) => ArrayLike<nu
 
 // 1. 評価
 console.log(`学習：${train.length} 件、評価：${test.length} 件（曲単位で分けた）`);
-const trial = fit(train.map((item) => item.x));
+const trial = fitTransforms(
+  train.map((item) => item.x),
+  D,
+  K,
+);
 const results = {
   "2048 次元（そのまま）": evaluate(test, (x) => x),
   "pca（射影だけ）": evaluate(test, projectWith(trial.pca)),
@@ -152,7 +125,11 @@ const results = {
 console.table(results);
 
 // 2. すべての感想で作り直して入れる。既にある行は置き換える。
-const final = fit(items.map((item) => item.x));
+const final = fitTransforms(
+  items.map((item) => item.x),
+  D,
+  K,
+);
 const transforms = { "plamo-1b:pca256-v1": final.pca, "plamo-1b:white256-v1": final.white };
 for (const [model, t] of Object.entries(transforms)) {
   await db
