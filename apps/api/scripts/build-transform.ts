@@ -2,7 +2,7 @@
  * 変換 z = Ax + b（2048 → 256 次元）を作り、効果を評価して、Turso の embedding_transforms に入れる（MUS-78）。
  * GitHub Actions（.github/workflows/build-transform.yml）から実行する。
  *
- * 1. 日本語版ウィキペディアの記事の冒頭から、文を CORPUS_SIZE 件集め、Workers AI で埋め込む
+ * 1. 日本語版ウィキペディア（Hugging Face のデータセット）の記事の冒頭から、文を CORPUS_SIZE 件集め、Workers AI で埋め込む
  * 2. その x で PCA を行い、2 つの変換を作る
  *    - plamo-1b:pca256-v1：上位 256 方向に射影するだけ（A = Uᵀ）
  *    - plamo-1b:white256-v1：射影して、方向ごとの分散を 1 にそろえる（A = Λ^(-1/2) Uᵀ、白色化）
@@ -40,24 +40,41 @@ const db = drizzle({
   relations,
 });
 
-// 1. コーパス：ランダムな記事の冒頭を、句点で文に分ける。投稿の上限（140 字）程度の長さの文だけを使う。
+// 1. コーパス：日本語版ウィキペディア（Hugging Face の izumi-lab/wikipedia-ja-20230720）から、
+// 決まった乱数で選んだ記事の冒頭の段落を、句点で文に分ける。投稿の上限（140 字）程度の長さの文だけを使う。
+// ウィキペディアの API は、GitHub Actions からの連続した呼び出しを 429 で断るので使わない。
+const DATASET = "izumi-lab/wikipedia-ja-20230720";
+const DATASET_ROWS = 1_362_415;
+
+async function fetchRows(offset: number) {
+  const url = `https://datasets-server.huggingface.co/rows?dataset=${DATASET}&config=default&split=train&offset=${offset}&length=100`;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const res = await fetch(url);
+    if (res.ok) return ((await res.json()) as { rows: { row: { text: string } }[] }).rows;
+    if (res.status !== 429 && res.status < 500) break;
+    await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt));
+  }
+  fail(new Error(`コーパスを取れませんでした（offset ${offset}）`));
+}
+
 async function collectCorpus(size: number) {
   const sentences = new Set<string>();
+  let seed = 20261119;
+  const next = () => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed / 2147483648;
+  };
   while (sentences.size < size) {
-    const url =
-      "https://ja.wikipedia.org/w/api.php?action=query&generator=random&grnnamespace=0&grnlimit=20" +
-      "&prop=extracts&exintro=1&explaintext=1&exlimit=20&format=json&formatversion=2";
-    const res = await fetch(url, { headers: { "User-Agent": "embedding-corpus-builder/1.0" } });
-    if (!res.ok) fail(new Error(`ウィキペディアから記事を取れませんでした（HTTP ${res.status}）`));
-    const body = (await res.json()) as { query?: { pages?: { extract?: string }[] } };
-    for (const page of body.query?.pages ?? []) {
-      for (const raw of (page.extract ?? "").split(/(?<=。)/)) {
+    const rows = await fetchRows(Math.floor(next() * (DATASET_ROWS - 100)));
+    for (const { row } of rows) {
+      const lead = row.text.split("\n").slice(0, 2).join("");
+      for (const raw of lead.split(/(?<=。)/).slice(0, 4)) {
         const sentence = raw.replace(/\s+/g, " ").trim();
         const length = Array.from(sentence).length;
         if (length >= 20 && length <= 140) sentences.add(sentence);
       }
     }
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 300));
   }
   return [...sentences].slice(0, size);
 }
