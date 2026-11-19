@@ -44,9 +44,14 @@ export default defineConfig(({ isPreview }) => ({
       LIKE_RATE_LIMIT: bindings.rateLimit({ namespace: "1002", simple: { limit: 30, period: 60 } }),
       // 投稿の埋め込み（Workers AI の PLaMo-Embedding-1B）を作る。
       AI: bindings.ai(),
-      // 元のベクトル x（2048 次元）を入れる D1。無ければデプロイのときに作られる。
+      // 元のベクトル x（2048 次元）を入れる D1。cf d1 create で作り、ID で指定する。
+      // 名前だけで指定すると、デプロイのたびに cf がデータベースを探して作ろうとし、CI のトークンでは 401 になったため。
       // 1 つで約 12 万投稿分。埋まりそうになったら 02 以降を足す（設計ドキュメント）。
-      X_STORE: bindings.d1({ name: isPreview ? "x-store-staging-01" : "x-store-01" }),
+      X_STORE: bindings.d1(
+        isPreview
+          ? { id: "bf74607a-5729-4970-b008-78d587eba6fd", name: "x-store-staging-01" }
+          : { id: "db0cdaf4-9817-4755-89a0-fa332932c4f7", name: "x-store-01" },
+      ),
       READ_RATE_LIMIT: bindings.rateLimit({ namespace: "1003", simple: { limit: 60, period: 60 } }),
     },
   },
