@@ -30,8 +30,8 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "beta",
-    "cf": "^1.0.0-beta.32",
+    "@cloudflare/vite-plugin": "catalog:",
+    "cf": "^1.0.0-rc.2",
     "typescript": "catalog:",
     "vite": "catalog:",
     "vite-plus": "catalog:"

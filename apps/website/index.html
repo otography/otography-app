@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Music is passed on in words." />
     <title>otography</title>
+    <!-- どの CSS より先にレイヤー順を決める。後から宣言される StyleX のレイヤーが ui-sdk の既定スタイルに勝つようにするため。 -->
+    <style>
+      @layer landing-reset, ui-sdk;
+    </style>
   </head>
   <body>
     <div id="app"></div>
