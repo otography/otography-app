@@ -2,7 +2,13 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content"
+    />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#171717" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Music is passed on in words." />
     <title>otography</title>
     <!-- どの CSS より先にレイヤー順と最小リセットを宣言し、後から来る ui-sdk や StyleX が上書きできるようにする。 -->
@@ -23,6 +29,11 @@
           box-sizing: border-box;
         }
 
+        html {
+          -webkit-tap-highlight-color: transparent;
+          -webkit-text-size-adjust: 100%;
+        }
+
         html,
         body,
         #app {
@@ -32,6 +43,27 @@
         body {
           margin: 0;
           font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button,
+        a,
+        [role="button"] {
+          touch-action: manipulation;
+        }
+
+        button,
+        [role="button"] {
+          user-select: none;
+          -webkit-user-select: none;
+          -webkit-touch-callout: none;
+        }
+
+        @media (pointer: coarse) {
+          input,
+          textarea,
+          select {
+            font-size: 16px;
+          }
         }
       }
     </style>
