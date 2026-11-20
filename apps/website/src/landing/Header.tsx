@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import { motion } from "#/motion.stylex";
-import { fontTokens, landingTokens as t } from "./tokens.stylex";
+import { fontTokens, landingMedia, landingTokens as t } from "./tokens.stylex";
 import { Logo } from "./Logo";
 import { StartButton } from "./StartButton";
 
@@ -29,11 +29,12 @@ const styles = stylex.create({
       default: "5rem",
       "@media (max-width: 640px)": "4.5rem",
     },
-    paddingBlock: "1rem",
     paddingInline: {
       default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
+    paddingTop: "calc(1rem + env(safe-area-inset-top, 0px))",
+    paddingBottom: "1rem",
     marginBlock: "0",
     marginInline: "auto",
   },
@@ -52,9 +53,17 @@ const styles = stylex.create({
   navLink: {
     color: {
       default: "inherit",
-      ":hover": "#6f64e8",
+      ":hover": {
+        default: "inherit",
+        [landingMedia.hover]: "#6f64e8",
+      },
     },
     textDecoration: "none",
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `color 120ms ${motion.easeOut}, opacity 120ms ${motion.easeOut}`,
   },
   headerPrimaryLinkHidden: {
     // StartButton の display（inline-flex）を、640px 以下でだけ none にする。default を null にすると inline-flex も消える。
@@ -73,10 +82,22 @@ const styles = stylex.create({
     height: "2.75rem",
     padding: 0,
     overflow: "visible",
+    cursor: "pointer",
     backgroundColor: "transparent",
     borderColor: "transparent",
     borderStyle: "none",
     borderWidth: 0,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.92)",
+        [landingMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default: `transform 140ms ${motion.easeOut}`,
+      [landingMedia.reducedMotion]: "none",
+    },
   },
   menuButtonBarTop: {
     position: "absolute",
@@ -165,9 +186,17 @@ const styles = stylex.create({
   navLinkMobile: {
     color: {
       default: "inherit",
-      ":hover": "#6f64e8",
+      ":hover": {
+        default: "inherit",
+        [landingMedia.hover]: "#6f64e8",
+      },
     },
     textDecoration: "none",
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `color 120ms ${motion.easeOut}, opacity 120ms ${motion.easeOut}`,
   },
 });
 

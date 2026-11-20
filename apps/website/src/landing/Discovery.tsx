@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
+import { motion } from "#/motion.stylex";
 import { BudouxText } from "./BudouxText";
 import { Avatar } from "./Avatar";
-import { fontTokens } from "./tokens.stylex";
+import { fontTokens, landingMedia } from "./tokens.stylex";
 import { TrackArt, type ArtVariant } from "./TrackArt";
 
 const styles = stylex.create({
@@ -62,9 +63,17 @@ const styles = stylex.create({
     fontWeight: 700,
     color: {
       default: "#8177ec",
-      ":hover": "#6f64e8",
+      ":hover": {
+        default: "#8177ec",
+        [landingMedia.hover]: "#6f64e8",
+      },
     },
     textDecoration: "none",
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `color 120ms ${motion.easeOut}, opacity 120ms ${motion.easeOut}`,
   },
   discoveryGrid: {
     display: "grid",

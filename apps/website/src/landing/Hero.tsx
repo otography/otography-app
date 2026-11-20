@@ -1,9 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
+import { motion } from "#/motion.stylex";
 import { BudouxText } from "./BudouxText";
 import { Avatar } from "./Avatar";
 import { MusicPill } from "./MusicPill";
 import { StartButton } from "./StartButton";
-import { fontTokens } from "./tokens.stylex";
+import { fontTokens, landingMedia } from "./tokens.stylex";
 import type { ArtVariant } from "./TrackArt";
 
 const styles = stylex.create({
@@ -120,11 +121,19 @@ const styles = stylex.create({
     fontWeight: 700,
     color: {
       default: "#1e2431",
-      ":hover": "#6f64e8",
+      ":hover": {
+        default: "#1e2431",
+        [landingMedia.hover]: "#6f64e8",
+      },
     },
     letterSpacing: "0.04em",
     whiteSpace: "nowrap",
     textDecoration: "none",
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `color 120ms ${motion.easeOut}, opacity 120ms ${motion.easeOut}`,
   },
   heroVisual: {
     position: "relative",

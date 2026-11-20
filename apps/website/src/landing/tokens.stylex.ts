@@ -1,4 +1,9 @@
-import { defineVars } from "@stylexjs/stylex";
+import { defineConsts, defineVars } from "@stylexjs/stylex";
+
+export const landingMedia = defineConsts({
+  hover: "@media (hover: hover) and (pointer: fine)",
+  reducedMotion: "@media (prefers-reduced-motion: reduce)",
+});
 
 // ランディングページ固有のカラートークン
 export const landingTokens = defineVars({

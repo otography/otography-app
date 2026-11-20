@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
+import { motion } from "#/motion.stylex";
 import { Logo } from "./Logo";
-import { fontTokens } from "./tokens.stylex";
+import { fontTokens, landingMedia } from "./tokens.stylex";
 
 const styles = stylex.create({
   footer: {
@@ -12,11 +13,12 @@ const styles = stylex.create({
     gap: "2rem",
     alignItems: "center",
     width: "min(100%, 78rem)",
-    paddingBlock: "2rem",
     paddingInline: {
       default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
+    paddingTop: "2rem",
+    paddingBottom: "calc(2rem + env(safe-area-inset-bottom, 0px))",
     marginBlock: "0",
     marginInline: "auto",
   },
@@ -37,9 +39,17 @@ const styles = stylex.create({
   footerLink: {
     color: {
       default: "inherit",
-      ":hover": "#6f64e8",
+      ":hover": {
+        default: "inherit",
+        [landingMedia.hover]: "#6f64e8",
+      },
     },
     textDecoration: "none",
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `color 120ms ${motion.easeOut}, opacity 120ms ${motion.easeOut}`,
   },
   socialLinks: {
     display: "flex",
