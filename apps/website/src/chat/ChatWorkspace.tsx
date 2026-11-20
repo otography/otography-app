@@ -5,6 +5,7 @@ import { Button } from "@ui-sdk/react/button";
 import { useEffect, useRef, useState } from "react";
 import { authClient } from "#/lib/auth-client";
 import { type Me, meQuery } from "#/lib/auth";
+import { motion } from "#/motion.stylex";
 import { PreviewPlayerProvider } from "#/songs/preview-player";
 import { ChatComposer } from "./ChatComposer";
 import { ChatProvider } from "./ChatProvider";
@@ -283,7 +284,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default: "transform 160ms var(--ease-out), background-color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease",
     },
   },

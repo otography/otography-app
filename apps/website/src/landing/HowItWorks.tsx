@@ -31,6 +31,7 @@ const styles = stylex.create({
     letterSpacing: "0.08em",
   },
   sectionTitle: {
+    margin: 0,
     fontFamily: fontTokens.heading,
     fontSize: "clamp(2rem, 4vw, 2.75rem)",
     fontWeight: 700,

@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Button } from "@ui-sdk/react/button";
 import { Toggle } from "@ui-sdk/react/toggle";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Me } from "#/lib/auth";
 import { type AppleSong, artworkUrl, catalogSongsQuery } from "#/lib/musickit";
 import { type PostView, similarPostsQuery } from "#/lib/posts";
+import { motion } from "#/motion.stylex";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { MusicNoteIcon, PauseIcon, PlayIcon } from "./icons";
@@ -61,8 +62,44 @@ function SongCard({ song }: { song: AppleSong }) {
 }
 
 function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; content: string }) {
+  const articleRef = useRef<HTMLElement | null>(null);
+
+  // 投稿直後のユーザーメッセージを、画面下のコンポーザー位置から定位置まで滑らかに上昇させる（FLIP / WAAPI）。
+  useLayoutEffect(() => {
+    const el = articleRef.current;
+    if (!el || typeof el.animate !== "function") return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      const animation = el.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 150,
+        easing: "ease",
+      });
+      return () => animation.cancel();
+    }
+
+    const rect = el.getBoundingClientRect();
+    const composerRect = document.querySelector("[data-chat-composer]")?.getBoundingClientRect();
+    const rawDelta = composerRect ? composerRect.top - rect.top : 40;
+    const deltaY = Math.max(24, Math.min(rawDelta, window.innerHeight * 0.65));
+    const duration = Math.round(Math.min(420, Math.max(240, 200 + deltaY * 0.42)));
+
+    const animation = el.animate(
+      [
+        { opacity: 0, transform: `translateY(${deltaY}px) scale(0.96)`, offset: 0 },
+        { opacity: 1, transform: `translateY(${deltaY * 0.35}px) scale(0.99)`, offset: 0.35 },
+        { opacity: 1, transform: "translateY(0) scale(1)", offset: 1 },
+      ],
+      {
+        duration,
+        easing: motion.easeOut,
+      },
+    );
+    return () => animation.cancel();
+  }, []);
+
   return (
-    <article {...stylex.props(styles.turn, styles.turnUser)}>
+    <article ref={articleRef} {...stylex.props(styles.turn, styles.turnUser)}>
       <div {...stylex.props(styles.userBubble)}>
         <SongCard song={song} />
         <p {...stylex.props(styles.userText)}>{content}</p>
@@ -176,7 +213,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
   }, [catalogQuery.data]);
 
   return (
-    <article {...stylex.props(styles.turn, styles.turnAssistant)}>
+    <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
       <div {...stylex.props(styles.botBadge)} aria-hidden="true">
         <MusicNoteIcon />
       </div>
@@ -230,7 +267,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 
 function AssistantErrorReply({ message }: { message: string }) {
   return (
-    <article {...stylex.props(styles.turn, styles.turnAssistant)}>
+    <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
       <div {...stylex.props(styles.botBadge)} aria-hidden="true">
         <MusicNoteIcon />
       </div>
@@ -248,7 +285,7 @@ export function ChatThread({ user }: { user: Me }) {
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    bottomRef.current?.scrollIntoView({ block: "end" });
   }, [state.turns.length]);
 
   if (state.turns.length === 0) {
@@ -309,6 +346,22 @@ const pulse = stylex.keyframes({
   "0%": { opacity: 1 },
   "50%": { opacity: 0.5 },
   "100%": { opacity: 1 },
+});
+
+const turnEnter = stylex.keyframes({
+  from: {
+    opacity: 0,
+    transform: "translateY(10px)",
+  },
+  to: {
+    opacity: 1,
+    transform: "translateY(0)",
+  },
+});
+
+const fadeIn = stylex.keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
 });
 
 const styles = stylex.create({
@@ -421,8 +474,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default:
-        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}, border-color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease, border-color 120ms ease",
     },
   },
@@ -441,6 +493,21 @@ const styles = stylex.create({
   },
   turnAssistant: {
     justifyContent: "flex-start",
+  },
+  turnAssistantEnter: {
+    animationName: {
+      default: turnEnter,
+      [chatMedia.reducedMotion]: fadeIn,
+    },
+    animationDuration: {
+      default: "220ms",
+      [chatMedia.reducedMotion]: "150ms",
+    },
+    animationTimingFunction: {
+      default: motion.easeOut,
+      [chatMedia.reducedMotion]: "ease",
+    },
+    animationFillMode: "both",
   },
   avatar: {
     display: "inline-flex",
@@ -581,8 +648,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default:
-        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}, color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease, color 120ms ease",
     },
   },
@@ -627,8 +693,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default:
-        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}, color 150ms ${motion.easeOut}, border-color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]:
         "background-color 120ms ease, color 120ms ease, border-color 120ms ease",
     },

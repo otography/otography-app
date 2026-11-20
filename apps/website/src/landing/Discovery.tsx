@@ -35,6 +35,7 @@ const styles = stylex.create({
     letterSpacing: "0.08em",
   },
   sectionTitle: {
+    margin: 0,
     fontFamily: fontTokens.heading,
     fontSize: "clamp(2rem, 4vw, 2.75rem)",
     fontWeight: 700,
@@ -63,6 +64,7 @@ const styles = stylex.create({
       default: "#8177ec",
       ":hover": "#6f64e8",
     },
+    textDecoration: "none",
   },
   discoveryGrid: {
     display: "grid",

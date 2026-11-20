@@ -18,7 +18,7 @@ export const landingTokens = defineVars({
 // StyleX はファイルをまたぐ素の文字列定数を静的評価できず black hole になる(警告なしで
 // fontFamily プロパティごと消える)ため、defineVars で解決可能な形にする
 export const fontTokens = defineVars({
-  heading: "var(--font-heading-en), var(--font-jp), sans-serif",
-  body: "var(--font-body-en), var(--font-jp), sans-serif",
-  mono: "var(--font-geist-mono), var(--font-jp), monospace",
+  heading: '"Bricolage Grotesque Variable", "Zen Kaku Gothic New", sans-serif',
+  body: '"Figtree Variable", "Zen Kaku Gothic New", sans-serif',
+  mono: '"Geist Mono", "Zen Kaku Gothic New", monospace',
 });
