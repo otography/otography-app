@@ -36,9 +36,10 @@ const styles = stylex.create({
   },
   footerLink: {
     color: {
-      default: null,
+      default: "inherit",
       ":hover": "#6f64e8",
     },
+    textDecoration: "none",
   },
   socialLinks: {
     display: "flex",

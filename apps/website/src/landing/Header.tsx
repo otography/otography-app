@@ -1,5 +1,6 @@
 import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { motion } from "#/motion.stylex";
 import { fontTokens, landingTokens as t } from "./tokens.stylex";
 import { Logo } from "./Logo";
 import { StartButton } from "./StartButton";
@@ -50,9 +51,10 @@ const styles = stylex.create({
   },
   navLink: {
     color: {
-      default: null,
+      default: "inherit",
       ":hover": "#6f64e8",
     },
+    textDecoration: "none",
   },
   headerPrimaryLinkHidden: {
     // StartButton の display（inline-flex）を、640px 以下でだけ none にする。default を null にすると inline-flex も消える。
@@ -87,7 +89,7 @@ const styles = stylex.create({
     borderRadius: "999px",
     transform: "translate(-50%, -50%) translateY(-0.4rem)",
     transition: {
-      default: "transform 200ms var(--ease-out)",
+      default: `transform 200ms ${motion.easeOut}`,
       "@media (prefers-reduced-motion: reduce)": "none",
     },
   },
@@ -102,7 +104,7 @@ const styles = stylex.create({
     borderRadius: "999px",
     transform: "translate(-50%, -50%) translateY(0.4rem)",
     transition: {
-      default: "transform 200ms var(--ease-out)",
+      default: `transform 200ms ${motion.easeOut}`,
       "@media (prefers-reduced-motion: reduce)": "none",
     },
   },
@@ -146,8 +148,7 @@ const styles = stylex.create({
     },
     transformOrigin: "top",
     transition: {
-      default:
-        "opacity 200ms var(--ease-out), transform 200ms var(--ease-out), visibility 0s linear 200ms",
+      default: `opacity 200ms ${motion.easeOut}, transform 200ms ${motion.easeOut}, visibility 0s linear 200ms`,
       "@media (prefers-reduced-motion: reduce)": "opacity 150ms ease, visibility 0s linear 150ms",
     },
   },
@@ -157,16 +158,16 @@ const styles = stylex.create({
     opacity: 1,
     transform: "translateY(0) scale(1)",
     transition: {
-      default:
-        "opacity 200ms var(--ease-out), transform 200ms var(--ease-out), visibility 0s linear 0s",
+      default: `opacity 200ms ${motion.easeOut}, transform 200ms ${motion.easeOut}, visibility 0s linear 0s`,
       "@media (prefers-reduced-motion: reduce)": "opacity 150ms ease, visibility 0s linear 0s",
     },
   },
   navLinkMobile: {
     color: {
-      default: null,
+      default: "inherit",
       ":hover": "#6f64e8",
     },
+    textDecoration: "none",
   },
 });
 

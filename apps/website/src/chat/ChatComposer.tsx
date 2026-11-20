@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { useEffect, useId, useRef, useState } from "react";
 import { type AppleSong, artworkUrl, searchSongs } from "#/lib/musickit";
+import { motion } from "#/motion.stylex";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PauseIcon, PlayIcon, PlusIcon } from "./icons";
@@ -14,7 +15,7 @@ function SongAttachmentChip({ song }: { song: AppleSong }) {
   const { name, artistName, artwork, previews } = song.attributes;
 
   return (
-    <div data-enter="song-chip" {...stylex.props(styles.attachment)}>
+    <div {...stylex.props(styles.attachment)}>
       {artwork ? (
         <img
           {...stylex.props(styles.attachmentArt)}
@@ -174,6 +175,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
     <div {...stylex.props(styles.dock, keyboardOpen && styles.dockKeyboardOpen)}>
       <form
         ref={setComposerEl}
+        data-chat-composer=""
         {...stylex.props(styles.composer)}
         onSubmit={(event) => {
           event.preventDefault();
@@ -360,6 +362,22 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
   );
 }
 
+const chipEnter = stylex.keyframes({
+  from: {
+    opacity: 0,
+    transform: "scale(0.96) translateY(4px)",
+  },
+  to: {
+    opacity: 1,
+    transform: "scale(1) translateY(0)",
+  },
+});
+
+const fadeIn = stylex.keyframes({
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+});
+
 const styles = stylex.create({
   dock: {
     position: "relative",
@@ -452,6 +470,20 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 12,
+    transformOrigin: "left bottom",
+    animationName: {
+      default: chipEnter,
+      [chatMedia.reducedMotion]: fadeIn,
+    },
+    animationDuration: {
+      default: "180ms",
+      [chatMedia.reducedMotion]: "120ms",
+    },
+    animationTimingFunction: {
+      default: motion.easeOut,
+      [chatMedia.reducedMotion]: "ease",
+    },
+    animationFillMode: "both",
   },
   attachmentArt: {
     flexShrink: 0,
@@ -525,8 +557,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default:
-        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}, color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease, color 120ms ease",
     },
   },
@@ -619,7 +650,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default: "transform 160ms var(--ease-out), background-color 150ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease",
     },
   },
@@ -666,7 +697,7 @@ const styles = stylex.create({
       ":disabled": 0.35,
     },
     transition: {
-      default: "opacity 150ms var(--ease-out), transform 160ms var(--ease-out)",
+      default: `opacity 150ms ${motion.easeOut}, transform 160ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "opacity 120ms ease",
     },
   },

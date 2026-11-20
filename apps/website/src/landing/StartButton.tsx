@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { authClient } from "#/lib/auth-client";
+import { motion } from "#/motion.stylex";
 import { fontTokens } from "./tokens.stylex";
 
 const styles = stylex.create({
@@ -46,7 +47,7 @@ const styles = stylex.create({
       },
     },
     transition: {
-      default: "transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out)",
+      default: `transform 160ms ${motion.easeOut}, box-shadow 160ms ${motion.easeOut}`,
       "@media (prefers-reduced-motion: reduce)": "box-shadow 120ms ease",
     },
   },

@@ -3,7 +3,6 @@ import "@fontsource-variable/figtree";
 import "@fontsource/zen-kaku-gothic-new/400.css";
 import "@fontsource/zen-kaku-gothic-new/500.css";
 import "@fontsource/zen-kaku-gothic-new/700.css";
-import "./landing.css";
 import * as stylex from "@stylexjs/stylex";
 import { Discovery } from "./Discovery";
 import { FinalCta } from "./FinalCta";
@@ -15,10 +14,8 @@ import { fontTokens, landingTokens as t } from "./tokens.stylex";
 
 /** ログインしていない人に見せるランディングページ。旧アプリ（otography-app-old）のトップページを移した。 */
 export function Landing() {
-  // landing クラスは landing.css の目印。StyleX の className と合わせて付ける。
-  const page = stylex.props(styles.page);
   return (
-    <main {...page} className={`landing ${page.className ?? ""}`}>
+    <main {...stylex.props(styles.page)}>
       <Header />
       <Hero />
       <HowItWorks />
@@ -31,6 +28,7 @@ export function Landing() {
 
 const styles = stylex.create({
   page: {
+    overflowX: "clip",
     fontFamily: fontTokens.body,
     color: t.ink,
     letterSpacing: 0,

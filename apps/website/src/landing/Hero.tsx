@@ -124,6 +124,7 @@ const styles = stylex.create({
     },
     letterSpacing: "0.04em",
     whiteSpace: "nowrap",
+    textDecoration: "none",
   },
   heroVisual: {
     position: "relative",
