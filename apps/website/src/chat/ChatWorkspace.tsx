@@ -266,12 +266,26 @@ const styles = stylex.create({
     cursor: "pointer",
     backgroundColor: {
       default: "transparent",
-      ":hover": t.hover,
+      ":hover": {
+        default: "transparent",
+        [chatMedia.hover]: t.hover,
+      },
     },
     borderColor: t.border,
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 8,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default: "transform 160ms var(--ease-out), background-color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "background-color 120ms ease",
+    },
   },
   main: {
     flexGrow: "1",

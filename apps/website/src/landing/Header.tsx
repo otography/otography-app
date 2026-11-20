@@ -86,7 +86,10 @@ const styles = stylex.create({
     backgroundColor: t.ink,
     borderRadius: "999px",
     transform: "translate(-50%, -50%) translateY(-0.4rem)",
-    transition: "transform 0.2s ease",
+    transition: {
+      default: "transform 200ms var(--ease-out)",
+      "@media (prefers-reduced-motion: reduce)": "none",
+    },
   },
   menuButtonBarBottom: {
     position: "absolute",
@@ -98,7 +101,10 @@ const styles = stylex.create({
     backgroundColor: t.ink,
     borderRadius: "999px",
     transform: "translate(-50%, -50%) translateY(0.4rem)",
-    transition: "transform 0.2s ease",
+    transition: {
+      default: "transform 200ms var(--ease-out)",
+      "@media (prefers-reduced-motion: reduce)": "none",
+    },
   },
   menuButtonBarTopOpen: {
     transform: "translate(-50%, -50%) rotate(45deg)",
@@ -116,6 +122,7 @@ const styles = stylex.create({
       default: "none",
       "@media (max-width: 980px)": "flex",
     },
+    visibility: "hidden",
     flexDirection: "column",
     gap: "1.25rem",
     width: "100%",
@@ -129,8 +136,31 @@ const styles = stylex.create({
     fontSize: "1.05rem",
     fontWeight: 600,
     color: "#11151f",
+    pointerEvents: "none",
     backgroundColor: t.paper,
     boxShadow: "0 1rem 2rem rgba(17, 21, 29, 0.16)",
+    opacity: 0,
+    transform: {
+      default: "translateY(-6px) scale(0.98)",
+      "@media (prefers-reduced-motion: reduce)": "none",
+    },
+    transformOrigin: "top",
+    transition: {
+      default:
+        "opacity 200ms var(--ease-out), transform 200ms var(--ease-out), visibility 0s linear 200ms",
+      "@media (prefers-reduced-motion: reduce)": "opacity 150ms ease, visibility 0s linear 150ms",
+    },
+  },
+  mobileNavOpen: {
+    visibility: "visible",
+    pointerEvents: "auto",
+    opacity: 1,
+    transform: "translateY(0) scale(1)",
+    transition: {
+      default:
+        "opacity 200ms var(--ease-out), transform 200ms var(--ease-out), visibility 0s linear 0s",
+      "@media (prefers-reduced-motion: reduce)": "opacity 150ms ease, visibility 0s linear 0s",
+    },
   },
   navLinkMobile: {
     color: {
@@ -178,35 +208,35 @@ export function Header() {
           />
         </button>
       </div>
-      {isMenuOpen && (
-        <nav
-          id="mobile-nav"
-          aria-label="モバイルナビゲーション"
-          {...stylex.props(styles.mobileNav)}
+      <nav
+        id="mobile-nav"
+        aria-label="モバイルナビゲーション"
+        aria-hidden={!isMenuOpen}
+        inert={!isMenuOpen}
+        {...stylex.props(styles.mobileNav, isMenuOpen && styles.mobileNavOpen)}
+      >
+        <a
+          href="#about"
+          {...stylex.props(styles.navLinkMobile)}
+          onClick={() => setIsMenuOpen(false)}
         >
-          <a
-            href="#about"
-            {...stylex.props(styles.navLinkMobile)}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            About
-          </a>
-          <a
-            href="#how-it-works"
-            {...stylex.props(styles.navLinkMobile)}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            How it works
-          </a>
-          <a
-            href="#voices"
-            {...stylex.props(styles.navLinkMobile)}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Voices
-          </a>
-        </nav>
-      )}
+          About
+        </a>
+        <a
+          href="#how-it-works"
+          {...stylex.props(styles.navLinkMobile)}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          How it works
+        </a>
+        <a
+          href="#voices"
+          {...stylex.props(styles.navLinkMobile)}
+          onClick={() => setIsMenuOpen(false)}
+        >
+          Voices
+        </a>
+      </nav>
     </header>
   );
 }

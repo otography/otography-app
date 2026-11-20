@@ -14,6 +14,8 @@ const PRIMARY_FG = { default: "#ffffff", [DARK]: "#171717" } as const;
 export const chatMedia = stylex.defineConsts({
   compact: "@media (max-width: 540px)",
   touch: "@media (pointer: coarse)",
+  hover: "@media (hover: hover) and (pointer: fine)",
+  reducedMotion: "@media (prefers-reduced-motion: reduce)",
 });
 
 export const chatPopover = stylex.defineConsts({

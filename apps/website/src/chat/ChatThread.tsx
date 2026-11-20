@@ -398,15 +398,33 @@ const styles = stylex.create({
     cursor: "pointer",
     backgroundColor: {
       default: t.surface,
-      ":hover": t.hover,
+      ":hover": {
+        default: t.surface,
+        [chatMedia.hover]: t.hover,
+      },
     },
     borderColor: {
       default: t.border,
-      ":hover": t.borderStrong,
+      ":hover": {
+        default: t.border,
+        [chatMedia.hover]: t.borderStrong,
+      },
     },
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 9999,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default:
+        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), border-color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "background-color 120ms ease, border-color 120ms ease",
+    },
   },
   thread: {
     display: "flex",
@@ -539,16 +557,34 @@ const styles = stylex.create({
     padding: 0,
     color: {
       default: t.muted,
-      ":hover": t.text,
+      ":hover": {
+        default: t.muted,
+        [chatMedia.hover]: t.text,
+      },
     },
     cursor: "pointer",
     backgroundColor: {
       default: "transparent",
-      ":hover": t.hover,
+      ":hover": {
+        default: "transparent",
+        [chatMedia.hover]: t.hover,
+      },
     },
     borderStyle: "none",
     borderWidth: 0,
     borderRadius: 9999,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default:
+        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "background-color 120ms ease, color 120ms ease",
+    },
   },
   assistantBody: {
     display: "flex",
@@ -583,6 +619,19 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 9999,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default:
+        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out), border-color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]:
+        "background-color 120ms ease, color 120ms ease, border-color 120ms ease",
+    },
   },
   filterTogglePressed: {
     color: t.primaryFg,

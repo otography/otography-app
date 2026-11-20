@@ -14,7 +14,7 @@ function SongAttachmentChip({ song }: { song: AppleSong }) {
   const { name, artistName, artwork, previews } = song.attributes;
 
   return (
-    <div {...stylex.props(styles.attachment)}>
+    <div data-enter="song-chip" {...stylex.props(styles.attachment)}>
       {artwork ? (
         <img
           {...stylex.props(styles.attachmentArt)}
@@ -347,7 +347,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
             </span>
             <Button
               type="submit"
-              {...stylex.props(styles.sendBtn)}
+              {...stylex.props(styles.sendBtn, state.canSubmit && styles.sendBtnEnabled)}
               aria-label="感想を送信"
               disabled={!state.canSubmit}
             >
@@ -501,16 +501,34 @@ const styles = stylex.create({
     padding: 0,
     color: {
       default: t.muted,
-      ":hover": t.text,
+      ":hover": {
+        default: t.muted,
+        [chatMedia.hover]: t.text,
+      },
     },
     cursor: "pointer",
     backgroundColor: {
       default: "transparent",
-      ":hover": t.hover,
+      ":hover": {
+        default: "transparent",
+        [chatMedia.hover]: t.hover,
+      },
     },
     borderStyle: "none",
     borderWidth: 0,
     borderRadius: 9999,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default:
+        "transform 160ms var(--ease-out), background-color 150ms var(--ease-out), color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "background-color 120ms ease, color 120ms ease",
+    },
   },
   textarea: {
     width: "100%",
@@ -584,12 +602,26 @@ const styles = stylex.create({
     cursor: "pointer",
     backgroundColor: {
       default: "transparent",
-      ":hover": t.hover,
+      ":hover": {
+        default: "transparent",
+        [chatMedia.hover]: t.hover,
+      },
     },
     borderColor: t.border,
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 9999,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.97)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default: "transform 160ms var(--ease-out), background-color 150ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "background-color 120ms ease",
+    },
   },
   submitGroup: {
     display: "flex",
@@ -633,11 +665,19 @@ const styles = stylex.create({
       default: 1,
       ":disabled": 0.35,
     },
+    transition: {
+      default: "opacity 150ms var(--ease-out), transform 160ms var(--ease-out)",
+      [chatMedia.reducedMotion]: "opacity 120ms ease",
+    },
+  },
+  sendBtnEnabled: {
     transform: {
       default: null,
-      ":active:not(:disabled)": "scale(0.95)",
+      ":active": {
+        default: "scale(0.95)",
+        [chatMedia.reducedMotion]: "none",
+      },
     },
-    transition: "opacity 0.15s ease, transform 0.1s ease",
   },
   triggerPopover: {
     position: "absolute",
