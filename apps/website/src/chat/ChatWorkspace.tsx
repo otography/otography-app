@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Button } from "@ui-sdk/react/button";
 import { useEffect, useRef, useState } from "react";
@@ -125,21 +126,27 @@ export function ChatWorkspace({ user }: { user: Me }) {
               <span {...stylex.props(styles.brandName)}>otography</span>
             </div>
             <div {...stylex.props(styles.account)}>
-              <Avatar {...stylex.props(styles.avatarSm)}>
-                {user.image ? (
-                  <AvatarImage
-                    src={user.image}
-                    alt={user.name}
-                    referrerPolicy="no-referrer"
-                    {...stylex.props(styles.avatarImg)}
-                  />
-                ) : null}
-                <AvatarFallback>
-                  <span aria-hidden="true">{initials(user.name)}</span>
-                  <span data-slot="visually-hidden">{user.name}</span>
-                </AvatarFallback>
-              </Avatar>
-              <span {...stylex.props(styles.accountName)}>{user.name}</span>
+              <Link
+                to="/profile"
+                aria-label="プロフィールを開く"
+                {...stylex.props(styles.profileLink)}
+              >
+                <Avatar {...stylex.props(styles.avatarSm)}>
+                  {user.image ? (
+                    <AvatarImage
+                      src={user.image}
+                      alt={user.name}
+                      referrerPolicy="no-referrer"
+                      {...stylex.props(styles.avatarImg)}
+                    />
+                  ) : null}
+                  <AvatarFallback>
+                    <span aria-hidden="true">{initials(user.name)}</span>
+                    <span data-slot="visually-hidden">{user.name}</span>
+                  </AvatarFallback>
+                </Avatar>
+                <span {...stylex.props(styles.accountName)}>{user.name}</span>
+              </Link>
               <Button
                 type="button"
                 {...stylex.props(styles.signoutBtn)}
@@ -233,6 +240,24 @@ const styles = stylex.create({
     display: "flex",
     gap: 10,
     alignItems: "center",
+  },
+  profileLink: {
+    display: "inline-flex",
+    gap: 8,
+    alignItems: "center",
+    paddingBlock: 4,
+    paddingInline: 8,
+    color: "inherit",
+    textDecoration: "none",
+    backgroundColor: {
+      default: "transparent",
+      ":hover": {
+        default: "transparent",
+        [chatMedia.hover]: t.hover,
+      },
+    },
+    borderRadius: 9999,
+    transition: `background-color 150ms ${motion.easeOut}`,
   },
   avatarSm: {
     display: "inline-flex",
