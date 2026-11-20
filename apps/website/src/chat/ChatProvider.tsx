@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { POST_CONTENT_MAX } from "db/constants";
-import { type ReactNode, useRef, useState } from "react";
-import type { AppleSong } from "#/lib/musickit";
+import { type ReactNode, useEffect, useId, useRef, useState } from "react";
+import { type AppleSong, searchSongs } from "#/lib/musickit";
 import { createPost } from "#/lib/posts";
 import { ChatContext, type SongSearchTrigger } from "./ChatContext";
 import type { ChatTurn } from "./types";
@@ -24,7 +24,13 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [selectedSong, setSelectedSong] = useState<AppleSong | null>(null);
   const [draft, setDraft] = useState("");
   const [searchDismissed, setSearchDismissed] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const [songs, setSongs] = useState<AppleSong[]>([]);
+  const [songsLoading, setSongsLoading] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const composerRef = useRef<HTMLFormElement | null>(null);
+  const pickerId = useId();
 
   const triggerMatch = parseSongTrigger(draft);
   const menuOpen = triggerMatch !== null && !searchDismissed;
@@ -36,7 +42,48 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const searchQuery = triggerMatch?.query.trim() ?? "";
+
+  // 曲検索のメニューが開いている間、入力に合わせて候補を debounce 付きで取得する。
+  useEffect(() => {
+    if (!menuOpen || !searchQuery) {
+      setSongs([]);
+      setSongsLoading(false);
+      setHighlightedIndex(0);
+      return;
+    }
+
+    let cancelled = false;
+    setSongsLoading(true);
+
+    const timer = window.setTimeout(() => {
+      searchSongs(searchQuery)
+        .then((result) => {
+          if (cancelled) return;
+          setSongs(result);
+          setHighlightedIndex(0);
+          setSongsLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setSongs([]);
+          setSongsLoading(false);
+        });
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [menuOpen, searchQuery]);
+
+  const moveHighlight = (direction: -1 | 1) => {
+    if (songs.length === 0) return;
+    setHighlightedIndex((prev) => (prev + direction + songs.length) % songs.length);
+  };
+
   const selectSong = (song: AppleSong) => {
+    if (!song.attributes.isrc) return;
     setSelectedSong(song);
     setDraft("");
     setSearchDismissed(false);
@@ -93,6 +140,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
   const submit = () => {
     if (!canSubmit || !selectedSong || !isrc) return;
+    textareaRef.current?.blur();
     const content = draft.trim();
     const song = selectedSong;
 
@@ -123,8 +171,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           canSubmit,
           isSubmitting: mutation.isPending,
           searchTrigger: triggerMatch?.trigger ?? null,
-          searchQuery: triggerMatch?.query.trim() ?? "",
+          searchQuery,
           menuOpen,
+          keyboardOpen,
+          songs,
+          songsLoading,
+          highlightedIndex,
         },
         actions: {
           selectSong,
@@ -133,10 +185,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           openSongSearch,
           dismissSongSearch: () => setSearchDismissed(true),
           submit,
+          setKeyboardOpen,
+          highlightSong: setHighlightedIndex,
+          moveHighlight,
         },
         meta: {
           maxLength: POST_CONTENT_MAX,
           textareaRef,
+          composerRef,
+          pickerId,
         },
       }}
     >

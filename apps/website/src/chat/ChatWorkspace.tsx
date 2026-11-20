@@ -2,13 +2,14 @@ import * as stylex from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
-import { Button } from "@ui-sdk/react/button";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { authClient } from "#/lib/auth-client";
 import { type Me, meQuery } from "#/lib/auth";
 import { motion } from "#/motion.stylex";
 import { PreviewPlayerProvider } from "#/songs/preview-player";
 import { ChatComposer } from "./ChatComposer";
+import { AppShell } from "#/shell/AppShell";
+import { useChat } from "./ChatContext";
 import { ChatProvider } from "./ChatProvider";
 import { ChatThread } from "./ChatThread";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
@@ -17,10 +18,10 @@ function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
 }
 
-export function ChatWorkspace({ user }: { user: Me }) {
+function ChatShell({ user }: { user: Me }) {
   const queryClient = useQueryClient();
   const shellRef = useRef<HTMLDivElement | null>(null);
-  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  const { setKeyboardOpen } = useChat().actions;
 
   // iOS Safari などでソフトウェアキーボード表示中に画面をスクロールしても
   // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
@@ -121,68 +122,67 @@ export function ChatWorkspace({ user }: { user: Me }) {
       document.removeEventListener("focusin", sync);
       document.removeEventListener("focusout", sync);
     };
-  }, []);
+  }, [setKeyboardOpen]);
 
+  return (
+    <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
+      <AppShell.Topbar style={styles.topbar}>
+        <div {...stylex.props(styles.brand)}>
+          <AppShell.BrandIcon />
+          <AppShell.BrandName />
+        </div>
+        <div {...stylex.props(styles.account)}>
+          <Link to="/profile" aria-label="プロフィールを開く" {...stylex.props(styles.profileLink)}>
+            <Avatar {...stylex.props(styles.avatarSm)}>
+              {user.image ? (
+                <AvatarImage
+                  src={user.image}
+                  alt={user.name}
+                  referrerPolicy="no-referrer"
+                  {...stylex.props(styles.avatarImg)}
+                />
+              ) : null}
+              <AvatarFallback>
+                <span aria-hidden="true">{initials(user.name)}</span>
+                <span data-slot="visually-hidden">{user.name}</span>
+              </AvatarFallback>
+            </Avatar>
+            <span {...stylex.props(styles.accountName)}>{user.name}</span>
+          </Link>
+          <AppShell.SignOutButton
+            onClick={() =>
+              void authClient
+                .signOut()
+                .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
+            }
+          />
+        </div>
+      </AppShell.Topbar>
+
+      <main {...stylex.props(styles.main)}>
+        <div {...stylex.props(styles.mainInner)}>
+          <ChatThread user={user} />
+        </div>
+      </main>
+
+      <ChatComposer.Frame>
+        <ChatComposer.SongPicker />
+        <ChatComposer.Attachment />
+        <ChatComposer.Input />
+        <ChatComposer.Toolbar>
+          <ChatComposer.PickSongButton />
+          <ChatComposer.Submit />
+        </ChatComposer.Toolbar>
+      </ChatComposer.Frame>
+    </div>
+  );
+}
+
+export function ChatWorkspace({ user }: { user: Me }) {
   return (
     <PreviewPlayerProvider>
       <ChatProvider>
-        <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
-          <header {...stylex.props(styles.topbar)}>
-            <div {...stylex.props(styles.brand)}>
-              <img
-                src="/otography-icon.png"
-                alt=""
-                aria-hidden="true"
-                width={24}
-                height={24}
-                {...stylex.props(styles.brandIcon)}
-              />
-              <span {...stylex.props(styles.brandName)}>otography</span>
-            </div>
-            <div {...stylex.props(styles.account)}>
-              <Link
-                to="/profile"
-                aria-label="プロフィールを開く"
-                {...stylex.props(styles.profileLink)}
-              >
-                <Avatar {...stylex.props(styles.avatarSm)}>
-                  {user.image ? (
-                    <AvatarImage
-                      src={user.image}
-                      alt={user.name}
-                      referrerPolicy="no-referrer"
-                      {...stylex.props(styles.avatarImg)}
-                    />
-                  ) : null}
-                  <AvatarFallback>
-                    <span aria-hidden="true">{initials(user.name)}</span>
-                    <span data-slot="visually-hidden">{user.name}</span>
-                  </AvatarFallback>
-                </Avatar>
-                <span {...stylex.props(styles.accountName)}>{user.name}</span>
-              </Link>
-              <Button
-                type="button"
-                {...stylex.props(styles.signoutBtn)}
-                onClick={() =>
-                  void authClient
-                    .signOut()
-                    .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
-                }
-              >
-                ログアウト
-              </Button>
-            </div>
-          </header>
-
-          <main {...stylex.props(styles.main)}>
-            <div {...stylex.props(styles.mainInner)}>
-              <ChatThread user={user} />
-            </div>
-          </main>
-
-          <ChatComposer keyboardOpen={keyboardOpen} />
-        </div>
+        <ChatShell user={user} />
       </ChatProvider>
     </PreviewPlayerProvider>
   );
@@ -204,51 +204,12 @@ const styles = stylex.create({
   },
   topbar: {
     position: "relative",
-    zIndex: 10,
-    display: "flex",
     flexShrink: 0,
-    gap: 12,
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: {
-      default: "max(12px, env(safe-area-inset-top, 0px))",
-      [chatMedia.compact]: "max(8px, env(safe-area-inset-top, 0px))",
-    },
-    paddingRight: {
-      default: "max(20px, env(safe-area-inset-right, 0px))",
-      [chatMedia.compact]: "max(14px, env(safe-area-inset-right, 0px))",
-    },
-    paddingBottom: {
-      default: 12,
-      [chatMedia.compact]: 8,
-    },
-    paddingLeft: {
-      default: "max(20px, env(safe-area-inset-left, 0px))",
-      [chatMedia.compact]: "max(14px, env(safe-area-inset-left, 0px))",
-    },
-    backgroundColor: `color-mix(in srgb, ${t.bg} 88%, transparent)`,
-    borderBottomColor: t.border,
-    borderBottomStyle: "solid",
-    borderBottomWidth: 1,
-    backdropFilter: "blur(10px)",
   },
   brand: {
     display: "flex",
     gap: 8,
     alignItems: "center",
-  },
-  brandIcon: {
-    display: "block",
-    flexShrink: 0,
-    width: 24,
-    height: 24,
-    objectFit: "cover",
-    borderRadius: 6,
-  },
-  brandName: {
-    fontSize: 15,
-    fontWeight: 600,
-    letterSpacing: "-0.01em",
   },
   account: {
     display: "flex",
@@ -296,40 +257,6 @@ const styles = stylex.create({
     },
     fontSize: 13,
     color: t.muted,
-  },
-  signoutBtn: {
-    height: {
-      default: 30,
-      [chatMedia.compact]: 28,
-    },
-    paddingBlock: 0,
-    paddingInline: 10,
-    fontSize: 12,
-    fontWeight: 500,
-    color: t.text,
-    cursor: "pointer",
-    backgroundColor: {
-      default: "transparent",
-      ":hover": {
-        default: "transparent",
-        [chatMedia.hover]: t.hover,
-      },
-    },
-    borderColor: t.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 8,
-    transform: {
-      default: null,
-      ":active": {
-        default: "scale(0.97)",
-        [chatMedia.reducedMotion]: "none",
-      },
-    },
-    transition: {
-      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}`,
-      [chatMedia.reducedMotion]: "background-color 120ms ease",
-    },
   },
   main: {
     flexGrow: "1",

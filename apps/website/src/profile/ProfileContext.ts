@@ -1,5 +1,4 @@
-import type { Toaster } from "@ui-sdk/core/toast";
-import { createContext, type ReactNode, use } from "react";
+import { createContext, use } from "react";
 import type { Me } from "#/lib/auth";
 import type { AppleArtist, AppleSong } from "#/lib/musickit";
 import type { PostView } from "#/lib/posts";
@@ -53,7 +52,6 @@ type ProfileMeta = {
   favoriteCommentMax: number;
   userNameMax: number;
   userBioMax: number;
-  toaster: Toaster<ReactNode>;
 };
 
 export type ProfileContextValue = {

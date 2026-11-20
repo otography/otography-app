@@ -224,9 +224,6 @@ catalogs:
     knip:
       specifier: ^6.45.1
       version: 6.45.1
-    thinking-orbs:
-      specifier: ^0.3.2
-      version: 0.3.2
     typescript:
       specifier: ^7.0.2
       version: 7.0.2
@@ -356,9 +353,6 @@ importers:
       react-dom:
         specifier: ^19.2.0
         version: 19.3.1(react@19.3.1)
-      thinking-orbs:
-        specifier: 'catalog:'
-        version: 0.3.2(react@19.3.1)
     devDependencies:
       '@stylexjs/unplugin':
         specifier: 'catalog:'
@@ -3441,11 +3435,6 @@ packages:
     resolution: {integrity: sha512-SS+jx45GF1QjgEXQx4NJZV9ImqmO2NPz5FNsIHrsDjh2YsHnawpan7SNQ1o8NuhrbHZy9AZhIoCUiCeaW/C80g==}
     engines: {node: '>=18'}
 
-  thinking-orbs@0.3.2:
-    resolution: {integrity: sha512-QZFeBaPEzqhjiZoXy961EvDgaXk2WgXacF3Rbz+Sj5IfzDzBvTC86vdREUHniBffYibJFKSwbfllxLUdI/Xv6g==}
-    peerDependencies:
-      react: '>=18.0.0'
-
   tinybench@6.2.3:
     resolution: {integrity: sha512-Al01C2JIBnO2CXCAPbpAl6sUiOZHeThGtHYNTa51JRw9PyWOCdr+9Ong05R4qg/Sk3+H645E8ov1h2c58ityNw==}
     engines: {node: '>=20.0.0'}
@@ -6244,10 +6233,6 @@ snapshots:
   styleq@0.2.1: {}
 
   supports-color@10.2.2: {}
-
-  thinking-orbs@0.3.2(react@19.3.1):
-    dependencies:
-      react: 19.3.1
 
   tinybench@6.2.3: {}
 

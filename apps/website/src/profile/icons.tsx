@@ -40,17 +40,28 @@ export function TrashIcon() {
   );
 }
 
-export function HeartIcon({ filled = false }: { filled?: boolean }) {
+const HEART_PATH =
+  "M8 13.5s-5.25-3.25-5.25-6.95A3.05 3.05 0 0 1 8 4.45a3.05 3.05 0 0 1 5.25 2.1c0 3.7-5.25 6.95-5.25 6.95Z";
+
+export function HeartIcon() {
   return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill={filled ? "currentColor" : "none"}
-      aria-hidden="true"
-    >
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
-        d="M8 13.5s-5.25-3.25-5.25-6.95A3.05 3.05 0 0 1 8 4.45a3.05 3.05 0 0 1 5.25 2.1c0 3.7-5.25 6.95-5.25 6.95Z"
+        d={HEART_PATH}
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function HeartFilledIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path
+        d={HEART_PATH}
         stroke="currentColor"
         strokeWidth="1.4"
         strokeLinecap="round"

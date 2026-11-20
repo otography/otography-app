@@ -14,6 +14,10 @@ type ChatState = {
   searchTrigger: SongSearchTrigger | null;
   searchQuery: string;
   menuOpen: boolean;
+  keyboardOpen: boolean;
+  songs: AppleSong[];
+  songsLoading: boolean;
+  highlightedIndex: number;
 };
 
 type ChatActions = {
@@ -23,11 +27,16 @@ type ChatActions = {
   openSongSearch: (trigger: SongSearchTrigger) => void;
   dismissSongSearch: () => void;
   submit: () => void;
+  setKeyboardOpen: (open: boolean) => void;
+  highlightSong: (index: number) => void;
+  moveHighlight: (direction: -1 | 1) => void;
 };
 
 type ChatMeta = {
   maxLength: number;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
+  composerRef: RefObject<HTMLFormElement | null>;
+  pickerId: string;
 };
 
 export type ChatContextValue = {

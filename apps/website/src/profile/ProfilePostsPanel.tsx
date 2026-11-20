@@ -11,13 +11,13 @@ import {
 } from "@ui-sdk/react/alert-dialog";
 import { Button } from "@ui-sdk/react/button";
 import { Toggle } from "@ui-sdk/react/toggle";
-import { MusicNoteIcon, PauseIcon, PlayIcon } from "#/chat/icons";
+import { MusicNoteIcon } from "#/chat/icons";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import { type AppleSong, artworkUrl } from "#/lib/musickit";
 import type { PostView } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
-import { usePreviewPlayer } from "#/songs/preview-player";
-import { HeartIcon, TrashIcon } from "./icons";
+import { PreviewToggle } from "#/songs/PreviewToggle";
+import { HeartFilledIcon, HeartIcon, TrashIcon } from "./icons";
 import { useProfile } from "./ProfileContext";
 
 const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
@@ -34,8 +34,6 @@ function formatDate(iso: string) {
 
 function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
   const { state, actions } = useProfile();
-  const preview = usePreviewPlayer();
-  const playing = catalogSong ? preview.state.playingId === catalogSong.id : false;
   const songTitle = post.song?.title ?? "（曲名なし）";
   const isDeleting = state.deletingPostId === post.id;
   const isLiking = state.likingPostId === post.id;
@@ -76,15 +74,8 @@ function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSo
               <span {...stylex.props(styles.songArtist)}>{post.song.artistName}</span>
             ) : null}
           </div>
-          {catalogSong?.attributes.previews?.length ? (
-            <Button
-              type="button"
-              {...stylex.props(styles.iconBtn)}
-              aria-label={playing ? `${songTitle} の試聴を停止` : `${songTitle} を試聴`}
-              onClick={() => preview.actions.toggle(catalogSong)}
-            >
-              {playing ? <PauseIcon /> : <PlayIcon />}
-            </Button>
+          {catalogSong ? (
+            <PreviewToggle song={catalogSong} title={songTitle} style={styles.iconBtn} />
           ) : null}
         </div>
       ) : null}
@@ -106,7 +97,7 @@ function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSo
             }}
             {...stylex.props(styles.likeToggle, post.likedByMe && styles.likeTogglePressed)}
           >
-            <HeartIcon filled={post.likedByMe} />
+            {post.likedByMe ? <HeartFilledIcon /> : <HeartIcon />}
             <span {...stylex.props(styles.likeCount)}>{post.likeCount}</span>
           </Toggle>
 

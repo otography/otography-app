@@ -9,6 +9,7 @@ import { createToaster } from "@ui-sdk/react/toast";
 import { FAVORITE_COMMENT_MAX, FAVORITE_LIMIT, USER_BIO_MAX, USER_NAME_MAX } from "db/constants";
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { type Me, meQuery } from "#/lib/auth";
+import { ProfileToasts } from "./ProfileToasts";
 import { type AppleArtist, type AppleSong, catalogSongsQuery } from "#/lib/musickit";
 import {
   type AuthorPostsPage,
@@ -340,11 +341,11 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
           favoriteCommentMax: FAVORITE_COMMENT_MAX,
           userNameMax: USER_NAME_MAX,
           userBioMax: USER_BIO_MAX,
-          toaster,
         },
       }}
     >
       {children}
+      <ProfileToasts toaster={toaster} />
     </ProfileContext>
   );
 }
