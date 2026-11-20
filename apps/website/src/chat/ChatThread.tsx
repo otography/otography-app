@@ -11,6 +11,7 @@ import { motion } from "#/motion.stylex";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { MusicNoteIcon, PauseIcon, PlayIcon } from "./icons";
+import { OtographyOrb } from "./OtographyOrb";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function initials(name: string) {
@@ -237,9 +238,8 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
         </div>
 
         {query.isPending ? (
-          <div {...stylex.props(styles.skeletonList)} aria-busy="true">
-            <div {...stylex.props(styles.skeletonCard)} />
-            <div {...stylex.props(styles.skeletonCard)} />
+          <div {...stylex.props(styles.searchingOrbWrap)} aria-busy="true">
+            <OtographyOrb state="working" palette="icon-mesh" size={64} aria-hidden="true" />
           </div>
         ) : null}
 
@@ -342,12 +342,6 @@ export function ChatThread({ user }: { user: Me }) {
   );
 }
 
-const pulse = stylex.keyframes({
-  "0%": { opacity: 1 },
-  "50%": { opacity: 0.5 },
-  "100%": { opacity: 1 },
-});
-
 const turnEnter = stylex.keyframes({
   from: {
     opacity: 0,
@@ -356,6 +350,28 @@ const turnEnter = stylex.keyframes({
   to: {
     opacity: 1,
     transform: "translateY(0)",
+  },
+});
+
+const similarListEnter = stylex.keyframes({
+  from: {
+    opacity: 0,
+    transform: "translateY(6px)",
+  },
+  to: {
+    opacity: 1,
+    transform: "translateY(0)",
+  },
+});
+
+const orbEnter = stylex.keyframes({
+  from: {
+    opacity: 0,
+    transform: "scale(0.95)",
+  },
+  to: {
+    opacity: 1,
+    transform: "scale(1)",
   },
 });
 
@@ -707,6 +723,19 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: 10,
+    animationName: {
+      default: similarListEnter,
+      [chatMedia.reducedMotion]: fadeIn,
+    },
+    animationDuration: {
+      default: "220ms",
+      [chatMedia.reducedMotion]: "150ms",
+    },
+    animationTimingFunction: {
+      default: motion.easeOut,
+      [chatMedia.reducedMotion]: "ease",
+    },
+    animationFillMode: "both",
   },
   similarCard: {
     display: "flex",
@@ -773,22 +802,24 @@ const styles = stylex.create({
     fontSize: 12,
     color: t.muted,
   },
-  skeletonList: {
+  searchingOrbWrap: {
     display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  skeletonCard: {
-    height: 88,
-    backgroundColor: t.surface,
-    borderColor: t.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 14,
-    animationName: pulse,
-    animationDuration: "1.5s",
-    animationTimingFunction: "ease-in-out",
-    animationIterationCount: "infinite",
+    alignItems: "center",
+    paddingBlock: 8,
+    transformOrigin: "left center",
+    animationName: {
+      default: orbEnter,
+      [chatMedia.reducedMotion]: fadeIn,
+    },
+    animationDuration: {
+      default: "200ms",
+      [chatMedia.reducedMotion]: "150ms",
+    },
+    animationTimingFunction: {
+      default: motion.easeOut,
+      [chatMedia.reducedMotion]: "ease",
+    },
+    animationFillMode: "both",
   },
   errorText: {
     margin: 0,
