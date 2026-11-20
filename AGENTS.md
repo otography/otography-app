@@ -36,3 +36,7 @@ release. Add a tool name to select part of the graph. For example, run
 - `import * as errore from "errore"` で読み込み、ドメインのエラーは `errore.createTaggedError` で定義する。
 - 例外を投げるライブラリ（`fetch`、Drizzle、`jose` など）を呼ぶ箇所では、`.catch((e) => new XxxError({ cause: e }))` か `errore.try` で値に変換する。
 - 例外として残すのは、起動時の設定不備（`apps/api/src/lib/env.ts` の `requireEnv`）だけである。理由は docs/adr/0009-errors-as-values-with-errore.md に書いた。
+
+## ui-sdk
+
+Before using `ui-sdk`, follow the `ui-sdk` skill if it's installed, and read `node_modules/@ui-sdk/react/docs/llms.txt`. To build a new component, also search `node_modules/@ui-sdk/react/docs/core.md` by heading, and read `rendering.md` next to it.

@@ -1,51 +1,31 @@
-import * as stylex from "@stylexjs/stylex";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { authClient } from "#/lib/auth-client";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { ChatWorkspace } from "#/chat/ChatWorkspace";
 import { Landing } from "#/landing/Landing";
-import { CreatePostComposer } from "#/posts/CreatePostComposer";
-import { meQuery } from "#/profiles/queries";
-import { colors, space } from "#/styles/tokens.stylex";
-import { Button } from "#/ui/button";
+import { meQuery } from "#/lib/auth";
 
 export const Route = createFileRoute("/")({ component: Home });
 
 function Home() {
-  const queryClient = useQueryClient();
   const me = useQuery(meQuery);
 
-  if (me.isPending) return <p {...stylex.props(styles.page)}>読み込み中…</p>;
+  if (me.isPending) {
+    return (
+      <main
+        style={{
+          minHeight: "100dvh",
+          display: "grid",
+          placeItems: "center",
+          fontSize: 14,
+          opacity: 0.7,
+        }}
+      >
+        読み込み中…
+      </main>
+    );
+  }
 
   if (!me.data) return <Landing />;
 
-  return (
-    <div {...stylex.props(styles.page, styles.stack)}>
-      <header {...stylex.props(styles.header)}>
-        <span {...stylex.props(styles.muted)}>{me.data.name} としてログイン中</span>
-        <Link to="/u/$publicId" params={{ publicId: me.data.publicId }}>
-          プロフィール
-        </Link>
-        <Link to="/settings/profile">プロフィールを編集</Link>
-        <Link to="/search">感想を探す</Link>
-        {me.data.isAdmin && <Link to="/admin/reports">通報の管理</Link>}
-        <Button
-          onClick={() =>
-            void authClient
-              .signOut()
-              .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
-          }
-        >
-          ログアウト
-        </Button>
-      </header>
-      <CreatePostComposer />
-    </div>
-  );
+  return <ChatWorkspace user={me.data} />;
 }
-
-const styles = stylex.create({
-  page: { padding: space.xl, color: colors.text },
-  stack: { display: "flex", flexDirection: "column", gap: space.lg, alignItems: "flex-start" },
-  header: { display: "flex", flexWrap: "wrap", gap: space.md, alignItems: "center" },
-  muted: { color: colors.textMuted },
-});

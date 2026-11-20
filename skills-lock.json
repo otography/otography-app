@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "skills": {
+    "design-taste-frontend": {
+      "source": "Leonxlnx/taste-skill",
+      "sourceType": "github",
+      "skillPath": "skills/taste-skill/SKILL.md",
+      "computedHash": ""
+    },
+    "ui-sdk": {
+      "source": "vercel-labs/ui",
+      "commit": "3647512865fe0242b749dd8981c51c75ad5f486b",
+      "sourceType": "github",
+      "skillPath": "packages/core/skills/ui-sdk/SKILL.md",
+      "computedHash": "9a60caf01da3d47beedf627bf1505d922dccc93b04f294c6aa64edf01c46b3ba"
+    },
+    "vercel-composition-patterns": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/composition-patterns/SKILL.md",
+      "computedHash": ""
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": ""
+    }
+  }
+}

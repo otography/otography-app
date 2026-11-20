@@ -1,0 +1,64 @@
+/* ui-sdk の data-slot / data-* 状態属性とテーマトークン橋渡し */
+.chat-shell {
+  color-scheme: light dark;
+  --ui-background: #ffffff;
+  --ui-foreground: #171717;
+  --ui-muted: #ececef;
+  --ui-muted-foreground: #595962;
+  --ui-border: #e2e2e6;
+  --ui-input: #c9c9d0;
+  --ui-primary: #171717;
+  --ui-primary-foreground: #ffffff;
+  --ui-ring: #171717;
+  --ui-ring-border: #c9c9d0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chat-shell {
+    --ui-background: #2a2a2a;
+    --ui-foreground: #f2f2f2;
+    --ui-muted: #343434;
+    --ui-muted-foreground: #a3a3ab;
+    --ui-border: #363636;
+    --ui-input: #4a4a4a;
+    --ui-primary: #f4f4f5;
+    --ui-primary-foreground: #171717;
+    --ui-ring: #f4f4f5;
+    --ui-ring-border: #4a4a4a;
+  }
+}
+
+.chat-composer:focus-within {
+  border-color: #c9c9d0;
+}
+
+[data-slot="toggle"][data-pressed].chat-filter-toggle {
+  background-color: #171717;
+  border-color: #171717;
+  color: #ffffff;
+}
+
+[data-slot="trigger-menu-item"].chat-trigger-item[data-highlighted] {
+  background-color: #f0f0f3;
+}
+
+@media (prefers-color-scheme: dark) {
+  .chat-composer:focus-within {
+    border-color: #4a4a4a;
+  }
+
+  [data-slot="toggle"][data-pressed].chat-filter-toggle {
+    background-color: #f4f4f5;
+    border-color: #f4f4f5;
+    color: #171717;
+  }
+
+  [data-slot="trigger-menu-item"].chat-trigger-item[data-highlighted] {
+    background-color: #353538;
+  }
+}
+
+[data-slot="trigger-menu-item"].chat-trigger-item[data-disabled] {
+  opacity: 0.48;
+  cursor: not-allowed;
+}

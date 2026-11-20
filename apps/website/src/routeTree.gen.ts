@@ -10,102 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SearchRouteImport } from './routes/search'
-import { Route as AdminReportsRouteImport } from './routes/admin/reports'
-import { Route as PostsPostIdRouteImport } from './routes/posts/$postId'
-import { Route as SettingsProfileRouteImport } from './routes/settings/profile'
-import { Route as UPublicIdRouteImport } from './routes/u/$publicId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SearchRoute = SearchRouteImport.update({
-  id: '/search',
-  path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminReportsRoute = AdminReportsRouteImport.update({
-  id: '/admin/reports',
-  path: '/admin/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PostsPostIdRoute = PostsPostIdRouteImport.update({
-  id: '/posts/$postId',
-  path: '/posts/$postId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsProfileRoute = SettingsProfileRouteImport.update({
-  id: '/settings/profile',
-  path: '/settings/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const UPublicIdRoute = UPublicIdRouteImport.update({
-  id: '/u/$publicId',
-  path: '/u/$publicId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/search': typeof SearchRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/posts/$postId': typeof PostsPostIdRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/search': typeof SearchRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/posts/$postId': typeof PostsPostIdRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/search': typeof SearchRoute
-  '/admin/reports': typeof AdminReportsRoute
-  '/posts/$postId': typeof PostsPostIdRoute
-  '/settings/profile': typeof SettingsProfileRoute
-  '/u/$publicId': typeof UPublicIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/search'
-    | '/admin/reports'
-    | '/posts/$postId'
-    | '/settings/profile'
-    | '/u/$publicId'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/search'
-    | '/admin/reports'
-    | '/posts/$postId'
-    | '/settings/profile'
-    | '/u/$publicId'
-  id:
-    | '__root__'
-    | '/'
-    | '/search'
-    | '/admin/reports'
-    | '/posts/$postId'
-    | '/settings/profile'
-    | '/u/$publicId'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SearchRoute: typeof SearchRoute
-  AdminReportsRoute: typeof AdminReportsRoute
-  PostsPostIdRoute: typeof PostsPostIdRoute
-  SettingsProfileRoute: typeof SettingsProfileRoute
-  UPublicIdRoute: typeof UPublicIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -117,51 +48,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/search': {
-      id: '/search'
-      path: '/search'
-      fullPath: '/search'
-      preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/reports': {
-      id: '/admin/reports'
-      path: '/admin/reports'
-      fullPath: '/admin/reports'
-      preLoaderRoute: typeof AdminReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/posts/$postId': {
-      id: '/posts/$postId'
-      path: '/posts/$postId'
-      fullPath: '/posts/$postId'
-      preLoaderRoute: typeof PostsPostIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings/profile': {
-      id: '/settings/profile'
-      path: '/settings/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof SettingsProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/u/$publicId': {
-      id: '/u/$publicId'
-      path: '/u/$publicId'
-      fullPath: '/u/$publicId'
-      preLoaderRoute: typeof UPublicIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SearchRoute: SearchRoute,
-  AdminReportsRoute: AdminReportsRoute,
-  PostsPostIdRoute: PostsPostIdRoute,
-  SettingsProfileRoute: SettingsProfileRoute,
-  UPublicIdRoute: UPublicIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
