@@ -11,6 +11,8 @@
     "deploy": "vp run website#build && cf deploy",
     "typecheck": "cf workers types && tsc",
     "deploy:staging": "vp run website#build && cf previews deploy --preview-name staging",
+    "deploy:preview": "vp run website#build && cf previews deploy --preview-name \"${PREVIEW_NAME:?PREVIEW_NAME is required}\"",
+    "delete:preview": "cf previews delete \"${PREVIEW_NAME:?PREVIEW_NAME is required}\" --worker app --force",
     "embedding:refresh": "vpx ./scripts/refresh-embedding-metric.ts",
     "embedding:embed-posts": "vpx ./scripts/embed-posts.ts",
     "embedding:reembed-posts": "vpx ./scripts/reembed-posts.ts",
