@@ -14,12 +14,13 @@ const styles = stylex.create({
     gap: "clamp(2rem, 4vw, 3.5rem)",
     alignItems: "start",
     width: "min(100%, 78rem)",
-    padding: "clamp(3rem, 6vw, 4.5rem) clamp(1.25rem, 3vw, 2.5rem)",
+    paddingBlock: "clamp(3rem,6vw,4.5rem)",
     paddingInline: {
-      default: null,
+      default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
-    margin: "0 auto",
+    marginBlock: "0",
+    marginInline: "auto",
   },
   discoveryIntro: {
     display: "grid",
@@ -70,7 +71,8 @@ const styles = stylex.create({
       "@media (max-width: 640px)": "1fr",
       "@media (min-width: 641px) and (max-width: 980px)": "repeat(2, minmax(0, 1fr))",
     },
-    gap: "clamp(2.5rem, 5vw, 3.5rem) clamp(1rem, 2vw, 2rem)",
+    rowGap: "clamp(2.5rem, 5vw, 3.5rem)",
+    columnGap: "clamp(1rem, 2vw, 2rem)",
   },
   discoveryCard: {
     display: "grid",

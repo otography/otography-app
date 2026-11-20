@@ -143,7 +143,6 @@ function SimilarPostCard({ post }: { post: PostView }) {
 function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitle: string }) {
   const [includeSameSong, setIncludeSameSong] = useState(false);
   const query = useQuery(similarPostsQuery(postId, includeSameSong));
-  const toggleProps = stylex.props(styles.filterToggle);
 
   return (
     <article {...stylex.props(styles.turn, styles.turnAssistant)}>
@@ -161,8 +160,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
                 : "まだ近い感想は見つかりませんでした。"}
           </p>
           <Toggle
-            {...toggleProps}
-            className={`chat-filter-toggle ${toggleProps.className ?? ""}`}
+            {...stylex.props(styles.filterToggle, includeSameSong && styles.filterTogglePressed)}
             pressed={includeSameSong}
             onPressedChange={setIncludeSameSong}
           >
@@ -529,6 +527,11 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 9999,
+  },
+  filterTogglePressed: {
+    color: t.primaryFg,
+    backgroundColor: t.primary,
+    borderColor: t.primary,
   },
   similarList: {
     display: "flex",

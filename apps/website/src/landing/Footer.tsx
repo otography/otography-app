@@ -12,12 +12,13 @@ const styles = stylex.create({
     gap: "2rem",
     alignItems: "center",
     width: "min(100%, 78rem)",
-    padding: "2rem clamp(1.25rem, 3vw, 2.5rem)",
+    paddingBlock: "2rem",
     paddingInline: {
-      default: null,
+      default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
-    margin: "0 auto",
+    marginBlock: "0",
+    marginInline: "auto",
   },
   footerNav: {
     display: "flex",

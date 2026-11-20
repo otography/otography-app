@@ -17,7 +17,7 @@ import { type AppleSong, artworkUrl, searchSongs } from "#/lib/musickit";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PauseIcon, PlayIcon, PlusIcon } from "./icons";
-import { chatTokens as t } from "./tokens.stylex";
+import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function SongAttachmentChip({ song }: { song: AppleSong }) {
   const { actions } = useChat();
@@ -136,15 +136,12 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
   }, []);
 
   const overLimit = state.length > meta.maxLength;
-  const composerProps = stylex.props(styles.composer);
-  const itemProps = stylex.props(styles.triggerItem);
 
   return (
     <div {...stylex.props(styles.dock, keyboardOpen && styles.dockKeyboardOpen)}>
       <form
         ref={setComposerEl}
-        {...composerProps}
-        className={`chat-composer ${composerProps.className ?? ""}`}
+        {...stylex.props(styles.composer)}
         onSubmit={(event) => {
           event.preventDefault();
           actions.submit();
@@ -230,8 +227,13 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
                       value={song.id}
                       label={item.label}
                       disabled={!isrc}
-                      {...itemProps}
-                      className={`chat-trigger-item ${itemProps.className ?? ""}`}
+                      className={(itemState) =>
+                        stylex.props(
+                          styles.triggerItem,
+                          itemState.highlighted && styles.triggerItemHighlighted,
+                          itemState.disabled && styles.triggerItemDisabled,
+                        ).className
+                      }
                     >
                       <TriggerMenuItemIcon {...stylex.props(styles.triggerItemIcon)}>
                         {artwork ? (
@@ -321,7 +323,10 @@ const styles = stylex.create({
     paddingBottom: 10,
     paddingLeft: 14,
     backgroundColor: t.surface,
-    borderColor: t.border,
+    borderColor: {
+      default: t.border,
+      ":focus-within": t.borderStrong,
+    },
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 22,
@@ -404,7 +409,7 @@ const styles = stylex.create({
     fontFamily: "inherit",
     fontSize: {
       default: 15,
-      "@media (pointer: coarse)": 16,
+      [chatMedia.touch]: 16,
     },
     lineHeight: 1.55,
     color: t.text,
@@ -540,6 +545,13 @@ const styles = stylex.create({
     cursor: "pointer",
     userSelect: "none",
     borderRadius: 12,
+  },
+  triggerItemHighlighted: {
+    backgroundColor: t.highlight,
+  },
+  triggerItemDisabled: {
+    cursor: "not-allowed",
+    opacity: 0.48,
   },
   triggerItemIcon: {
     display: "flex",
