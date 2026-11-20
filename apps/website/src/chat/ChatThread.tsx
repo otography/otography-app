@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Button } from "@ui-sdk/react/button";
 import { Toggle } from "@ui-sdk/react/toggle";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Me } from "#/lib/auth";
-import { type AppleSong, artworkUrl } from "#/lib/musickit";
+import { type AppleSong, artworkUrl, catalogSongsQuery } from "#/lib/musickit";
 import { type PostView, similarPostsQuery } from "#/lib/posts";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
@@ -16,10 +16,25 @@ function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
 }
 
-function SongCard({ song }: { song: AppleSong }) {
+function PreviewToggleButton({ song, title }: { song: AppleSong; title: string }) {
   const preview = usePreviewPlayer();
   const playing = preview.state.playingId === song.id;
-  const { name, artistName, artwork, previews } = song.attributes;
+  if (!song.attributes.previews?.length) return null;
+
+  return (
+    <Button
+      type="button"
+      {...stylex.props(styles.iconBtn)}
+      aria-label={playing ? `${title} の試聴を停止` : `${title} を試聴`}
+      onClick={() => preview.actions.toggle(song)}
+    >
+      {playing ? <PauseIcon /> : <PlayIcon />}
+    </Button>
+  );
+}
+
+function SongCard({ song }: { song: AppleSong }) {
+  const { name, artistName, artwork } = song.attributes;
 
   return (
     <div {...stylex.props(styles.songCard)}>
@@ -40,16 +55,7 @@ function SongCard({ song }: { song: AppleSong }) {
         <span {...stylex.props(styles.songCardTitle)}>{name}</span>
         <span {...stylex.props(styles.songCardArtist)}>{artistName}</span>
       </div>
-      {previews?.length ? (
-        <Button
-          type="button"
-          {...stylex.props(styles.iconBtn)}
-          aria-label={playing ? `${name} の試聴を停止` : `${name} を試聴`}
-          onClick={() => preview.actions.toggle(song)}
-        >
-          {playing ? <PauseIcon /> : <PlayIcon />}
-        </Button>
-      ) : null}
+      <PreviewToggleButton song={song} title={name} />
     </div>
   );
 }
@@ -79,7 +85,7 @@ function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; c
   );
 }
 
-function SimilarPostCard({ post }: { post: PostView }) {
+function SimilarPostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
   return (
     <article {...stylex.props(styles.similarCard)}>
       {post.song ? (
@@ -116,6 +122,12 @@ function SimilarPostCard({ post }: { post: PostView }) {
               <span {...stylex.props(styles.similarArtist)}>{post.song.artistName}</span>
             ) : null}
           </div>
+          {catalogSong ? (
+            <PreviewToggleButton
+              song={catalogSong}
+              title={post.song.title ?? catalogSong.attributes.name}
+            />
+          ) : null}
         </div>
       ) : null}
       <p {...stylex.props(styles.similarQuote)}>{post.content}</p>
@@ -143,6 +155,25 @@ function SimilarPostCard({ post }: { post: PostView }) {
 function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitle: string }) {
   const [includeSameSong, setIncludeSameSong] = useState(false);
   const query = useQuery(similarPostsQuery(postId, includeSameSong));
+  const songIds = useMemo(
+    () =>
+      (query.data ?? [])
+        .map((post) => post.song?.appleSongId)
+        .filter((id): id is string => Boolean(id)),
+    [query.data],
+  );
+  const catalogQuery = useQuery(catalogSongsQuery(songIds));
+  const catalogSongs = useMemo(() => {
+    const byId = new Map<string, AppleSong>();
+    const byIsrc = new Map<string, AppleSong>();
+    for (const song of catalogQuery.data ?? []) {
+      byId.set(song.id, song);
+      if (song.attributes.isrc) {
+        byIsrc.set(song.attributes.isrc.toUpperCase(), song);
+      }
+    }
+    return { byId, byIsrc };
+  }, [catalogQuery.data]);
 
   return (
     <article {...stylex.props(styles.turn, styles.turnAssistant)}>
@@ -183,9 +214,13 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 
         {query.data && query.data.length > 0 ? (
           <div {...stylex.props(styles.similarList)}>
-            {query.data.map((post) => (
-              <SimilarPostCard key={post.id} post={post} />
-            ))}
+            {query.data.map((post) => {
+              const catalogSong = post.song
+                ? (catalogSongs.byId.get(post.song.appleSongId) ??
+                  catalogSongs.byIsrc.get(post.song.isrc.toUpperCase()))
+                : undefined;
+              return <SimilarPostCard key={post.id} post={post} catalogSong={catalogSong} />;
+            })}
           </div>
         ) : null}
       </div>
