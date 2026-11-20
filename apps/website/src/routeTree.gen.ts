@@ -10,17 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrbsRouteImport } from './routes/orbs'
 import { Route as ProfileRouteImport } from './routes/profile'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrbsRoute = OrbsRouteImport.update({
-  id: '/orbs',
-  path: '/orbs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -31,31 +25,27 @@ const ProfileRoute = ProfileRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/orbs' | '/profile'
+  fullPaths: '/' | '/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/orbs' | '/profile'
-  id: '__root__' | '/' | '/orbs' | '/profile'
+  to: '/' | '/profile'
+  id: '__root__' | '/' | '/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  OrbsRoute: typeof OrbsRoute
   ProfileRoute: typeof ProfileRoute
 }
 
@@ -66,13 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/orbs': {
-      id: '/orbs'
-      path: '/orbs'
-      fullPath: '/orbs'
-      preLoaderRoute: typeof OrbsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -87,7 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  OrbsRoute: OrbsRoute,
   ProfileRoute: ProfileRoute,
 }
 export const routeTree = rootRouteImport

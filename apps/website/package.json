@@ -28,8 +28,7 @@
     "db": "workspace:*",
     "hono": "^4.13.18",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "thinking-orbs": "catalog:"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@stylexjs/unplugin": "catalog:",
