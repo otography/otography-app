@@ -10,17 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OrbsRouteImport } from './routes/orbs'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as SubmitDemoRouteImport } from './routes/submit-demo'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrbsRoute = OrbsRouteImport.update({
-  id: '/orbs',
-  path: '/orbs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -28,35 +23,40 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SubmitDemoRoute = SubmitDemoRouteImport.update({
+  id: '/submit-demo',
+  path: '/submit-demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
+  '/submit-demo': typeof SubmitDemoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
+  '/submit-demo': typeof SubmitDemoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/orbs': typeof OrbsRoute
   '/profile': typeof ProfileRoute
+  '/submit-demo': typeof SubmitDemoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/orbs' | '/profile'
+  fullPaths: '/' | '/profile' | '/submit-demo'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/orbs' | '/profile'
-  id: '__root__' | '/' | '/orbs' | '/profile'
+  to: '/' | '/profile' | '/submit-demo'
+  id: '__root__' | '/' | '/profile' | '/submit-demo'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  OrbsRoute: typeof OrbsRoute
   ProfileRoute: typeof ProfileRoute
+  SubmitDemoRoute: typeof SubmitDemoRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,13 +68,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/orbs': {
-      id: '/orbs'
-      path: '/orbs'
-      fullPath: '/orbs'
-      preLoaderRoute: typeof OrbsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -82,13 +75,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/submit-demo': {
+      id: '/submit-demo'
+      path: '/submit-demo'
+      fullPath: '/submit-demo'
+      preLoaderRoute: typeof SubmitDemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  OrbsRoute: OrbsRoute,
   ProfileRoute: ProfileRoute,
+  SubmitDemoRoute: SubmitDemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

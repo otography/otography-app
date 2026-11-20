@@ -8,31 +8,13 @@ import type { Me } from "#/lib/auth";
 import { type AppleSong, artworkUrl, catalogSongsQuery } from "#/lib/musickit";
 import { type PostView, similarPostsQuery } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
-import { usePreviewPlayer } from "#/songs/preview-player";
+import { PreviewToggle } from "#/songs/PreviewToggle";
 import { useChat } from "./ChatContext";
-import { MusicNoteIcon, PauseIcon, PlayIcon } from "./icons";
-import { OtographyOrb } from "./OtographyOrb";
+import { MusicNoteIcon } from "./icons";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
-}
-
-function PreviewToggleButton({ song, title }: { song: AppleSong; title: string }) {
-  const preview = usePreviewPlayer();
-  const playing = preview.state.playingId === song.id;
-  if (!song.attributes.previews?.length) return null;
-
-  return (
-    <Button
-      type="button"
-      {...stylex.props(styles.iconBtn)}
-      aria-label={playing ? `${title} の試聴を停止` : `${title} を試聴`}
-      onClick={() => preview.actions.toggle(song)}
-    >
-      {playing ? <PauseIcon /> : <PlayIcon />}
-    </Button>
-  );
 }
 
 function SongCard({ song }: { song: AppleSong }) {
@@ -57,7 +39,7 @@ function SongCard({ song }: { song: AppleSong }) {
         <span {...stylex.props(styles.songCardTitle)}>{name}</span>
         <span {...stylex.props(styles.songCardArtist)}>{artistName}</span>
       </div>
-      <PreviewToggleButton song={song} title={name} />
+      <PreviewToggle song={song} title={name} style={styles.iconBtn} />
     </div>
   );
 }
@@ -123,9 +105,26 @@ function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; c
   );
 }
 
-function SimilarPostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
+function SimilarPostCard({
+  post,
+  catalogSong,
+  index,
+}: {
+  post: PostView;
+  catalogSong?: AppleSong;
+  index: number;
+}) {
+  const staggerStyle =
+    index === 0
+      ? styles.stagger0
+      : index === 1
+        ? styles.stagger1
+        : index === 2
+          ? styles.stagger2
+          : styles.stagger3;
+
   return (
-    <article {...stylex.props(styles.similarCard)}>
+    <article {...stylex.props(styles.similarCard, styles.similarCardEnter, staggerStyle)}>
       {post.song ? (
         <div {...stylex.props(styles.similarSong)}>
           {post.song.artworkUrl ? (
@@ -161,7 +160,8 @@ function SimilarPostCard({ post, catalogSong }: { post: PostView; catalogSong?: 
             ) : null}
           </div>
           {catalogSong ? (
-            <PreviewToggleButton
+            <PreviewToggle
+              style={styles.iconBtn}
               song={catalogSong}
               title={post.song.title ?? catalogSong.attributes.name}
             />
@@ -215,9 +215,14 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 
   return (
     <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
-      <div {...stylex.props(styles.botBadge)} aria-hidden="true">
-        <MusicNoteIcon />
-      </div>
+      <img
+        src="/otography-icon.png"
+        alt=""
+        aria-hidden="true"
+        width={32}
+        height={32}
+        {...stylex.props(styles.botBadge)}
+      />
       <div {...stylex.props(styles.assistantBody)}>
         <div {...stylex.props(styles.assistantHeader)}>
           <p {...stylex.props(styles.assistantLead)}>
@@ -237,12 +242,6 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
           </Toggle>
         </div>
 
-        {query.isPending ? (
-          <div {...stylex.props(styles.searchingOrbWrap)} aria-busy="true">
-            <OtographyOrb state="working" palette="icon-mesh" size={64} aria-hidden="true" />
-          </div>
-        ) : null}
-
         {query.isError ? (
           <p role="alert" {...stylex.props(styles.errorText)}>
             {query.error.message}
@@ -251,12 +250,19 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 
         {query.data && query.data.length > 0 ? (
           <div {...stylex.props(styles.similarList)}>
-            {query.data.map((post) => {
+            {query.data.map((post, index) => {
               const catalogSong = post.song
                 ? (catalogSongs.byId.get(post.song.appleSongId) ??
                   catalogSongs.byIsrc.get(post.song.isrc.toUpperCase()))
                 : undefined;
-              return <SimilarPostCard key={post.id} post={post} catalogSong={catalogSong} />;
+              return (
+                <SimilarPostCard
+                  key={post.id}
+                  post={post}
+                  catalogSong={catalogSong}
+                  index={index}
+                />
+              );
             })}
           </div>
         ) : null}
@@ -268,9 +274,14 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 function AssistantErrorReply({ message }: { message: string }) {
   return (
     <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
-      <div {...stylex.props(styles.botBadge)} aria-hidden="true">
-        <MusicNoteIcon />
-      </div>
+      <img
+        src="/otography-icon.png"
+        alt=""
+        aria-hidden="true"
+        width={32}
+        height={32}
+        {...stylex.props(styles.botBadge)}
+      />
       <div {...stylex.props(styles.assistantBody)}>
         <p role="alert" {...stylex.props(styles.errorText)}>
           投稿できませんでした: {message}
@@ -356,25 +367,14 @@ const turnEnter = stylex.keyframes({
   },
 });
 
-const similarListEnter = stylex.keyframes({
+const similarCardEnter = stylex.keyframes({
   from: {
     opacity: 0,
-    transform: "translateY(6px)",
+    transform: "translateY(8px) scale(0.985)",
   },
   to: {
     opacity: 1,
-    transform: "translateY(0)",
-  },
-});
-
-const orbEnter = stylex.keyframes({
-  from: {
-    opacity: 0,
-    transform: "scale(0.95)",
-  },
-  to: {
-    opacity: 1,
-    transform: "scale(1)",
+    transform: "translateY(0) scale(1)",
   },
 });
 
@@ -571,17 +571,12 @@ const styles = stylex.create({
     objectFit: "cover",
   },
   botBadge: {
-    display: "grid",
+    display: "block",
     flexShrink: 0,
-    placeItems: "center",
     width: 32,
     height: 32,
-    color: t.text,
-    backgroundColor: t.surface,
-    borderColor: t.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 9999,
+    objectFit: "cover",
+    borderRadius: 9,
   },
   userBubble: {
     display: "flex",
@@ -741,8 +736,21 @@ const styles = stylex.create({
     display: "flex",
     flexDirection: "column",
     gap: 10,
+  },
+  similarCard: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+    padding: 14,
+    backgroundColor: t.surface,
+    borderColor: t.border,
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderRadius: 14,
+  },
+  similarCardEnter: {
     animationName: {
-      default: similarListEnter,
+      default: similarCardEnter,
       [chatMedia.reducedMotion]: fadeIn,
     },
     animationDuration: {
@@ -755,16 +763,26 @@ const styles = stylex.create({
     },
     animationFillMode: "both",
   },
-  similarCard: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-    padding: 14,
-    backgroundColor: t.surface,
-    borderColor: t.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 14,
+  stagger0: {
+    animationDelay: "0ms",
+  },
+  stagger1: {
+    animationDelay: {
+      default: "50ms",
+      [chatMedia.reducedMotion]: "0ms",
+    },
+  },
+  stagger2: {
+    animationDelay: {
+      default: "90ms",
+      [chatMedia.reducedMotion]: "0ms",
+    },
+  },
+  stagger3: {
+    animationDelay: {
+      default: "120ms",
+      [chatMedia.reducedMotion]: "0ms",
+    },
   },
   similarSong: {
     display: "flex",
@@ -827,25 +845,6 @@ const styles = stylex.create({
     alignItems: "center",
     fontSize: 12,
     color: t.muted,
-  },
-  searchingOrbWrap: {
-    display: "flex",
-    alignItems: "center",
-    paddingBlock: 8,
-    transformOrigin: "left center",
-    animationName: {
-      default: orbEnter,
-      [chatMedia.reducedMotion]: fadeIn,
-    },
-    animationDuration: {
-      default: "200ms",
-      [chatMedia.reducedMotion]: "150ms",
-    },
-    animationTimingFunction: {
-      default: motion.easeOut,
-      [chatMedia.reducedMotion]: "ease",
-    },
-    animationFillMode: "both",
   },
   errorText: {
     margin: 0,
