@@ -23,6 +23,7 @@ catalog:
   drizzle-orm: 1.0.0-rc.5
   errore: ^0.14.1
   knip: ^6.45.1
+  thinking-orbs: ^0.3.2
   typescript: ^7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@8.3.8000
   vite-plus: 1.7.0
