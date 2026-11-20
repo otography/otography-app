@@ -10,7 +10,7 @@ import { type PostView, similarPostsQuery } from "#/lib/posts";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { MusicNoteIcon, PauseIcon, PlayIcon } from "./icons";
-import { chatTokens as t } from "./tokens.stylex";
+import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
@@ -209,7 +209,7 @@ function AssistantErrorReply({ message }: { message: string }) {
 }
 
 export function ChatThread({ user }: { user: Me }) {
-  const { state, meta } = useChat();
+  const { state, actions } = useChat();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -233,7 +233,7 @@ export function ChatThread({ user }: { user: Me }) {
             type="button"
             {...stylex.props(styles.suggestionPill)}
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => void meta.menuController.open({ trigger: "@" })}
+            onClick={() => actions.openSongSearch("@")}
           >
             @ で曲を検索する
           </Button>
@@ -241,7 +241,7 @@ export function ChatThread({ user }: { user: Me }) {
             type="button"
             {...stylex.props(styles.suggestionPill)}
             onMouseDown={(event) => event.preventDefault()}
-            onClick={() => void meta.menuController.open({ trigger: "/" })}
+            onClick={() => actions.openSongSearch("/")}
           >
             / で曲を検索する
           </Button>
@@ -280,9 +280,15 @@ const styles = stylex.create({
   welcome: {
     display: "flex",
     flexDirection: "column",
-    gap: 14,
+    gap: {
+      default: 14,
+      [chatMedia.compact]: 10,
+    },
     alignItems: "center",
-    paddingBlock: 40,
+    paddingBlock: {
+      default: 40,
+      [chatMedia.compact]: 16,
+    },
     paddingInline: 12,
     marginBlock: "auto",
     marginInline: 0,
@@ -291,25 +297,40 @@ const styles = stylex.create({
   welcomeIcon: {
     display: "grid",
     placeItems: "center",
-    width: 44,
-    height: 44,
+    width: {
+      default: 44,
+      [chatMedia.compact]: 36,
+    },
+    height: {
+      default: 44,
+      [chatMedia.compact]: 36,
+    },
     color: t.text,
     backgroundColor: t.surface,
     borderColor: t.border,
     borderStyle: "solid",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: {
+      default: 12,
+      [chatMedia.compact]: 10,
+    },
   },
   welcomeTitle: {
     margin: 0,
-    fontSize: "clamp(22px, 3vw, 28px)",
+    fontSize: {
+      default: "clamp(22px, 3vw, 28px)",
+      [chatMedia.compact]: 20,
+    },
     fontWeight: 600,
     letterSpacing: "-0.02em",
   },
   welcomeDesc: {
     maxWidth: 480,
     margin: 0,
-    fontSize: 14,
+    fontSize: {
+      default: 14,
+      [chatMedia.compact]: 13,
+    },
     lineHeight: 1.65,
     color: t.muted,
   },
