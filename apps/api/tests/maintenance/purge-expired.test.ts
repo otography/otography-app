@@ -42,7 +42,12 @@ beforeEach(async () => {
 
 describe("purgeExpired", () => {
   test("90 日を過ぎた退会者・削除した投稿・IP ログだけを消し、子の行も消える", async () => {
-    expect(await purgeExpired({ db, now })).toEqual({ users: 1, posts: 1, ipLogs: 1 });
+    expect(await purgeExpired({ db, now })).toEqual({
+      users: 1,
+      posts: 1,
+      ipLogs: 1,
+      similarCaches: 0,
+    });
 
     expect((await db.select().from(users)).map((u) => u.id).sort()).toEqual([
       "active",
