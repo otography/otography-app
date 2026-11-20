@@ -1,3 +1,4 @@
+import { queryOptions } from "@tanstack/react-query";
 import { client } from "#/lib/api";
 
 // MusicKit on the Web（v3）のうち、この画面で使う部分だけの型。
@@ -140,6 +141,29 @@ export const searchSongs = (term: string) => searchCatalog(term, "songs");
 
 /** アーティストを検索する。 */
 export const searchArtists = (term: string) => searchCatalog(term, "artists");
+
+/** カタログの曲を Apple Music の ID でまとめて取得する。 */
+async function fetchSongsByIds(ids: string[]): Promise<AppleSong[]> {
+  if (ids.length === 0) return [];
+  const music = await getMusicKit();
+  const { data } = await music.api.music<{ data?: AppleSong[] }>("/v1/catalog/jp/songs", {
+    ids: ids.join(","),
+    l: "ja",
+  });
+  return data.data ?? [];
+}
+
+/** Apple Music の ID の一覧から、試聴 URL を含む曲の情報をまとめて取得するクエリ。 */
+export const catalogSongsQuery = (ids: string[]) => {
+  const normalizedIds = Array.from(new Set(ids.filter(Boolean))).sort();
+  return queryOptions({
+    queryKey: ["musickit", "songs", normalizedIds],
+    queryFn: () => fetchSongsByIds(normalizedIds),
+    enabled: normalizedIds.length > 0,
+    staleTime: 10 * 60 * 1000,
+    retry: false,
+  });
+};
 
 /** ジャケット画像の URL のテンプレート（{w}x{h}）に大きさを入れる。 */
 export const artworkUrl = (template: string, size: number) =>
