@@ -15,6 +15,8 @@ import { getPost } from "./usecases/get-post.ts";
 import { setLike } from "./usecases/like-post.ts";
 import { getSimilarPosts, searchPosts } from "./usecases/similar-posts.ts";
 import { logError } from "../lib/log.ts";
+import { isLocalSimilarSimulationEnabled, simulateLocalSimilarPosts } from "./local-similar.ts";
+import { findVisiblePost } from "./repository.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 const SEARCH_UNAVAILABLE = "感想を探す機能は準備中です。時間をおいて、もう一度試してください";
@@ -74,7 +76,10 @@ export const postsRoutes = new Hono<SessionEnv>()
         return c.json({ error }, status);
       }
       // 埋め込みは応答を返した後に作る。失敗しても投稿は成功のままで、埋め込みのバッチが後で補う。
-      c.executionCtx.waitUntil(embedNewPost(post));
+      // ローカルでは埋め込み検索を使わないのでスキップする。
+      if (!isLocalSimilarSimulationEnabled()) {
+        c.executionCtx.waitUntil(embedNewPost(post));
+      }
       return c.json(post, 201);
     },
   )
@@ -92,6 +97,10 @@ export const postsRoutes = new Hono<SessionEnv>()
       }
     }),
     async (c) => {
+      if (isLocalSimilarSimulationEnabled()) {
+        const posts = await simulateLocalSimilarPosts();
+        return c.json({ posts });
+      }
       const embedding = await loadEmbedding();
       if (embedding instanceof Error) {
         logError(embedding);
@@ -137,6 +146,24 @@ export const postsRoutes = new Hono<SessionEnv>()
       }
     }),
     async (c) => {
+      if (isLocalSimilarSimulationEnabled()) {
+        const post = await findVisiblePost({
+          db,
+          postId: c.req.param("id"),
+          viewerId: c.get("user").id,
+        });
+        if (post instanceof Error) {
+          logError(post);
+          return c.json({ error: INTERNAL_ERROR }, 500);
+        }
+        if (!post)
+          return c.json(
+            { error: new PostNotFoundError({ postId: c.req.param("id") }).message },
+            404,
+          );
+        const posts = await simulateLocalSimilarPosts();
+        return c.json({ posts });
+      }
       const embedding = await loadEmbedding();
       if (embedding instanceof Error) {
         logError(embedding);
