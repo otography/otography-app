@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
-import { type ReactNode, useLayoutEffect } from "react";
+import { type KeyboardEvent, type ReactNode, useLayoutEffect, useRef } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { useMediaQuery } from "#/lib/use-media-query";
 import { motion } from "#/motion.stylex";
@@ -87,8 +87,20 @@ const copy = {
 function Input() {
   const { state, actions, meta } = useChat();
   const compact = useMediaQuery("(max-width: 540px)");
+  const coarsePointer = useMediaQuery("(pointer: coarse)");
+  const isMobile = compact || coarsePointer;
   const text = compact ? copy.compact : copy.full;
   const { menuOpen, songs, highlightedIndex, keyboardOpen } = state;
+  const isComposingRef = useRef(false);
+  const compositionEndedAtRef = useRef(0);
+
+  // Safari では compositionend が keydown(Enter) より先に発火するため、直後の Enter も変換確定として扱う。
+  const isImeComposing = (event: KeyboardEvent<HTMLTextAreaElement>) =>
+    event.nativeEvent.isComposing ||
+    isComposingRef.current ||
+    event.keyCode === 229 ||
+    event.key === "Process" ||
+    performance.now() - compositionEndedAtRef.current < 50;
 
   // 1行以内はコンパクトな minHeight のまま保ち、2行目以降で maxHeight まで自動で広げる。
   useLayoutEffect(() => {
@@ -123,10 +135,22 @@ function Input() {
       {...stylex.props(styles.textarea)}
       aria-label={text.label}
       aria-controls={menuOpen ? meta.pickerId : undefined}
-      enterKeyHint={menuOpen ? "search" : "send"}
+      enterKeyHint={menuOpen ? "search" : isMobile ? "enter" : "send"}
       placeholder={state.selectedSong ? text.withSong : text.withoutSong}
       rows={1}
       value={state.draft}
+      onFocus={() => {
+        if (!state.selectedSong && !menuOpen) {
+          actions.openSongSearch("@");
+        }
+      }}
+      onCompositionStart={() => {
+        isComposingRef.current = true;
+      }}
+      onCompositionEnd={() => {
+        isComposingRef.current = false;
+        compositionEndedAtRef.current = performance.now();
+      }}
       onChange={(event) => actions.updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {
         if (menuOpen) {
@@ -148,7 +172,7 @@ function Input() {
           if (
             (event.key === "Enter" || event.key === "Tab") &&
             !event.shiftKey &&
-            !event.nativeEvent.isComposing &&
+            !isImeComposing(event) &&
             songs.length > 0
           ) {
             const target = songs[highlightedIndex];
@@ -161,9 +185,10 @@ function Input() {
         }
 
         if (
+          !isMobile &&
           event.key === "Enter" &&
           !event.shiftKey &&
-          !event.nativeEvent.isComposing &&
+          !isImeComposing(event) &&
           !menuOpen
         ) {
           event.preventDefault();
