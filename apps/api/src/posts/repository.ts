@@ -1,5 +1,14 @@
-import { likes, type NewPost, postEmbeddings, postIpLogs, posts, users } from "db";
-import { and, eq, exists, inArray, isNull, sql } from "drizzle-orm";
+import {
+  likes,
+  type NewPost,
+  postEmbeddings,
+  postIpLogs,
+  posts,
+  postSimilarCacheItems,
+  postSimilarCaches,
+  users,
+} from "db";
+import { and, asc, eq, exists, gt, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { PostInsertError, PostQueryError } from "./errors.ts";
 
@@ -213,4 +222,105 @@ export const softDeletePost = async ({
     .catch((e) => new PostQueryError({ cause: e }));
   if (result instanceof Error) return result;
   return result[0][0]?.id ?? null;
+};
+
+/** 有効期限内の類似検索キャッシュ（親行と順位付きアイテム行）を 1 バッチで読む。無ければ null。 */
+export const findValidSimilarCache = async ({
+  db,
+  postId,
+  includeSameSong,
+  now,
+}: {
+  db: Database;
+  postId: string;
+  includeSameSong: boolean;
+  now: Date;
+}) => {
+  const sameSongFlag = includeSameSong ? 1 : 0;
+  const result = await db
+    .batch([
+      db
+        .select({ expiresAt: postSimilarCaches.expiresAt })
+        .from(postSimilarCaches)
+        .where(
+          and(
+            eq(postSimilarCaches.postId, postId),
+            eq(postSimilarCaches.includeSameSong, sameSongFlag),
+            gt(postSimilarCaches.expiresAt, now),
+          ),
+        )
+        .limit(1),
+      db
+        .select({ similarPostId: postSimilarCacheItems.similarPostId })
+        .from(postSimilarCacheItems)
+        .where(
+          and(
+            eq(postSimilarCacheItems.postId, postId),
+            eq(postSimilarCacheItems.includeSameSong, sameSongFlag),
+          ),
+        )
+        .orderBy(asc(postSimilarCacheItems.rank)),
+    ])
+    .catch((e) => new PostQueryError({ cause: e }));
+  if (result instanceof Error) return result;
+
+  const [cache] = result[0];
+  if (!cache) return null;
+  return {
+    postIds: result[1].map((row) => row.similarPostId),
+    expiresAt: cache.expiresAt,
+  };
+};
+
+/** 類似検索キャッシュ（親行とアイテム行）を 1 トランザクションで保存する。 */
+export const saveSimilarCache = async ({
+  db,
+  postId,
+  includeSameSong,
+  similarPostIds,
+  expiresAt,
+}: {
+  db: Database;
+  postId: string;
+  includeSameSong: boolean;
+  similarPostIds: readonly string[];
+  expiresAt: Date;
+}) => {
+  const sameSongFlag = includeSameSong ? 1 : 0;
+  const upsertCache = db
+    .insert(postSimilarCaches)
+    .values({ postId, includeSameSong: sameSongFlag, expiresAt })
+    .onConflictDoUpdate({
+      target: [postSimilarCaches.postId, postSimilarCaches.includeSameSong],
+      set: { expiresAt, createdAt: new Date() },
+    });
+  const clearItems = db
+    .delete(postSimilarCacheItems)
+    .where(
+      and(
+        eq(postSimilarCacheItems.postId, postId),
+        eq(postSimilarCacheItems.includeSameSong, sameSongFlag),
+      ),
+    );
+
+  const statements =
+    similarPostIds.length > 0
+      ? ([
+          upsertCache,
+          clearItems,
+          db.insert(postSimilarCacheItems).values(
+            similarPostIds.map((similarPostId, rank) => ({
+              postId,
+              includeSameSong: sameSongFlag,
+              rank,
+              similarPostId,
+            })),
+          ),
+        ] as const)
+      : ([upsertCache, clearItems] as const);
+
+  return db
+    .batch(statements)
+    .then(() => undefined)
+    .catch((e) => new PostQueryError({ cause: e }));
 };

@@ -1,5 +1,14 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, primaryKey, real, snakeCase, text } from "drizzle-orm/sqlite-core";
+import {
+  check,
+  foreignKey,
+  index,
+  integer,
+  primaryKey,
+  real,
+  snakeCase,
+  text,
+} from "drizzle-orm/sqlite-core";
 import { EMBEDDING_DIMENSIONS, POST_CONTENT_MAX } from "../constants.ts";
 import { users } from "./auth.ts";
 import { bytes, createdAt, float16Vector, timestamp, updatedAt } from "./columns.ts";
@@ -155,4 +164,50 @@ export const likes = snakeCase.table(
     createdAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.postId] }), index("likes_post_idx").on(t.postId)],
+);
+
+/**
+ * 投稿に対する類似検索結果のキャッシュ（24 時間保持）の親行。
+ * ヒット 0 件も「検索済み」として区別できるよう、アイテム表と分ける。
+ */
+export const postSimilarCaches = snakeCase.table(
+  "post_similar_caches",
+  {
+    postId: text()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    includeSameSong: integer().notNull(),
+    createdAt: createdAt(),
+    expiresAt: timestamp().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.includeSameSong] }),
+    index("post_similar_caches_expires_at_idx").on(t.expiresAt),
+    check("post_similar_caches_include_same_song", sql`${t.includeSameSong} in (0, 1)`),
+  ],
+);
+
+/**
+ * 類似検索キャッシュに属する投稿 1 件の行。親行の期限切れ削除や相手投稿の物理削除時に CASCADE で消える。
+ */
+export const postSimilarCacheItems = snakeCase.table(
+  "post_similar_cache_items",
+  {
+    postId: text().notNull(),
+    includeSameSong: integer().notNull(),
+    rank: integer().notNull(),
+    similarPostId: text()
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.postId, t.includeSameSong, t.rank] }),
+    foreignKey({
+      columns: [t.postId, t.includeSameSong],
+      foreignColumns: [postSimilarCaches.postId, postSimilarCaches.includeSameSong],
+      name: "post_similar_cache_items_cache_fk",
+    }).onDelete("cascade"),
+    index("post_similar_cache_items_similar_post_idx").on(t.similarPostId),
+    check("post_similar_cache_items_rank", sql`${t.rank} >= 0`),
+  ],
 );

@@ -192,12 +192,11 @@ function SimilarPostCard({
 function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitle: string }) {
   const [includeSameSong, setIncludeSameSong] = useState(false);
   const query = useQuery(similarPostsQuery(postId, includeSameSong));
+  const similarPosts = query.data?.posts ?? [];
   const songIds = useMemo(
     () =>
-      (query.data ?? [])
-        .map((post) => post.song?.appleSongId)
-        .filter((id): id is string => Boolean(id)),
-    [query.data],
+      similarPosts.map((post) => post.song?.appleSongId).filter((id): id is string => Boolean(id)),
+    [similarPosts],
   );
   const catalogQuery = useQuery(catalogSongsQuery(songIds));
   const catalogSongs = useMemo(() => {
@@ -228,7 +227,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
             「{songTitle}」の感想を投稿しました。
             {query.isPending
               ? "近い感覚の曲を探しています…"
-              : query.data && query.data.length > 0
+              : similarPosts.length > 0
                 ? "似た感覚の感想が見つかりました。"
                 : "まだ近い感想は見つかりませんでした。"}
           </p>
@@ -247,9 +246,9 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
           </p>
         ) : null}
 
-        {query.data && query.data.length > 0 ? (
+        {similarPosts.length > 0 ? (
           <div {...stylex.props(styles.similarList)}>
-            {query.data.map((post, index) => {
+            {similarPosts.map((post, index) => {
               const catalogSong = post.song
                 ? (catalogSongs.byId.get(post.song.appleSongId) ??
                   catalogSongs.byIsrc.get(post.song.isrc.toUpperCase()))

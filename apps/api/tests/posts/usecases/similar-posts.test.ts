@@ -1,5 +1,10 @@
-import { postEmbeddings, posts, songs, users } from "db";
-import { EMBEDDING_DIMENSIONS, EMBEDDING_INPUT_DIMENSIONS } from "db/constants";
+import { postEmbeddings, posts, postSimilarCacheItems, postSimilarCaches, songs, users } from "db";
+import {
+  EMBEDDING_DIMENSIONS,
+  EMBEDDING_INPUT_DIMENSIONS,
+  SIMILAR_CACHE_TTL_MS,
+} from "db/constants";
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, test } from "vite-plus/test";
 import { EmbeddingUnavailableError } from "../../../src/embeddings/errors.ts";
 import type { Transform } from "../../../src/embeddings/transform.ts";
@@ -86,10 +91,11 @@ describe("getSimilarPosts", () => {
       includeSameSong: false,
     });
     if (result instanceof Error) throw result;
-    expect(result.map((post) => post.id)).toEqual(["close", "mid", expect.any(String)]);
-    expect(result.map((post) => post.id)).not.toContain("samesong");
-    expect(result.map((post) => post.id)).not.toContain("hidden");
-    expect(result[0]?.author.publicId).toBe("u00000000001");
+    expect(result.expired).toBe(false);
+    expect(result.posts.map((post) => post.id)).toEqual(["close", "mid", expect.any(String)]);
+    expect(result.posts.map((post) => post.id)).not.toContain("samesong");
+    expect(result.posts.map((post) => post.id)).not.toContain("hidden");
+    expect(result.posts[0]?.author.publicId).toBe("u00000000001");
   });
 
   test("includeSameSong が true なら、同じ曲の感想も含める", async () => {
@@ -101,7 +107,57 @@ describe("getSimilarPosts", () => {
       includeSameSong: true,
     });
     if (result instanceof Error) throw result;
-    expect(result.map((post) => post.id)).toEqual(["samesong", "close", "mid"]);
+    expect(result.expired).toBe(false);
+    expect(result.posts.map((post) => post.id)).toEqual(["samesong", "close", "mid"]);
+  });
+
+  test("24 時間以内はキャッシュテーブルに保存し、2 回目は検索せずキャッシュから返す（非表示になった投稿は除外）", async () => {
+    const first = await getSimilarPosts({
+      db,
+      embedding: { embed, store: store.store, transform },
+      postId: "origin",
+      viewerId: "u",
+      includeSameSong: false,
+    });
+    if (first instanceof Error) throw first;
+
+    const caches = await db.select().from(postSimilarCaches);
+    const items = await db.select().from(postSimilarCacheItems);
+    expect(caches).toHaveLength(1);
+    expect(items).toHaveLength(3);
+
+    // 1 件を非表示にしても、キャッシュからハイドレート時に除外される
+    await db.update(posts).set({ hiddenAt: new Date() }).where(eq(posts.id, "close"));
+
+    calls.length = 0;
+    const second = await getSimilarPosts({
+      db,
+      embedding: { embed, store: store.store, transform: null },
+      postId: "origin",
+      viewerId: "u",
+      includeSameSong: false,
+    });
+    if (second instanceof Error) throw second;
+    expect(calls).toEqual([]);
+    expect(second.expired).toBe(false);
+    expect(second.posts.map((post) => post.id)).not.toContain("close");
+    expect(second.posts.map((post) => post.id)).toContain("mid");
+  });
+
+  test("24 時間を過ぎた投稿は再検索せず expired: true を返す", async () => {
+    const after24h = new Date(Date.now() + SIMILAR_CACHE_TTL_MS + 1000);
+    const result = await getSimilarPosts({
+      db,
+      embedding: { embed, store: store.store, transform },
+      postId: "origin",
+      viewerId: "u",
+      includeSameSong: false,
+      now: after24h,
+    });
+    if (result instanceof Error) throw result;
+    expect(result.expired).toBe(true);
+    expect(result.posts).toEqual([]);
+    expect(calls).toEqual([]);
   });
 
   test("埋め込みがまだ無い投稿は、その場で作って保存する", async () => {

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { Link } from "@tanstack/react-router";
 import { Button } from "@ui-sdk/react/button";
 import {
   Drawer,
@@ -23,41 +24,45 @@ import { useChatHistory } from "./ChatHistoryContext";
 import { CloseIcon, MusicNoteIcon, SidebarIcon } from "./icons";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
-function HistorySongItem({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
+function HistorySongItem({
+  post,
+  catalogSong,
+  onNavigate,
+}: {
+  post: PostView;
+  catalogSong?: AppleSong;
+  onNavigate: () => void;
+}) {
   const songTitle = post.song?.title ?? "（曲名なし）";
   const artistName = post.song?.artistName ?? "";
 
   return (
     <li {...stylex.props(styles.item)}>
-      {post.song?.artworkUrl ? (
-        <img
-          src={artworkUrl(post.song.artworkUrl, 72)}
-          alt=""
-          width={32}
-          height={32}
-          loading="lazy"
-          {...stylex.props(styles.art)}
-        />
-      ) : (
-        <div {...stylex.props(styles.art, styles.artFallback)} aria-hidden="true">
-          <MusicNoteIcon />
-        </div>
-      )}
-      <div {...stylex.props(styles.songMeta)}>
-        {post.song?.url ? (
-          <a
-            href={post.song.url}
-            target="_blank"
-            rel="noreferrer"
-            {...stylex.props(styles.songTitle, styles.songTitleLink)}
-          >
-            {songTitle}
-          </a>
+      <Link
+        to="/posts/$postId"
+        params={{ postId: post.id }}
+        onClick={onNavigate}
+        {...stylex.props(styles.itemLink)}
+      >
+        {post.song?.artworkUrl ? (
+          <img
+            src={artworkUrl(post.song.artworkUrl, 72)}
+            alt=""
+            width={32}
+            height={32}
+            loading="lazy"
+            {...stylex.props(styles.art)}
+          />
         ) : (
-          <span {...stylex.props(styles.songTitle)}>{songTitle}</span>
+          <div {...stylex.props(styles.art, styles.artFallback)} aria-hidden="true">
+            <MusicNoteIcon />
+          </div>
         )}
-        {artistName ? <span {...stylex.props(styles.songArtist)}>{artistName}</span> : null}
-      </div>
+        <div {...stylex.props(styles.songMeta)}>
+          <span {...stylex.props(styles.songTitle)}>{songTitle}</span>
+          {artistName ? <span {...stylex.props(styles.songArtist)}>{artistName}</span> : null}
+        </div>
+      </Link>
       {catalogSong ? (
         <PreviewToggle song={catalogSong} title={songTitle} style={styles.previewBtn} />
       ) : null}
@@ -108,7 +113,14 @@ function HistoryList() {
                   ? (state.catalogSongs.byId.get(post.song.appleSongId) ??
                     state.catalogSongs.byIsrc.get(post.song.isrc.toUpperCase()))
                   : undefined;
-                return <HistorySongItem key={post.id} post={post} catalogSong={catalogSong} />;
+                return (
+                  <HistorySongItem
+                    key={post.id}
+                    post={post}
+                    catalogSong={catalogSong}
+                    onNavigate={() => actions.setMobileOpen(false)}
+                  />
+                );
               })}
             </ul>
           </section>
@@ -354,10 +366,11 @@ const styles = stylex.create({
   },
   item: {
     display: "flex",
-    gap: 9,
+    gap: 4,
     alignItems: "center",
-    paddingBlock: 6,
-    paddingInline: 8,
+    paddingBlock: 2,
+    paddingRight: 4,
+    paddingLeft: 2,
     backgroundColor: {
       default: "transparent",
       ":hover": {
@@ -367,6 +380,18 @@ const styles = stylex.create({
     },
     borderRadius: 10,
     transition: `background-color 140ms ${motion.easeOut}`,
+  },
+  itemLink: {
+    display: "flex",
+    flex: "1",
+    gap: 9,
+    alignItems: "center",
+    minWidth: 0,
+    paddingBlock: 4,
+    paddingInline: 6,
+    color: "inherit",
+    textDecoration: "none",
+    borderRadius: 8,
   },
   art: {
     flexShrink: 0,
@@ -396,15 +421,6 @@ const styles = stylex.create({
     lineHeight: 1.35,
     color: t.text,
     whiteSpace: "nowrap",
-  },
-  songTitleLink: {
-    textDecoration: {
-      default: "none",
-      ":hover": {
-        default: "none",
-        [chatMedia.hover]: "underline",
-      },
-    },
   },
   songArtist: {
     overflow: "hidden",

@@ -1,5 +1,5 @@
-import { postIpLogs, posts, users } from "db";
-import { inArray, lt } from "drizzle-orm";
+import { postIpLogs, posts, postSimilarCaches, users } from "db";
+import { inArray, lt, sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { PurgeError } from "./errors.ts";
 
@@ -38,3 +38,21 @@ export const purgeRows = ({
     .then((result) => result.rowsAffected)
     .catch((e) => new PurgeError({ target: label, cause: e }));
 };
+
+/** 期限切れの類似検索キャッシュ（親行）を削除する。子行は ON DELETE CASCADE で消える。 */
+export const purgeExpiredSimilarCaches = ({
+  db,
+  cutoff,
+  limit,
+}: {
+  db: Database;
+  cutoff: Date;
+  limit: number;
+}) =>
+  db
+    .delete(postSimilarCaches)
+    .where(
+      sql`rowid in (select rowid from ${postSimilarCaches} where ${lt(postSimilarCaches.expiresAt, cutoff)} limit ${limit})`,
+    )
+    .then((result) => result.rowsAffected)
+    .catch((e) => new PurgeError({ target: "類似検索キャッシュ", cause: e }));

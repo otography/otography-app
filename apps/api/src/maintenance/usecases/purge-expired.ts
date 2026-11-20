@@ -1,5 +1,5 @@
 import type { Database } from "../../lib/db.ts";
-import { purgeRows } from "../repository.ts";
+import { purgeExpiredSimilarCaches, purgeRows } from "../repository.ts";
 
 /** 論理削除した行と IP ログを残す期間（設計ドキュメント）。 */
 const RETENTION_DAYS = 90;
@@ -19,6 +19,8 @@ export async function purgeExpired({ db, now }: { db: Database; now: Date }) {
   if (posts instanceof Error) return posts;
   const ipLogs = await purgeRows({ db, table: "post_ip_logs", cutoff, limit: PURGE_LIMIT });
   if (ipLogs instanceof Error) return ipLogs;
+  const similarCaches = await purgeExpiredSimilarCaches({ db, cutoff: now, limit: PURGE_LIMIT });
+  if (similarCaches instanceof Error) return similarCaches;
 
-  return { users, posts, ipLogs };
+  return { users, posts, ipLogs, similarCaches };
 }
