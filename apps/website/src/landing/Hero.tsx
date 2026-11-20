@@ -21,16 +21,17 @@ const styles = stylex.create({
       default: "clamp(41rem, 78svh, 48rem)",
       "@media (max-width: 980px)": "auto",
     },
-    padding: "clamp(2rem, 5vw, 4.5rem) clamp(1.25rem, 3vw, 2.5rem) 3rem",
     paddingInline: {
-      default: null,
+      default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
     paddingTop: {
-      default: null,
+      default: "clamp(2rem, 5vw, 4.5rem)",
       "@media (max-width: 980px)": "2.5rem",
     },
-    margin: "0 auto",
+    paddingBottom: "3rem",
+    marginBlock: "0",
+    marginInline: "auto",
   },
   heroCopy: {
     display: "grid",

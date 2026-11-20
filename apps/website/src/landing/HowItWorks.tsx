@@ -7,12 +7,13 @@ const styles = stylex.create({
     display: "grid",
     gap: "1.5rem",
     width: "100%",
-    padding: "clamp(3rem, 6vw, 5rem) clamp(1.25rem, 3vw, 2.5rem)",
+    paddingBlock: "clamp(3rem,6vw,5rem)",
     paddingInline: {
-      default: null,
+      default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
-    margin: "0 auto",
+    marginBlock: "0",
+    marginInline: "auto",
     backgroundImage:
       "radial-gradient(circle at 86% 85%, rgba(186, 176, 255, 0.34), transparent 18rem), radial-gradient(circle at 76% 90%, rgba(244, 165, 183, 0.25), transparent 13rem)",
     borderTopColor: t.line,

@@ -33,7 +33,8 @@ const styles = stylex.create({
       default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",
     },
-    margin: "0 auto",
+    marginBlock: "0",
+    marginInline: "auto",
   },
   nav: {
     display: {
@@ -118,7 +119,8 @@ const styles = stylex.create({
     flexDirection: "column",
     gap: "1.25rem",
     width: "100%",
-    paddingBlock: "1.5rem 2rem",
+    paddingBlockStart: "1.5rem",
+    paddingBlockEnd: "2rem",
     paddingInline: {
       default: "clamp(1.25rem, 3vw, 2.5rem)",
       "@media (max-width: 640px)": "1rem",

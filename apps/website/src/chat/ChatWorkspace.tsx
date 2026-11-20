@@ -9,8 +9,7 @@ import { PreviewPlayerProvider } from "#/songs/preview-player";
 import { ChatComposer } from "./ChatComposer";
 import { ChatProvider } from "./ChatProvider";
 import { ChatThread } from "./ChatThread";
-import { chatTokens as t } from "./tokens.stylex";
-import "./chat.css";
+import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
@@ -20,7 +19,6 @@ export function ChatWorkspace({ user }: { user: Me }) {
   const queryClient = useQueryClient();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const shell = stylex.props(styles.shell);
 
   // iOS Safari などでソフトウェアキーボード表示中に画面をスクロールしても
   // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
@@ -91,7 +89,7 @@ export function ChatWorkspace({ user }: { user: Me }) {
   return (
     <PreviewPlayerProvider>
       <ChatProvider>
-        <div ref={shellRef} {...shell} className={`chat-shell ${shell.className ?? ""}`}>
+        <div ref={shellRef} {...stylex.props(styles.shell)}>
           <header {...stylex.props(styles.topbar)}>
             <div {...stylex.props(styles.brand)}>
               <span {...stylex.props(styles.brandDot)} aria-hidden="true" />
@@ -211,7 +209,7 @@ const styles = stylex.create({
   accountName: {
     display: {
       default: "inline",
-      "@media (max-width: 540px)": "none",
+      [chatMedia.compact]: "none",
     },
     fontSize: 13,
     color: t.muted,

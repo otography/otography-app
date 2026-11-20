@@ -4,7 +4,9 @@ import type { StyleXStyles } from "@stylexjs/stylex";
 const styles = stylex.create({
   base: {
     display: "inline-grid",
-    flex: "0 0 auto",
+    flexGrow: "0",
+    flexShrink: "0",
+    flexBasis: "auto",
     placeItems: "center",
     width: "1.75rem",
     height: "1.75rem",

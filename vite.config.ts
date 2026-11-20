@@ -23,6 +23,8 @@ export default defineConfig({
       "@stylexjs/valid-styles": "error",
       "@stylexjs/no-unused": "error",
       "@stylexjs/no-legacy-contextual-styles": "error",
+      "@stylexjs/enforce-extension": "error",
+      "@stylexjs/valid-shorthands": "error",
       "@stylexjs/sort-keys": ["error", { order: "recess" }],
     },
     options: { typeAware: true, typeCheck: true },

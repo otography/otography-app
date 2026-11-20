@@ -18,9 +18,9 @@ const styles = stylex.create({
       "@media (max-width: 980px)": "start",
     },
     minHeight: "15rem",
-    padding: "3.5rem max(clamp(1.25rem, 6vw, 7rem), calc((100vw - 78rem) / 2 + 2.5rem))",
+    paddingBlock: "3.5rem",
     paddingInline: {
-      default: null,
+      default: "max(clamp(1.25rem, 6vw, 7rem), calc((100vw - 78rem) / 2 + 2.5rem))",
       "@media (max-width: 640px)": "1rem",
     },
     borderTopColor: t.line,
