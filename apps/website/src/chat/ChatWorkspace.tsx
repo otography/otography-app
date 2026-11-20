@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Button } from "@ui-sdk/react/button";
+import { useEffect, useRef, useState } from "react";
 import { authClient } from "#/lib/auth-client";
 import { type Me, meQuery } from "#/lib/auth";
 import { PreviewPlayerProvider } from "#/songs/preview-player";
@@ -17,12 +18,80 @@ function initials(name: string) {
 
 export function ChatWorkspace({ user }: { user: Me }) {
   const queryClient = useQueryClient();
+  const shellRef = useRef<HTMLDivElement | null>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const shell = stylex.props(styles.shell);
+
+  // iOS Safari などでソフトウェアキーボード表示中に画面をスクロールしても
+  // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
+  useEffect(() => {
+    const shellEl = shellRef.current;
+    if (!shellEl) return;
+
+    const html = document.documentElement;
+    const { body } = document;
+    const prevHtml = {
+      height: html.style.height,
+      overflow: html.style.overflow,
+      overscrollBehavior: html.style.overscrollBehavior,
+    };
+    const prevBody = {
+      height: body.style.height,
+      overflow: body.style.overflow,
+      overscrollBehavior: body.style.overscrollBehavior,
+    };
+
+    html.style.height = "100%";
+    html.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.height = "100%";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    window.scrollTo(0, 0);
+
+    const vv = window.visualViewport;
+
+    const sync = () => {
+      if (vv) {
+        if (Math.abs(vv.scale - 1) > 0.01) return;
+        shellEl.style.height = `${vv.height}px`;
+        shellEl.style.top = `${vv.offsetTop}px`;
+        setKeyboardOpen(window.innerHeight - vv.height > 100);
+        return;
+      }
+
+      shellEl.style.height = `${window.innerHeight}px`;
+      shellEl.style.top = "0px";
+      setKeyboardOpen(false);
+    };
+
+    sync();
+
+    if (vv) {
+      vv.addEventListener("resize", sync);
+      vv.addEventListener("scroll", sync);
+    }
+    window.addEventListener("resize", sync);
+
+    return () => {
+      html.style.height = prevHtml.height;
+      html.style.overflow = prevHtml.overflow;
+      html.style.overscrollBehavior = prevHtml.overscrollBehavior;
+      body.style.height = prevBody.height;
+      body.style.overflow = prevBody.overflow;
+      body.style.overscrollBehavior = prevBody.overscrollBehavior;
+      if (vv) {
+        vv.removeEventListener("resize", sync);
+        vv.removeEventListener("scroll", sync);
+      }
+      window.removeEventListener("resize", sync);
+    };
+  }, []);
 
   return (
     <PreviewPlayerProvider>
       <ChatProvider>
-        <div {...shell} className={`chat-shell ${shell.className ?? ""}`}>
+        <div ref={shellRef} {...shell} className={`chat-shell ${shell.className ?? ""}`}>
           <header {...stylex.props(styles.topbar)}>
             <div {...stylex.props(styles.brand)}>
               <span {...stylex.props(styles.brandDot)} aria-hidden="true" />
@@ -59,10 +128,12 @@ export function ChatWorkspace({ user }: { user: Me }) {
           </header>
 
           <main {...stylex.props(styles.main)}>
-            <ChatThread user={user} />
+            <div {...stylex.props(styles.mainInner)}>
+              <ChatThread user={user} />
+            </div>
           </main>
 
-          <ChatComposer />
+          <ChatComposer keyboardOpen={keyboardOpen} />
         </div>
       </ChatProvider>
     </PreviewPlayerProvider>
@@ -71,22 +142,29 @@ export function ChatWorkspace({ user }: { user: Me }) {
 
 const styles = stylex.create({
   shell: {
+    position: "fixed",
+    top: 0,
+    right: 0,
+    left: 0,
     display: "flex",
     flexDirection: "column",
-    minHeight: "100dvh",
+    height: "100dvh",
+    overflow: "hidden",
     color: t.text,
+    colorScheme: "light dark",
     backgroundColor: t.bg,
   },
   topbar: {
-    position: "sticky",
-    top: 0,
+    position: "relative",
     zIndex: 10,
     display: "flex",
+    flexShrink: 0,
     gap: 12,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingBlock: 12,
     paddingInline: 20,
+    paddingTop: "max(12px, env(safe-area-inset-top))",
+    paddingBottom: 12,
     backgroundColor: `color-mix(in srgb, ${t.bg} 88%, transparent)`,
     borderBottomColor: t.border,
     borderBottomStyle: "solid",
@@ -156,10 +234,19 @@ const styles = stylex.create({
     borderRadius: 8,
   },
   main: {
+    flexGrow: "1",
+    flexShrink: "1",
+    flexBasis: "0%",
+    width: "100%",
+    minHeight: 0,
+    overflowY: "auto",
+    overscrollBehaviorY: "contain",
+  },
+  mainInner: {
     display: "flex",
-    flex: "1 1 auto",
     flexDirection: "column",
     width: "min(100%, 760px)",
+    minHeight: "100%",
     paddingTop: 24,
     paddingRight: 16,
     paddingBottom: 32,

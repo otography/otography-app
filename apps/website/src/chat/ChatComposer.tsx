@@ -66,7 +66,7 @@ function SongAttachmentChip({ song }: { song: AppleSong }) {
   );
 }
 
-export function ChatComposer() {
+export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean }) {
   const { state, actions, meta } = useChat();
   const [composerEl, setComposerEl] = useState<HTMLFormElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -140,7 +140,7 @@ export function ChatComposer() {
   const itemProps = stylex.props(styles.triggerItem);
 
   return (
-    <div {...stylex.props(styles.dock)}>
+    <div {...stylex.props(styles.dock, keyboardOpen && styles.dockKeyboardOpen)}>
       <form
         ref={setComposerEl}
         {...composerProps}
@@ -296,17 +296,20 @@ export function ChatComposer() {
 
 const styles = stylex.create({
   dock: {
-    position: "sticky",
-    bottom: 0,
+    position: "relative",
     zIndex: 20,
+    flexShrink: 0,
     width: "min(100%, 760px)",
     paddingTop: 8,
     paddingRight: 16,
-    paddingBottom: 20,
+    paddingBottom: "max(20px, env(safe-area-inset-bottom))",
     paddingLeft: 16,
     marginBlock: 0,
     marginInline: "auto",
     backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${t.bg} 0%, transparent), ${t.bg} 28%)`,
+  },
+  dockKeyboardOpen: {
+    paddingBottom: 12,
   },
   composer: {
     position: "relative",
@@ -399,7 +402,10 @@ const styles = stylex.create({
     paddingBlock: 4,
     paddingInline: 2,
     fontFamily: "inherit",
-    fontSize: 15,
+    fontSize: {
+      default: 15,
+      "@media (pointer: coarse)": 16,
+    },
     lineHeight: 1.55,
     color: t.text,
     resize: "none",
