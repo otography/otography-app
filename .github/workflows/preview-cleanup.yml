@@ -1,0 +1,48 @@
+# プルリクエストが閉じられた（またはマージされた）とき、その PR 用の Worker Preview（pr-<PR番号>）を削除する。
+# 理由は docs/adr/0015-deploy-from-github-actions.md を参照。
+name: Preview Cleanup
+
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    # フォークからのプルリクエストにはシークレットを渡さない。
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: staging
+    concurrency:
+      group: preview-deploy-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    env:
+      CF_SEND_TELEMETRY: "false"
+      PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - name: Delete the PR Preview
+        run: |
+          set +e
+          vp run api#delete:preview 2>&1 | tee delete.log
+          status=${PIPESTATUS[0]}
+          set -e
+          if [ "$status" -ne 0 ]; then
+            # チェック失敗などで一度もデプロイされずに閉じられた PR では Preview が存在しない。
+            if grep -qiE '404|not found' delete.log; then
+              echo "Preview (${PREVIEW_NAME}) は存在しないため削除をスキップしました。"
+              exit 0
+            fi
+            exit "$status"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

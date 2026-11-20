@@ -1,5 +1,6 @@
-# プルリクエストごとに、変更を staging（Worker の Preview「staging」と staging の Turso）に反映し、
-# 確認用の URL をプルリクエストにコメントする。理由は docs/adr/0015-deploy-from-github-actions.md を参照。
+# プルリクエストごとに、Worker の Preview（pr-<PR番号>）へデプロイし、確認用の URL をコメントする。
+# DB は staging の Turso（1 つ）を共有するため、マイグレーションだけ直列に実行する。
+# 理由は docs/adr/0015-deploy-from-github-actions.md を参照。
 name: Staging
 
 on:
@@ -7,21 +8,18 @@ on:
     branches: [main]
     types: [opened, synchronize, reopened]
 
-# staging は 1 つしかないので、反映は 1 つずつ行い、途中で取り消さない（マイグレーションの途中で止めないため）。
-concurrency:
-  group: staging
-  cancel-in-progress: false
-
 permissions:
   contents: read
   pull-requests: write
 
 jobs:
-  deploy:
+  verify:
     # フォークからのプルリクエストにはシークレットを渡さない。
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    environment: staging
+    concurrency:
+      group: preview-verify-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     env:
       CF_SEND_TELEMETRY: "false"
     steps:
@@ -38,19 +36,54 @@ jobs:
       # 使われていないファイル・export・依存を見つける（knip.json）。
       - run: vp run knip
 
+  migrate:
+    needs: verify
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: staging
+    # staging の DB は 1 つしかないので、マイグレーションは 1 つずつ行い、途中で取り消さない。
+    concurrency:
+      group: staging-db
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+
       - name: Migrate the staging database
         run: vp run db#db:migrate
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
 
-      - name: Deploy the staging Preview
+  deploy:
+    needs: migrate
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    environment: staging
+    # Preview は PR ごとに分かれているので、別 PR 同士は並列にデプロイできる。
+    concurrency:
+      group: preview-deploy-pr-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    env:
+      CF_SEND_TELEMETRY: "false"
+      PREVIEW_NAME: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: voidzero-dev/setup-vp@v1.22.0
+        with:
+          node-version: "24"
+          cache: true
+
+      - name: Deploy the PR Preview
         id: deploy
         run: |
-          vp run api#deploy:staging 2>&1 | tee deploy.log
-          url=$(grep -o 'https://staging-[a-z0-9.-]*\.workers\.dev' deploy.log | head -n 1)
+          vp run api#deploy:preview 2>&1 | tee deploy.log
+          url=$(grep -o "https://${PREVIEW_NAME}-[a-z0-9.-]*\.workers\.dev" deploy.log | head -n 1)
           if [ -z "$url" ]; then
-            echo "::error::staging の URL がデプロイの出力に見つかりません（デプロイが中断された可能性があります）"
+            echo "::error::Preview (${PREVIEW_NAME}) の URL がデプロイの出力に見つかりません（デプロイが中断された可能性があります）"
             exit 1
           fi
           echo "url=$url" >> "$GITHUB_OUTPUT"
@@ -58,10 +91,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
-      - name: Comment the staging URL
+      - name: Comment the Preview URL
         run: |
           gh pr comment "$PR" --edit-last --create-if-none --body "$(cat <<EOF
-          ### staging に反映しました
+          ### Preview に反映しました
+          - Preview: \`$PREVIEW_NAME\`
           - URL: $URL
           - コミット: $SHA
           - マイグレーション: staging の DB に適用済み
