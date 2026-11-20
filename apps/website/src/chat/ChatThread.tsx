@@ -10,7 +10,9 @@ import { motion } from "#/motion.stylex";
 import { PreviewToggle } from "#/songs/PreviewToggle";
 import { useChat } from "./ChatContext";
 import { MusicNoteIcon } from "./icons";
+import { SearchingNotes, useSearchingNotes } from "./SearchingNotes";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
+import type { ChatTurn } from "./types";
 
 function initials(name: string) {
   return Array.from(name.trim()).slice(0, 2).join("") || "U";
@@ -82,9 +84,12 @@ function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; c
 
   return (
     <article ref={articleRef} {...stylex.props(styles.turn, styles.turnUser)}>
-      <div {...stylex.props(styles.userBubble)}>
-        <SongCard song={song} />
-        <p {...stylex.props(styles.userText)}>{content}</p>
+      <div {...stylex.props(styles.userBubbleWrap)}>
+        <SearchingNotes.Overlay />
+        <div {...stylex.props(styles.userBubble)}>
+          <SongCard song={song} />
+          <p {...stylex.props(styles.userText)}>{content}</p>
+        </div>
       </div>
       <Avatar {...stylex.props(styles.avatar)}>
         {user.image ? (
@@ -192,6 +197,13 @@ function SimilarPostCard({
 function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitle: string }) {
   const [includeSameSong, setIncludeSameSong] = useState(false);
   const query = useQuery(similarPostsQuery(postId, includeSameSong));
+  const searchingNotes = useSearchingNotes();
+  const setNotesActive = searchingNotes?.actions.setActive;
+
+  useEffect(() => {
+    setNotesActive?.(query.isPending);
+  }, [query.isPending, setNotesActive]);
+
   const similarPosts = query.data?.posts ?? [];
   const songIds = useMemo(
     () =>
@@ -214,6 +226,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
   return (
     <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
       <img
+        ref={searchingNotes?.meta.registerTarget}
         src="/otography-icon.png"
         alt=""
         aria-hidden="true"
@@ -289,9 +302,33 @@ function AssistantErrorReply({ message }: { message: string }) {
   );
 }
 
+type ChatExchange = {
+  id: string;
+  user?: Extract<ChatTurn, { kind: "user" }>;
+  reply?: Extract<ChatTurn, { kind: "assistant" | "assistant-error" }>;
+};
+
+function groupExchanges(turns: readonly ChatTurn[]): ChatExchange[] {
+  const exchanges: ChatExchange[] = [];
+  for (const turn of turns) {
+    if (turn.kind === "user") {
+      exchanges.push({ id: turn.id, user: turn });
+      continue;
+    }
+    const last = exchanges[exchanges.length - 1];
+    if (last && !last.reply) {
+      last.reply = turn;
+    } else {
+      exchanges.push({ id: turn.id, reply: turn });
+    }
+  }
+  return exchanges;
+}
+
 export function ChatThread({ user }: { user: Me }) {
   const { state } = useChat();
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const exchanges = useMemo(() => groupExchanges(state.turns), [state.turns]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ block: "end" });
@@ -318,18 +355,38 @@ export function ChatThread({ user }: { user: Me }) {
 
   return (
     <div {...stylex.props(styles.thread)} aria-live="polite">
-      {state.turns.map((turn) => {
-        if (turn.kind === "user") {
-          return (
-            <UserTurnMessage key={turn.id} user={user} song={turn.song} content={turn.content} />
-          );
-        }
-        if (turn.kind === "assistant") {
-          return (
-            <AssistantSimilarReply key={turn.id} postId={turn.postId} songTitle={turn.songTitle} />
-          );
-        }
-        return <AssistantErrorReply key={turn.id} message={turn.message} />;
+      {exchanges.map((exchange, index) => {
+        const isLatest = index === exchanges.length - 1;
+        const forcedActive =
+          exchange.reply?.kind === "assistant-error"
+            ? false
+            : !exchange.reply && isLatest && state.isSubmitting
+              ? true
+              : undefined;
+
+        return (
+          <SearchingNotes.Provider
+            key={exchange.id}
+            defaultActive={isLatest && state.isSubmitting}
+            active={forcedActive}
+          >
+            {exchange.user ? (
+              <UserTurnMessage
+                user={user}
+                song={exchange.user.song}
+                content={exchange.user.content}
+              />
+            ) : null}
+            {exchange.reply?.kind === "assistant" ? (
+              <AssistantSimilarReply
+                postId={exchange.reply.postId}
+                songTitle={exchange.reply.songTitle}
+              />
+            ) : exchange.reply?.kind === "assistant-error" ? (
+              <AssistantErrorReply message={exchange.reply.message} />
+            ) : null}
+          </SearchingNotes.Provider>
+        );
       })}
       <div ref={bottomRef} />
     </div>
@@ -459,6 +516,8 @@ const styles = stylex.create({
     justifyContent: "flex-end",
   },
   turnAssistant: {
+    position: "relative",
+    zIndex: 1,
     justifyContent: "flex-start",
   },
   turnAssistantEnter: {
@@ -511,11 +570,16 @@ const styles = stylex.create({
     objectFit: "cover",
     borderRadius: 9,
   },
+  userBubbleWrap: {
+    position: "relative",
+    maxWidth: "min(100%, 540px)",
+  },
   userBubble: {
+    position: "relative",
+    zIndex: 1,
     display: "flex",
     flexDirection: "column",
     gap: 10,
-    maxWidth: "min(100%, 540px)",
     paddingBlock: 12,
     paddingInline: 14,
     backgroundColor: t.surface,

@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as DemoSearchingNotesRouteImport } from './routes/demo.searching-notes'
 import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,11 +23,6 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoSearchingNotesRoute = DemoSearchingNotesRouteImport.update({
-  id: '/demo/searching-notes',
-  path: '/demo/searching-notes',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PostsPostIdRoute = PostsPostIdRouteImport.update({
   id: '/posts/$postId',
   path: '/posts/$postId',
@@ -38,34 +32,30 @@ const PostsPostIdRoute = PostsPostIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/demo/searching-notes': typeof DemoSearchingNotesRoute
   '/posts/$postId': typeof PostsPostIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/demo/searching-notes': typeof DemoSearchingNotesRoute
   '/posts/$postId': typeof PostsPostIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/profile': typeof ProfileRoute
-  '/demo/searching-notes': typeof DemoSearchingNotesRoute
   '/posts/$postId': typeof PostsPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/profile' | '/demo/searching-notes' | '/posts/$postId'
+  fullPaths: '/' | '/profile' | '/posts/$postId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/profile' | '/demo/searching-notes' | '/posts/$postId'
-  id: '__root__' | '/' | '/profile' | '/demo/searching-notes' | '/posts/$postId'
+  to: '/' | '/profile' | '/posts/$postId'
+  id: '__root__' | '/' | '/profile' | '/posts/$postId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ProfileRoute: typeof ProfileRoute
-  DemoSearchingNotesRoute: typeof DemoSearchingNotesRoute
   PostsPostIdRoute: typeof PostsPostIdRoute
 }
 
@@ -85,13 +75,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/demo/searching-notes': {
-      id: '/demo/searching-notes'
-      path: '/demo/searching-notes'
-      fullPath: '/demo/searching-notes'
-      preLoaderRoute: typeof DemoSearchingNotesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/posts/$postId': {
       id: '/posts/$postId'
       path: '/posts/$postId'
@@ -105,7 +88,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ProfileRoute: ProfileRoute,
-  DemoSearchingNotesRoute: DemoSearchingNotesRoute,
   PostsPostIdRoute: PostsPostIdRoute,
 }
 export const routeTree = rootRouteImport
