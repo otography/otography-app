@@ -295,10 +295,13 @@ export function ChatThread({ user }: { user: Me }) {
           <MusicNoteIcon />
         </div>
         <h1 {...stylex.props(styles.welcomeTitle)}>どの曲の感想を残しますか？</h1>
-        <p {...stylex.props(styles.welcomeDesc)}>
+        <p {...stylex.props(styles.welcomeDesc, styles.welcomeDescDesktop)}>
           入力欄で <code {...stylex.props(styles.inlineCode)}>@</code> または{" "}
           <code {...stylex.props(styles.inlineCode)}>/</code>{" "}
           を押して曲を検索し、感想を送ると近い感覚の曲が返ってきます。
+        </p>
+        <p {...stylex.props(styles.welcomeDesc, styles.welcomeDescMobile)}>
+          曲を選んで感想を送ると、近い感覚の曲が返ってきます。
         </p>
         <div {...stylex.props(styles.welcomeActions)}>
           <Button
@@ -438,6 +441,18 @@ const styles = stylex.create({
     lineHeight: 1.65,
     color: t.muted,
   },
+  welcomeDescDesktop: {
+    display: {
+      default: "block",
+      [chatMedia.compact]: "none",
+    },
+  },
+  welcomeDescMobile: {
+    display: {
+      default: "none",
+      [chatMedia.compact]: "block",
+    },
+  },
   inlineCode: {
     paddingBlock: 1,
     paddingInline: 6,
@@ -451,7 +466,10 @@ const styles = stylex.create({
     borderRadius: 6,
   },
   welcomeActions: {
-    display: "flex",
+    display: {
+      default: "flex",
+      [chatMedia.compact]: "none",
+    },
     flexWrap: "wrap",
     gap: 8,
     justifyContent: "center",

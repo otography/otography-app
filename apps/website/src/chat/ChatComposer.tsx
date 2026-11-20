@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { type AppleSong, artworkUrl, searchSongs } from "#/lib/musickit";
 import { motion } from "#/motion.stylex";
 import { usePreviewPlayer } from "#/songs/preview-player";
@@ -62,6 +62,9 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
   const [songs, setSongs] = useState<AppleSong[]>([]);
   const [loading, setLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const [isCompact, setIsCompact] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 540px)").matches : false,
+  );
   const listRef = useRef<HTMLDivElement | null>(null);
   const listId = useId();
   const collisionPadding = keyboardOpen
@@ -164,6 +167,47 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
     }
   }, [highlightedIndex]);
 
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 540px)");
+    const onChange = () => setIsCompact(media.matches);
+    onChange();
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, []);
+
+  // 1行以内はコンパクトな minHeight のまま保ち、2行目以降で maxHeight まで自動で広げる。
+  useLayoutEffect(() => {
+    const el = meta.textareaRef.current;
+    if (!el) return;
+    if (!state.draft) {
+      el.style.height = "";
+      el.style.overflowY = "hidden";
+      return;
+    }
+
+    el.style.height = "0px";
+    const computed = window.getComputedStyle(el);
+    const minHeight = Number.parseFloat(computed.minHeight) || 30;
+    const computedMax = Number.parseFloat(computed.maxHeight);
+    const maxHeight = Number.isFinite(computedMax) ? computedMax : 200;
+
+    if (el.scrollHeight <= minHeight + 2) {
+      el.style.height = "";
+      el.style.overflowY = "hidden";
+      return;
+    }
+
+    const nextHeight = Math.min(el.scrollHeight, maxHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [meta.textareaRef, state.draft, state.selectedSong, keyboardOpen, isCompact]);
+
+  const handleSubmit = () => {
+    if (!state.canSubmit) return;
+    meta.textareaRef.current?.blur();
+    actions.submit();
+  };
+
   const selectSongItem = (song: AppleSong) => {
     if (!song.attributes.isrc) return;
     actions.selectSong(song);
@@ -179,7 +223,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
         {...stylex.props(styles.composer)}
         onSubmit={(event) => {
           event.preventDefault();
-          actions.submit();
+          handleSubmit();
         }}
       >
         {menuOpen ? (
@@ -275,13 +319,17 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
         <textarea
           ref={meta.textareaRef}
           {...stylex.props(styles.textarea)}
-          aria-label="曲への感想を入力（@ または / で曲を検索）"
+          aria-label={isCompact ? "曲への感想を入力" : "曲への感想を入力（@ または / で曲を検索）"}
           aria-controls={menuOpen ? listId : undefined}
           enterKeyHint={menuOpen ? "search" : "send"}
           placeholder={
             state.selectedSong
-              ? "この曲への感想を書く…（Enter で送信、Shift+Enter で改行）"
-              : "@ または / に続けて曲名・アーティスト名で検索し、感想を書く…"
+              ? isCompact
+                ? "この曲への感想を書く…"
+                : "この曲への感想を書く…（Enter で送信、Shift+Enter で改行）"
+              : isCompact
+                ? "曲を選んで感想を書く…"
+                : "@ または / に続けて曲名・アーティスト名で検索し、感想を書く…"
           }
           rows={1}
           value={state.draft}
@@ -325,7 +373,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
               !menuOpen
             ) {
               event.preventDefault();
-              if (state.canSubmit) actions.submit();
+              handleSubmit();
             }
           }}
         />
@@ -570,7 +618,7 @@ const styles = stylex.create({
     },
     maxHeight: {
       default: 200,
-      [chatMedia.compact]: 112,
+      [chatMedia.compact]: 120,
     },
     paddingBlock: {
       default: 4,
