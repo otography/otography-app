@@ -277,6 +277,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
           {...stylex.props(styles.textarea)}
           aria-label="曲への感想を入力（@ または / で曲を検索）"
           aria-controls={menuOpen ? listId : undefined}
+          enterKeyHint={menuOpen ? "search" : "send"}
           placeholder={
             state.selectedSong
               ? "この曲への感想を書く…（Enter で送信、Shift+Enter で改行）"
@@ -389,16 +390,16 @@ const styles = stylex.create({
       [chatMedia.compact]: 4,
     },
     paddingRight: {
-      default: 16,
-      [chatMedia.compact]: 12,
+      default: "max(16px, env(safe-area-inset-right, 0px))",
+      [chatMedia.compact]: "max(12px, env(safe-area-inset-right, 0px))",
     },
     paddingBottom: {
-      default: "max(20px, env(safe-area-inset-bottom))",
-      [chatMedia.compact]: "max(12px, env(safe-area-inset-bottom))",
+      default: "max(20px, env(safe-area-inset-bottom, 0px))",
+      [chatMedia.compact]: "max(12px, env(safe-area-inset-bottom, 0px))",
     },
     paddingLeft: {
-      default: 16,
-      [chatMedia.compact]: 12,
+      default: "max(16px, env(safe-area-inset-left, 0px))",
+      [chatMedia.compact]: "max(12px, env(safe-area-inset-left, 0px))",
     },
     marginBlock: 0,
     marginInline: "auto",
@@ -783,12 +784,27 @@ const styles = stylex.create({
     cursor: "pointer",
     backgroundColor: {
       default: t.surface,
-      ":hover": t.hover,
+      ":hover": {
+        default: t.surface,
+        [chatMedia.hover]: t.hover,
+      },
+      ":active": t.hover,
     },
     borderColor: t.border,
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 10,
+    transform: {
+      default: null,
+      ":active": {
+        default: "scale(0.98)",
+        [chatMedia.reducedMotion]: "none",
+      },
+    },
+    transition: {
+      default: `transform 150ms ${motion.easeOut}, background-color 120ms ${motion.easeOut}`,
+      [chatMedia.reducedMotion]: "background-color 120ms ease",
+    },
   },
   triggerEmpty: {
     paddingBlock: {
@@ -850,13 +866,17 @@ const styles = stylex.create({
     textAlign: "left",
     cursor: "pointer",
     userSelect: "none",
-    backgroundColor: "transparent",
+    backgroundColor: {
+      default: "transparent",
+      ":active": t.highlight,
+    },
     borderStyle: "none",
     borderWidth: 0,
     borderRadius: {
       default: 12,
       [chatMedia.compact]: 10,
     },
+    transition: `background-color 100ms ${motion.easeOut}`,
   },
   triggerItemHighlighted: {
     backgroundColor: t.highlight,

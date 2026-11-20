@@ -189,17 +189,21 @@ const styles = stylex.create({
     gap: 12,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingInline: {
-      default: 20,
-      [chatMedia.compact]: 14,
-    },
     paddingTop: {
-      default: "max(12px, env(safe-area-inset-top))",
-      [chatMedia.compact]: "max(8px, env(safe-area-inset-top))",
+      default: "max(12px, env(safe-area-inset-top, 0px))",
+      [chatMedia.compact]: "max(8px, env(safe-area-inset-top, 0px))",
+    },
+    paddingRight: {
+      default: "max(20px, env(safe-area-inset-right, 0px))",
+      [chatMedia.compact]: "max(14px, env(safe-area-inset-right, 0px))",
     },
     paddingBottom: {
       default: 12,
       [chatMedia.compact]: 8,
+    },
+    paddingLeft: {
+      default: "max(20px, env(safe-area-inset-left, 0px))",
+      [chatMedia.compact]: "max(14px, env(safe-area-inset-left, 0px))",
     },
     backgroundColor: `color-mix(in srgb, ${t.bg} 88%, transparent)`,
     borderBottomColor: t.border,
