@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { POST_CONTENT_MAX } from "db/constants";
 import { type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { type AppleSong, searchSongs } from "#/lib/musickit";
@@ -19,7 +19,14 @@ function parseSongTrigger(value: string): { trigger: SongSearchTrigger; query: s
   return { trigger: first, query };
 }
 
-export function ChatProvider({ children }: { children: ReactNode }) {
+export function ChatProvider({
+  userPublicId,
+  children,
+}: {
+  userPublicId?: string;
+  children: ReactNode;
+}) {
+  const queryClient = useQueryClient();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [selectedSong, setSelectedSong] = useState<AppleSong | null>(null);
   const [draft, setDraft] = useState("");
@@ -36,6 +43,12 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const menuOpen = triggerMatch !== null && !searchDismissed;
 
   const updateDraft = (value: string) => {
+    // 曲が未選択のまま通常の文字が入力された場合も、自動で @ 検索モードに入れる。
+    if (!selectedSong && value !== "" && !parseSongTrigger(value)) {
+      setDraft(`@${value}`);
+      setSearchDismissed(false);
+      return;
+    }
     setDraft(value);
     if (!parseSongTrigger(value)) {
       setSearchDismissed(false);
@@ -119,6 +132,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           createdAt: new Date(),
         },
       ]);
+      if (userPublicId) {
+        void queryClient.invalidateQueries({ queryKey: ["users", "posts", userPublicId] });
+      }
     },
     onError: (error) => {
       setTurns((prev) => [

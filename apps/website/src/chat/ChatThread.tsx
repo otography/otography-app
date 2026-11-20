@@ -1,7 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
-import { Button } from "@ui-sdk/react/button";
 import { Toggle } from "@ui-sdk/react/toggle";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Me } from "#/lib/auth";
@@ -292,7 +291,7 @@ function AssistantErrorReply({ message }: { message: string }) {
 }
 
 export function ChatThread({ user }: { user: Me }) {
-  const { state, actions } = useChat();
+  const { state } = useChat();
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -314,24 +313,6 @@ export function ChatThread({ user }: { user: Me }) {
         <p {...stylex.props(styles.welcomeDesc, styles.welcomeDescMobile)}>
           曲を選んで感想を送ると、近い感覚の曲が返ってきます。
         </p>
-        <div {...stylex.props(styles.welcomeActions)}>
-          <Button
-            type="button"
-            {...stylex.props(styles.suggestionPill)}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => actions.openSongSearch("@")}
-          >
-            @ で曲を検索する
-          </Button>
-          <Button
-            type="button"
-            {...stylex.props(styles.suggestionPill)}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => actions.openSongSearch("/")}
-          >
-            / で曲を検索する
-          </Button>
-        </div>
       </section>
     );
   }
@@ -464,53 +445,6 @@ const styles = stylex.create({
     borderStyle: "solid",
     borderWidth: 1,
     borderRadius: 6,
-  },
-  welcomeActions: {
-    display: {
-      default: "flex",
-      [chatMedia.compact]: "none",
-    },
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-    marginTop: 6,
-  },
-  suggestionPill: {
-    height: 34,
-    paddingBlock: 0,
-    paddingInline: 14,
-    fontSize: 13,
-    fontWeight: 500,
-    color: t.text,
-    cursor: "pointer",
-    backgroundColor: {
-      default: t.surface,
-      ":hover": {
-        default: t.surface,
-        [chatMedia.hover]: t.hover,
-      },
-    },
-    borderColor: {
-      default: t.border,
-      ":hover": {
-        default: t.border,
-        [chatMedia.hover]: t.borderStrong,
-      },
-    },
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 9999,
-    transform: {
-      default: null,
-      ":active": {
-        default: "scale(0.97)",
-        [chatMedia.reducedMotion]: "none",
-      },
-    },
-    transition: {
-      default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}, border-color 150ms ${motion.easeOut}`,
-      [chatMedia.reducedMotion]: "background-color 120ms ease, border-color 120ms ease",
-    },
   },
   thread: {
     display: "flex",

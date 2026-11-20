@@ -95,7 +95,9 @@ export function ChatSongPicker() {
           ? "曲を検索中…"
           : songs.length > 0
             ? `${songs.length} 件の曲`
-            : "曲名やアーティスト名を入力して絞り込む"}
+            : state.selectedSong
+              ? "曲名やアーティスト名を入力して絞り込む"
+              : "まずは曲を検索して選択してください"}
       </div>
 
       {!songsLoading && songs.length === 0 ? (
