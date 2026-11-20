@@ -749,8 +749,16 @@ const styles = stylex.create({
   similarTitleLink: {
     textDecoration: {
       default: "none",
-      ":hover": "underline",
+      ":hover": {
+        default: "none",
+        [chatMedia.hover]: "underline",
+      },
     },
+    opacity: {
+      default: 1,
+      ":active": 0.65,
+    },
+    transition: `opacity 120ms ${motion.easeOut}`,
   },
   similarArtist: {
     overflow: "hidden",
