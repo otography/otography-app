@@ -113,7 +113,14 @@ export function ChatWorkspace({ user }: { user: Me }) {
         <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
           <header {...stylex.props(styles.topbar)}>
             <div {...stylex.props(styles.brand)}>
-              <span {...stylex.props(styles.brandDot)} aria-hidden="true" />
+              <img
+                src="/otography-icon.png"
+                alt=""
+                aria-hidden="true"
+                width={24}
+                height={24}
+                {...stylex.props(styles.brandIcon)}
+              />
               <span {...stylex.props(styles.brandName)}>otography</span>
             </div>
             <div {...stylex.props(styles.account)}>
@@ -204,11 +211,13 @@ const styles = stylex.create({
     gap: 8,
     alignItems: "center",
   },
-  brandDot: {
-    width: 10,
-    height: 10,
-    backgroundColor: t.primary,
-    borderRadius: 9999,
+  brandIcon: {
+    display: "block",
+    flexShrink: 0,
+    width: 24,
+    height: 24,
+    objectFit: "cover",
+    borderRadius: 6,
   },
   brandName: {
     fontSize: 15,
