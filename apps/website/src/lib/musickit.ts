@@ -7,13 +7,25 @@ import { client } from "#/lib/api";
 /** Apple Music API のカタログのリソース（曲、アーティストなど）。 */
 type CatalogResource<Attributes> = { id: string; attributes: Attributes };
 
+/** Apple Music API のジャケット画像と代表色（# なしの 6 桁 16 進数）。 */
+export type AppleArtwork = {
+  url: string;
+  bgColor?: string;
+  textColor1?: string;
+  textColor2?: string;
+  textColor3?: string;
+  textColor4?: string;
+};
+
 /** Apple Music API のカタログの曲（使う属性だけ）。 */
 export type AppleSong = CatalogResource<{
   name: string;
   artistName: string;
   albumName?: string;
-  artwork?: { url: string };
+  artwork?: AppleArtwork;
+  durationInMillis?: number;
   isrc?: string;
+  url?: string;
   /** 試聴用の音源（約 30 秒）。 */
   previews?: { url: string }[];
 }>;
@@ -21,11 +33,37 @@ export type AppleSong = CatalogResource<{
 /** Apple Music API のカタログのアーティスト（使う属性だけ）。 */
 export type AppleArtist = CatalogResource<{
   name: string;
-  artwork?: { url: string };
+  artwork?: AppleArtwork;
   genreNames?: string[];
 }>;
 
-type MusicKitInstance = {
+export type MusicKitPlaybackTimeEvent = {
+  currentPlaybackTime?: number;
+  currentPlaybackDuration?: number;
+};
+
+export type MusicKitPlaybackStateEvent = {
+  state?: number;
+};
+
+export type MusicKitInstance = {
+  isAuthorized: boolean;
+  isPlaying?: boolean;
+  queueIsEmpty?: boolean;
+  queue?: { items?: unknown[]; isEmpty?: boolean };
+  storefrontId?: string;
+  playbackState?: number;
+  currentPlaybackTime?: number;
+  currentPlaybackDuration?: number;
+  authorize: () => Promise<string | undefined>;
+  unauthorize: () => Promise<void>;
+  setQueue: (options: { song: string; startPlaying?: boolean }) => Promise<unknown>;
+  play: () => Promise<void>;
+  pause: () => void;
+  stop: () => void;
+  seekToTime: (time: number) => Promise<void>;
+  addEventListener: (event: string, listener: (event: unknown) => void) => void;
+  removeEventListener: (event: string, listener: (event: unknown) => void) => void;
   api: {
     music: <T>(path: string, query?: Record<string, string | number>) => Promise<{ data: T }>;
   };
@@ -34,6 +72,18 @@ type MusicKitInstance = {
 declare global {
   interface Window {
     MusicKit?: {
+      PlaybackStates?: {
+        none: number;
+        loading: number;
+        playing: number;
+        paused: number;
+        stopped: number;
+        ended: number;
+        seeking: number;
+        waiting: number;
+        stalled: number;
+        completed: number;
+      };
       configure: (options: {
         developerToken: string;
         app: { name: string; build: string };
@@ -48,17 +98,14 @@ const LOAD_TIMEOUT_MS = 15_000;
 
 /**
  * 開発サーバーでは、Vite が define の値（TanStack Router のプラグインが足す process.env.TSS_INLINE_CSS_ENABLED）を
- * globalThis.process に置く。musickit.js は process があると Node.js の環境だと判断して、読み込みの途中で例外になる。
- * そのため、開発時だけ、読み込みの間は globalThis.process を外し、読み込み後に戻す。本番のビルドでは process は置かれない。
+ * globalThis.process に置く。musickit.js は初期読み込み時だけでなく configure() や setQueue() で
+ * プレイヤーのモジュールを遅延ロードするときも process があると Node.js 環境だと誤認し、
+ * 再生機能が初期化されない。本番ビルドでは process は置かれないため、開発時のみ削除したままにする。
  */
-function hideViteProcessShim() {
+function removeViteProcessShim() {
   const scope = globalThis as { process?: unknown };
-  if (!import.meta.env.DEV || scope.process === undefined) return () => {};
-  const saved = scope.process;
+  if (!import.meta.env.DEV || scope.process === undefined) return;
   delete scope.process;
-  return () => {
-    scope.process = saved;
-  };
 }
 
 /**
@@ -67,17 +114,15 @@ function hideViteProcessShim() {
  */
 const loadScript = () =>
   new Promise<void>((resolve, reject) => {
+    removeViteProcessShim();
     if (typeof window.MusicKit?.configure === "function") return resolve();
-    const restoreProcess = hideViteProcessShim();
     const timer = setTimeout(() => {
-      restoreProcess();
       reject(new Error("MusicKit の準備ができませんでした。再読み込みしてください"));
     }, LOAD_TIMEOUT_MS);
     document.addEventListener(
       "musickitloaded",
       () => {
         clearTimeout(timer);
-        restoreProcess();
         resolve();
       },
       { once: true },
@@ -89,13 +134,18 @@ const loadScript = () =>
     script.crossOrigin = "anonymous";
     script.onerror = () => {
       clearTimeout(timer);
-      restoreProcess();
       reject(new Error("MusicKit を読み込めませんでした"));
     };
     document.head.append(script);
   });
 
 let instance: Promise<MusicKitInstance> | null = null;
+let loadedInstance: MusicKitInstance | null = null;
+
+/** すでに初期化済みの MusicKit を同期的に返す。Safari でクリック直後に呼ぶために使う。 */
+export function getLoadedMusicKit() {
+  return loadedInstance;
+}
 
 /**
  * 設定済みの MusicKit を返す。開発者トークンは API から受け取る（このページのオリジンでだけ使える）。
@@ -108,15 +158,28 @@ export function getMusicKit() {
     const { token } = await res.json();
     await loadScript();
     if (!window.MusicKit) throw new Error("MusicKit を読み込めませんでした");
-    return window.MusicKit.configure({
+    const configured = await window.MusicKit.configure({
       developerToken: token,
       app: { name: "otography", build: "0.0.0" },
     });
+    loadedInstance = configured;
+    return configured;
   })().catch((error: unknown) => {
     instance = null;
+    loadedInstance = null;
     throw error;
   });
   return instance;
+}
+
+/** ユーザーのストアフロントが異なる場合に ISRC から再生可能な曲 ID を引き直す。 */
+export async function findSongIdByIsrc(music: MusicKitInstance, isrc: string) {
+  const storefront = music.storefrontId || "jp";
+  const { data } = await music.api.music<{ data?: { id: string }[] }>(
+    `/v1/catalog/${storefront}/songs`,
+    { "filter[isrc]": isrc },
+  );
+  return data.data?.[0]?.id ?? null;
 }
 
 /** 検索の種類と、返るリソースの型。 */

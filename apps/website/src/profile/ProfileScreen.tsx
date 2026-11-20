@@ -2,14 +2,16 @@ import * as stylex from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@ui-sdk/react/button";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { Tabs, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import { authClient } from "#/lib/auth-client";
 import { type Me, meQuery } from "#/lib/auth";
 import { motion } from "#/motion.stylex";
 import { AppShell } from "#/shell/AppShell";
-import { PreviewPlayerProvider } from "#/songs/preview-player";
+import { MiniPlayerBar } from "#/songs/MiniPlayerBar";
+import { usePreviewPlayer } from "#/songs/preview-player";
+import { AppleMusicConnection } from "./AppleMusicConnection";
 import { FavoriteArtistsPanel } from "./FavoriteArtistsPanel";
 import { FavoriteSongsPanel } from "./FavoriteSongsPanel";
 import { ArrowLeftIcon } from "./icons";
@@ -35,8 +37,15 @@ function ProfileWorkspaceContent() {
   const { state } = useProfile();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const player = usePreviewPlayer();
+  const { preloadAppleMusic } = player.actions;
+
+  useEffect(() => {
+    preloadAppleMusic();
+  }, [preloadAppleMusic]);
 
   const handleSignOut = () => {
+    player.actions.close();
     void authClient.signOut().then(async () => {
       await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
       await navigate({ to: "/" });
@@ -45,20 +54,24 @@ function ProfileWorkspaceContent() {
 
   return (
     <div {...stylex.props(styles.shell)}>
-      <AppShell.Topbar style={styles.topbar}>
-        <div {...stylex.props(styles.leftNav)}>
-          <Button render={<Link to="/" />} {...stylex.props(styles.backBtn)}>
-            <ArrowLeftIcon />
-            <span>ホーム</span>
-          </Button>
-          <Link to="/" {...stylex.props(styles.brand)}>
-            <AppShell.BrandIcon />
-            <AppShell.BrandName style={styles.brandName} />
-          </Link>
-        </div>
+      <div {...stylex.props(styles.stickyHeader)}>
+        <AppShell.Topbar>
+          <div {...stylex.props(styles.leftNav)}>
+            <Button render={<Link to="/" />} {...stylex.props(styles.backBtn)}>
+              <ArrowLeftIcon />
+              <span>ホーム</span>
+            </Button>
+            <Link to="/" {...stylex.props(styles.brand)}>
+              <AppShell.BrandIcon />
+              <AppShell.BrandName style={styles.brandName} />
+            </Link>
+          </div>
 
-        <AppShell.SignOutButton onClick={handleSignOut} />
-      </AppShell.Topbar>
+          <AppShell.SignOutButton onClick={handleSignOut} />
+        </AppShell.Topbar>
+
+        <MiniPlayerBar />
+      </div>
 
       <main {...stylex.props(styles.main)}>
         <div {...stylex.props(styles.inner)}>
@@ -69,6 +82,7 @@ function ProfileWorkspaceContent() {
           ) : null}
 
           <ProfileHero />
+          <AppleMusicConnection />
 
           <Tabs defaultValue="posts" {...stylex.props(styles.tabs)}>
             <TabsList aria-label="プロフィールセクション" {...stylex.props(styles.tabsList)}>
@@ -96,11 +110,9 @@ function ProfileWorkspaceContent() {
 
 export function ProfileScreen({ user }: { user: Me }) {
   return (
-    <PreviewPlayerProvider>
-      <ProfileProvider user={user}>
-        <ProfileWorkspaceContent />
-      </ProfileProvider>
-    </PreviewPlayerProvider>
+    <ProfileProvider user={user}>
+      <ProfileWorkspaceContent />
+    </ProfileProvider>
   );
 }
 
@@ -113,9 +125,10 @@ const styles = stylex.create({
     colorScheme: "light dark",
     backgroundColor: t.bg,
   },
-  topbar: {
+  stickyHeader: {
     position: "sticky",
     top: 0,
+    zIndex: 10,
   },
   leftNav: {
     display: "flex",

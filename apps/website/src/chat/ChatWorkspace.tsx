@@ -6,7 +6,8 @@ import { useEffect, useRef } from "react";
 import { authClient } from "#/lib/auth-client";
 import { type Me, meQuery } from "#/lib/auth";
 import { motion } from "#/motion.stylex";
-import { PreviewPlayerProvider } from "#/songs/preview-player";
+import { MiniPlayerBar } from "#/songs/MiniPlayerBar";
+import { usePreviewPlayer } from "#/songs/preview-player";
 import { ChatComposer } from "./ChatComposer";
 import { AppShell } from "#/shell/AppShell";
 import { useChat } from "./ChatContext";
@@ -26,7 +27,13 @@ function ChatShell({ user }: { user: Me }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const { setKeyboardOpen } = useChat().actions;
   const { state: historyState } = useChatHistory();
+  const player = usePreviewPlayer();
+  const { preloadAppleMusic } = player.actions;
   const showTopbarBrand = !(historyState.isDesktop && historyState.desktopOpen);
+
+  useEffect(() => {
+    preloadAppleMusic();
+  }, [preloadAppleMusic]);
 
   // iOS Safari などでソフトウェアキーボード表示中に画面をスクロールしても
   // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
@@ -168,14 +175,17 @@ function ChatShell({ user }: { user: Me }) {
               <span {...stylex.props(styles.accountName)}>{user.name}</span>
             </Link>
             <AppShell.SignOutButton
-              onClick={() =>
+              onClick={() => {
+                player.actions.close();
                 void authClient
                   .signOut()
-                  .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
-              }
+                  .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }));
+              }}
             />
           </div>
         </AppShell.Topbar>
+
+        <MiniPlayerBar />
 
         <main {...stylex.props(styles.main)}>
           <div {...stylex.props(styles.mainInner)}>
@@ -199,13 +209,11 @@ function ChatShell({ user }: { user: Me }) {
 
 export function ChatWorkspace({ user }: { user: Me }) {
   return (
-    <PreviewPlayerProvider>
-      <ChatHistoryProvider publicId={user.publicId}>
-        <ChatProvider userPublicId={user.publicId}>
-          <ChatShell user={user} />
-        </ChatProvider>
-      </ChatHistoryProvider>
-    </PreviewPlayerProvider>
+    <ChatHistoryProvider publicId={user.publicId}>
+      <ChatProvider userPublicId={user.publicId}>
+        <ChatShell user={user} />
+      </ChatProvider>
+    </ChatHistoryProvider>
   );
 }
 
