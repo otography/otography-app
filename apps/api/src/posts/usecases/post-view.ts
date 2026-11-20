@@ -7,3 +7,5 @@ export const toPostView = (post: { id: string; likes: unknown[] }) => {
   if (!output.success) return new PostOutputError({ postId: post.id, cause: output.error });
   return output.data;
 };
+
+export type PostView = Exclude<ReturnType<typeof toPostView>, Error>;

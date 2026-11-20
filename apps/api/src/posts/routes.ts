@@ -13,10 +13,13 @@ import { currentTransform, embed, embedNewPost, store } from "../embeddings/work
 import { deletePost } from "./usecases/delete-post.ts";
 import { getPost } from "./usecases/get-post.ts";
 import { setLike } from "./usecases/like-post.ts";
-import { getSimilarPosts, searchPosts } from "./usecases/similar-posts.ts";
+import {
+  getLocalSimulatedSimilarPosts,
+  getSimilarPosts,
+  searchPosts,
+} from "./usecases/similar-posts.ts";
 import { logError } from "../lib/log.ts";
 import { isLocalSimilarSimulationEnabled, simulateLocalSimilarPosts } from "./local-similar.ts";
-import { findVisiblePost } from "./repository.ts";
 
 const INTERNAL_ERROR = "処理に失敗しました。時間をおいて、もう一度試してください";
 const SEARCH_UNAVAILABLE = "感想を探す機能は準備中です。時間をおいて、もう一度試してください";
@@ -146,44 +149,42 @@ export const postsRoutes = new Hono<SessionEnv>()
       }
     }),
     async (c) => {
+      const includeSameSong = c.req.valid("query").sameSong === "include";
       if (isLocalSimilarSimulationEnabled()) {
-        const post = await findVisiblePost({
+        const result = await getLocalSimulatedSimilarPosts({
           db,
           postId: c.req.param("id"),
           viewerId: c.get("user").id,
+          includeSameSong,
+          simulate: simulateLocalSimilarPosts,
         });
-        if (post instanceof Error) {
-          logError(post);
+        if (result instanceof PostNotFoundError) return c.json({ error: result.message }, 404);
+        if (result instanceof Error) {
+          logError(result);
           return c.json({ error: INTERNAL_ERROR }, 500);
         }
-        if (!post)
-          return c.json(
-            { error: new PostNotFoundError({ postId: c.req.param("id") }).message },
-            404,
-          );
-        const posts = await simulateLocalSimilarPosts();
-        return c.json({ posts });
+        return c.json(result);
       }
       const embedding = await loadEmbedding();
       if (embedding instanceof Error) {
         logError(embedding);
         return c.json({ error: SEARCH_UNAVAILABLE }, 503);
       }
-      const posts = await getSimilarPosts({
+      const result = await getSimilarPosts({
         db,
         embedding,
         postId: c.req.param("id"),
         viewerId: c.get("user").id,
-        includeSameSong: c.req.valid("query").sameSong === "include",
+        includeSameSong,
       });
-      if (posts instanceof PostNotFoundError) return c.json({ error: posts.message }, 404);
-      if (posts instanceof Error) {
-        logError(posts);
-        if (posts instanceof EmbeddingUnavailableError)
+      if (result instanceof PostNotFoundError) return c.json({ error: result.message }, 404);
+      if (result instanceof Error) {
+        logError(result);
+        if (result instanceof EmbeddingUnavailableError)
           return c.json({ error: SEARCH_UNAVAILABLE }, 503);
         return c.json({ error: INTERNAL_ERROR }, 500);
       }
-      return c.json({ posts });
+      return c.json(result);
     },
   )
   // 自分の投稿を削除する。

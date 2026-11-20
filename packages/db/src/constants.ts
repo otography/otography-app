@@ -23,6 +23,8 @@ export const USER_BIO_MAX = 300;
 
 /** 投稿の本文の上限（文字数。Unicode のコードポイントで数える）。 */
 export const POST_CONTENT_MAX = 140;
+/** 投稿に対する類似検索結果キャッシュの有効期間（24 時間）。 */
+export const SIMILAR_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 /** ISRC の長さ。 */
 export const ISRC_LENGTH = 12;
 

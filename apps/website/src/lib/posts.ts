@@ -3,6 +3,10 @@ import type { InferResponseType } from "hono/client";
 import { client } from "#/lib/api";
 
 export type PostView = InferResponseType<(typeof client.api.posts)[":id"]["$get"], 200>;
+export type SimilarPostsResponse = InferResponseType<
+  (typeof client.api.posts)[":id"]["similar"]["$get"],
+  200
+>;
 
 export async function createPost(input: { songId: string; isrc: string; content: string }) {
   const res = await client.api.posts.$post({ json: input });
@@ -10,6 +14,17 @@ export async function createPost(input: { songId: string; isrc: string; content:
   if ("error" in body) throw new Error(body.error);
   return body;
 }
+
+export const postQuery = (postId: string) =>
+  queryOptions({
+    queryKey: ["posts", "detail", postId],
+    queryFn: async () => {
+      const res = await client.api.posts[":id"].$get({ param: { id: postId } });
+      const body = await res.json();
+      if ("error" in body) throw new Error(body.error);
+      return body;
+    },
+  });
 
 export const similarPostsQuery = (postId: string, includeSameSong: boolean) =>
   queryOptions({
@@ -21,6 +36,6 @@ export const similarPostsQuery = (postId: string, includeSameSong: boolean) =>
       });
       const body = await res.json();
       if ("error" in body) throw new Error(body.error);
-      return body.posts;
+      return body;
     },
   });
