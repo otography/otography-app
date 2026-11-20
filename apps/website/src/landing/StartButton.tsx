@@ -28,11 +28,26 @@ const styles = stylex.create({
     borderRadius: "999px",
     boxShadow: {
       default: "0 1rem 2rem rgba(17, 21, 29, 0.16)",
-      ":hover": "0 1.15rem 2.2rem rgba(17, 21, 29, 0.2)",
+      ":hover": {
+        default: "0 1rem 2rem rgba(17, 21, 29, 0.16)",
+        "@media (hover: hover) and (pointer: fine)": "0 1.15rem 2.2rem rgba(17, 21, 29, 0.2)",
+      },
     },
     transform: {
       default: null,
-      ":hover": "translateY(-1px)",
+      ":hover": {
+        default: null,
+        "@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)":
+          "translateY(-1px)",
+      },
+      ":active": {
+        default: null,
+        "@media (prefers-reduced-motion: no-preference)": "scale(0.97)",
+      },
+    },
+    transition: {
+      default: "transform 160ms var(--ease-out), box-shadow 160ms var(--ease-out)",
+      "@media (prefers-reduced-motion: reduce)": "box-shadow 120ms ease",
     },
   },
 });
