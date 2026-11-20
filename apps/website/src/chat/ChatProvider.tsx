@@ -1,9 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { POST_CONTENT_MAX } from "db/constants";
-import { type ReactNode, useEffect, useId, useRef, useState } from "react";
-import { type AppleSong, searchSongs } from "#/lib/musickit";
+import { useEffect, useId, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { searchSongs } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
 import { createPost } from "#/lib/posts";
-import { ChatContext, type SongSearchTrigger } from "./ChatContext";
+import { ChatContext } from "./ChatContext";
+import type { SongSearchTrigger } from "./ChatContext";
 import type { ChatTurn } from "./types";
 
 // API・DB の length() と同じコードポイント単位で数える（ADR 0012）。
@@ -11,11 +14,17 @@ const countCharacters = (text: string) => Array.from(text.trim()).length;
 
 function parseSongTrigger(value: string): { trigger: SongSearchTrigger; query: string } | null {
   const first = value[0];
-  if (first !== "@" && first !== "/") return null;
+  if (first !== "@" && first !== "/") {
+    return null;
+  }
   const query = value.slice(1);
-  if (query.includes("\n") || query.length > 60) return null;
+  if (query.includes("\n") || query.length > 60) {
+    return null;
+  }
   const spaces = query.match(/ /g)?.length ?? 0;
-  if (spaces > 4) return null;
+  if (spaces > 4) {
+    return null;
+  }
   return { trigger: first, query };
 }
 
@@ -27,12 +36,14 @@ export function ChatProvider({
   children: ReactNode;
 }) {
   const queryClient = useQueryClient();
-  const [turns, setTurns] = useState<ChatTurn[]>([]);
+  const [turns, setTurns] = useState<Array<ChatTurn>>([]);
   const [selectedSong, setSelectedSong] = useState<AppleSong | null>(null);
   const [draft, setDraft] = useState("");
   const [searchDismissed, setSearchDismissed] = useState(false);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [songs, setSongs] = useState<AppleSong[]>([]);
+  const [isComposing, setComposing] = useState(false);
+  const [lastSubmission, setLastSubmission] = useState<{ id: string; length: number } | null>(null);
+  const [songs, setSongs] = useState<Array<AppleSong>>([]);
   const [songsLoading, setSongsLoading] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -72,13 +83,17 @@ export function ChatProvider({
     const timer = window.setTimeout(() => {
       searchSongs(searchQuery)
         .then((result) => {
-          if (cancelled) return;
+          if (cancelled) {
+            return;
+          }
           setSongs(result);
           setHighlightedIndex(0);
           setSongsLoading(false);
         })
         .catch(() => {
-          if (cancelled) return;
+          if (cancelled) {
+            return;
+          }
           setSongs([]);
           setSongsLoading(false);
         });
@@ -91,12 +106,16 @@ export function ChatProvider({
   }, [menuOpen, searchQuery]);
 
   const moveHighlight = (direction: -1 | 1) => {
-    if (songs.length === 0) return;
+    if (songs.length === 0) {
+      return;
+    }
     setHighlightedIndex((prev) => (prev + direction + songs.length) % songs.length);
   };
 
   const selectSong = (song: AppleSong) => {
-    if (!song.attributes.isrc) return;
+    if (!song.attributes.isrc) {
+      return;
+    }
     setSelectedSong(song);
     setDraft("");
     setSearchDismissed(false);
@@ -112,7 +131,9 @@ export function ChatProvider({
     setDraft(nextValue);
     requestAnimationFrame(() => {
       const el = textareaRef.current;
-      if (!el) return;
+      if (!el) {
+        return;
+      }
       el.focus();
       const pos = nextValue.length;
       el.setSelectionRange(pos, pos);
@@ -155,15 +176,19 @@ export function ChatProvider({
     !!selectedSong && !!isrc && length > 0 && length <= POST_CONTENT_MAX && !mutation.isPending;
 
   const submit = () => {
-    if (!canSubmit || !selectedSong || !isrc) return;
+    if (!canSubmit || !selectedSong || !isrc) {
+      return;
+    }
     textareaRef.current?.blur();
     const content = draft.trim();
     const song = selectedSong;
+    const submissionId = crypto.randomUUID();
 
+    setLastSubmission({ id: submissionId, length: content.length });
     setTurns((prev) => [
       ...prev,
       {
-        id: `user-${crypto.randomUUID()}`,
+        id: `user-${submissionId}`,
         kind: "user",
         song,
         content,
@@ -186,6 +211,8 @@ export function ChatProvider({
           length,
           canSubmit,
           isSubmitting: mutation.isPending,
+          isComposing,
+          lastSubmission,
           searchTrigger: triggerMatch?.trigger ?? null,
           searchQuery,
           menuOpen,
@@ -198,6 +225,7 @@ export function ChatProvider({
           selectSong,
           clearSong: () => setSelectedSong(null),
           updateDraft,
+          setComposing,
           openSongSearch,
           dismissSongSearch: () => setSearchDismissed(true),
           submit,

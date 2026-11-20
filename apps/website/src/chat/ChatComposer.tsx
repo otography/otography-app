@@ -1,11 +1,13 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, keyframes, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
-import { type KeyboardEvent, type ReactNode, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { useMediaQuery } from "#/lib/use-media-query";
 import { motion } from "#/motion.stylex";
 import { PreviewToggle } from "#/songs/PreviewToggle";
 import { useChat } from "./ChatContext";
+import { ChatDraftAssist } from "./ChatDraftAssist";
 import { ChatSongPicker } from "./ChatSongPicker";
 import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PlusIcon } from "./icons";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
@@ -15,11 +17,11 @@ function Frame({ children }: { children: ReactNode }) {
   const { state, actions, meta } = useChat();
 
   return (
-    <div {...stylex.props(styles.dock, state.keyboardOpen && styles.dockKeyboardOpen)}>
+    <div {...props(styles.dock, state.keyboardOpen && styles.dockKeyboardOpen)}>
       <form
         ref={meta.composerRef}
         data-chat-composer=""
-        {...stylex.props(styles.composer)}
+        {...props(styles.composer)}
         onSubmit={(event) => {
           event.preventDefault();
           actions.submit();
@@ -35,32 +37,34 @@ function Frame({ children }: { children: ReactNode }) {
 function Attachment() {
   const { state, actions } = useChat();
   const song = state.selectedSong;
-  if (!song) return null;
+  if (!song) {
+    return null;
+  }
   const { name, artistName, artwork } = song.attributes;
 
   return (
-    <div {...stylex.props(styles.attachment)}>
+    <div {...props(styles.attachment)}>
       {artwork ? (
         <img
-          {...stylex.props(styles.attachmentArt)}
+          {...props(styles.attachmentArt)}
           src={artworkUrl(artwork.url, 80)}
           alt=""
           width={36}
           height={36}
         />
       ) : (
-        <div {...stylex.props(styles.attachmentArt, styles.artFallback)} aria-hidden="true">
+        <div {...props(styles.attachmentArt, styles.artFallback)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
       )}
-      <div {...stylex.props(styles.attachmentMeta)}>
-        <span {...stylex.props(styles.attachmentTitle)}>{name}</span>
-        <span {...stylex.props(styles.attachmentArtist)}>{artistName}</span>
+      <div {...props(styles.attachmentMeta)}>
+        <span {...props(styles.attachmentTitle)}>{name}</span>
+        <span {...props(styles.attachmentArtist)}>{artistName}</span>
       </div>
       <PreviewToggle song={song} title={name} style={styles.iconBtn} />
       <Button
         type="button"
-        {...stylex.props(styles.iconBtn)}
+        {...props(styles.iconBtn)}
         aria-label={`${name} の選択を解除`}
         onClick={actions.clearSong}
       >
@@ -105,7 +109,9 @@ function Input() {
   // 1行以内はコンパクトな minHeight のまま保ち、2行目以降で maxHeight まで自動で広げる。
   useLayoutEffect(() => {
     const el = meta.textareaRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
     if (!state.draft) {
       el.style.height = "";
       el.style.overflowY = "hidden";
@@ -132,7 +138,7 @@ function Input() {
   return (
     <textarea
       ref={meta.textareaRef}
-      {...stylex.props(styles.textarea)}
+      {...props(styles.textarea)}
       aria-label={text.label}
       aria-controls={menuOpen ? meta.pickerId : undefined}
       enterKeyHint={menuOpen ? "search" : isMobile ? "enter" : "send"}
@@ -146,10 +152,12 @@ function Input() {
       }}
       onCompositionStart={() => {
         isComposingRef.current = true;
+        actions.setComposing(true);
       }}
       onCompositionEnd={() => {
         isComposingRef.current = false;
         compositionEndedAtRef.current = performance.now();
+        actions.setComposing(false);
       }}
       onChange={(event) => actions.updateDraft(event.currentTarget.value)}
       onKeyDown={(event) => {
@@ -200,17 +208,17 @@ function Input() {
 }
 
 function Toolbar({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.toolbar)}>{children}</div>;
+  return <div {...props(styles.toolbar)}>{children}</div>;
 }
 
 function PickSongButton() {
   const { actions } = useChat();
 
   return (
-    <div {...stylex.props(styles.tools)}>
+    <div {...props(styles.tools)}>
       <Button
         type="button"
-        {...stylex.props(styles.toolBtn)}
+        {...props(styles.toolBtn)}
         aria-label="曲を検索して添付"
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => actions.openSongSearch("@")}
@@ -228,13 +236,13 @@ function Submit() {
   const overLimit = state.length > meta.maxLength;
 
   return (
-    <div {...stylex.props(styles.submitGroup)}>
-      <span {...stylex.props(styles.counter, overLimit && styles.counterOver)}>
+    <div {...props(styles.submitGroup)}>
+      <span {...props(styles.counter, overLimit && styles.counterOver)}>
         {state.length} / {meta.maxLength}
       </span>
       <Button
         type="submit"
-        {...stylex.props(styles.sendBtn, state.canSubmit && styles.sendBtnEnabled)}
+        {...props(styles.sendBtn, state.canSubmit && styles.sendBtnEnabled)}
         aria-label="感想を送信"
         disabled={!state.canSubmit}
       >
@@ -259,6 +267,7 @@ function Submit() {
  */
 export const ChatComposer = {
   Frame,
+  DraftAssist: ChatDraftAssist,
   SongPicker: ChatSongPicker,
   Attachment,
   Input,
@@ -267,7 +276,7 @@ export const ChatComposer = {
   Submit,
 };
 
-const chipEnter = stylex.keyframes({
+const chipEnter = keyframes({
   from: {
     opacity: 0,
     transform: "scale(0.96) translateY(4px)",
@@ -278,12 +287,12 @@ const chipEnter = stylex.keyframes({
   },
 });
 
-const fadeIn = stylex.keyframes({
+const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
 });
 
-const styles = stylex.create({
+const styles = create({
   dock: {
     position: "relative",
     zIndex: 20,
