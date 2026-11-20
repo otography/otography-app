@@ -1,23 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
-import {
-  type TriggerDefinition,
-  type TriggerMenuDataItem,
-  TriggerMenu,
-  TriggerMenuContent,
-  TriggerMenuEmpty,
-  TriggerMenuInput,
-  TriggerMenuItem,
-  TriggerMenuItemIcon,
-  TriggerMenuList,
-  TriggerMenuStatus,
-} from "@ui-sdk/react/trigger-menu";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { type AppleSong, artworkUrl, searchSongs } from "#/lib/musickit";
 import { usePreviewPlayer } from "#/songs/preview-player";
 import { useChat } from "./ChatContext";
 import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PauseIcon, PlayIcon, PlusIcon } from "./icons";
-import { chatMedia, chatTokens as t } from "./tokens.stylex";
+import { chatMedia, chatPopover, chatTokens as t } from "./tokens.stylex";
 
 function SongAttachmentChip({ song }: { song: AppleSong }) {
   const { actions } = useChat();
@@ -69,71 +57,116 @@ function SongAttachmentChip({ song }: { song: AppleSong }) {
 export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean }) {
   const { state, actions, meta } = useChat();
   const [composerEl, setComposerEl] = useState<HTMLFormElement | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const songCacheRef = useRef(new Map<string, AppleSong>());
+  const [popoverMaxHeight, setPopoverMaxHeight] = useState<number>(chatPopover.maxHeight);
+  const [songs, setSongs] = useState<AppleSong[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const listId = useId();
+  const collisionPadding = keyboardOpen
+    ? chatPopover.collisionPaddingCompact
+    : chatPopover.collisionPadding;
+
+  const { menuOpen, searchQuery } = state;
 
   useEffect(() => {
-    if (state.draft === "" && textareaRef.current && textareaRef.current.value !== "") {
-      textareaRef.current.value = "";
+    if (!menuOpen || !searchQuery) {
+      setSongs([]);
+      setLoading(false);
+      setHighlightedIndex(0);
+      return;
     }
-  }, [state.draft]);
 
-  const triggers = useMemo<TriggerDefinition<string>[]>(() => {
-    const loadSongs = async (query: string, { signal }: { signal: AbortSignal }) => {
-      const trimmed = query.trim();
-      if (!trimmed) return [];
+    let cancelled = false;
+    setLoading(true);
 
-      const songs = await new Promise<AppleSong[]>((resolve, reject) => {
-        if (signal.aborted) {
-          reject(signal.reason);
-          return;
-        }
-        const onAbort = () => reject(signal.reason);
-        signal.addEventListener("abort", onAbort, { once: true });
-        searchSongs(trimmed)
-          .then((result) => {
-            signal.removeEventListener("abort", onAbort);
-            resolve(result);
-          })
-          .catch((error: unknown) => {
-            signal.removeEventListener("abort", onAbort);
-            reject(error);
-          });
-      });
-
-      const items: TriggerMenuDataItem<string>[] = [];
-      for (const song of songs) {
-        songCacheRef.current.set(song.id, song);
-        items.push({
-          value: song.id,
-          label: `${song.attributes.name} ${song.attributes.artistName}`,
-          disabled: !song.attributes.isrc,
+    const timer = window.setTimeout(() => {
+      searchSongs(searchQuery)
+        .then((result) => {
+          if (cancelled) return;
+          setSongs(result);
+          setHighlightedIndex(0);
+          setLoading(false);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setSongs([]);
+          setLoading(false);
         });
-      }
-      return items;
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [menuOpen, searchQuery]);
+
+  // 入力欄より上の空き高さ全体を使えるようにし、PC のみ上限を chatPopover.maxHeight に抑える。
+  useEffect(() => {
+    if (!composerEl) return;
+
+    let rafId = 0;
+    const shellEl = composerEl.closest("[data-chat-shell]");
+    const compactMedia = window.matchMedia("(max-width: 540px)");
+
+    const updateMaxHeight = () => {
+      const rect = composerEl.getBoundingClientRect();
+      const topBoundary = shellEl ? shellEl.getBoundingClientRect().top : 0;
+      const available = Math.floor(
+        rect.top - topBoundary - chatPopover.sideOffset - collisionPadding,
+      );
+      const maxCap = compactMedia.matches ? available : chatPopover.maxHeight;
+      const next = Math.max(chatPopover.minHeight, Math.min(maxCap, available));
+      setPopoverMaxHeight((prev) => (prev === next ? prev : next));
     };
 
-    const insertEmpty = () => "";
+    const scheduleUpdate = () => {
+      updateMaxHeight();
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(updateMaxHeight);
+    };
 
-    return [
-      {
-        char: "@",
-        boundary: "start",
-        spaces: 4,
-        maxLength: 60,
-        items: loadSongs,
-        insert: insertEmpty,
-      },
-      {
-        char: "/",
-        boundary: "start",
-        spaces: 4,
-        maxLength: 60,
-        items: loadSongs,
-        insert: insertEmpty,
-      },
-    ];
-  }, []);
+    updateMaxHeight();
+
+    const vv = window.visualViewport;
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleUpdate) : null;
+    ro?.observe(composerEl);
+    if (shellEl) ro?.observe(shellEl);
+    vv?.addEventListener("resize", scheduleUpdate);
+    vv?.addEventListener("scroll", scheduleUpdate);
+    window.addEventListener("resize", scheduleUpdate);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro?.disconnect();
+      vv?.removeEventListener("resize", scheduleUpdate);
+      vv?.removeEventListener("scroll", scheduleUpdate);
+      window.removeEventListener("resize", scheduleUpdate);
+    };
+  }, [collisionPadding, composerEl, keyboardOpen, menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen || !composerEl) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.target instanceof Node && !composerEl.contains(event.target)) {
+        actions.dismissSongSearch();
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [actions, composerEl, menuOpen]);
+
+  useEffect(() => {
+    const item = listRef.current?.children[highlightedIndex];
+    if (item instanceof HTMLElement) {
+      item.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightedIndex]);
+
+  const selectSongItem = (song: AppleSong) => {
+    if (!song.attributes.isrc) return;
+    actions.selectSong(song);
+  };
 
   const overLimit = state.length > meta.maxLength;
 
@@ -147,95 +180,52 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
           actions.submit();
         }}
       >
-        {state.selectedSong ? <SongAttachmentChip song={state.selectedSong} /> : null}
-
-        <TriggerMenu
-          controller={meta.menuController}
-          triggers={triggers}
-          autoHighlight
-          onOpenChange={(next) => actions.setMenuOpen(next)}
-          onSelect={(songId, details) => {
-            const song = songCacheRef.current.get(songId);
-            if (!song) return;
-            details.preventDefault();
-            // 選択した曲を添付チップへ移すため、入力中の @query / /query を空文字に置き換える。
-            details.insert("");
-            actions.selectSong(song);
-          }}
-        >
-          <TriggerMenuInput
-            ref={textareaRef}
-            {...stylex.props(styles.textarea)}
-            aria-label="曲への感想を入力（@ または / で曲を検索）"
-            placeholder={
-              state.selectedSong
-                ? "この曲への感想を書く…（Enter で送信、Shift+Enter で改行）"
-                : "@ または / に続けて曲名・アーティスト名で検索し、感想を書く…"
-            }
-            rows={2}
-            onInput={(event) => actions.updateDraft(event.currentTarget.value)}
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter" &&
-                !event.shiftKey &&
-                !event.nativeEvent.isComposing &&
-                !state.menuOpen
-              ) {
-                event.preventDefault();
-                if (state.canSubmit) actions.submit();
-              }
-            }}
-          />
-
-          <div data-slot="visually-hidden">
-            <TriggerMenuStatus />
-          </div>
-
-          <TriggerMenuContent
-            {...stylex.props(styles.triggerPopover)}
-            side="top"
-            align="start"
-            sideOffset={10}
-            collisionPadding={16}
-            anchor={composerEl}
+        {menuOpen ? (
+          <div
+            id={listId}
+            aria-label="曲の検索候補"
+            {...stylex.props(
+              styles.triggerPopover,
+              styles.triggerPopoverMaxHeight(popoverMaxHeight),
+            )}
           >
-            <TriggerMenuStatus {...stylex.props(styles.triggerStatus)}>
-              {(menuState) => {
-                if (menuState.loading) return "曲を検索中…";
-                if (menuState.count > 0) return `${menuState.count} 件の曲`;
-                return "曲名やアーティスト名を入力して絞り込む";
-              }}
-            </TriggerMenuStatus>
+            <div role="status" aria-live="polite" {...stylex.props(styles.triggerStatus)}>
+              {loading
+                ? "曲を検索中…"
+                : songs.length > 0
+                  ? `${songs.length} 件の曲`
+                  : "曲名やアーティスト名を入力して絞り込む"}
+            </div>
 
-            <TriggerMenuEmpty {...stylex.props(styles.triggerEmpty)}>
-              {(menuState) => {
-                if (menuState.loading) return null;
-                if (!menuState.query.trim()) return "曲名やアーティスト名を入力してください";
-                return `「${menuState.query}」に一致する曲が見つかりません`;
-              }}
-            </TriggerMenuEmpty>
+            {!loading && songs.length === 0 ? (
+              <div {...stylex.props(styles.triggerEmpty)}>
+                {!searchQuery
+                  ? "曲名やアーティスト名を入力してください"
+                  : `「${searchQuery}」に一致する曲が見つかりません`}
+              </div>
+            ) : null}
 
-            <TriggerMenuList {...stylex.props(styles.triggerList)}>
-              {(menuState) =>
-                (menuState.items as TriggerMenuDataItem<string>[]).map((item) => {
-                  const song = songCacheRef.current.get(item.value);
-                  if (!song) return null;
+            {songs.length > 0 ? (
+              <div ref={listRef} {...stylex.props(styles.triggerList)}>
+                {songs.map((song, index) => {
                   const { name, artistName, artwork, isrc } = song.attributes;
+                  const highlighted = index === highlightedIndex;
+                  const disabled = !isrc;
                   return (
-                    <TriggerMenuItem
+                    <button
                       key={song.id}
-                      value={song.id}
-                      label={item.label}
-                      disabled={!isrc}
-                      className={(itemState) =>
-                        stylex.props(
-                          styles.triggerItem,
-                          itemState.highlighted && styles.triggerItemHighlighted,
-                          itemState.disabled && styles.triggerItemDisabled,
-                        ).className
-                      }
+                      type="button"
+                      disabled={disabled}
+                      {...stylex.props(
+                        styles.triggerItem,
+                        highlighted && styles.triggerItemHighlighted,
+                        disabled && styles.triggerItemDisabled,
+                      )}
+                      onMouseEnter={() => setHighlightedIndex(index)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectSongItem(song)}
                     >
-                      <TriggerMenuItemIcon {...stylex.props(styles.triggerItemIcon)}>
+                      <span {...stylex.props(styles.triggerItemIcon)} aria-hidden="true">
                         {artwork ? (
                           <img
                             src={artworkUrl(artwork.url, 72)}
@@ -249,19 +239,93 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
                             <MusicNoteIcon />
                           </span>
                         )}
-                      </TriggerMenuItemIcon>
+                      </span>
                       <span {...stylex.props(styles.triggerItemText)}>
                         <span {...stylex.props(styles.triggerItemTitle)}>{name}</span>
                         <span {...stylex.props(styles.triggerItemSub)}>{artistName}</span>
                       </span>
-                      {!isrc ? <span {...stylex.props(styles.triggerBadge)}>選択不可</span> : null}
-                    </TriggerMenuItem>
+                      {disabled ? (
+                        <span {...stylex.props(styles.triggerBadge)}>選択不可</span>
+                      ) : null}
+                    </button>
                   );
-                })
+                })}
+              </div>
+            ) : null}
+
+            {keyboardOpen && songs.length > 0 ? (
+              <div {...stylex.props(styles.triggerFooter)}>
+                <Button
+                  type="button"
+                  {...stylex.props(styles.expandResultsBtn)}
+                  aria-label="キーボードを閉じて検索結果を広く表示する"
+                  onClick={() => meta.textareaRef.current?.blur()}
+                >
+                  検索結果を広く表示
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {state.selectedSong ? <SongAttachmentChip song={state.selectedSong} /> : null}
+
+        <textarea
+          ref={meta.textareaRef}
+          {...stylex.props(styles.textarea)}
+          aria-label="曲への感想を入力（@ または / で曲を検索）"
+          aria-controls={menuOpen ? listId : undefined}
+          placeholder={
+            state.selectedSong
+              ? "この曲への感想を書く…（Enter で送信、Shift+Enter で改行）"
+              : "@ または / に続けて曲名・アーティスト名で検索し、感想を書く…"
+          }
+          rows={1}
+          value={state.draft}
+          onChange={(event) => actions.updateDraft(event.currentTarget.value)}
+          onKeyDown={(event) => {
+            if (menuOpen) {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                actions.dismissSongSearch();
+                return;
               }
-            </TriggerMenuList>
-          </TriggerMenuContent>
-        </TriggerMenu>
+              if (event.key === "ArrowDown" && songs.length > 0) {
+                event.preventDefault();
+                setHighlightedIndex((prev) => (prev + 1) % songs.length);
+                return;
+              }
+              if (event.key === "ArrowUp" && songs.length > 0) {
+                event.preventDefault();
+                setHighlightedIndex((prev) => (prev - 1 + songs.length) % songs.length);
+                return;
+              }
+              if (
+                (event.key === "Enter" || event.key === "Tab") &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                songs.length > 0
+              ) {
+                const target = songs[highlightedIndex];
+                if (target?.attributes.isrc) {
+                  event.preventDefault();
+                  selectSongItem(target);
+                }
+                return;
+              }
+            }
+
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing &&
+              !menuOpen
+            ) {
+              event.preventDefault();
+              if (state.canSubmit) actions.submit();
+            }
+          }}
+        />
 
         <div {...stylex.props(styles.toolbar)}>
           <div {...stylex.props(styles.tools)}>
@@ -270,7 +334,7 @@ export function ChatComposer({ keyboardOpen = false }: { keyboardOpen?: boolean 
               {...stylex.props(styles.toolBtn)}
               aria-label="曲を検索して添付"
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => void meta.menuController.open({ trigger: "@" })}
+              onClick={() => actions.openSongSearch("@")}
             >
               <PlusIcon />
               <span>曲を選ぶ</span>
@@ -302,26 +366,56 @@ const styles = stylex.create({
     zIndex: 20,
     flexShrink: 0,
     width: "min(100%, 760px)",
-    paddingTop: 8,
-    paddingRight: 16,
-    paddingBottom: "max(20px, env(safe-area-inset-bottom))",
-    paddingLeft: 16,
+    paddingTop: {
+      default: 8,
+      [chatMedia.compact]: 4,
+    },
+    paddingRight: {
+      default: 16,
+      [chatMedia.compact]: 12,
+    },
+    paddingBottom: {
+      default: "max(20px, env(safe-area-inset-bottom))",
+      [chatMedia.compact]: "max(12px, env(safe-area-inset-bottom))",
+    },
+    paddingLeft: {
+      default: 16,
+      [chatMedia.compact]: 12,
+    },
     marginBlock: 0,
     marginInline: "auto",
     backgroundImage: `linear-gradient(to bottom, color-mix(in srgb, ${t.bg} 0%, transparent), ${t.bg} 28%)`,
   },
   dockKeyboardOpen: {
-    paddingBottom: 12,
+    paddingBottom: {
+      default: 12,
+      [chatMedia.compact]: 8,
+    },
   },
   composer: {
     position: "relative",
     display: "flex",
     flexDirection: "column",
-    gap: 8,
-    paddingTop: 12,
-    paddingRight: 14,
-    paddingBottom: 10,
-    paddingLeft: 14,
+    gap: {
+      default: 8,
+      [chatMedia.compact]: 4,
+    },
+    paddingTop: {
+      default: 12,
+      [chatMedia.compact]: 8,
+    },
+    paddingRight: {
+      default: 14,
+      [chatMedia.compact]: 10,
+    },
+    paddingBottom: {
+      default: 10,
+      [chatMedia.compact]: 8,
+    },
+    paddingLeft: {
+      default: 14,
+      [chatMedia.compact]: 12,
+    },
     backgroundColor: t.surface,
     borderColor: {
       default: t.border,
@@ -329,18 +423,30 @@ const styles = stylex.create({
     },
     borderStyle: "solid",
     borderWidth: 1,
-    borderRadius: 22,
+    borderRadius: {
+      default: 22,
+      [chatMedia.compact]: 18,
+    },
     boxShadow: t.shadow,
     transition: "border-color 0.15s ease",
   },
   attachment: {
     display: "inline-flex",
-    gap: 10,
+    gap: {
+      default: 10,
+      [chatMedia.compact]: 8,
+    },
     alignItems: "center",
     alignSelf: "flex-start",
     maxWidth: "100%",
-    paddingBlock: 6,
-    paddingInline: 8,
+    paddingBlock: {
+      default: 6,
+      [chatMedia.compact]: 4,
+    },
+    paddingInline: {
+      default: 8,
+      [chatMedia.compact]: 6,
+    },
     backgroundColor: t.surfaceElevated,
     borderColor: t.border,
     borderStyle: "solid",
@@ -349,8 +455,14 @@ const styles = stylex.create({
   },
   attachmentArt: {
     flexShrink: 0,
-    width: 36,
-    height: 36,
+    width: {
+      default: 36,
+      [chatMedia.compact]: 30,
+    },
+    height: {
+      default: 36,
+      [chatMedia.compact]: 30,
+    },
     objectFit: "cover",
     borderRadius: 7,
   },
@@ -402,16 +514,28 @@ const styles = stylex.create({
   },
   textarea: {
     width: "100%",
-    minHeight: 48,
-    maxHeight: 200,
-    paddingBlock: 4,
+    minHeight: {
+      default: 55,
+      [chatMedia.compact]: 30,
+    },
+    maxHeight: {
+      default: 200,
+      [chatMedia.compact]: 112,
+    },
+    paddingBlock: {
+      default: 4,
+      [chatMedia.compact]: 2,
+    },
     paddingInline: 2,
     fontFamily: "inherit",
     fontSize: {
       default: 15,
       [chatMedia.touch]: 16,
     },
-    lineHeight: 1.55,
+    lineHeight: {
+      default: 1.55,
+      [chatMedia.compact]: 1.45,
+    },
     color: t.text,
     resize: "none",
     outline: {
@@ -437,12 +561,24 @@ const styles = stylex.create({
   },
   toolBtn: {
     display: "inline-flex",
-    gap: 6,
+    gap: {
+      default: 6,
+      [chatMedia.compact]: 4,
+    },
     alignItems: "center",
-    height: 32,
+    height: {
+      default: 32,
+      [chatMedia.compact]: 30,
+    },
     paddingBlock: 0,
-    paddingInline: 11,
-    fontSize: 13,
+    paddingInline: {
+      default: 11,
+      [chatMedia.compact]: 10,
+    },
+    fontSize: {
+      default: 13,
+      [chatMedia.compact]: 12,
+    },
     fontWeight: 500,
     color: t.text,
     cursor: "pointer",
@@ -457,7 +593,10 @@ const styles = stylex.create({
   },
   submitGroup: {
     display: "flex",
-    gap: 10,
+    gap: {
+      default: 10,
+      [chatMedia.compact]: 8,
+    },
     alignItems: "center",
   },
   counter: {
@@ -472,8 +611,14 @@ const styles = stylex.create({
   sendBtn: {
     display: "grid",
     placeItems: "center",
-    width: 34,
-    height: 34,
+    width: {
+      default: 34,
+      [chatMedia.compact]: 30,
+    },
+    height: {
+      default: 34,
+      [chatMedia.compact]: 30,
+    },
     padding: 0,
     color: t.primaryFg,
     cursor: {
@@ -495,13 +640,25 @@ const styles = stylex.create({
     transition: "opacity 0.15s ease, transform 0.1s ease",
   },
   triggerPopover: {
+    position: "absolute",
+    bottom: `calc(100% + ${chatPopover.sideOffset}px)`,
+    left: 0,
     zIndex: 50,
     display: "flex",
     flexDirection: "column",
-    gap: 6,
-    width: "min(500px, calc(100vw - 32px))",
-    maxHeight: 420,
-    padding: 8,
+    gap: {
+      default: 6,
+      [chatMedia.compact]: 2,
+    },
+    width: {
+      default: "min(500px, calc(100vw - 32px))",
+      [chatMedia.compact]: "100%",
+    },
+    maxHeight: chatPopover.maxHeight,
+    padding: {
+      default: 8,
+      [chatMedia.compact]: 6,
+    },
     overflow: "hidden",
     color: t.text,
     colorScheme: "light dark",
@@ -509,42 +666,126 @@ const styles = stylex.create({
     borderColor: t.border,
     borderStyle: "solid",
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: {
+      default: 16,
+      [chatMedia.compact]: 14,
+    },
     boxShadow: t.shadow,
   },
+  triggerPopoverMaxHeight: (maxHeight: number) => ({
+    maxHeight,
+  }),
   triggerStatus: {
-    paddingBlock: 4,
-    paddingInline: 12,
-    fontSize: 12,
+    flexShrink: 0,
+    paddingBlock: {
+      default: 4,
+      [chatMedia.compact]: 2,
+    },
+    paddingInline: {
+      default: 12,
+      [chatMedia.compact]: 8,
+    },
+    fontSize: {
+      default: 12,
+      [chatMedia.compact]: 11,
+    },
     color: t.muted,
   },
-  triggerEmpty: {
-    paddingBlock: 20,
+  triggerFooter: {
+    flexShrink: 0,
+    paddingTop: 6,
+    borderTopColor: t.border,
+    borderTopStyle: "solid",
+    borderTopWidth: 1,
+  },
+  expandResultsBtn: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    minHeight: 36,
+    paddingBlock: 6,
     paddingInline: 12,
     fontSize: 13,
+    fontWeight: 500,
+    color: t.text,
+    cursor: "pointer",
+    backgroundColor: {
+      default: t.surface,
+      ":hover": t.hover,
+    },
+    borderColor: t.border,
+    borderStyle: "solid",
+    borderWidth: 1,
+    borderRadius: 10,
+  },
+  triggerEmpty: {
+    paddingBlock: {
+      default: 20,
+      [chatMedia.compact]: 12,
+    },
+    paddingInline: {
+      default: 12,
+      [chatMedia.compact]: 10,
+    },
+    fontSize: {
+      default: 13,
+      [chatMedia.compact]: 12,
+    },
     color: t.muted,
     textAlign: "center",
   },
   triggerList: {
     display: "flex",
+    flexGrow: 1,
+    flexShrink: 1,
     flexDirection: "column",
-    gap: 8,
-    maxHeight: 360,
-    padding: 4,
+    gap: {
+      default: 8,
+      [chatMedia.compact]: 2,
+    },
+    minHeight: 0,
+    padding: {
+      default: 4,
+      [chatMedia.compact]: 2,
+    },
     overflowY: "auto",
+    overscrollBehaviorY: "contain",
   },
   triggerItem: {
     display: "flex",
     flexShrink: 0,
-    gap: 12,
+    gap: {
+      default: 12,
+      [chatMedia.compact]: 10,
+    },
     alignItems: "center",
+    width: "100%",
     height: "auto",
-    minHeight: 56,
-    paddingBlock: 10,
-    paddingInline: 12,
+    minHeight: {
+      default: 56,
+      [chatMedia.compact]: 44,
+    },
+    paddingBlock: {
+      default: 10,
+      [chatMedia.compact]: 6,
+    },
+    paddingInline: {
+      default: 12,
+      [chatMedia.compact]: 8,
+    },
+    fontFamily: "inherit",
+    color: "inherit",
+    textAlign: "left",
     cursor: "pointer",
     userSelect: "none",
-    borderRadius: 12,
+    backgroundColor: "transparent",
+    borderStyle: "none",
+    borderWidth: 0,
+    borderRadius: {
+      default: 12,
+      [chatMedia.compact]: 10,
+    },
   },
   triggerItemHighlighted: {
     backgroundColor: t.highlight,
@@ -558,30 +799,56 @@ const styles = stylex.create({
     flexShrink: 0,
   },
   triggerArt: {
-    width: 36,
-    height: 36,
+    width: {
+      default: 36,
+      [chatMedia.compact]: 32,
+    },
+    height: {
+      default: 36,
+      [chatMedia.compact]: 32,
+    },
     objectFit: "cover",
-    borderRadius: 7,
+    borderRadius: {
+      default: 7,
+      [chatMedia.compact]: 6,
+    },
   },
   triggerItemText: {
     display: "flex",
     flex: "1",
     flexDirection: "column",
-    gap: 2,
+    gap: {
+      default: 2,
+      [chatMedia.compact]: 1,
+    },
     minWidth: 0,
   },
   triggerItemTitle: {
     overflow: "hidden",
     textOverflow: "ellipsis",
-    fontSize: 14,
+    fontSize: {
+      default: 14,
+      [chatMedia.compact]: 13,
+    },
     fontWeight: 500,
+    lineHeight: {
+      default: null,
+      [chatMedia.compact]: 1.3,
+    },
     whiteSpace: "nowrap",
   },
   triggerItemSub: {
     flexShrink: 1,
     overflow: "hidden",
     textOverflow: "ellipsis",
-    fontSize: 12,
+    fontSize: {
+      default: 12,
+      [chatMedia.compact]: 11,
+    },
+    lineHeight: {
+      default: null,
+      [chatMedia.compact]: 1.3,
+    },
     color: t.muted,
     whiteSpace: "nowrap",
   },

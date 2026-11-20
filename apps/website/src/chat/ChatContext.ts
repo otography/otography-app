@@ -1,7 +1,8 @@
-import { createContext, use } from "react";
-import type { TriggerMenuController } from "@ui-sdk/react/trigger-menu";
+import { createContext, type RefObject, use } from "react";
 import type { AppleSong } from "#/lib/musickit";
 import type { ChatTurn } from "./types";
+
+export type SongSearchTrigger = "@" | "/";
 
 type ChatState = {
   turns: ChatTurn[];
@@ -10,6 +11,8 @@ type ChatState = {
   length: number;
   canSubmit: boolean;
   isSubmitting: boolean;
+  searchTrigger: SongSearchTrigger | null;
+  searchQuery: string;
   menuOpen: boolean;
 };
 
@@ -17,13 +20,14 @@ type ChatActions = {
   selectSong: (song: AppleSong) => void;
   clearSong: () => void;
   updateDraft: (value: string) => void;
-  setMenuOpen: (open: boolean) => void;
+  openSongSearch: (trigger: SongSearchTrigger) => void;
+  dismissSongSearch: () => void;
   submit: () => void;
 };
 
 type ChatMeta = {
   maxLength: number;
-  menuController: TriggerMenuController;
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
 };
 
 export type ChatContextValue = {

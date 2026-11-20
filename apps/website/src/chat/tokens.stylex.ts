@@ -16,6 +16,14 @@ export const chatMedia = stylex.defineConsts({
   touch: "@media (pointer: coarse)",
 });
 
+export const chatPopover = stylex.defineConsts({
+  maxHeight: 420,
+  minHeight: 120,
+  sideOffset: 10,
+  collisionPadding: 16,
+  collisionPaddingCompact: 8,
+});
+
 export const chatTokens = stylex.defineVars({
   bg: {
     default: "#ffffff",

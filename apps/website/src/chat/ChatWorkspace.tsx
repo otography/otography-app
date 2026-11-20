@@ -48,19 +48,36 @@ export function ChatWorkspace({ user }: { user: Me }) {
     window.scrollTo(0, 0);
 
     const vv = window.visualViewport;
+    let lastWidth = vv ? vv.width : window.innerWidth;
+    let baseHeight = vv ? vv.height : window.innerHeight;
 
     const sync = () => {
+      const currentWidth = vv ? vv.width : window.innerWidth;
+      const currentHeight = vv ? vv.height : window.innerHeight;
+      const hasInputFocus =
+        document.activeElement instanceof HTMLTextAreaElement ||
+        document.activeElement instanceof HTMLInputElement;
+
+      if (Math.abs(currentWidth - lastWidth) > 20) {
+        lastWidth = currentWidth;
+        baseHeight = currentHeight;
+      } else if (!hasInputFocus) {
+        baseHeight = Math.max(baseHeight, currentHeight);
+      }
+
       if (vv) {
         if (Math.abs(vv.scale - 1) > 0.01) return;
         shellEl.style.height = `${vv.height}px`;
         shellEl.style.top = `${vv.offsetTop}px`;
-        setKeyboardOpen(window.innerHeight - vv.height > 100);
+        setKeyboardOpen(
+          window.innerHeight - vv.height > 100 || (hasInputFocus && baseHeight - vv.height > 100),
+        );
         return;
       }
 
       shellEl.style.height = `${window.innerHeight}px`;
       shellEl.style.top = "0px";
-      setKeyboardOpen(false);
+      setKeyboardOpen(hasInputFocus && baseHeight - window.innerHeight > 100);
     };
 
     sync();
@@ -70,6 +87,8 @@ export function ChatWorkspace({ user }: { user: Me }) {
       vv.addEventListener("scroll", sync);
     }
     window.addEventListener("resize", sync);
+    document.addEventListener("focusin", sync);
+    document.addEventListener("focusout", sync);
 
     return () => {
       html.style.height = prevHtml.height;
@@ -83,13 +102,15 @@ export function ChatWorkspace({ user }: { user: Me }) {
         vv.removeEventListener("scroll", sync);
       }
       window.removeEventListener("resize", sync);
+      document.removeEventListener("focusin", sync);
+      document.removeEventListener("focusout", sync);
     };
   }, []);
 
   return (
     <PreviewPlayerProvider>
       <ChatProvider>
-        <div ref={shellRef} {...stylex.props(styles.shell)}>
+        <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
           <header {...stylex.props(styles.topbar)}>
             <div {...stylex.props(styles.brand)}>
               <span {...stylex.props(styles.brandDot)} aria-hidden="true" />
@@ -160,9 +181,18 @@ const styles = stylex.create({
     gap: 12,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingInline: 20,
-    paddingTop: "max(12px, env(safe-area-inset-top))",
-    paddingBottom: 12,
+    paddingInline: {
+      default: 20,
+      [chatMedia.compact]: 14,
+    },
+    paddingTop: {
+      default: "max(12px, env(safe-area-inset-top))",
+      [chatMedia.compact]: "max(8px, env(safe-area-inset-top))",
+    },
+    paddingBottom: {
+      default: 12,
+      [chatMedia.compact]: 8,
+    },
     backgroundColor: `color-mix(in srgb, ${t.bg} 88%, transparent)`,
     borderBottomColor: t.border,
     borderBottomStyle: "solid",
@@ -215,7 +245,10 @@ const styles = stylex.create({
     color: t.muted,
   },
   signoutBtn: {
-    height: 30,
+    height: {
+      default: 30,
+      [chatMedia.compact]: 28,
+    },
     paddingBlock: 0,
     paddingInline: 10,
     fontSize: 12,
@@ -245,10 +278,22 @@ const styles = stylex.create({
     flexDirection: "column",
     width: "min(100%, 760px)",
     minHeight: "100%",
-    paddingTop: 24,
-    paddingRight: 16,
-    paddingBottom: 32,
-    paddingLeft: 16,
+    paddingTop: {
+      default: 24,
+      [chatMedia.compact]: 12,
+    },
+    paddingRight: {
+      default: 16,
+      [chatMedia.compact]: 12,
+    },
+    paddingBottom: {
+      default: 32,
+      [chatMedia.compact]: 16,
+    },
+    paddingLeft: {
+      default: 16,
+      [chatMedia.compact]: 12,
+    },
     marginBlock: 0,
     marginInline: "auto",
   },
