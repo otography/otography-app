@@ -10,6 +10,9 @@ import { PreviewPlayerProvider } from "#/songs/preview-player";
 import { ChatComposer } from "./ChatComposer";
 import { AppShell } from "#/shell/AppShell";
 import { useChat } from "./ChatContext";
+import { useChatHistory } from "./ChatHistoryContext";
+import { ChatHistoryProvider } from "./ChatHistoryProvider";
+import { ChatHistorySidebar } from "./ChatHistorySidebar";
 import { ChatProvider } from "./ChatProvider";
 import { ChatThread } from "./ChatThread";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
@@ -22,6 +25,8 @@ function ChatShell({ user }: { user: Me }) {
   const queryClient = useQueryClient();
   const shellRef = useRef<HTMLDivElement | null>(null);
   const { setKeyboardOpen } = useChat().actions;
+  const { state: historyState } = useChatHistory();
+  const showTopbarBrand = !(historyState.isDesktop && historyState.desktopOpen);
 
   // iOS Safari などでソフトウェアキーボード表示中に画面をスクロールしても
   // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
@@ -126,54 +131,68 @@ function ChatShell({ user }: { user: Me }) {
 
   return (
     <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
-      <AppShell.Topbar style={styles.topbar}>
-        <div {...stylex.props(styles.brand)}>
-          <AppShell.BrandIcon />
-          <AppShell.BrandName />
-        </div>
-        <div {...stylex.props(styles.account)}>
-          <Link to="/profile" aria-label="プロフィールを開く" {...stylex.props(styles.profileLink)}>
-            <Avatar {...stylex.props(styles.avatarSm)}>
-              {user.image ? (
-                <AvatarImage
-                  src={user.image}
-                  alt={user.name}
-                  referrerPolicy="no-referrer"
-                  {...stylex.props(styles.avatarImg)}
-                />
-              ) : null}
-              <AvatarFallback>
-                <span aria-hidden="true">{initials(user.name)}</span>
-                <span data-slot="visually-hidden">{user.name}</span>
-              </AvatarFallback>
-            </Avatar>
-            <span {...stylex.props(styles.accountName)}>{user.name}</span>
-          </Link>
-          <AppShell.SignOutButton
-            onClick={() =>
-              void authClient
-                .signOut()
-                .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
-            }
-          />
-        </div>
-      </AppShell.Topbar>
+      <ChatHistorySidebar.Desktop />
+      <ChatHistorySidebar.MobileDrawer />
 
-      <main {...stylex.props(styles.main)}>
-        <div {...stylex.props(styles.mainInner)}>
-          <ChatThread user={user} />
-        </div>
-      </main>
+      <div {...stylex.props(styles.workspace)}>
+        <AppShell.Topbar style={styles.topbar}>
+          <div {...stylex.props(styles.brand)}>
+            <ChatHistorySidebar.OpenTrigger />
+            {showTopbarBrand ? (
+              <>
+                <AppShell.BrandIcon />
+                <AppShell.BrandName />
+              </>
+            ) : null}
+          </div>
+          <div {...stylex.props(styles.account)}>
+            <Link
+              to="/profile"
+              aria-label="プロフィールを開く"
+              {...stylex.props(styles.profileLink)}
+            >
+              <Avatar {...stylex.props(styles.avatarSm)}>
+                {user.image ? (
+                  <AvatarImage
+                    src={user.image}
+                    alt={user.name}
+                    referrerPolicy="no-referrer"
+                    {...stylex.props(styles.avatarImg)}
+                  />
+                ) : null}
+                <AvatarFallback>
+                  <span aria-hidden="true">{initials(user.name)}</span>
+                  <span data-slot="visually-hidden">{user.name}</span>
+                </AvatarFallback>
+              </Avatar>
+              <span {...stylex.props(styles.accountName)}>{user.name}</span>
+            </Link>
+            <AppShell.SignOutButton
+              onClick={() =>
+                void authClient
+                  .signOut()
+                  .then(() => queryClient.invalidateQueries({ queryKey: meQuery.queryKey }))
+              }
+            />
+          </div>
+        </AppShell.Topbar>
 
-      <ChatComposer.Frame>
-        <ChatComposer.SongPicker />
-        <ChatComposer.Attachment />
-        <ChatComposer.Input />
-        <ChatComposer.Toolbar>
-          <ChatComposer.PickSongButton />
-          <ChatComposer.Submit />
-        </ChatComposer.Toolbar>
-      </ChatComposer.Frame>
+        <main {...stylex.props(styles.main)}>
+          <div {...stylex.props(styles.mainInner)}>
+            <ChatThread user={user} />
+          </div>
+        </main>
+
+        <ChatComposer.Frame>
+          <ChatComposer.SongPicker />
+          <ChatComposer.Attachment />
+          <ChatComposer.Input />
+          <ChatComposer.Toolbar>
+            <ChatComposer.PickSongButton />
+            <ChatComposer.Submit />
+          </ChatComposer.Toolbar>
+        </ChatComposer.Frame>
+      </div>
     </div>
   );
 }
@@ -181,9 +200,11 @@ function ChatShell({ user }: { user: Me }) {
 export function ChatWorkspace({ user }: { user: Me }) {
   return (
     <PreviewPlayerProvider>
-      <ChatProvider>
-        <ChatShell user={user} />
-      </ChatProvider>
+      <ChatHistoryProvider publicId={user.publicId}>
+        <ChatProvider userPublicId={user.publicId}>
+          <ChatShell user={user} />
+        </ChatProvider>
+      </ChatHistoryProvider>
     </PreviewPlayerProvider>
   );
 }
@@ -195,12 +216,22 @@ const styles = stylex.create({
     right: 0,
     left: 0,
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row",
     height: "100dvh",
     overflow: "hidden",
     color: t.text,
     colorScheme: "light dark",
     backgroundColor: t.bg,
+  },
+  workspace: {
+    display: "flex",
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: "0%",
+    flexDirection: "column",
+    minWidth: 0,
+    height: "100%",
+    overflow: "hidden",
   },
   topbar: {
     position: "relative",
