@@ -34,11 +34,20 @@ export function ChatWorkspace({ user }: { user: Me }) {
       height: html.style.height,
       overflow: html.style.overflow,
       overscrollBehavior: html.style.overscrollBehavior,
+      backgroundColor: html.style.backgroundColor,
     };
     const prevBody = {
       height: body.style.height,
       overflow: body.style.overflow,
       overscrollBehavior: body.style.overscrollBehavior,
+      backgroundColor: body.style.backgroundColor,
+    };
+
+    const colorSchemeMedia = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncBackground = () => {
+      const bg = colorSchemeMedia.matches ? "#171717" : "#ffffff";
+      html.style.backgroundColor = bg;
+      body.style.backgroundColor = bg;
     };
 
     html.style.height = "100%";
@@ -47,6 +56,8 @@ export function ChatWorkspace({ user }: { user: Me }) {
     body.style.height = "100%";
     body.style.overflow = "hidden";
     body.style.overscrollBehavior = "none";
+    syncBackground();
+    colorSchemeMedia.addEventListener("change", syncBackground);
     window.scrollTo(0, 0);
 
     const vv = window.visualViewport;
@@ -93,12 +104,15 @@ export function ChatWorkspace({ user }: { user: Me }) {
     document.addEventListener("focusout", sync);
 
     return () => {
+      colorSchemeMedia.removeEventListener("change", syncBackground);
       html.style.height = prevHtml.height;
       html.style.overflow = prevHtml.overflow;
       html.style.overscrollBehavior = prevHtml.overscrollBehavior;
+      html.style.backgroundColor = prevHtml.backgroundColor;
       body.style.height = prevBody.height;
       body.style.overflow = prevBody.overflow;
       body.style.overscrollBehavior = prevBody.overscrollBehavior;
+      body.style.backgroundColor = prevBody.backgroundColor;
       if (vv) {
         vv.removeEventListener("resize", sync);
         vv.removeEventListener("scroll", sync);
