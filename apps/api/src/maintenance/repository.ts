@@ -36,7 +36,7 @@ export const purgeRows = ({
     .delete(table)
     .where(inArray(key, db.select({ key }).from(table).where(lt(since, cutoff)).limit(limit)))
     .then((result) => result.rowsAffected)
-    .catch((e) => new PurgeError({ target: label, cause: e }));
+    .catch((error: unknown) => new PurgeError({ target: label, cause: error }));
 };
 
 /** 期限切れの類似検索キャッシュ（親行）を削除する。子行は ON DELETE CASCADE で消える。 */
@@ -55,4 +55,4 @@ export const purgeExpiredSimilarCaches = ({
       sql`rowid in (select rowid from ${postSimilarCaches} where ${lt(postSimilarCaches.expiresAt, cutoff)} limit ${limit})`,
     )
     .then((result) => result.rowsAffected)
-    .catch((e) => new PurgeError({ target: "類似検索キャッシュ", cause: e }));
+    .catch((error: unknown) => new PurgeError({ target: "類似検索キャッシュ", cause: error }));

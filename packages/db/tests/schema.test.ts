@@ -16,6 +16,7 @@ import {
 
 const client = createClient({ url: ":memory:" });
 const db = drizzle({ client, relations });
+const sortedIds = (rows: Array<{ id: string }> | undefined) => rows?.map((p) => p.id).sort();
 
 const vector = (seed: number) =>
   Array.from({ length: EMBEDDING_DIMENSIONS }, (_, i) => ((i + seed) % 7) / 8 - 0.25);
@@ -108,22 +109,20 @@ describe("schema", () => {
       },
       { id: "hidden", userId: "u1", songIsrc: "JPAB01234567", content: "y", hiddenAt: new Date() },
     ]);
-    const ids = (rows: { id: string }[] | undefined) => rows?.map((p) => p.id).sort();
-
     const user = await db.query.users.findFirst({
       where: { id: "u1" },
       columns: { id: true },
       with: { posts: { columns: { id: true } }, allPosts: { columns: { id: true } } },
     });
-    expect(ids(user?.posts)).toEqual(["post1", "post2", "post3"]);
-    expect(ids(user?.allPosts)).toEqual(["deleted", "hidden", "post1", "post2", "post3"]);
+    expect(sortedIds(user?.posts)).toEqual(["post1", "post2", "post3"]);
+    expect(sortedIds(user?.allPosts)).toEqual(["deleted", "hidden", "post1", "post2", "post3"]);
 
     const song = await db.query.songs.findFirst({
       where: { isrc: "JPAB01234567" },
       columns: { isrc: true },
       with: { posts: { columns: { id: true } } },
     });
-    expect(ids(song?.posts)).toEqual(["post1", "post2", "post3"]);
+    expect(sortedIds(song?.posts)).toEqual(["post1", "post2", "post3"]);
 
     await db.delete(posts).where(inArray(posts.id, ["deleted", "hidden"]));
   });

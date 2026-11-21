@@ -1,8 +1,8 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { BudouxText } from "./BudouxText";
 import { fontTokens, landingTokens as t } from "./tokens.stylex";
 
-const styles = stylex.create({
+const styles = create({
   howItWorks: {
     display: "grid",
     gap: "1.5rem",
@@ -51,12 +51,12 @@ const styles = stylex.create({
 
 export function HowItWorks() {
   return (
-    <section {...stylex.props(styles.howItWorks)} id="how-it-works">
-      <span {...stylex.props(styles.kicker)}>HOW IT WORKS</span>
-      <h2 {...stylex.props(styles.sectionTitle)}>
+    <section {...props(styles.howItWorks)} id="how-it-works">
+      <span {...props(styles.kicker)}>HOW IT WORKS</span>
+      <h2 {...props(styles.sectionTitle)}>
         <BudouxText text="感想がつなぐ、音楽との出会い。" />
       </h2>
-      <p {...stylex.props(styles.bodyText)}>
+      <p {...props(styles.bodyText)}>
         <BudouxText text="楽曲を聴いて浮かんだ気持ちや情景を、短い言葉で気軽に投稿する。他の人の感想を読んで、気になる曲を見つけて聴いてみる。そうやって一つの楽曲に、いろんな人のいろんな言葉が積もっていき、その曲の新しい一面が見えてきます。" />
       </p>
     </section>

@@ -3,7 +3,7 @@ import "@fontsource-variable/figtree";
 import "@fontsource/zen-kaku-gothic-new/400.css";
 import "@fontsource/zen-kaku-gothic-new/500.css";
 import "@fontsource/zen-kaku-gothic-new/700.css";
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { useEffect } from "react";
 import { Discovery } from "./Discovery";
 import { FinalCta } from "./FinalCta";
@@ -28,13 +28,15 @@ export function Landing() {
     }
     return () => {
       for (const { meta, content } of previous) {
-        if (content !== null) meta.setAttribute("content", content);
+        if (content !== null) {
+          meta.setAttribute("content", content);
+        }
       }
     };
   }, []);
 
   return (
-    <main {...stylex.props(styles.page)}>
+    <main {...props(styles.page)}>
       <Header />
       <Hero />
       <HowItWorks />
@@ -45,7 +47,7 @@ export function Landing() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   page: {
     overflowX: "clip",
     fontFamily: fontTokens.body,

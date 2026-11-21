@@ -8,7 +8,7 @@ type CatalogSongLookup = {
 };
 
 type ChatHistoryState = {
-  groups: PostDateGroup[];
+  groups: Array<PostDateGroup>;
   totalCount: number;
   catalogSongs: CatalogSongLookup;
   isPending: boolean;
@@ -36,6 +36,8 @@ export const ChatHistoryContext = createContext<ChatHistoryContextValue | null>(
 
 export function useChatHistory() {
   const value = use(ChatHistoryContext);
-  if (!value) throw new Error("useChatHistory は ChatHistoryProvider の中で使う");
+  if (!value) {
+    throw new Error("useChatHistory は ChatHistoryProvider の中で使う");
+  }
   return value;
 }

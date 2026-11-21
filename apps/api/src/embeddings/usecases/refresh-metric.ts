@@ -1,12 +1,7 @@
 import { EMBEDDING_DIMENSIONS, EMBEDDING_MODEL } from "db/constants";
 import type { Database } from "../../lib/db.ts";
-import {
-  consumeChanges,
-  type PnormColumn,
-  publishMetric,
-  readMetricState,
-  writePnorms,
-} from "../repository.ts";
+import { consumeChanges, publishMetric, readMetricState, writePnorms } from "../repository.ts";
+import type { PnormColumn } from "../repository.ts";
 import {
   drift,
   emptyMoments,
@@ -55,10 +50,14 @@ export async function refreshEmbeddingMetric({
   publish: boolean;
 }) {
   const state = await readMetricState({ db, model, emptyMoments: emptyMoments() });
-  if (state instanceof Error) return state;
+  if (state instanceof Error) {
+    return state;
+  }
 
   const consumed = await consumeChanges({ db, model, moments: state.moments });
-  if (consumed instanceof Error) return consumed;
+  if (consumed instanceof Error) {
+    return consumed;
+  }
 
   if (!publish) {
     return {
@@ -84,7 +83,9 @@ export async function refreshEmbeddingMetric({
         onlyMissing: true,
       })
     : 0;
-  if (filled instanceof Error) return filled;
+  if (filled instanceof Error) {
+    return filled;
+  }
 
   const summary = {
     model,
@@ -94,7 +95,9 @@ export async function refreshEmbeddingMetric({
     count: momentsCount(state.moments),
   };
   const next = summary.count >= minCount ? toGeometry(state.moments) : null;
-  if (!next) return { ...summary, refreshed: false, reason: "not_enough_rows" } as const;
+  if (!next) {
+    return { ...summary, refreshed: false, reason: "not_enough_rows" } as const;
+  }
 
   const change = drift(current, next);
   if (change.precisionChange < threshold && change.meanShift < threshold) {
@@ -106,13 +109,19 @@ export async function refreshEmbeddingMetric({
 
   const column: PnormColumn = state.pnormColumn === "pnorm_a" ? "pnorm_b" : "pnorm_a";
   const written = await writePnorms({ db, model, column, geometry: next, onlyMissing: false });
-  if (written instanceof Error) return written;
+  if (written instanceof Error) {
+    return written;
+  }
   // 全行に書いている間に追加された行にも書く。その行の統計は、次の実行で足す
   const late = await writePnorms({ db, model, column, geometry: next, onlyMissing: true });
-  if (late instanceof Error) return late;
+  if (late instanceof Error) {
+    return late;
+  }
 
   const version = state.version + 1;
   const published = await publishMetric({ db, model, version, geometry: next, column, now });
-  if (published instanceof Error) return published;
+  if (published instanceof Error) {
+    return published;
+  }
   return { ...summary, ...change, version, written: written + late, refreshed: true } as const;
 }

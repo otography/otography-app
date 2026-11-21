@@ -1,7 +1,8 @@
 import { postEmbeddings } from "db";
 import type { Database } from "../../lib/db.ts";
 import { EmbeddingSaveError } from "../errors.ts";
-import { project, type Transform } from "../transform.ts";
+import { project } from "../transform.ts";
+import type { Transform } from "../transform.ts";
 import type { Embedder, VectorStore } from "../vector-store.ts";
 
 /**
@@ -15,7 +16,7 @@ export async function saveProjected({
 }: {
   db: Database;
   transform: Transform;
-  rows: { postId: string; x: Float32Array }[];
+  rows: Array<{ postId: string; x: Float32Array }>;
 }) {
   const [first, ...rest] = rows.map(({ postId, x }) => {
     const { z, norm } = project(transform, x);
@@ -24,11 +25,17 @@ export async function saveProjected({
       .values({ postId, embedding: z, norm, model: transform.model })
       .onConflictDoNothing();
   });
-  if (!first) return 0;
+  if (first === undefined) {
+    return 0;
+  }
   const saved = await db
     .batch([first, ...rest])
-    .catch((e) => new EmbeddingSaveError({ postId: rows[0]?.postId ?? "", cause: e }));
-  if (saved instanceof Error) return saved;
+    .catch(
+      (error: unknown) => new EmbeddingSaveError({ postId: rows[0]?.postId ?? "", cause: error }),
+    );
+  if (saved instanceof Error) {
+    return saved;
+  }
   return rows.length;
 }
 
@@ -47,18 +54,28 @@ export async function embedPosts({
   embed: Embedder;
   store: VectorStore;
   transform: Transform | null;
-  posts: { id: string; content: string }[];
+  posts: Array<{ id: string; content: string }>;
 }) {
-  if (posts.length === 0) return { stored: 0, projected: 0 };
+  if (posts.length === 0) {
+    return { stored: 0, projected: 0 };
+  }
   const xs = await embed(posts.map((post) => post.content));
-  if (xs instanceof Error) return xs;
+  if (xs instanceof Error) {
+    return xs;
+  }
 
   const rows = posts.map((post, i) => ({ postId: post.id, x: xs[i] ?? new Float32Array() }));
   const stored = await store.put(rows);
-  if (stored instanceof Error) return stored;
+  if (stored instanceof Error) {
+    return stored;
+  }
 
-  if (!transform) return { stored: rows.length, projected: 0 };
+  if (!transform) {
+    return { stored: rows.length, projected: 0 };
+  }
   const projected = await saveProjected({ db, transform, rows });
-  if (projected instanceof Error) return projected;
+  if (projected instanceof Error) {
+    return projected;
+  }
   return { stored: rows.length, projected };
 }

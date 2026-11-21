@@ -1,6 +1,7 @@
 import { postEmbeddings, posts, users } from "db";
 import { EMBEDDING_DIMENSIONS, EMBEDDING_INPUT_DIMENSIONS } from "db/constants";
 import { beforeEach, describe, expect, test } from "vite-plus/test";
+import { EmbeddingRequestError } from "../../src/embeddings/errors.ts";
 import type { Transform } from "../../src/embeddings/transform.ts";
 import { project } from "../../src/embeddings/transform.ts";
 import { embedPosts } from "../../src/embeddings/usecases/embed-posts.ts";
@@ -39,7 +40,9 @@ describe("vectors", () => {
     const x = randomX();
     const back = decodeHalf(encodeHalf(x));
     expect(back).toHaveLength(x.length);
-    for (let i = 0; i < 50; i++) expect(back[i]).toBeCloseTo(x[i]!, 2);
+    for (let i = 0; i < 50; i++) {
+      expect(back[i]).toBeCloseTo(x[i], 2);
+    }
     expect(fromHex(toHex(encodeHalf(x)))).toEqual(encodeHalf(x));
   });
 });
@@ -47,7 +50,7 @@ describe("vectors", () => {
 describe("embedPosts", () => {
   test("x を置き場所に入れ、変換があれば z を post_embeddings に入れる", async () => {
     const xs = [randomX(), randomX()];
-    const embed: Embedder = async (texts) => texts.map((_, i) => xs[i]!);
+    const embed: Embedder = async (texts) => texts.map((_, i) => xs[i]);
     const { rows, store } = memoryStore();
 
     const result = await embedPosts({
@@ -65,9 +68,9 @@ describe("embedPosts", () => {
 
     const saved = await db.select().from(postEmbeddings).orderBy(postEmbeddings.postId);
     expect(saved.map((r) => r.model)).toEqual(["test-transform", "test-transform"]);
-    const { z, norm } = project(transform, xs[0]!);
+    const { z, norm } = project(transform, xs[0]);
     expect(saved[0]?.norm).toBeCloseTo(norm, 6);
-    expect(saved[0]?.embedding[0]).toBeCloseTo(z[0]!, 2);
+    expect(saved[0]?.embedding[0]).toBeCloseTo(z[0], 2);
   });
 
   test("変換が無ければ、x だけを入れる", async () => {
@@ -88,7 +91,7 @@ describe("embedPosts", () => {
     const { rows, store } = memoryStore();
     const result = await embedPosts({
       db,
-      embed: async () => new Error("失敗") as never,
+      embed: async () => new EmbeddingRequestError({ cause: new Error("失敗") }),
       store,
       transform,
       posts: [{ id: "p1", content: "一つ目" }],

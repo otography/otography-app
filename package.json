@@ -12,6 +12,7 @@
     "similarity:ci": "similarity-ts apps packages --exclude '**/*.gen.ts' --threshold 0.95 --min-tokens 25 --types --fail-on-duplicates"
   },
   "devDependencies": {
+    "@cloudflare/oxlint-config": "catalog:",
     "@stylexjs/eslint-plugin": "catalog:",
     "knip": "catalog:",
     "vite-plus": "catalog:"

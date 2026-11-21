@@ -1,10 +1,10 @@
 import { Fragment } from "react";
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { loadDefaultJapaneseParser } from "budoux";
 
 const parser = loadDefaultJapaneseParser();
 
-const styles = stylex.create({
+const styles = create({
   // 日本語はデフォルトで文字間ならどこでも改行可能なため、word-break: keep-all で
   // それを止めた上で <wbr> による文節境界のみを改行点にする（BudouXの公式仕様に準拠）。
   root: {
@@ -19,7 +19,7 @@ const styles = stylex.create({
  */
 export function BudouxText({ text }: { text: string }) {
   return (
-    <span {...stylex.props(styles.root)}>
+    <span {...props(styles.root)}>
       {parser.parse(text).map((phrase, index) => (
         <Fragment key={index}>
           {index > 0 && <wbr />}

@@ -27,14 +27,14 @@ export type AppleSong = CatalogResource<{
   isrc?: string;
   url?: string;
   /** 試聴用の音源（約 30 秒）。 */
-  previews?: { url: string }[];
+  previews?: Array<{ url: string }>;
 }>;
 
 /** Apple Music API のカタログのアーティスト（使う属性だけ）。 */
 export type AppleArtist = CatalogResource<{
   name: string;
   artwork?: AppleArtwork;
-  genreNames?: string[];
+  genreNames?: Array<string>;
 }>;
 
 export type MusicKitPlaybackTimeEvent = {
@@ -50,14 +50,14 @@ export type MusicKitInstance = {
   isAuthorized: boolean;
   isPlaying?: boolean;
   queueIsEmpty?: boolean;
-  queue?: { items?: unknown[]; isEmpty?: boolean };
+  queue?: { items?: Array<unknown>; isEmpty?: boolean };
   storefrontId?: string;
   playbackState?: number;
   currentPlaybackTime?: number;
   currentPlaybackDuration?: number;
   authorize: () => Promise<string | undefined>;
   unauthorize: () => Promise<void>;
-  setQueue: (options: { song: string; startPlaying?: boolean }) => Promise<unknown>;
+  setQueue: (options: { song: string; startPlaying?: boolean }) => Promise<void>;
   play: () => Promise<void>;
   pause: () => void;
   stop: () => void;
@@ -104,7 +104,9 @@ const LOAD_TIMEOUT_MS = 15_000;
  */
 function removeViteProcessShim() {
   const scope = globalThis as { process?: unknown };
-  if (!import.meta.env.DEV || scope.process === undefined) return;
+  if (!import.meta.env.DEV || scope.process === undefined) {
+    return;
+  }
   delete scope.process;
 }
 
@@ -115,7 +117,10 @@ function removeViteProcessShim() {
 const loadScript = () =>
   new Promise<void>((resolve, reject) => {
     removeViteProcessShim();
-    if (typeof window.MusicKit?.configure === "function") return resolve();
+    if (typeof window.MusicKit?.configure === "function") {
+      resolve();
+      return;
+    }
     const timer = setTimeout(() => {
       reject(new Error("MusicKit の準備ができませんでした。再読み込みしてください"));
     }, LOAD_TIMEOUT_MS);
@@ -154,10 +159,14 @@ export function getLoadedMusicKit() {
 export function getMusicKit() {
   instance ??= (async () => {
     const res = await client.api.music.token.$get();
-    if (!res.ok) throw new Error("Apple Music を使う準備ができませんでした");
+    if (!res.ok) {
+      throw new Error("Apple Music を使う準備ができませんでした");
+    }
     const { token } = await res.json();
     await loadScript();
-    if (!window.MusicKit) throw new Error("MusicKit を読み込めませんでした");
+    if (!window.MusicKit) {
+      throw new Error("MusicKit を読み込めませんでした");
+    }
     const configured = await window.MusicKit.configure({
       developerToken: token,
       app: { name: "otography", build: "0.0.0" },
@@ -175,7 +184,7 @@ export function getMusicKit() {
 /** ユーザーのストアフロントが異なる場合に ISRC から再生可能な曲 ID を引き直す。 */
 export async function findSongIdByIsrc(music: MusicKitInstance, isrc: string) {
   const storefront = music.storefrontId || "jp";
-  const { data } = await music.api.music<{ data?: { id: string }[] }>(
+  const { data } = await music.api.music<{ data?: Array<{ id: string }> }>(
     `/v1/catalog/${storefront}/songs`,
     { "filter[isrc]": isrc },
   );
@@ -184,7 +193,7 @@ export async function findSongIdByIsrc(music: MusicKitInstance, isrc: string) {
 
 /** 検索の種類と、返るリソースの型。 */
 type SearchTypes = { songs: AppleSong; artists: AppleArtist };
-type SearchResults = { [Type in keyof SearchTypes]?: { data: SearchTypes[Type][] } };
+type SearchResults = { [Type in keyof SearchTypes]?: { data: Array<SearchTypes[Type]> } };
 
 /** カタログを 1 つの種類で検索する。ストアフロントは jp に固定する（API と同じ）。 */
 async function searchCatalog<Type extends keyof SearchTypes>(term: string, type: Type) {
@@ -206,10 +215,12 @@ export const searchSongs = (term: string) => searchCatalog(term, "songs");
 export const searchArtists = (term: string) => searchCatalog(term, "artists");
 
 /** カタログの曲を Apple Music の ID でまとめて取得する。 */
-async function fetchSongsByIds(ids: string[]): Promise<AppleSong[]> {
-  if (ids.length === 0) return [];
+async function fetchSongsByIds(ids: Array<string>): Promise<Array<AppleSong>> {
+  if (ids.length === 0) {
+    return [];
+  }
   const music = await getMusicKit();
-  const { data } = await music.api.music<{ data?: AppleSong[] }>("/v1/catalog/jp/songs", {
+  const { data } = await music.api.music<{ data?: Array<AppleSong> }>("/v1/catalog/jp/songs", {
     ids: ids.join(","),
     l: "ja",
   });
@@ -217,7 +228,7 @@ async function fetchSongsByIds(ids: string[]): Promise<AppleSong[]> {
 }
 
 /** Apple Music の ID の一覧から、試聴 URL を含む曲の情報をまとめて取得するクエリ。 */
-export const catalogSongsQuery = (ids: string[]) => {
+export const catalogSongsQuery = (ids: Array<string>) => {
   const normalizedIds = Array.from(new Set(ids.filter(Boolean))).sort();
   return queryOptions({
     queryKey: ["musickit", "songs", normalizedIds],

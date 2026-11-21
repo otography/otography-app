@@ -1,3 +1,4 @@
+import cloudflare from "@cloudflare/oxlint-config";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
@@ -13,11 +14,30 @@ export default defineConfig({
   // db:migrate や deploy のようにデータベースや外部のサービスを変更するスクリプトがキャッシュされると、
   // 2 回目以降は実行されず、前回の出力が表示されるだけになるためである。
   lint: {
+    ...cloudflare,
+    ignorePatterns: [
+      ...(cloudflare.ignorePatterns ?? []),
+      ".agents/**",
+      ".claude/**",
+      "**/routeTree.gen.ts",
+    ],
     jsPlugins: [
+      ...(cloudflare.jsPlugins ?? []),
       { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
       { name: "@stylexjs", specifier: "@stylexjs/eslint-plugin" },
     ],
+    overrides: [
+      ...(cloudflare.overrides ?? []),
+      {
+        files: ["**/scripts/**", "apps/api/src/lib/log.ts"],
+        rules: {
+          "no-console": "off",
+        },
+      },
+    ],
     rules: {
+      ...cloudflare.rules,
+      "@nkzw/no-instanceof": "off",
       "vite-plus/prefer-vite-plus-imports": "error",
       // StyleX の公式の例（examples/example-vite-react の eslint.config.js）と同じルール。
       "@stylexjs/valid-styles": "error",
@@ -27,6 +47,10 @@ export default defineConfig({
       "@stylexjs/valid-shorthands": "error",
       "@stylexjs/sort-keys": ["error", { order: "recess" }],
     },
-    options: { typeAware: true, typeCheck: true },
+    options: {
+      ...cloudflare.options,
+      typeAware: true,
+      typeCheck: true,
+    },
   },
 });

@@ -1,7 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import * as errore from "errore";
+import { matchErrorPartial } from "errore";
 import { Hono } from "hono";
-import { requireAuth, type SessionEnv } from "../auth/session.ts";
+import { requireAuth } from "../auth/session.ts";
+import type { SessionEnv } from "../auth/session.ts";
 import { fetchArtist, fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
 import { rateLimit } from "../lib/rate-limit/middleware.ts";
@@ -81,7 +82,7 @@ export const usersRoutes = new Hono<SessionEnv>()
         input: c.req.valid("json"),
       });
       if (profile instanceof Error) {
-        const { status, error } = errore.matchErrorPartial<
+        const { status, error } = matchErrorPartial<
           typeof profile,
           { status: 400 | 422 | 500 | 503; error: string }
         >(
@@ -120,7 +121,7 @@ export const usersRoutes = new Hono<SessionEnv>()
         input: c.req.valid("json"),
       });
       if (profile instanceof Error) {
-        const { status, error } = errore.matchErrorPartial<
+        const { status, error } = matchErrorPartial<
           typeof profile,
           { status: 400 | 422 | 500 | 503; error: string }
         >(
@@ -144,7 +145,9 @@ export const usersRoutes = new Hono<SessionEnv>()
   .get("/users/:publicId", requireAuth, rateLimit("READ_RATE_LIMIT"), async (c) => {
     const profile = await getProfile({ db, publicId: c.req.param("publicId") });
     if (profile instanceof Error) {
-      if (profile instanceof UserNotFoundError) return c.json({ error: profile.message }, 404);
+      if (profile instanceof UserNotFoundError) {
+        return c.json({ error: profile.message }, 404);
+      }
       logError(profile);
       return c.json({ error: INTERNAL_ERROR }, 500);
     }

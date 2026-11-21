@@ -14,13 +14,13 @@ type ProfileState = {
   profile: ProfileView | null;
   isProfilePending: boolean;
   profileError: string | null;
-  posts: PostView[];
+  posts: Array<PostView>;
   isPostsPending: boolean;
   postsError: string | null;
   hasNextPosts: boolean;
   isFetchingNextPosts: boolean;
-  favoriteSongs: FavoriteSongItem[];
-  favoriteArtists: FavoriteArtistItem[];
+  favoriteSongs: Array<FavoriteSongItem>;
+  favoriteArtists: Array<FavoriteArtistItem>;
   catalogSongs: {
     byId: Map<string, AppleSong>;
     byIsrc: Map<string, AppleSong>;
@@ -64,6 +64,8 @@ export const ProfileContext = createContext<ProfileContextValue | null>(null);
 
 export function useProfile() {
   const value = use(ProfileContext);
-  if (!value) throw new Error("useProfile は ProfileProvider の中で使う");
+  if (!value) {
+    throw new Error("useProfile は ProfileProvider の中で使う");
+  }
   return value;
 }

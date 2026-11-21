@@ -1,7 +1,7 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 
-const baseStyles = stylex.create({
+const baseStyles = create({
   base: {
     position: "relative",
     width: "3rem",
@@ -19,7 +19,7 @@ const baseStyles = stylex.create({
   },
 });
 
-const artStyles = stylex.create({
+const artStyles = create({
   coast: {
     backgroundImage:
       "linear-gradient(180deg, rgba(187, 234, 240, 0.85) 0 45%, rgba(129, 197, 219, 0.88) 45% 60%, #86bad0 60% 100%), radial-gradient(circle at 72% 22%, rgba(255, 212, 157, 0.8), transparent 22%)",
@@ -67,12 +67,8 @@ type TrackArtProps = {
 export function TrackArt({ variant, style, label }: TrackArtProps) {
   if (label) {
     return (
-      <div
-        role="img"
-        aria-label={label}
-        {...stylex.props(baseStyles.base, artStyles[variant], style)}
-      />
+      <div role="img" aria-label={label} {...props(baseStyles.base, artStyles[variant], style)} />
     );
   }
-  return <span {...stylex.props(baseStyles.base, artStyles[variant], style)} aria-hidden="true" />;
+  return <span {...props(baseStyles.base, artStyles[variant], style)} aria-hidden="true" />;
 }

@@ -38,7 +38,9 @@ export const profileQuery = (publicId: string) =>
     queryFn: async () => {
       const res = await client.api.users[":publicId"].$get({ param: { publicId } });
       const body = await res.json();
-      if ("error" in body) throw new Error(body.error);
+      if ("error" in body) {
+        throw new Error(body.error);
+      }
       return body;
     },
   });
@@ -53,7 +55,9 @@ export const authorPostsInfiniteQuery = (publicId: string) =>
         query: pageParam ? { cursor: pageParam } : {},
       });
       const body = await res.json();
-      if ("error" in body) throw new Error(body.error);
+      if ("error" in body) {
+        throw new Error(body.error);
+      }
       return body;
     },
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
@@ -62,29 +66,39 @@ export const authorPostsInfiniteQuery = (publicId: string) =>
 export async function updateProfile(input: { name?: string; bio?: string }) {
   const res = await client.api.me.$patch({ json: input });
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   return body;
 }
 
-export async function replaceFavoriteSongs(items: ReplaceFavoriteSongInput[]) {
+export async function replaceFavoriteSongs(items: Array<ReplaceFavoriteSongInput>) {
   const res = await client.api.me["favorite-songs"].$put({ json: { items } });
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   return body;
 }
 
-export async function replaceFavoriteArtists(items: ReplaceFavoriteArtistInput[]) {
+export async function replaceFavoriteArtists(items: Array<ReplaceFavoriteArtistInput>) {
   const res = await client.api.me["favorite-artists"].$put({ json: { items } });
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   return body;
 }
 
 export async function deletePost(postId: string) {
   const res = await client.api.posts[":id"].$delete({ param: { id: postId } });
-  if (res.status === 204) return;
+  if (res.status === 204) {
+    return;
+  }
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   throw new Error("投稿を削除できませんでした");
 }
 
@@ -93,6 +107,8 @@ export async function setPostLike(postId: string, liked: boolean) {
     ? await client.api.posts[":id"].like.$put({ param: { id: postId } })
     : await client.api.posts[":id"].like.$delete({ param: { id: postId } });
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   return body;
 }

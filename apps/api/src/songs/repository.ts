@@ -8,7 +8,7 @@ const findSong = ({ db, isrc }: { db: Database; isrc: string }) =>
   db.query.songs
     .findFirst({ where: { isrc } })
     .then((song) => song ?? null)
-    .catch((e) => new SongQueryError({ isrc, cause: e }));
+    .catch((error: unknown) => new SongQueryError({ isrc, cause: error }));
 
 // 別のリクエストが同じ曲を先に保存した場合は、その行を返す。
 const saveSong = ({ db, song }: { db: Database; song: CatalogSong }) =>
@@ -19,7 +19,7 @@ const saveSong = ({ db, song }: { db: Database; song: CatalogSong }) =>
         .values({ ...song, fetchedAt: new Date() })
         .onConflictDoNothing()
         .returning()
-        .catch((e) => new SongQueryError({ isrc: song.isrc, cause: e })),
+        .catch((error: unknown) => new SongQueryError({ isrc: song.isrc, cause: error })),
     find: () => findSong({ db, isrc: song.isrc }),
     missing: () => new SongConflictError({ isrc: song.isrc, appleSongId: song.appleSongId }),
   });

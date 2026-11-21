@@ -1,6 +1,5 @@
 import {
   likes,
-  type NewPost,
   postEmbeddings,
   postIpLogs,
   posts,
@@ -8,6 +7,7 @@ import {
   postSimilarCaches,
   users,
 } from "db";
+import type { NewPost } from "db";
 import { and, asc, eq, exists, gt, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { PostInsertError, PostQueryError } from "./errors.ts";
@@ -30,11 +30,15 @@ export async function insertPostWithIpLog({
       db.insert(posts).values(post).returning(),
       db.insert(postIpLogs).values({ postId: post.id, userId: post.userId, ipAddress }),
     ])
-    .catch((e) => new PostInsertError({ cause: e }));
-  if (result instanceof Error) return result;
+    .catch((error: unknown) => new PostInsertError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
 
   const [[inserted]] = result;
-  if (!inserted) return new PostInsertError({ cause: new Error("INSERT が行を返さなかった") });
+  if (!inserted) {
+    return new PostInsertError({ cause: new Error("INSERT が行を返さなかった") });
+  }
   return inserted;
 }
 
@@ -69,7 +73,7 @@ export const findVisiblePost = ({
   db.query.posts
     .findFirst({ where: { id: postId, ...visible }, ...postColumns(viewerId) })
     .then((post) => post ?? null)
-    .catch((e) => new PostQueryError({ cause: e }));
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
 
 /**
  * ユーザーの見せてよい投稿を、新しい順に読む。
@@ -104,7 +108,7 @@ export const findVisiblePostsByAuthor = ({
       limit,
       ...postColumns(viewerId),
     })
-    .catch((e) => new PostQueryError({ cause: e }));
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
 
 /** 見せてよい投稿を、ID で読む。見せられない投稿は結果に含めない。順序は ids と同じにする。 */
 export const findVisiblePostsByIds = async ({
@@ -113,14 +117,18 @@ export const findVisiblePostsByIds = async ({
   viewerId,
 }: {
   db: Database;
-  ids: string[];
+  ids: Array<string>;
   viewerId: string;
 }) => {
-  if (ids.length === 0) return [];
+  if (ids.length === 0) {
+    return [];
+  }
   const rows = await db.query.posts
     .findMany({ where: { id: { in: ids }, ...visible }, ...postColumns(viewerId) })
-    .catch((e) => new PostQueryError({ cause: e }));
-  if (rows instanceof Error) return rows;
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
+  if (rows instanceof Error) {
+    return rows;
+  }
   const byId = new Map(rows.map((row) => [row.id, row]));
   return ids.flatMap((id) => byId.get(id) ?? []);
 };
@@ -184,8 +192,10 @@ export const writeLike = async ({
     : db.delete(likes).where(and(eq(likes.userId, userId), eq(likes.postId, postId)));
   const result = await db
     .batch([write, recountLikes(db, postId)])
-    .catch((e) => new PostQueryError({ cause: e }));
-  if (result instanceof Error) return result;
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
   return result[1][0]?.likeCount ?? null;
 };
 
@@ -219,8 +229,10 @@ export const softDeletePost = async ({
         ),
       ),
     ])
-    .catch((e) => new PostQueryError({ cause: e }));
-  if (result instanceof Error) return result;
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
   return result[0][0]?.id ?? null;
 };
 
@@ -261,11 +273,15 @@ export const findValidSimilarCache = async ({
         )
         .orderBy(asc(postSimilarCacheItems.rank)),
     ])
-    .catch((e) => new PostQueryError({ cause: e }));
-  if (result instanceof Error) return result;
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
 
   const [cache] = result[0];
-  if (!cache) return null;
+  if (!cache) {
+    return null;
+  }
   return {
     postIds: result[1].map((row) => row.similarPostId),
     expiresAt: cache.expiresAt,
@@ -283,7 +299,7 @@ export const saveSimilarCache = async ({
   db: Database;
   postId: string;
   includeSameSong: boolean;
-  similarPostIds: readonly string[];
+  similarPostIds: ReadonlyArray<string>;
   expiresAt: Date;
 }) => {
   const sameSongFlag = includeSameSong ? 1 : 0;
@@ -322,5 +338,5 @@ export const saveSimilarCache = async ({
   return db
     .batch(statements)
     .then(() => undefined)
-    .catch((e) => new PostQueryError({ cause: e }));
+    .catch((error: unknown) => new PostQueryError({ cause: error }));
 };

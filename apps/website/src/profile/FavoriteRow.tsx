@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { props } from "@stylexjs/stylex";
 import {
   AlertDialog,
   AlertDialogBackdrop,
@@ -18,16 +18,16 @@ import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from "./icons";
 
 function Root({ color, children }: { color: FavoriteDecoration["color"]; children: ReactNode }) {
   const accentStyle = color ? favoriteAccentStyles[color] : null;
-  return <li {...stylex.props(styles.card, accentStyle)}>{children}</li>;
+  return <li {...props(styles.card, accentStyle)}>{children}</li>;
 }
 
 function Main({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.cardMain)}>{children}</div>;
+  return <div {...props(styles.cardMain)}>{children}</div>;
 }
 
 function Rank({ index }: { index: number }) {
   return (
-    <span {...stylex.props(styles.rank)} aria-label={`${index + 1} 番目`}>
+    <span {...props(styles.rank)} aria-label={`${index + 1} 番目`}>
       {String(index + 1).padStart(2, "0")}
     </span>
   );
@@ -47,28 +47,25 @@ function Art({
 }) {
   const round = shape === "round";
   return (
-    <div {...stylex.props(styles.artWrap)}>
+    <div {...props(styles.artWrap)}>
       {src ? (
         <img
           src={artworkUrl(src, 112)}
           alt=""
           width={52}
           height={52}
-          {...stylex.props(styles.cardArt, round && styles.roundCardArt)}
+          {...props(styles.cardArt, round && styles.roundCardArt)}
         />
       ) : (
         <div
-          {...stylex.props(styles.cardArt, styles.artFallback, round && styles.roundCardArt)}
+          {...props(styles.cardArt, styles.artFallback, round && styles.roundCardArt)}
           aria-hidden="true"
         >
           {fallback}
         </div>
       )}
       {emoji ? (
-        <span
-          {...stylex.props(styles.emojiBadge, round && styles.roundEmojiBadge)}
-          aria-hidden="true"
-        >
+        <span {...props(styles.emojiBadge, round && styles.roundEmojiBadge)} aria-hidden="true">
           {emoji}
         </span>
       ) : null}
@@ -77,11 +74,11 @@ function Art({
 }
 
 function Meta({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.meta)}>{children}</div>;
+  return <div {...props(styles.meta)}>{children}</div>;
 }
 
 function Actions({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.rowActions)}>{children}</div>;
+  return <div {...props(styles.rowActions)}>{children}</div>;
 }
 
 function MoveButtons({
@@ -104,7 +101,7 @@ function MoveButtons({
         disabled={index === 0 || saving}
         aria-label={`「${label}」を上に移動`}
         onClick={() => onMove(-1)}
-        {...stylex.props(styles.iconBtn)}
+        {...props(styles.iconBtn)}
       >
         <ChevronUpIcon />
       </Button>
@@ -113,7 +110,7 @@ function MoveButtons({
         disabled={index === total - 1 || saving}
         aria-label={`「${label}」を下に移動`}
         onClick={() => onMove(1)}
-        {...stylex.props(styles.iconBtn)}
+        {...props(styles.iconBtn)}
       >
         <ChevronDownIcon />
       </Button>
@@ -138,25 +135,23 @@ function RemoveDialog({
       <AlertDialogTrigger
         disabled={saving}
         aria-label={`「${label}」を${noun}から削除`}
-        {...stylex.props(styles.deleteBtn)}
+        {...props(styles.deleteBtn)}
       >
         <TrashIcon />
       </AlertDialogTrigger>
-      <AlertDialogBackdrop {...stylex.props(styles.backdrop)} />
-      <AlertDialogContent {...stylex.props(styles.alertDialog)}>
-        <AlertDialogTitle {...stylex.props(styles.dialogTitle)}>
-          {noun}から外しますか？
-        </AlertDialogTitle>
-        <AlertDialogDescription {...stylex.props(styles.dialogDesc)}>
+      <AlertDialogBackdrop {...props(styles.backdrop)} />
+      <AlertDialogContent {...props(styles.alertDialog)}>
+        <AlertDialogTitle {...props(styles.dialogTitle)}>{noun}から外しますか？</AlertDialogTitle>
+        <AlertDialogDescription {...props(styles.dialogDesc)}>
           「{label}」を{noun}リストから削除します。
         </AlertDialogDescription>
-        <div {...stylex.props(styles.dialogFooter)}>
-          <AlertDialogClose {...stylex.props(styles.secondaryBtn)}>キャンセル</AlertDialogClose>
+        <div {...props(styles.dialogFooter)}>
+          <AlertDialogClose {...props(styles.secondaryBtn)}>キャンセル</AlertDialogClose>
           <AlertDialogClose
             value="confirm"
             data-agent-confirm={`「${label}」を${noun}から削除します`}
             action={onRemove}
-            {...stylex.props(styles.dangerBtn)}
+            {...props(styles.dangerBtn)}
           >
             リストから外す
           </AlertDialogClose>
@@ -167,7 +162,7 @@ function RemoveDialog({
 }
 
 function Comment({ children }: { children: string | null }) {
-  return children ? <p {...stylex.props(styles.comment)}>{children}</p> : null;
+  return children ? <p {...props(styles.comment)}>{children}</p> : null;
 }
 
 /** お気に入り 1 件分の行。Root の中に Main / Comment を並べ、Main の中に部品を組み合わせる。 */

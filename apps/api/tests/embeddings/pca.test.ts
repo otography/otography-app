@@ -14,9 +14,9 @@ describe("pca", () => {
     expect(mean[0]).toBeCloseTo(3, 1);
     const { values, vectors } = topEigen(c, d, 5);
     for (let r = 0; r < 5; r++) {
-      expect(values[r]! / (5 - r) ** 2).toBeCloseTo(1, 1);
+      expect(values[r] / (5 - r) ** 2).toBeCloseTo(1, 1);
       // r 番目の固有ベクトルは、ほぼ r 番目の軸
-      expect(Math.abs(vectors[r * d + r]!)).toBeGreaterThan(0.9);
+      expect(Math.abs(vectors[r * d + r])).toBeGreaterThan(0.9);
     }
   });
 });

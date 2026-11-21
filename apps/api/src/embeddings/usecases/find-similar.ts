@@ -3,7 +3,8 @@ import { and, eq } from "drizzle-orm";
 import type { Database } from "../../lib/db.ts";
 import { EmbeddingSaveError } from "../errors.ts";
 import { searchSimilarPosts } from "../search.ts";
-import { project, type Transform } from "../transform.ts";
+import { project } from "../transform.ts";
+import type { Transform } from "../transform.ts";
 import type { Embedder, VectorStore } from "../vector-store.ts";
 import { saveProjected } from "./embed-posts.ts";
 
@@ -32,26 +33,42 @@ async function vectorOfPost({
     .from(postEmbeddings)
     .where(and(eq(postEmbeddings.postId, post.id), eq(postEmbeddings.model, transform.model)))
     .get()
-    .catch((e) => new EmbeddingSaveError({ postId: post.id, cause: e }));
-  if (saved instanceof Error) return saved;
-  if (saved) return saved.embedding;
+    .catch((error: unknown) => new EmbeddingSaveError({ postId: post.id, cause: error }));
+  if (saved instanceof Error) {
+    return saved;
+  }
+  if (saved) {
+    return saved.embedding;
+  }
 
   const stored = await store.get([post.id]);
-  if (stored instanceof Error) return stored;
+  if (stored instanceof Error) {
+    return stored;
+  }
   const x = await (async () => {
     const found = stored.get(post.id);
-    if (found) return found;
+    if (found) {
+      return found;
+    }
     const created = await embed([post.content]);
-    if (created instanceof Error) return created;
+    if (created instanceof Error) {
+      return created;
+    }
     const vector = created[0] ?? new Float32Array();
     const put = await store.put([{ postId: post.id, x: vector }]);
-    if (put instanceof Error) return put;
+    if (put instanceof Error) {
+      return put;
+    }
     return vector;
   })();
-  if (x instanceof Error) return x;
+  if (x instanceof Error) {
+    return x;
+  }
 
   const projected = await saveProjected({ db, transform, rows: [{ postId: post.id, x }] });
-  if (projected instanceof Error) return projected;
+  if (projected instanceof Error) {
+    return projected;
+  }
   return project(transform, x).z;
 }
 
@@ -78,7 +95,9 @@ export async function findSimilarPosts({
   limit: number;
 }) {
   const z = await vectorOfPost({ db, embed, store, transform, post });
-  if (z instanceof Error) return z;
+  if (z instanceof Error) {
+    return z;
+  }
   // 統計による補正は使わない（ADR 0020）
   return searchSimilarPosts({
     db,
@@ -105,7 +124,9 @@ export async function searchPostsByText({
   limit: number;
 }) {
   const xs = await embed([text]);
-  if (xs instanceof Error) return xs;
+  if (xs instanceof Error) {
+    return xs;
+  }
   const { z } = project(transform, xs[0] ?? new Float32Array());
   return searchSimilarPosts({ db, z, metric: null, limit, candidates: CANDIDATES });
 }

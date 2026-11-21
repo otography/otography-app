@@ -19,9 +19,15 @@ export async function createReport({
     "postId" in input
       ? await findVisiblePostAuthorId({ db, postId: input.postId })
       : await findActiveUserId({ db, publicId: input.publicId });
-  if (target instanceof Error) return target;
-  if (target === null) return new ReportTargetNotFoundError();
-  if (target === reporterId) return new SelfReportError();
+  if (target instanceof Error) {
+    return target;
+  }
+  if (target === null) {
+    return new ReportTargetNotFoundError();
+  }
+  if (target === reporterId) {
+    return new SelfReportError();
+  }
 
   return insertReport({
     db,

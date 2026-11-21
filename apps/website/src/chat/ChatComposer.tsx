@@ -16,12 +16,14 @@ import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 /** 入力欄の外枠。キーボード表示中は余白を詰める。中に他の部品を並べる。 */
 function Frame({ children }: { children: ReactNode }) {
-  const { state, actions, meta } = useChat();
+  const { state, actions } = useChat();
 
   return (
     <div {...props(styles.dock, state.keyboardOpen && styles.dockKeyboardOpen)}>
       <form
-        ref={meta.composerRef}
+        ref={(el) => {
+          actions.registerComposer(el);
+        }}
         data-chat-composer=""
         {...props(styles.composer)}
         onSubmit={(event) => {
@@ -98,6 +100,7 @@ function Input() {
   const isMobile = compact || coarsePointer;
   const text = compact ? copy.compact : copy.full;
   const { menuOpen, songs, highlightedIndex, keyboardOpen } = state;
+  const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const isComposingRef = useRef(false);
   const compositionEndedAtRef = useRef(0);
 
@@ -111,7 +114,7 @@ function Input() {
 
   // 1行以内はコンパクトな minHeight のまま保ち、2行目以降で maxHeight まで自動で広げる。
   useLayoutEffect(() => {
-    const el = meta.textareaRef.current;
+    const el = localTextareaRef.current;
     if (!el) {
       return;
     }
@@ -136,11 +139,14 @@ function Input() {
     const nextHeight = Math.min(el.scrollHeight, maxHeight);
     el.style.height = `${nextHeight}px`;
     el.style.overflowY = el.scrollHeight > maxHeight ? "auto" : "hidden";
-  }, [meta.textareaRef, state.draft, state.selectedSong, keyboardOpen, compact]);
+  }, [state.draft, state.selectedSong, keyboardOpen, compact]);
 
   return (
     <textarea
-      ref={meta.textareaRef}
+      ref={(el) => {
+        localTextareaRef.current = el;
+        actions.registerTextarea(el);
+      }}
       {...props(styles.textarea)}
       aria-label={text.label}
       aria-controls={menuOpen ? meta.pickerId : undefined}

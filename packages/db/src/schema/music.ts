@@ -23,7 +23,7 @@ export const songs = snakeCase.table(
 
     // Apple のアーティスト ID の JSON 配列。今は読まない。
     // 後で song_artists を作るとき、Apple に問い合わせ直さずに済ませるための保険。
-    artistIds: text({ mode: "json" }).$type<string[]>(),
+    artistIds: text({ mode: "json" }).$type<Array<string>>(),
 
     fetchedAt: timestamp().notNull(),
     unavailableAt: timestamp(),

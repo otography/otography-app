@@ -14,13 +14,21 @@ export async function purgeExpired({ db, now }: { db: Database; now: Date }) {
   const cutoff = new Date(now.getTime() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
 
   const users = await purgeRows({ db, table: "users", cutoff, limit: PURGE_LIMIT });
-  if (users instanceof Error) return users;
+  if (users instanceof Error) {
+    return users;
+  }
   const posts = await purgeRows({ db, table: "posts", cutoff, limit: PURGE_LIMIT });
-  if (posts instanceof Error) return posts;
+  if (posts instanceof Error) {
+    return posts;
+  }
   const ipLogs = await purgeRows({ db, table: "post_ip_logs", cutoff, limit: PURGE_LIMIT });
-  if (ipLogs instanceof Error) return ipLogs;
+  if (ipLogs instanceof Error) {
+    return ipLogs;
+  }
   const similarCaches = await purgeExpiredSimilarCaches({ db, cutoff: now, limit: PURGE_LIMIT });
-  if (similarCaches instanceof Error) return similarCaches;
+  if (similarCaches instanceof Error) {
+    return similarCaches;
+  }
 
   return { users, posts, ipLogs, similarCaches };
 }

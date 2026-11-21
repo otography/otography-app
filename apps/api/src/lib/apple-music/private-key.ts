@@ -10,11 +10,11 @@ const FOOTER = "-----END PRIVATE KEY-----";
  * 見出しの行がない場合は、値全体を本体として扱う。
  */
 export function normalizePkcs8Pem(value: string) {
-  const text = value.replaceAll("\\n", "\n");
+  const text = value.replaceAll(String.raw`\n`, "\n");
   const start = text.indexOf(HEADER);
   const end = text.indexOf(FOOTER);
   const inner = start !== -1 && end > start ? text.slice(start + HEADER.length, end) : text;
-  const body = inner.replace(/[^A-Za-z0-9+/=]/g, "");
+  const body = inner.replaceAll(/[^A-Za-z0-9+/=]/g, "");
   const lines = body.match(/.{1,64}/g) ?? [];
   return [HEADER, ...lines, FOOTER, ""].join("\n");
 }

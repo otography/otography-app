@@ -25,7 +25,9 @@ function Home() {
     );
   }
 
-  if (!me.data) return <Landing />;
+  if (!me.data) {
+    return <Landing />;
+  }
 
   return <ChatWorkspace user={me.data} />;
 }

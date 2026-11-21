@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { motion } from "#/motion.stylex";
 import { useChat } from "./ChatContext";
@@ -19,7 +19,7 @@ export function ChatEmptyHints() {
       role="group"
       aria-label="書き出しの観点ヒント"
       aria-hidden={!state.showEmptyHints}
-      {...stylex.props(styles.hintBar, !state.showEmptyHints && styles.hintBarHidden)}
+      {...props(styles.hintBar, !state.showEmptyHints && styles.hintBarHidden)}
     >
       {EMPTY_HINT_ANGLES.map((angle) => {
         const selected = state.selectedAngle === angle.id;
@@ -29,7 +29,7 @@ export function ChatEmptyHints() {
             type="button"
             aria-pressed={selected}
             tabIndex={state.showEmptyHints ? 0 : -1}
-            {...stylex.props(styles.hintChip, selected && styles.hintChipSelected)}
+            {...props(styles.hintChip, selected && styles.hintChipSelected)}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => actions.selectEmptyHintAngle(angle.id)}
           >
@@ -41,7 +41,7 @@ export function ChatEmptyHints() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   hintBar: {
     display: "flex",
     flexWrap: "wrap",

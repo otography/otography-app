@@ -1,11 +1,13 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, keyframes, props } from "@stylexjs/stylex";
 import { useQuery } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Toggle } from "@ui-sdk/react/toggle";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Me } from "#/lib/auth";
-import { type AppleSong, artworkUrl, catalogSongsQuery } from "#/lib/musickit";
-import { type PostView, similarPostsQuery } from "#/lib/posts";
+import { artworkUrl, catalogSongsQuery } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
+import { similarPostsQuery } from "#/lib/posts";
+import type { PostView } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
 import { PreviewToggle } from "#/songs/PreviewToggle";
 import { useChat } from "./ChatContext";
@@ -22,23 +24,23 @@ function SongCard({ song }: { song: AppleSong }) {
   const { name, artistName, artwork } = song.attributes;
 
   return (
-    <div {...stylex.props(styles.songCard)}>
+    <div {...props(styles.songCard)}>
       {artwork ? (
         <img
           src={artworkUrl(artwork.url, 96)}
           alt=""
           width={44}
           height={44}
-          {...stylex.props(styles.songCardArt)}
+          {...props(styles.songCardArt)}
         />
       ) : (
-        <div {...stylex.props(styles.songCardArt, styles.artFallback)} aria-hidden="true">
+        <div {...props(styles.songCardArt, styles.artFallback)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
       )}
-      <div {...stylex.props(styles.songCardMeta)}>
-        <span {...stylex.props(styles.songCardTitle)}>{name}</span>
-        <span {...stylex.props(styles.songCardArtist)}>{artistName}</span>
+      <div {...props(styles.songCardMeta)}>
+        <span {...props(styles.songCardTitle)}>{name}</span>
+        <span {...props(styles.songCardArtist)}>{artistName}</span>
       </div>
       <PreviewToggle song={song} title={name} style={styles.iconBtn} />
     </div>
@@ -51,7 +53,9 @@ function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; c
   // 投稿直後のユーザーメッセージを、画面下のコンポーザー位置から定位置まで滑らかに上昇させる（FLIP / WAAPI）。
   useLayoutEffect(() => {
     const el = articleRef.current;
-    if (!el || typeof el.animate !== "function") return;
+    if (!el || typeof el.animate !== "function") {
+      return;
+    }
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reducedMotion) {
@@ -83,21 +87,21 @@ function UserTurnMessage({ user, song, content }: { user: Me; song: AppleSong; c
   }, []);
 
   return (
-    <article ref={articleRef} {...stylex.props(styles.turn, styles.turnUser)}>
-      <div {...stylex.props(styles.userBubbleWrap)}>
+    <article ref={articleRef} {...props(styles.turn, styles.turnUser)}>
+      <div {...props(styles.userBubbleWrap)}>
         <SearchingNotes.Overlay />
-        <div {...stylex.props(styles.userBubble)}>
+        <div {...props(styles.userBubble)}>
           <SongCard song={song} />
-          <p {...stylex.props(styles.userText)}>{content}</p>
+          <p {...props(styles.userText)}>{content}</p>
         </div>
       </div>
-      <Avatar {...stylex.props(styles.avatar)}>
+      <Avatar {...props(styles.avatar)}>
         {user.image ? (
           <AvatarImage
             src={user.image}
             alt={user.name}
             referrerPolicy="no-referrer"
-            {...stylex.props(styles.avatarImg)}
+            {...props(styles.avatarImg)}
           />
         ) : null}
         <AvatarFallback>
@@ -128,39 +132,37 @@ function SimilarPostCard({
           : styles.stagger3;
 
   return (
-    <article {...stylex.props(styles.similarCard, styles.similarCardEnter, staggerStyle)}>
+    <article {...props(styles.similarCard, styles.similarCardEnter, staggerStyle)}>
       {post.song ? (
-        <div {...stylex.props(styles.similarSong)}>
+        <div {...props(styles.similarSong)}>
           {post.song.artworkUrl ? (
             <img
               src={artworkUrl(post.song.artworkUrl, 96)}
               alt=""
               width={40}
               height={40}
-              {...stylex.props(styles.similarArt)}
+              {...props(styles.similarArt)}
             />
           ) : (
-            <div {...stylex.props(styles.similarArt, styles.artFallback)} aria-hidden="true">
+            <div {...props(styles.similarArt, styles.artFallback)} aria-hidden="true">
               <MusicNoteIcon />
             </div>
           )}
-          <div {...stylex.props(styles.similarSongMeta)}>
+          <div {...props(styles.similarSongMeta)}>
             {post.song.url ? (
               <a
                 href={post.song.url}
                 target="_blank"
                 rel="noreferrer"
-                {...stylex.props(styles.similarTitle, styles.similarTitleLink)}
+                {...props(styles.similarTitle, styles.similarTitleLink)}
               >
                 {post.song.title ?? "（曲名なし）"}
               </a>
             ) : (
-              <span {...stylex.props(styles.similarTitle)}>
-                {post.song.title ?? "（曲名なし）"}
-              </span>
+              <span {...props(styles.similarTitle)}>{post.song.title ?? "（曲名なし）"}</span>
             )}
             {post.song.artistName ? (
-              <span {...stylex.props(styles.similarArtist)}>{post.song.artistName}</span>
+              <span {...props(styles.similarArtist)}>{post.song.artistName}</span>
             ) : null}
           </div>
           {catalogSong ? (
@@ -172,15 +174,15 @@ function SimilarPostCard({
           ) : null}
         </div>
       ) : null}
-      <p {...stylex.props(styles.similarQuote)}>{post.content}</p>
-      <div {...stylex.props(styles.similarAuthor)}>
-        <Avatar {...stylex.props(styles.avatarSm)}>
+      <p {...props(styles.similarQuote)}>{post.content}</p>
+      <div {...props(styles.similarAuthor)}>
+        <Avatar {...props(styles.avatarSm)}>
           {post.author.image ? (
             <AvatarImage
               src={post.author.image}
               alt={post.author.name}
               referrerPolicy="no-referrer"
-              {...stylex.props(styles.avatarImg)}
+              {...props(styles.avatarImg)}
             />
           ) : null}
           <AvatarFallback>
@@ -204,7 +206,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
     setNotesActive?.(query.isPending);
   }, [query.isPending, setNotesActive]);
 
-  const similarPosts = query.data?.posts ?? [];
+  const similarPosts = useMemo(() => query.data?.posts ?? [], [query.data?.posts]);
   const songIds = useMemo(
     () =>
       similarPosts.map((post) => post.song?.appleSongId).filter((id): id is string => Boolean(id)),
@@ -224,7 +226,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
   }, [catalogQuery.data]);
 
   return (
-    <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
+    <article {...props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
       <img
         ref={searchingNotes?.meta.registerTarget}
         src="/otography-icon.png"
@@ -232,11 +234,11 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
         aria-hidden="true"
         width={32}
         height={32}
-        {...stylex.props(styles.botBadge)}
+        {...props(styles.botBadge)}
       />
-      <div {...stylex.props(styles.assistantBody)}>
-        <div {...stylex.props(styles.assistantHeader)}>
-          <p {...stylex.props(styles.assistantLead)}>
+      <div {...props(styles.assistantBody)}>
+        <div {...props(styles.assistantHeader)}>
+          <p {...props(styles.assistantLead)}>
             「{songTitle}」の感想を投稿しました。
             {query.isPending
               ? "近い感覚の曲を探しています…"
@@ -245,7 +247,7 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
                 : "まだ近い感想は見つかりませんでした。"}
           </p>
           <Toggle
-            {...stylex.props(styles.filterToggle, includeSameSong && styles.filterTogglePressed)}
+            {...props(styles.filterToggle, includeSameSong && styles.filterTogglePressed)}
             pressed={includeSameSong}
             onPressedChange={setIncludeSameSong}
           >
@@ -254,13 +256,13 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
         </div>
 
         {query.isError ? (
-          <p role="alert" {...stylex.props(styles.errorText)}>
+          <p role="alert" {...props(styles.errorText)}>
             {query.error.message}
           </p>
         ) : null}
 
         {similarPosts.length > 0 ? (
-          <div {...stylex.props(styles.similarList)}>
+          <div {...props(styles.similarList)}>
             {similarPosts.map((post, index) => {
               const catalogSong = post.song
                 ? (catalogSongs.byId.get(post.song.appleSongId) ??
@@ -284,17 +286,17 @@ function AssistantSimilarReply({ postId, songTitle }: { postId: string; songTitl
 
 function AssistantErrorReply({ message }: { message: string }) {
   return (
-    <article {...stylex.props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
+    <article {...props(styles.turn, styles.turnAssistant, styles.turnAssistantEnter)}>
       <img
         src="/otography-icon.png"
         alt=""
         aria-hidden="true"
         width={32}
         height={32}
-        {...stylex.props(styles.botBadge)}
+        {...props(styles.botBadge)}
       />
-      <div {...stylex.props(styles.assistantBody)}>
-        <p role="alert" {...stylex.props(styles.errorText)}>
+      <div {...props(styles.assistantBody)}>
+        <p role="alert" {...props(styles.errorText)}>
           投稿できませんでした: {message}
         </p>
       </div>
@@ -308,14 +310,14 @@ type ChatExchange = {
   reply?: Extract<ChatTurn, { kind: "assistant" | "assistant-error" }>;
 };
 
-function groupExchanges(turns: readonly ChatTurn[]): ChatExchange[] {
-  const exchanges: ChatExchange[] = [];
+function groupExchanges(turns: ReadonlyArray<ChatTurn>): Array<ChatExchange> {
+  const exchanges: Array<ChatExchange> = [];
   for (const turn of turns) {
     if (turn.kind === "user") {
       exchanges.push({ id: turn.id, user: turn });
       continue;
     }
-    const last = exchanges[exchanges.length - 1];
+    const last = exchanges.at(-1);
     if (last && !last.reply) {
       last.reply = turn;
     } else {
@@ -336,17 +338,17 @@ export function ChatThread({ user }: { user: Me }) {
 
   if (state.turns.length === 0) {
     return (
-      <section {...stylex.props(styles.welcome)} aria-label="はじめる">
-        <div {...stylex.props(styles.welcomeIcon)} aria-hidden="true">
+      <section {...props(styles.welcome)} aria-label="はじめる">
+        <div {...props(styles.welcomeIcon)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
-        <h1 {...stylex.props(styles.welcomeTitle)}>どの曲の感想を残しますか？</h1>
-        <p {...stylex.props(styles.welcomeDesc, styles.welcomeDescDesktop)}>
-          入力欄で <code {...stylex.props(styles.inlineCode)}>@</code> または{" "}
-          <code {...stylex.props(styles.inlineCode)}>/</code>{" "}
+        <h1 {...props(styles.welcomeTitle)}>どの曲の感想を残しますか？</h1>
+        <p {...props(styles.welcomeDesc, styles.welcomeDescDesktop)}>
+          入力欄で <code {...props(styles.inlineCode)}>@</code> または{" "}
+          <code {...props(styles.inlineCode)}>/</code>{" "}
           を押して曲を検索し、感想を送ると近い感覚の曲が返ってきます。
         </p>
-        <p {...stylex.props(styles.welcomeDesc, styles.welcomeDescMobile)}>
+        <p {...props(styles.welcomeDesc, styles.welcomeDescMobile)}>
           曲を選んで感想を送ると、近い感覚の曲が返ってきます。
         </p>
       </section>
@@ -354,7 +356,7 @@ export function ChatThread({ user }: { user: Me }) {
   }
 
   return (
-    <div {...stylex.props(styles.thread)} aria-live="polite">
+    <div {...props(styles.thread)} aria-live="polite">
       {exchanges.map((exchange, index) => {
         const isLatest = index === exchanges.length - 1;
         const forcedActive =
@@ -393,7 +395,7 @@ export function ChatThread({ user }: { user: Me }) {
   );
 }
 
-const turnEnter = stylex.keyframes({
+const turnEnter = keyframes({
   from: {
     opacity: 0,
     transform: "translateY(10px)",
@@ -404,7 +406,7 @@ const turnEnter = stylex.keyframes({
   },
 });
 
-const similarCardEnter = stylex.keyframes({
+const similarCardEnter = keyframes({
   from: {
     opacity: 0,
     transform: "translateY(8px) scale(0.985)",
@@ -415,12 +417,12 @@ const similarCardEnter = stylex.keyframes({
   },
 });
 
-const fadeIn = stylex.keyframes({
+const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
 });
 
-const styles = stylex.create({
+const styles = create({
   welcome: {
     display: "flex",
     flexDirection: "column",

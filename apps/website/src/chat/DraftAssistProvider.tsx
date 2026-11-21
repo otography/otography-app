@@ -183,8 +183,10 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
   // 曲検索メニューが開いたときはポップアップと重なるため隠す。入力再開では閉じず明示的に閉じられるまで残す。
   useEffect(() => {
     if (menuOpen) {
-      abortInFlight();
-      hideImmediately();
+      queueMicrotask(() => {
+        abortInFlight();
+        hideImmediately();
+      });
     }
   }, [abortInFlight, hideImmediately, menuOpen]);
 

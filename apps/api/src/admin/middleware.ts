@@ -15,7 +15,9 @@ export const requireAdmin = createMiddleware<{ Variables: { user: SessionUser } 
       logError(isAdmin);
       return c.json({ error: "管理者かどうかを確かめられませんでした" }, 500);
     }
-    if (!isAdmin) return c.json({ error: "管理者だけが使えます" }, 403);
+    if (!isAdmin) {
+      return c.json({ error: "管理者だけが使えます" }, 403);
+    }
     return next();
   },
 );

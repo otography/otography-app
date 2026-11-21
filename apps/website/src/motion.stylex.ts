@@ -1,5 +1,5 @@
-import * as stylex from "@stylexjs/stylex";
+import { defineConsts } from "@stylexjs/stylex";
 
-export const motion = stylex.defineConsts({
+export const motion = defineConsts({
   easeOut: "cubic-bezier(0.23, 1, 0.32, 1)",
 });

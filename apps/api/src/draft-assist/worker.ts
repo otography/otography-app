@@ -6,11 +6,17 @@ import type { RunAiFn } from "./adapter.ts";
 
 // Worker のバインディング（AI・DRAFT_ASSIST_RATE_LIMIT）を使う実装。テストからは読み込まない。
 
+// Workers AI の型定義に未登録のモデル（@cf/cloudflare/clef-flash 等）を呼ぶためのブリッジ。
+function runCustomAiModel(ai: typeof env.AI): RunAiFn {
+  const raw: unknown = ai;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+  return (model, payload) => (raw as { run: RunAiFn }).run(model, payload);
+}
+
 export function getWorkerDecisionAdapter() {
-  const ai = env.AI as unknown as { run: RunAiFn };
   return resolveDecisionAdapter({
     env: process.env,
-    runAi: (model, payload) => ai.run(model, payload),
+    runAi: runCustomAiModel(env.AI),
   });
 }
 

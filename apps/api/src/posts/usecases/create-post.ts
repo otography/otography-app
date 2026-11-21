@@ -6,7 +6,8 @@ import { createPublicId } from "../../lib/id.ts";
 import { getOrCreateSong } from "../../songs/repository.ts";
 import { MissingIpAddressError, PostOutputError } from "../errors.ts";
 import { insertPostWithIpLog } from "../repository.ts";
-import { type createPostInput, postOutput } from "../schemas.ts";
+import { postOutput } from "../schemas.ts";
+import type { createPostInput } from "../schemas.ts";
 
 /**
  * 曲を選んで投稿する。
@@ -26,19 +27,27 @@ export async function createPost<FetchError extends Error>({
   input: z.output<typeof createPostInput>;
 }) {
   // 発信者情報開示請求に備えて IP を必ず残す（設計ドキュメント）。IP がなければ投稿を保存しない。
-  if (!ipAddress) return new MissingIpAddressError();
+  if (!ipAddress) {
+    return new MissingIpAddressError();
+  }
 
   const song = await getOrCreateSong({ db, songId: input.songId, isrc: input.isrc, fetchSong });
-  if (song instanceof Error) return song;
+  if (song instanceof Error) {
+    return song;
+  }
 
   const post = await insertPostWithIpLog({
     db,
     post: { id: createPublicId(), userId: user.id, songIsrc: song.isrc, content: input.content },
     ipAddress,
   });
-  if (post instanceof Error) return post;
+  if (post instanceof Error) {
+    return post;
+  }
 
   const output = postOutput.safeParse({ ...post, song });
-  if (!output.success) return new PostOutputError({ postId: post.id, cause: output.error });
+  if (!output.success) {
+    return new PostOutputError({ postId: post.id, cause: output.error });
+  }
   return output.data;
 }

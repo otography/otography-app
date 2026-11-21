@@ -1,9 +1,9 @@
 import { DrizzleQueryError } from "drizzle-orm";
-import * as errore from "errore";
+import { createTaggedError } from "errore";
 import { describe, expect, test } from "vite-plus/test";
 import { redactError } from "../../src/lib/log.ts";
 
-class PostInsertError extends errore.createTaggedError({
+class PostInsertError extends createTaggedError({
   name: "PostInsertError",
   message: "投稿を保存できませんでした",
 }) {}

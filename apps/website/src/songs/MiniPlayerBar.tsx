@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import {
@@ -15,7 +15,9 @@ import { motion } from "#/motion.stylex";
 import { usePreviewPlayer } from "./preview-player";
 
 function formatTime(seconds: number) {
-  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    return "0:00";
+  }
   const total = Math.floor(seconds);
   const m = Math.floor(total / 60);
   const s = total % 60;
@@ -26,7 +28,9 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
   const { state, actions } = usePreviewPlayer();
   const { activeSong, mode, status, currentTime, duration, isAuthorizingAppleMusic, error } = state;
 
-  if (!activeSong || !mode) return null;
+  if (!activeSong || !mode) {
+    return null;
+  }
 
   const isPlaying = status === "playing";
   const isLoading = status === "loading";
@@ -34,46 +38,46 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
   const clampedTime = Math.min(currentTime, maxDuration);
 
   return (
-    <section aria-label="再生中の曲" data-mini-player="" {...stylex.props(styles.bar, style)}>
-      <div {...stylex.props(styles.row)}>
-        <div {...stylex.props(styles.songInfo)}>
+    <section aria-label="再生中の曲" data-mini-player="" {...props(styles.bar, style)}>
+      <div {...props(styles.row)}>
+        <div {...props(styles.songInfo)}>
           {activeSong.attributes.artwork ? (
             <img
               src={artworkUrl(activeSong.attributes.artwork.url, 64)}
               alt=""
               width={32}
               height={32}
-              {...stylex.props(styles.artwork)}
+              {...props(styles.artwork)}
             />
           ) : (
-            <div {...stylex.props(styles.artwork, styles.artFallback)} aria-hidden="true">
+            <div {...props(styles.artwork, styles.artFallback)} aria-hidden="true">
               <MusicNoteIcon />
             </div>
           )}
 
-          <div {...stylex.props(styles.meta)}>
-            <div {...stylex.props(styles.titleLine)}>
-              <span {...stylex.props(styles.title)}>{activeSong.attributes.name}</span>
-              <span {...stylex.props(styles.badge, mode === "full" && styles.badgeFull)}>
+          <div {...props(styles.meta)}>
+            <div {...props(styles.titleLine)}>
+              <span {...props(styles.title)}>{activeSong.attributes.name}</span>
+              <span {...props(styles.badge, mode === "full" && styles.badgeFull)}>
                 {mode === "full" ? "Apple Music" : "30秒試聴"}
               </span>
             </div>
-            <span {...stylex.props(styles.artist)}>{activeSong.attributes.artistName}</span>
+            <span {...props(styles.artist)}>{activeSong.attributes.artistName}</span>
           </div>
         </div>
 
-        <div {...stylex.props(styles.controls)}>
+        <div {...props(styles.controls)}>
           <Button
             type="button"
             aria-label={isPlaying ? "一時停止" : "再生"}
             onClick={actions.togglePlayPause}
-            {...stylex.props(styles.playBtn)}
+            {...props(styles.playBtn)}
           >
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </Button>
 
-          <div {...stylex.props(styles.seekGroup)}>
-            <span {...stylex.props(styles.time)}>{formatTime(clampedTime)}</span>
+          <div {...props(styles.seekGroup)}>
+            <span {...props(styles.time)}>{formatTime(clampedTime)}</span>
             <Slider
               value={clampedTime}
               min={0}
@@ -81,28 +85,26 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
               step={1}
               disabled={isLoading || duration <= 0}
               onValueChange={(value) => actions.seek(value)}
-              {...stylex.props(styles.slider)}
+              {...props(styles.slider)}
             >
-              <SliderControl {...stylex.props(styles.sliderControl)}>
-                <SliderTrack {...stylex.props(styles.sliderTrack)}>
-                  <SliderIndicator {...stylex.props(styles.sliderIndicator)} />
-                  <SliderThumb aria-label="再生位置" {...stylex.props(styles.sliderThumb)} />
+              <SliderControl {...props(styles.sliderControl)}>
+                <SliderTrack {...props(styles.sliderTrack)}>
+                  <SliderIndicator {...props(styles.sliderIndicator)} />
+                  <SliderThumb aria-label="再生位置" {...props(styles.sliderThumb)} />
                 </SliderTrack>
               </SliderControl>
             </Slider>
-            <span {...stylex.props(styles.time)}>
-              {duration > 0 ? formatTime(duration) : "--:--"}
-            </span>
+            <span {...props(styles.time)}>{duration > 0 ? formatTime(duration) : "--:--"}</span>
           </div>
         </div>
 
-        <div {...stylex.props(styles.actions)}>
+        <div {...props(styles.actions)}>
           {mode === "preview" ? (
             <Button
               type="button"
               disabled={isAuthorizingAppleMusic}
               onClick={() => void actions.playFull(activeSong)}
-              {...stylex.props(styles.fullBtn)}
+              {...props(styles.fullBtn)}
             >
               {isAuthorizingAppleMusic ? "連携中…" : "フルで聴く"}
             </Button>
@@ -112,7 +114,7 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
             type="button"
             aria-label="プレイヤーを閉じる"
             onClick={actions.close}
-            {...stylex.props(styles.closeBtn)}
+            {...props(styles.closeBtn)}
           >
             <CloseIcon />
           </Button>
@@ -120,7 +122,7 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
       </div>
 
       {error ? (
-        <p role="alert" {...stylex.props(styles.error)}>
+        <p role="alert" {...props(styles.error)}>
           {error}
         </p>
       ) : null}
@@ -128,7 +130,7 @@ export function MiniPlayerBar({ style }: { style?: StyleXStyles }) {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   bar: {
     zIndex: 9,
     display: "flex",

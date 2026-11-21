@@ -34,7 +34,9 @@ const db = drizzle({
 });
 
 const store = await restVectorStore(process.env.X_STORE_NAME ?? "x-store-staging-01");
-if (store instanceof Error) fail(store);
+if (store instanceof Error) {
+  fail(store);
+}
 
 // 他人に見せてよい投稿（削除・非表示でなく、投稿者が利用停止中・退会済みでない）。
 const visible = await db
@@ -51,11 +53,15 @@ const visible = await db
   );
 
 const stored = await store.listIds();
-if (stored instanceof Error) fail(stored);
+if (stored instanceof Error) {
+  fail(stored);
+}
 
 const missing = visible.filter((post) => !stored.has(post.id)).slice(0, MAX_POSTS);
 const transform = await loadTransform({ db, model: EMBEDDING_MODEL });
-if (transform instanceof Error) fail(transform);
+if (transform instanceof Error) {
+  fail(transform);
+}
 
 let embedded = 0;
 let projected = 0;
@@ -67,7 +73,9 @@ for (let i = 0; i < missing.length; i += CHUNK) {
     transform,
     posts: missing.slice(i, i + CHUNK),
   });
-  if (result instanceof Error) fail(result);
+  if (result instanceof Error) {
+    fail(result);
+  }
   embedded += result.stored;
   projected += result.projected;
   console.log(`埋め込みを作りました：${embedded} / ${missing.length}`);
@@ -86,13 +94,17 @@ if (transform) {
   const pending = visible.filter((post) => !withZ.has(post.id)).map((post) => post.id);
   for (let i = 0; i < pending.length; i += CHUNK) {
     const xs = await store.get(pending.slice(i, i + CHUNK));
-    if (xs instanceof Error) fail(xs);
+    if (xs instanceof Error) {
+      fail(xs);
+    }
     const saved = await saveProjected({
       db,
       transform,
       rows: [...xs].map(([postId, x]) => ({ postId, x })),
     });
-    if (saved instanceof Error) fail(saved);
+    if (saved instanceof Error) {
+      fail(saved);
+    }
     projected += saved;
   }
 }

@@ -32,7 +32,9 @@ const ids = [
       .filter((id) => id.length > 0),
   ),
 ];
-if (ids.length === 0) fail(new Error("POST_IDS に投稿の ID を入れてください"));
+if (ids.length === 0) {
+  fail(new Error("POST_IDS に投稿の ID を入れてください"));
+}
 
 const db = drizzle({
   client: createClient({
@@ -43,16 +45,21 @@ const db = drizzle({
 });
 
 const transform = await loadTransform({ db, model: EMBEDDING_MODEL });
-if (transform instanceof Error) fail(transform);
-if (!transform)
+if (transform instanceof Error) {
+  fail(transform);
+}
+if (!transform) {
   fail(
     new Error(
       `変換 ${EMBEDDING_MODEL} がありません。先に Build embedding transform を実行してください`,
     ),
   );
+}
 
 const store = await restVectorStore(process.env.X_STORE_NAME ?? "x-store-staging-01");
-if (store instanceof Error) fail(store);
+if (store instanceof Error) {
+  fail(store);
+}
 
 let reembedded = 0;
 for (let i = 0; i < ids.length; i += CHUNK) {
@@ -62,14 +69,20 @@ for (let i = 0; i < ids.length; i += CHUNK) {
     .from(posts)
     .where(and(inArray(posts.id, part), isNull(posts.deletedAt)));
   const targetIds = targets.map((post) => post.id);
-  if (targetIds.length === 0) continue;
+  if (targetIds.length === 0) {
+    continue;
+  }
 
   await db.delete(postEmbeddings).where(inArray(postEmbeddings.postId, targetIds));
   const removed = await store.remove(targetIds);
-  if (removed instanceof Error) fail(removed);
+  if (removed instanceof Error) {
+    fail(removed);
+  }
 
   const result = await embedPosts({ db, embed: restEmbedder, store, transform, posts: targets });
-  if (result instanceof Error) fail(result);
+  if (result instanceof Error) {
+    fail(result);
+  }
   reembedded += result.projected;
   console.log(`埋め込みを作り直しました：${reembedded} / ${ids.length}`);
 }

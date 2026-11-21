@@ -1,9 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { props } from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { favoriteStyles as styles } from "./favorite-styles";
 
 function Root({ children }: { children: ReactNode }) {
-  return <div {...stylex.props(styles.panel)}>{children}</div>;
+  return <div {...props(styles.panel)}>{children}</div>;
 }
 
 function Bar({
@@ -18,10 +18,10 @@ function Bar({
   children: ReactNode;
 }) {
   return (
-    <div {...stylex.props(styles.panelBar)}>
-      <div {...stylex.props(styles.panelInfo)}>
-        <h2 {...stylex.props(styles.panelTitle)}>{title}</h2>
-        <span {...stylex.props(styles.panelCount)}>
+    <div {...props(styles.panelBar)}>
+      <div {...props(styles.panelInfo)}>
+        <h2 {...props(styles.panelTitle)}>{title}</h2>
+        <span {...props(styles.panelCount)}>
           {count} / {limit}
         </span>
       </div>
@@ -32,7 +32,7 @@ function Bar({
 
 function Loading({ children }: { children: ReactNode }) {
   return (
-    <div {...stylex.props(styles.stateBox)} aria-busy="true">
+    <div {...props(styles.stateBox)} aria-busy="true">
       {children}
     </div>
   );
@@ -40,19 +40,19 @@ function Loading({ children }: { children: ReactNode }) {
 
 function Empty({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
   return (
-    <div {...stylex.props(styles.emptyBox)}>
-      <div {...stylex.props(styles.emptyIcon)} aria-hidden="true">
+    <div {...props(styles.emptyBox)}>
+      <div {...props(styles.emptyIcon)} aria-hidden="true">
         {icon}
       </div>
-      <p {...stylex.props(styles.emptyTitle)}>{title}</p>
-      <p {...stylex.props(styles.emptyDesc)}>{children}</p>
+      <p {...props(styles.emptyTitle)}>{title}</p>
+      <p {...props(styles.emptyDesc)}>{children}</p>
     </div>
   );
 }
 
 function List({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <ol {...stylex.props(styles.list)} aria-label={label}>
+    <ol {...props(styles.list)} aria-label={label}>
       {children}
     </ol>
   );

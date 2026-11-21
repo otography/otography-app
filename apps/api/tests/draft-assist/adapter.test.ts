@@ -7,6 +7,7 @@ import {
   PPLX_DECIDER_MODEL_VERSION,
   resolveDecisionAdapter,
 } from "../../src/draft-assist/adapter.ts";
+import type { SystemOnePayload } from "../../src/draft-assist/adapter.ts";
 import {
   DecisionModelConfigError,
   DecisionModelParseError,
@@ -93,13 +94,14 @@ describe("normalizeSystemOneResponse", () => {
 
 describe("resolveDecisionAdapter & adapters", () => {
   test("デフォルトは clef-flash を選び Workers AI へ System One ペイロードを送る", async () => {
-    const captured: { model: string; payload?: Record<string, unknown> } = { model: "" };
+    let capturedModel = "";
+    let capturedPayload: SystemOnePayload | undefined;
 
     const adapter = resolveDecisionAdapter({
       env: {},
       runAi: async (model, payload) => {
-        captured.model = model;
-        captured.payload = payload;
+        capturedModel = model;
+        capturedPayload = payload;
         return {
           answers: {
             tone_type: { choice: "abstract_only", confidence: 0.9 },
@@ -123,8 +125,8 @@ describe("resolveDecisionAdapter & adapters", () => {
       trackTitle: "夜に駆ける - YOASOBI",
       draftText: "めっちゃエモい",
     });
-    expect(captured.model).toBe(CLEF_FLASH_WORKERS_AI_MODEL);
-    expect(captured.payload?.state).toEqual({
+    expect(capturedModel).toBe(CLEF_FLASH_WORKERS_AI_MODEL);
+    expect(capturedPayload?.state).toEqual({
       track_title: "夜に駆ける - YOASOBI",
       draft_text: "めっちゃエモい",
     });

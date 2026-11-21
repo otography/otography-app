@@ -57,7 +57,9 @@ describe("findIsAdmin", () => {
 describe("listReports / resolveReport", () => {
   test("未処理の通報を、通報者・対象・投稿とともに返し、処理すると一覧から外れる", async () => {
     const open = await listReports({ db, status: "open" });
-    if (open instanceof Error) throw open;
+    if (open instanceof Error) {
+      throw open;
+    }
     expect(open.reports).toMatchObject([
       {
         id: "r1",
@@ -72,7 +74,9 @@ describe("listReports / resolveReport", () => {
       status: "resolved",
     });
     const after = await listReports({ db, status: "open" });
-    if (after instanceof Error) throw after;
+    if (after instanceof Error) {
+      throw after;
+    }
     expect(after.reports).toHaveLength(0);
     expect(await resolveReport({ db, reportId: "x", status: "dismissed" })).toBeInstanceOf(
       ReportNotFoundError,

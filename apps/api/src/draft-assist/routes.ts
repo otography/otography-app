@@ -2,7 +2,7 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { requireAuth } from "../auth/session.ts";
 import type { SessionEnv } from "../auth/session.ts";
-import { logWarning } from "../lib/log.ts";
+import { logInfo, logWarning } from "../lib/log.ts";
 import { CLEF_FLASH_MODEL_VERSION } from "./adapter.ts";
 import { readShallowSingleStrategy, readThresholds } from "./decide.ts";
 import { draftAssistEventInput, draftAssistInput } from "./schemas.ts";
@@ -55,7 +55,7 @@ export const draftAssistRoutes = new Hono<SessionEnv>()
       }
     }),
     (c) => {
-      console.log(
+      logInfo(
         JSON.stringify({
           category: "draft_assist_behavior",
           ...c.req.valid("json"),

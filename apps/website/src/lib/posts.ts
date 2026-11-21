@@ -11,7 +11,9 @@ export type SimilarPostsResponse = InferResponseType<
 export async function createPost(input: { songId: string; isrc: string; content: string }) {
   const res = await client.api.posts.$post({ json: input });
   const body = await res.json();
-  if ("error" in body) throw new Error(body.error);
+  if ("error" in body) {
+    throw new Error(body.error);
+  }
   return body;
 }
 
@@ -21,7 +23,9 @@ export const postQuery = (postId: string) =>
     queryFn: async () => {
       const res = await client.api.posts[":id"].$get({ param: { id: postId } });
       const body = await res.json();
-      if ("error" in body) throw new Error(body.error);
+      if ("error" in body) {
+        throw new Error(body.error);
+      }
       return body;
     },
   });
@@ -35,7 +39,9 @@ export const similarPostsQuery = (postId: string, includeSameSong: boolean) =>
         query: { sameSong: includeSameSong ? "include" : "exclude" },
       });
       const body = await res.json();
-      if ("error" in body) throw new Error(body.error);
+      if ("error" in body) {
+        throw new Error(body.error);
+      }
       return body;
     },
   });

@@ -17,7 +17,9 @@ export function project(transform: Transform, x: ArrayLike<number>) {
   for (let i = 0; i < k; i++) {
     let acc = transform.b[i] ?? 0;
     const row = i * d;
-    for (let j = 0; j < d; j++) acc += (transform.a[row + j] ?? 0) * (x[j] ?? 0);
+    for (let j = 0; j < d; j++) {
+      acc += (transform.a[row + j] ?? 0) * (x[j] ?? 0);
+    }
     z[i] = acc;
     squared += acc * acc;
   }
@@ -31,9 +33,13 @@ export async function loadTransform({ db, model }: { db: Database; model: string
     .from(embeddingTransforms)
     .where(eq(embeddingTransforms.model, model))
     .get()
-    .catch((e) => new EmbeddingTransformError({ model, cause: e }));
-  if (row instanceof Error) return row;
-  if (!row) return null;
+    .catch((error: unknown) => new EmbeddingTransformError({ model, cause: error }));
+  if (row instanceof Error) {
+    return row;
+  }
+  if (!row) {
+    return null;
+  }
   const transform = { model, a: bytesToFloat32(row.a), b: bytesToFloat32(row.b) };
   if (
     transform.a.length !== EMBEDDING_DIMENSIONS * EMBEDDING_INPUT_DIMENSIONS ||

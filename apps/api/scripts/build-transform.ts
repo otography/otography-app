@@ -24,7 +24,8 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { float32Bytes } from "../src/embeddings/vectors.ts";
 import { restVectorStore } from "./lib/cloudflare.ts";
-import { fitTransforms, type Transform } from "./lib/pca.ts";
+import { fitTransforms } from "./lib/pca.ts";
+import type { Transform } from "./lib/pca.ts";
 
 const OFFICIAL_USER_ID = "official-otography";
 const D = EMBEDDING_INPUT_DIMENSIONS;
@@ -47,23 +48,28 @@ const db = drizzle({
 
 // 公式アカウントの感想と、D1 にある x
 const store = await restVectorStore(process.env.X_STORE_NAME ?? "x-store-staging-01");
-if (store instanceof Error) fail(store);
+if (store instanceof Error) {
+  fail(store);
+}
 const reviews = await db
   .select({ id: posts.id, isrc: posts.songIsrc })
   .from(posts)
   .where(eq(posts.userId, OFFICIAL_USER_ID));
 const xs = await store.get(reviews.map((r) => r.id));
-if (xs instanceof Error) fail(xs);
+if (xs instanceof Error) {
+  fail(xs);
+}
 const items = reviews.flatMap((r) => {
   const x = xs.get(r.id);
   return x && r.isrc ? [{ isrc: r.isrc, x }] : [];
 });
-if (items.length <= D)
+if (items.length <= D) {
   fail(
     new Error(
       `x のある感想が少なすぎます（${items.length} 件）。先に Embed posts を実行してください`,
     ),
   );
+}
 
 // 曲ごとに分ける。ISRC のハッシュで決めるので、何度実行しても同じ分け方になる。
 const isTest = (isrc: string) =>
@@ -74,8 +80,10 @@ const test = items.filter((item) => isTest(item.isrc));
 const projectWith = (t: Transform) => (x: Float32Array) => {
   const z = new Float64Array(K);
   for (let r = 0; r < K; r++) {
-    let acc = t.b[r]!;
-    for (let j = 0; j < D; j++) acc += t.a[r * D + j]! * x[j]!;
+    let acc = t.b[r];
+    for (let j = 0; j < D; j++) {
+      acc += t.a[r * D + j] * x[j];
+    }
     z[r] = acc;
   }
   return z;
@@ -94,17 +102,25 @@ function evaluate(set: typeof items, vectorOf: (x: Float32Array) => ArrayLike<nu
   let reciprocal = 0;
   let queries = 0;
   for (let i = 0; i < set.length; i++) {
-    if (!set.some((other, j) => j !== i && other.isrc === set[i]!.isrc)) continue;
+    if (!set.some((other, j) => j !== i && other.isrc === set[i].isrc)) {
+      continue;
+    }
     queries++;
     const scores = vs.map((v, j) => {
-      if (j === i) return -Infinity;
+      if (j === i) {
+        return -Infinity;
+      }
       let dot = 0;
-      for (let t = 0; t < v.length; t++) dot += v[t]! * vs[i]![t]!;
+      for (let t = 0; t < v.length; t++) {
+        dot += v[t] * vs[i][t];
+      }
       return dot;
     });
     const ranked = scores.map((s, j) => [s, j] as const).sort((p, q) => q[0] - p[0]);
-    const first = ranked.findIndex(([, j]) => set[j]!.isrc === set[i]!.isrc);
-    if (first < 10) hits++;
+    const first = ranked.findIndex(([, j]) => set[j].isrc === set[i].isrc);
+    if (first < 10) {
+      hits++;
+    }
     reciprocal += 1 / (first + 1);
   }
   return { queries, hitAt10: hits / queries, mrr: reciprocal / queries };

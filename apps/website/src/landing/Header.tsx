@@ -1,11 +1,11 @@
 import { useState } from "react";
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { motion } from "#/motion.stylex";
 import { fontTokens, landingMedia, landingTokens as t } from "./tokens.stylex";
 import { Logo } from "./Logo";
 import { StartButton } from "./StartButton";
 
-const styles = stylex.create({
+const styles = create({
   header: {
     position: "relative",
     width: "100%",
@@ -204,17 +204,17 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <header {...stylex.props(styles.header)}>
-      <div {...stylex.props(styles.headerInner)}>
+    <header {...props(styles.header)}>
+      <div {...props(styles.headerInner)}>
         <Logo />
-        <nav aria-label="メインナビゲーション" {...stylex.props(styles.nav)}>
-          <a href="#about" {...stylex.props(styles.navLink)}>
+        <nav aria-label="メインナビゲーション" {...props(styles.nav)}>
+          <a href="#about" {...props(styles.navLink)}>
             About
           </a>
-          <a href="#how-it-works" {...stylex.props(styles.navLink)}>
+          <a href="#how-it-works" {...props(styles.navLink)}>
             How it works
           </a>
-          <a href="#voices" {...stylex.props(styles.navLink)}>
+          <a href="#voices" {...props(styles.navLink)}>
             Voices
           </a>
         </nav>
@@ -225,16 +225,11 @@ export function Header() {
           aria-expanded={isMenuOpen}
           aria-controls="mobile-nav"
           onClick={() => setIsMenuOpen((open) => !open)}
-          {...stylex.props(styles.menuButton)}
+          {...props(styles.menuButton)}
         >
+          <span {...props(styles.menuButtonBarTop, isMenuOpen && styles.menuButtonBarTopOpen)} />
           <span
-            {...stylex.props(styles.menuButtonBarTop, isMenuOpen && styles.menuButtonBarTopOpen)}
-          />
-          <span
-            {...stylex.props(
-              styles.menuButtonBarBottom,
-              isMenuOpen && styles.menuButtonBarBottomOpen,
-            )}
+            {...props(styles.menuButtonBarBottom, isMenuOpen && styles.menuButtonBarBottomOpen)}
           />
         </button>
       </div>
@@ -243,27 +238,19 @@ export function Header() {
         aria-label="モバイルナビゲーション"
         aria-hidden={!isMenuOpen}
         inert={!isMenuOpen}
-        {...stylex.props(styles.mobileNav, isMenuOpen && styles.mobileNavOpen)}
+        {...props(styles.mobileNav, isMenuOpen && styles.mobileNavOpen)}
       >
-        <a
-          href="#about"
-          {...stylex.props(styles.navLinkMobile)}
-          onClick={() => setIsMenuOpen(false)}
-        >
+        <a href="#about" {...props(styles.navLinkMobile)} onClick={() => setIsMenuOpen(false)}>
           About
         </a>
         <a
           href="#how-it-works"
-          {...stylex.props(styles.navLinkMobile)}
+          {...props(styles.navLinkMobile)}
           onClick={() => setIsMenuOpen(false)}
         >
           How it works
         </a>
-        <a
-          href="#voices"
-          {...stylex.props(styles.navLinkMobile)}
-          onClick={() => setIsMenuOpen(false)}
-        >
+        <a href="#voices" {...props(styles.navLinkMobile)} onClick={() => setIsMenuOpen(false)}>
           Voices
         </a>
       </nav>

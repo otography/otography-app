@@ -21,17 +21,18 @@ import { OFFICIAL_USER_ID, officialPostId } from "db/official-reviews";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { restEmbedder, restVectorStore } from "./lib/cloudflare.ts";
-import { fitTransforms, type Transform } from "./lib/pca.ts";
+import { fitTransforms } from "./lib/pca.ts";
+import type { Transform } from "./lib/pca.ts";
 
 type EvalData = {
-  reviews: {
+  reviews: Array<{
     key: string;
     aspectPrimary: string;
-    aspects: string[];
+    aspects: Array<string>;
     moodPrimary: string;
-    moods: string[];
-  }[];
-  queries: { text: string; aspect: string | null; mood: string | null }[];
+    moods: Array<string>;
+  }>;
+  queries: Array<{ text: string; aspect: string | null; mood: string | null }>;
 };
 
 const D = EMBEDDING_INPUT_DIMENSIONS;
@@ -43,12 +44,25 @@ function fail(error: Error): never {
   process.exit(1);
 }
 
-const data = JSON.parse(
+function isEvalData(value: unknown): value is EvalData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "queries" in value &&
+    Array.isArray(value.queries)
+  );
+}
+
+const parsedData: unknown = JSON.parse(
   await readFile(
     new URL("../../../packages/db/data/embedding-eval.json", import.meta.url).pathname,
     "utf8",
   ),
-) as EvalData;
+);
+if (!isEvalData(parsedData)) {
+  fail(new Error("embedding-eval.json の形式が不正です"));
+}
+const data = parsedData;
 
 const db = drizzle({
   client: createClient({
@@ -58,13 +72,17 @@ const db = drizzle({
   relations,
 });
 const store = await restVectorStore(process.env.X_STORE_NAME ?? "x-store-staging-01");
-if (store instanceof Error) fail(store);
+if (store instanceof Error) {
+  fail(store);
+}
 
 const allIds = (
   await db.select({ id: posts.id }).from(posts).where(eq(posts.userId, OFFICIAL_USER_ID))
 ).map((row) => row.id);
 const xs = await store.get(allIds);
-if (xs instanceof Error) fail(xs);
+if (xs instanceof Error) {
+  fail(xs);
+}
 
 const labeled = data.reviews.flatMap((review) => {
   const x = xs.get(officialPostId(review.key));
@@ -77,15 +95,19 @@ console.log(
 );
 
 const queryX = await restEmbedder(data.queries.map((q) => q.text));
-if (queryX instanceof Error) fail(queryX);
-const queryVectors: Float32Array[] = queryX;
+if (queryX instanceof Error) {
+  fail(queryX);
+}
+const queryVectors: Array<Float32Array> = queryX;
 
 const fitted = fitTransforms(fitRows, D, K);
 const projectWith = (t: Transform) => (x: Float32Array) => {
   const z = new Float64Array(K);
   for (let r = 0; r < K; r++) {
-    let acc = t.b[r]!;
-    for (let j = 0; j < D; j++) acc += t.a[r * D + j]! * x[j]!;
+    let acc = t.b[r];
+    for (let j = 0; j < D; j++) {
+      acc += t.a[r * D + j] * x[j];
+    }
     z[r] = acc;
   }
   return z;
@@ -97,30 +119,32 @@ const normalize = (v: ArrayLike<number>) => {
 };
 const dot = (a: Float64Array, b: Float64Array) => {
   let s = 0;
-  for (let i = 0; i < a.length; i++) s += a[i]! * b[i]!;
+  for (let i = 0; i < a.length; i++) {
+    s += a[i] * b[i];
+  }
   return s;
 };
 
 /** 起点のベクトルから、評価の感想を上位 TOP 件だけ返す（exclude は除く）。 */
-const topOf = (vs: Float64Array[], q: Float64Array, exclude: number) =>
+const topOf = (vs: Array<Float64Array>, q: Float64Array, exclude: number) =>
   vs
     .map((v, j) => [j === exclude ? -Infinity : dot(v, q), j] as const)
     .sort((p, q2) => q2[0] - p[0])
     .slice(0, TOP)
-    .map(([, j]) => labeled[j]!);
+    .map(([, j]) => labeled[j]);
 
 function evaluate(vectorOf: (x: Float32Array) => ArrayLike<number>) {
   const vs = labeled.map((item) => normalize(vectorOf(item.x)));
   let sameAspect = 0;
   let sameMood = 0;
   for (let i = 0; i < labeled.length; i++) {
-    const top = topOf(vs, vs[i]!, i);
-    sameAspect += top.filter((r) => r.aspectPrimary === labeled[i]!.aspectPrimary).length / TOP;
-    sameMood += top.filter((r) => r.moodPrimary === labeled[i]!.moodPrimary).length / TOP;
+    const top = topOf(vs, vs[i], i);
+    sameAspect += top.filter((r) => r.aspectPrimary === labeled[i].aspectPrimary).length / TOP;
+    sameMood += top.filter((r) => r.moodPrimary === labeled[i].moodPrimary).length / TOP;
   }
   let textHits = 0;
   for (const [qi, query] of data.queries.entries()) {
-    const top = topOf(vs, normalize(vectorOf(queryVectors[qi]!)), -1);
+    const top = topOf(vs, normalize(vectorOf(queryVectors[qi])), -1);
     textHits +=
       top.filter(
         (r) =>
@@ -138,7 +162,9 @@ function evaluate(vectorOf: (x: Float32Array) => ArrayLike<number>) {
 // 偶然の一致：ランダムに 10 件選んだときに当たる割合
 const share = (pick: (r: (typeof labeled)[number]) => string) => {
   const counts = new Map<string, number>();
-  for (const r of labeled) counts.set(pick(r), (counts.get(pick(r)) ?? 0) + 1);
+  for (const r of labeled) {
+    counts.set(pick(r), (counts.get(pick(r)) ?? 0) + 1);
+  }
   return [...counts.values()].reduce(
     (s, c) => s + (c / labeled.length) * ((c - 1) / (labeled.length - 1)),
     0,

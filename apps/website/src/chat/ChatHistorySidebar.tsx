@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, keyframes, props } from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@ui-sdk/react/button";
 import {
@@ -15,7 +15,8 @@ import {
   ScrollAreaThumb,
   ScrollAreaViewport,
 } from "@ui-sdk/react/scroll-area";
-import { type AppleSong, artworkUrl } from "#/lib/musickit";
+import { artworkUrl } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
 import type { PostView } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
 import { AppShell } from "#/shell/AppShell";
@@ -37,12 +38,12 @@ function HistorySongItem({
   const artistName = post.song?.artistName ?? "";
 
   return (
-    <li {...stylex.props(styles.item)}>
+    <li {...props(styles.item)}>
       <Link
         to="/posts/$postId"
         params={{ postId: post.id }}
         onClick={onNavigate}
-        {...stylex.props(styles.itemLink)}
+        {...props(styles.itemLink)}
       >
         {post.song?.artworkUrl ? (
           <img
@@ -51,16 +52,16 @@ function HistorySongItem({
             width={32}
             height={32}
             loading="lazy"
-            {...stylex.props(styles.art)}
+            {...props(styles.art)}
           />
         ) : (
-          <div {...stylex.props(styles.art, styles.artFallback)} aria-hidden="true">
+          <div {...props(styles.art, styles.artFallback)} aria-hidden="true">
             <MusicNoteIcon />
           </div>
         )}
-        <div {...stylex.props(styles.songMeta)}>
-          <span {...stylex.props(styles.songTitle)}>{songTitle}</span>
-          {artistName ? <span {...stylex.props(styles.songArtist)}>{artistName}</span> : null}
+        <div {...props(styles.songMeta)}>
+          <span {...props(styles.songTitle)}>{songTitle}</span>
+          {artistName ? <span {...props(styles.songArtist)}>{artistName}</span> : null}
         </div>
       </Link>
       {catalogSong ? (
@@ -75,7 +76,7 @@ function HistoryList() {
 
   if (state.isPending) {
     return (
-      <div {...stylex.props(styles.stateText)} aria-busy="true">
+      <div {...props(styles.stateText)} aria-busy="true">
         履歴を読み込んでいます…
       </div>
     );
@@ -83,7 +84,7 @@ function HistoryList() {
 
   if (state.error) {
     return (
-      <div role="alert" {...stylex.props(styles.errorText)}>
+      <div role="alert" {...props(styles.errorText)}>
         {state.error}
       </div>
     );
@@ -91,23 +92,23 @@ function HistoryList() {
 
   if (state.groups.length === 0) {
     return (
-      <div {...stylex.props(styles.emptyBox)}>
-        <p {...stylex.props(styles.emptyTitle)}>まだ投稿がありません</p>
-        <p {...stylex.props(styles.emptyDesc)}>曲の感想を送ると、日付ごとにここに並びます。</p>
+      <div {...props(styles.emptyBox)}>
+        <p {...props(styles.emptyTitle)}>まだ投稿がありません</p>
+        <p {...props(styles.emptyDesc)}>曲の感想を送ると、日付ごとにここに並びます。</p>
       </div>
     );
   }
 
   return (
-    <div {...stylex.props(styles.groupList)}>
+    <div {...props(styles.groupList)}>
       {state.groups.map((group) => {
         const headingId = `history-date-${group.dateKey}`;
         return (
-          <section key={group.dateKey} aria-labelledby={headingId} {...stylex.props(styles.group)}>
-            <h3 id={headingId} {...stylex.props(styles.dateHeading)}>
+          <section key={group.dateKey} aria-labelledby={headingId} {...props(styles.group)}>
+            <h3 id={headingId} {...props(styles.dateHeading)}>
               <time dateTime={group.dateKey}>{group.label}</time>
             </h3>
-            <ul {...stylex.props(styles.items)}>
+            <ul {...props(styles.items)}>
               {group.posts.map((post) => {
                 const catalogSong = post.song
                   ? (state.catalogSongs.byId.get(post.song.appleSongId) ??
@@ -128,12 +129,12 @@ function HistoryList() {
       })}
 
       {state.hasNextPage ? (
-        <div {...stylex.props(styles.moreWrap)}>
+        <div {...props(styles.moreWrap)}>
           <Button
             type="button"
             disabled={state.isFetchingNextPage}
             onClick={actions.fetchNextPage}
-            {...stylex.props(styles.moreBtn)}
+            {...props(styles.moreBtn)}
           >
             {state.isFetchingNextPage ? "読み込み中…" : "さらに読み込む"}
           </Button>
@@ -145,13 +146,13 @@ function HistoryList() {
 
 function HistoryScrollBody() {
   return (
-    <ScrollArea {...stylex.props(styles.scrollArea)}>
+    <ScrollArea {...props(styles.scrollArea)}>
       <ScrollAreaViewport
         role="region"
         aria-label="日付ごとの投稿履歴"
-        {...stylex.props(styles.scrollViewport)}
+        {...props(styles.scrollViewport)}
       >
-        <ScrollAreaContent {...stylex.props(styles.scrollContent)}>
+        <ScrollAreaContent {...props(styles.scrollContent)}>
           <HistoryList />
         </ScrollAreaContent>
       </ScrollAreaViewport>
@@ -165,12 +166,14 @@ function HistoryScrollBody() {
 function Desktop() {
   const { state, actions } = useChatHistory();
 
-  if (!state.isDesktop || !state.desktopOpen) return null;
+  if (!state.isDesktop || !state.desktopOpen) {
+    return null;
+  }
 
   return (
-    <aside aria-label="投稿履歴" {...stylex.props(styles.desktopSidebar)}>
-      <div {...stylex.props(styles.sidebarHeader)}>
-        <div {...stylex.props(styles.brand)}>
+    <aside aria-label="投稿履歴" {...props(styles.desktopSidebar)}>
+      <div {...props(styles.sidebarHeader)}>
+        <div {...props(styles.brand)}>
           <AppShell.BrandIcon />
           <AppShell.BrandName />
         </div>
@@ -178,13 +181,13 @@ function Desktop() {
           type="button"
           aria-label="投稿履歴サイドバーを閉じる"
           onClick={() => actions.setDesktopOpen(false)}
-          {...stylex.props(styles.iconBtn)}
+          {...props(styles.iconBtn)}
         >
           <SidebarIcon />
         </Button>
       </div>
-      <div {...stylex.props(styles.sectionBar)}>
-        <h2 {...stylex.props(styles.sectionTitle)}>投稿した曲</h2>
+      <div {...props(styles.sectionBar)}>
+        <h2 {...props(styles.sectionTitle)}>投稿した曲</h2>
       </div>
       <HistoryScrollBody />
     </aside>
@@ -194,18 +197,20 @@ function Desktop() {
 function MobileDrawer() {
   const { state, actions } = useChatHistory();
 
-  if (state.isDesktop) return null;
+  if (state.isDesktop) {
+    return null;
+  }
 
   return (
     <Drawer side="left" open={state.mobileOpen} onOpenChange={actions.setMobileOpen}>
-      <DrawerBackdrop {...stylex.props(styles.backdrop)} />
-      <DrawerContent initialFocus="content" {...stylex.props(styles.drawerContent)}>
-        <div {...stylex.props(styles.drawerHeader)}>
-          <div {...stylex.props(styles.brand)}>
+      <DrawerBackdrop {...props(styles.backdrop)} />
+      <DrawerContent initialFocus="content" {...props(styles.drawerContent)}>
+        <div {...props(styles.drawerHeader)}>
+          <div {...props(styles.brand)}>
             <AppShell.BrandIcon />
-            <DrawerTitle {...stylex.props(styles.drawerTitle)}>投稿した曲</DrawerTitle>
+            <DrawerTitle {...props(styles.drawerTitle)}>投稿した曲</DrawerTitle>
           </div>
-          <DrawerClose aria-label="投稿履歴を閉じる" {...stylex.props(styles.iconBtn)}>
+          <DrawerClose aria-label="投稿履歴を閉じる" {...props(styles.iconBtn)}>
             <CloseIcon />
           </DrawerClose>
         </div>
@@ -218,7 +223,9 @@ function MobileDrawer() {
 function OpenTrigger() {
   const { state, actions } = useChatHistory();
 
-  if (state.isDesktop && state.desktopOpen) return null;
+  if (state.isDesktop && state.desktopOpen) {
+    return null;
+  }
 
   return (
     <Button
@@ -231,7 +238,7 @@ function OpenTrigger() {
           actions.setMobileOpen(true);
         }
       }}
-      {...stylex.props(styles.iconBtn)}
+      {...props(styles.iconBtn)}
     >
       <SidebarIcon />
     </Button>
@@ -244,7 +251,7 @@ export const ChatHistorySidebar = {
   OpenTrigger,
 };
 
-const sidebarEnter = stylex.keyframes({
+const sidebarEnter = keyframes({
   from: {
     opacity: 0,
     transform: "translateX(-8px)",
@@ -255,12 +262,12 @@ const sidebarEnter = stylex.keyframes({
   },
 });
 
-const fadeIn = stylex.keyframes({
+const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
 });
 
-const styles = stylex.create({
+const styles = create({
   desktopSidebar: {
     display: "flex",
     flexShrink: 0,

@@ -25,7 +25,9 @@ export async function replaceFavoriteArtistsOfUser<FetchError extends Error>({
 }) {
   const seen = new Set<string>();
   const duplicate = input.items.find((item) => seen.size === seen.add(item.artistId).size);
-  if (duplicate) return new DuplicateFavoriteArtistError({ artistId: duplicate.artistId });
+  if (duplicate) {
+    return new DuplicateFavoriteArtistError({ artistId: duplicate.artistId });
+  }
 
   // アーティストを確定させ、保存する行を作る。
   const resolved = await Promise.all(
@@ -36,12 +38,16 @@ export async function replaceFavoriteArtistsOfUser<FetchError extends Error>({
   );
   const items: Parameters<typeof replaceFavoriteArtists>[0]["items"] = [];
   for (const [position, row] of resolved.entries()) {
-    if (row instanceof Error) return row;
+    if (row instanceof Error) {
+      return row;
+    }
     items.push({ ...row, position });
   }
 
   const replaced = await replaceFavoriteArtists({ db, userId, items });
-  if (replaced instanceof Error) return replaced;
+  if (replaced instanceof Error) {
+    return replaced;
+  }
 
   return getProfileOfUser({ db, userId });
 }

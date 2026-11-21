@@ -1,13 +1,6 @@
 import { inArray, sql } from "drizzle-orm";
-import {
-  type SQLiteColumn,
-  check,
-  index,
-  integer,
-  primaryKey,
-  snakeCase,
-  text,
-} from "drizzle-orm/sqlite-core";
+import { check, index, integer, primaryKey, snakeCase, text } from "drizzle-orm/sqlite-core";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { FAVORITE_COLORS, FAVORITE_COMMENT_MAX } from "../constants.ts";
 import { users } from "./auth.ts";
 import { createdAt, updatedAt } from "./columns.ts";

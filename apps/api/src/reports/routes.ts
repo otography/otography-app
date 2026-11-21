@@ -1,7 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import * as errore from "errore";
+import { matchErrorPartial } from "errore";
 import { Hono } from "hono";
-import { requireAuth, type SessionEnv } from "../auth/session.ts";
+import { requireAuth } from "../auth/session.ts";
+import type { SessionEnv } from "../auth/session.ts";
 import { db } from "../lib/db.ts";
 import { rateLimit } from "../lib/rate-limit/middleware.ts";
 import { createReportInput } from "./schemas.ts";
@@ -32,7 +33,7 @@ export const reportsRoutes = new Hono<SessionEnv>()
         input: c.req.valid("json"),
       });
       if (report instanceof Error) {
-        const { status, error } = errore.matchErrorPartial<
+        const { status, error } = matchErrorPartial<
           typeof report,
           { status: 400 | 404 | 500; error: string }
         >(

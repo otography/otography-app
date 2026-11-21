@@ -8,9 +8,13 @@ export function cholesky(a: Float64Array, n: number) {
   for (let i = 0; i < n; i++) {
     for (let j = 0; j <= i; j++) {
       let sum = a[i * n + j] ?? 0;
-      for (let p = 0; p < j; p++) sum -= (l[i * n + p] ?? 0) * (l[j * n + p] ?? 0);
+      for (let p = 0; p < j; p++) {
+        sum -= (l[i * n + p] ?? 0) * (l[j * n + p] ?? 0);
+      }
       if (i === j) {
-        if (!(sum > 0)) return null;
+        if (!(sum > 0)) {
+          return null;
+        }
         l[i * n + i] = Math.sqrt(sum);
       } else {
         l[i * n + j] = sum / (l[j * n + j] ?? 1);
@@ -27,7 +31,9 @@ export function invertLower(l: Float64Array, n: number) {
     inv[j * n + j] = 1 / (l[j * n + j] ?? 1);
     for (let i = j + 1; i < n; i++) {
       let sum = 0;
-      for (let p = j; p < i; p++) sum += (l[i * n + p] ?? 0) * (inv[p * n + j] ?? 0);
+      for (let p = j; p < i; p++) {
+        sum += (l[i * n + p] ?? 0) * (inv[p * n + j] ?? 0);
+      }
       inv[i * n + j] = -sum / (l[i * n + i] ?? 1);
     }
   }
@@ -41,7 +47,9 @@ export function lowerGram(w: Float64Array, n: number) {
     for (let j = 0; j <= i; j++) {
       let sum = 0;
       // w は下三角なので、行 p が i 以上の成分だけが 0 でない
-      for (let p = i; p < n; p++) sum += (w[p * n + i] ?? 0) * (w[p * n + j] ?? 0);
+      for (let p = i; p < n; p++) {
+        sum += (w[p * n + i] ?? 0) * (w[p * n + j] ?? 0);
+      }
       out[i * n + j] = sum;
       out[j * n + i] = sum;
     }

@@ -32,17 +32,23 @@ export async function replaceFavoriteSongsOfUser<FetchError extends Error>({
   );
   const items: Parameters<typeof replaceFavoriteSongs>[0]["items"] = [];
   for (const [position, row] of resolved.entries()) {
-    if (row instanceof Error) return row;
+    if (row instanceof Error) {
+      return row;
+    }
     items.push({ ...row, position });
   }
 
   // 入力の ISRC が違っても、Apple が返した ISRC が同じなら同じ曲なので、確定した曲で重複を確かめる。
   const seen = new Set<string>();
   const duplicate = items.find((item) => seen.size === seen.add(item.songIsrc).size);
-  if (duplicate) return new DuplicateFavoriteSongError({ isrc: duplicate.songIsrc });
+  if (duplicate) {
+    return new DuplicateFavoriteSongError({ isrc: duplicate.songIsrc });
+  }
 
   const replaced = await replaceFavoriteSongs({ db, userId, items });
-  if (replaced instanceof Error) return replaced;
+  if (replaced instanceof Error) {
+    return replaced;
+  }
 
   return getProfileOfUser({ db, userId });
 }

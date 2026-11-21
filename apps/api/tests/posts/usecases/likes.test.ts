@@ -88,7 +88,9 @@ describe("getPost", () => {
   test("投稿者、曲、件数、閲覧者がいいね済みかを返す", async () => {
     await setLike({ db, userId: "viewer", postId: "post1", liked: true });
     const post = await getPost({ db, postId: "post1", viewerId: "viewer" });
-    if (post instanceof Error) throw post;
+    if (post instanceof Error) {
+      throw post;
+    }
     expect(post).toMatchObject({
       id: "post1",
       content: "好きな曲",
@@ -140,7 +142,9 @@ describe("listPostsByAuthor", () => {
       viewerId: "viewer",
       before: null,
     });
-    if (first instanceof Error) throw first;
+    if (first instanceof Error) {
+      throw first;
+    }
     expect(first.posts).toHaveLength(20);
     expect(first.nextCursor).not.toBeNull();
 
@@ -151,7 +155,9 @@ describe("listPostsByAuthor", () => {
       viewerId: "viewer",
       before: { createdAt: new Date(Number(ms)), id: id ?? "" },
     });
-    if (second instanceof Error) throw second;
+    if (second instanceof Error) {
+      throw second;
+    }
     expect(second.posts).toHaveLength(5);
     expect(second.nextCursor).toBeNull();
 

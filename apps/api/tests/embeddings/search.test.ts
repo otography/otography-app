@@ -15,7 +15,9 @@ const gaussian = createGaussian(42);
 const randomVector = (scale = 1) => Array.from({ length: k }, () => gaussian() * scale);
 const dot = (a: ArrayLike<number>, b: ArrayLike<number>) => {
   let s = 0;
-  for (let i = 0; i < a.length; i++) s += (a[i] ?? 0) * (b[i] ?? 0);
+  for (let i = 0; i < a.length; i++) {
+    s += (a[i] ?? 0) * (b[i] ?? 0);
+  }
   return s;
 };
 const multiply = (P: Float32Array, v: ArrayLike<number>) =>
@@ -24,10 +26,16 @@ const multiply = (P: Float32Array, v: ArrayLike<number>) =>
 // P = I + Σ v vᵀ（4 本）。対称で正定値なので、逆共分散として使える。
 const precision = (() => {
   const P = new Float32Array(k * k);
-  for (let i = 0; i < k; i++) P[i * k + i] = 1;
+  for (let i = 0; i < k; i++) {
+    P[i * k + i] = 1;
+  }
   for (let r = 0; r < 4; r++) {
     const v = randomVector(0.15);
-    for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) P[i * k + j]! += v[i]! * v[j]!;
+    for (let i = 0; i < k; i++) {
+      for (let j = 0; j < k; j++) {
+        P[i * k + j] += v[i] * v[j];
+      }
+    }
   }
   return P;
 })();
@@ -38,13 +46,13 @@ const metric: Metric = {
   pnormColumn: "pnormB",
 };
 const centered = (z: ArrayLike<number>) =>
-  Array.from({ length: k }, (_, i) => z[i]! - metric.mean[i]!);
+  Array.from({ length: k }, (_, i) => z[i] - metric.mean[i]);
 const pnorm = (z: ArrayLike<number>) =>
   Math.sqrt(dot(centered(z), multiply(precision, centered(z))));
 
 let db: Database;
 /** DB に保存された（F16 に丸めた）z。 */
-let stored: Map<string, number[]>;
+let stored: Map<string, Array<number>>;
 
 beforeAll(async () => {
   db = await createTestDb();
@@ -82,7 +90,9 @@ beforeAll(async () => {
   stored = new Map(rows.map((r) => [r.postId, r.embedding]));
   // バッチと同じく、この計量でのノルムを pnorm 列に書く。post3 は書かずに残す
   for (const [postId, z] of stored) {
-    if (postId === "post3") continue;
+    if (postId === "post3") {
+      continue;
+    }
     await db
       .update(postEmbeddings)
       .set({ pnormB: pnorm(z) })
@@ -91,10 +101,11 @@ beforeAll(async () => {
 });
 
 /** 見せてよい投稿（post1 は投稿者が停止中、post2 は非表示）を、スコアの大きい順に並べる。 */
-const rank = (score: (z: number[]) => number, exclude: string[] = []) =>
+const rank = (score: (z: Array<number>) => number, exclude: Array<string> = []) =>
   [...stored]
-    .filter(([postId]) => !["post1", "post2", ...exclude].includes(postId))
-    .map(([postId, z]) => ({ postId, score: score(z) }))
+    .flatMap(([postId, z]) =>
+      ["post1", "post2", ...exclude].includes(postId) ? [] : [{ postId, score: score(z) }],
+    )
     .sort((a, b) => b.score - a.score);
 
 describe("searchSimilarPosts", () => {
@@ -105,11 +116,13 @@ describe("searchSimilarPosts", () => {
     const expected = rank((zi) => dot(centered(zi), u) / pnorm(zi), ["post3"]).slice(0, 10);
 
     const result = await searchSimilarPosts({ db, z, metric, limit: N, candidates: N });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     const withoutApproximated = result.filter((r) => r.postId !== "post3").slice(0, 10);
     expect(withoutApproximated.map((r) => r.postId)).toEqual(expected.map((r) => r.postId));
     for (const [i, r] of withoutApproximated.entries()) {
-      expect(r.score).toBeCloseTo(expected[i]!.score, 2);
+      expect(r.score).toBeCloseTo(expected[i].score, 2);
     }
   });
 
@@ -121,7 +134,9 @@ describe("searchSimilarPosts", () => {
       limit: N,
       candidates: N,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(result.map((r) => r.postId)).toContain("post3");
   });
 
@@ -130,7 +145,9 @@ describe("searchSimilarPosts", () => {
     const expected = rank((zi) => dot(zi, z) / (Math.hypot(...zi) * Math.hypot(...z))).slice(0, 10);
 
     const result = await searchSimilarPosts({ db, z, metric: null, limit: 10, candidates: N });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(result.map((r) => r.postId)).toEqual(expected.map((r) => r.postId));
   });
 
@@ -143,9 +160,13 @@ describe("searchSimilarPosts", () => {
       candidates: N,
       exclude: { postId: "post4", songIsrc: "JPAB01234567" },
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     const ids = result.map((r) => r.postId);
-    for (const id of ["post4", "post5", "post6"]) expect(ids).not.toContain(id);
+    for (const id of ["post4", "post5", "post6"]) {
+      expect(ids).not.toContain(id);
+    }
     // 曲の無い投稿（songIsrc が NULL）は除かない
     expect(ids).toHaveLength(N - 2 - 3);
   });
@@ -158,7 +179,9 @@ describe("searchSimilarPosts", () => {
       limit: N,
       candidates: N,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     const ids = result.map((r) => r.postId);
     expect(ids).not.toContain("post1");
     expect(ids).not.toContain("post2");

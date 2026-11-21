@@ -1,4 +1,4 @@
-import * as jose from "jose";
+import { SignJWT, importPKCS8 } from "jose";
 import { requireEnv } from "../env.ts";
 import { DeveloperTokenError } from "./errors.ts";
 import { normalizePkcs8Pem } from "./private-key.ts";
@@ -16,9 +16,9 @@ export type DeveloperToken = { token: string; expiresAt: number };
 // 鍵の読み込みは非同期なので、最初に使うときに 1 回だけ行う。
 let privateKey: Promise<DeveloperTokenError | CryptoKey> | null = null;
 const loadPrivateKey = () => {
-  privateKey ??= jose
-    .importPKCS8(privateKeyPem, "ES256")
-    .catch((e) => new DeveloperTokenError({ cause: e }));
+  privateKey ??= importPKCS8(privateKeyPem, "ES256").catch(
+    (error: unknown) => new DeveloperTokenError({ cause: error }),
+  );
   return privateKey;
 };
 
@@ -32,20 +32,26 @@ const cache = new Map<string, DeveloperToken>();
 export async function getDeveloperToken({ origin }: { origin: string | null }) {
   const now = Math.floor(Date.now() / 1000);
   const cached = cache.get(origin ?? "");
-  if (cached && cached.expiresAt - now > RENEW_BEFORE_SECONDS) return cached;
+  if (cached && cached.expiresAt - now > RENEW_BEFORE_SECONDS) {
+    return cached;
+  }
 
   const key = await loadPrivateKey();
-  if (key instanceof Error) return key;
+  if (key instanceof Error) {
+    return key;
+  }
 
   const expiresAt = now + TOKEN_LIFETIME_SECONDS;
-  const token = await new jose.SignJWT(origin ? { origin: [origin] } : {})
+  const token = await new SignJWT(origin ? { origin: [origin] } : {})
     .setProtectedHeader({ alg: "ES256", kid: keyId })
     .setIssuer(teamId)
     .setIssuedAt(now)
     .setExpirationTime(expiresAt)
     .sign(key)
-    .catch((e) => new DeveloperTokenError({ cause: e }));
-  if (token instanceof Error) return token;
+    .catch((error: unknown) => new DeveloperTokenError({ cause: error }));
+  if (token instanceof Error) {
+    return token;
+  }
 
   const entry = { token, expiresAt };
   cache.set(origin ?? "", entry);

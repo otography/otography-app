@@ -1,6 +1,8 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { type ReactNode, useMemo, useState } from "react";
-import { type AppleSong, catalogSongsQuery } from "#/lib/musickit";
+import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { catalogSongsQuery } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
 import { authorPostsInfiniteQuery } from "#/lib/profile";
 import { useMediaQuery } from "#/lib/use-media-query";
 import { ChatHistoryContext } from "./ChatHistoryContext";

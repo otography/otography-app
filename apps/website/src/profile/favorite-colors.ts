@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create } from "@stylexjs/stylex";
 import type { FavoriteColor } from "db/constants";
 
 const DARK = "@media (prefers-color-scheme: dark)";
@@ -18,7 +18,7 @@ export const FAVORITE_COLOR_META: Record<FavoriteColor, { label: string; swatch:
   gray: { label: "グレー", swatch: "#52525b" },
 };
 
-export const favoriteAccentStyles = stylex.create({
+export const favoriteAccentStyles = create({
   red: {
     backgroundColor: { [DARK]: "rgba(239, 68, 68, 0.14)", default: "#fef2f2" },
     borderColor: { [DARK]: "rgba(248, 113, 113, 0.35)", default: "#fecaca" },

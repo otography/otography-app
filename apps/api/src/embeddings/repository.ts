@@ -3,7 +3,8 @@ import { and, asc, eq, gt, isNull, lte } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { EmbeddingMetricError } from "./errors.ts";
 import type { Metric } from "./metric.ts";
-import { accumulate, type Geometry, type Moments, precisionNorm } from "./statistics.ts";
+import { accumulate, precisionNorm } from "./statistics.ts";
+import type { Geometry, Moments } from "./statistics.ts";
 
 /** 1 回の読み書きで扱う行数。 */
 const CHUNK = 1000;
@@ -31,17 +32,23 @@ export async function readMetricState({
     .insert(embeddingMetrics)
     .values({ model, moments: toBytes(emptyMoments) })
     .onConflictDoNothing()
-    .catch((e) => new EmbeddingMetricError({ cause: e }));
-  if (inserted instanceof Error) return inserted;
+    .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+  if (inserted instanceof Error) {
+    return inserted;
+  }
 
   const row = await db
     .select()
     .from(embeddingMetrics)
     .where(eq(embeddingMetrics.model, model))
     .get()
-    .catch((e) => new EmbeddingMetricError({ cause: e }));
-  if (row instanceof Error) return row;
-  if (!row) return new EmbeddingMetricError({ cause: new Error("統計の行を作れなかった") });
+    .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+  if (row instanceof Error) {
+    return row;
+  }
+  if (!row) {
+    return new EmbeddingMetricError({ cause: new Error("統計の行を作れなかった") });
+  }
   return {
     version: row.version,
     moments: toFloat64(row.moments),
@@ -73,13 +80,19 @@ export async function consumeChanges({
       .from(embeddingChanges)
       .orderBy(asc(embeddingChanges.seq))
       .limit(CHUNK)
-      .catch((e) => new EmbeddingMetricError({ cause: e }));
-    if (changes instanceof Error) return changes;
+      .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+    if (changes instanceof Error) {
+      return changes;
+    }
     const last = changes.at(-1);
-    if (!last) return consumed;
+    if (!last) {
+      return consumed;
+    }
 
     for (const change of changes) {
-      if (change.model !== model) continue;
+      if (change.model !== model) {
+        continue;
+      }
       accumulate(moments, change.embedding, change.sign === -1 ? -1 : 1);
     }
     const saved = await db
@@ -90,8 +103,10 @@ export async function consumeChanges({
           .where(eq(embeddingMetrics.model, model)),
         db.delete(embeddingChanges).where(lte(embeddingChanges.seq, last.seq)),
       ])
-      .catch((e) => new EmbeddingMetricError({ cause: e }));
-    if (saved instanceof Error) return saved;
+      .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+    if (saved instanceof Error) {
+      return saved;
+    }
     consumed += changes.length;
   }
 }
@@ -130,8 +145,10 @@ export async function writePnorms({
       )
       .orderBy(asc(postEmbeddings.postId))
       .limit(CHUNK)
-      .catch((e) => new EmbeddingMetricError({ cause: e }));
-    if (rows instanceof Error) return rows;
+      .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+    if (rows instanceof Error) {
+      return rows;
+    }
     const [first, ...rest] = rows.map((row) => {
       const pnorm = precisionNorm(row.embedding, geometry);
       // updated_at は埋め込みを作り直したときだけ変える
@@ -141,11 +158,15 @@ export async function writePnorms({
         .set(column === "pnorm_a" ? { pnormA: pnorm, updatedAt } : { pnormB: pnorm, updatedAt })
         .where(eq(postEmbeddings.postId, row.postId));
     });
-    if (!first) return written;
+    if (first === undefined) {
+      return written;
+    }
     const saved = await db
       .batch([first, ...rest])
-      .catch((e) => new EmbeddingMetricError({ cause: e }));
-    if (saved instanceof Error) return saved;
+      .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+    if (saved instanceof Error) {
+      return saved;
+    }
     written += rows.length;
     after = rows.at(-1)?.postId ?? after;
   }
@@ -177,7 +198,7 @@ export async function publishMetric({
       switchedAt: now,
     })
     .where(eq(embeddingMetrics.model, model))
-    .catch((e) => new EmbeddingMetricError({ cause: e }));
+    .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
 }
 
 /** 検索に使う計量を読む。統計の補正がまだ無い（version が 0、または行が無い）ときは null。 */
@@ -192,9 +213,13 @@ export async function loadMetric({ db, model }: { db: Database; model: string })
     .from(embeddingMetrics)
     .where(eq(embeddingMetrics.model, model))
     .get()
-    .catch((e) => new EmbeddingMetricError({ cause: e }));
-  if (row instanceof Error) return row;
-  if (!row || row.version === 0 || !row.mean || !row.precision) return null;
+    .catch((error: unknown) => new EmbeddingMetricError({ cause: error }));
+  if (row instanceof Error) {
+    return row;
+  }
+  if (!row || row.version === 0 || !row.mean || !row.precision) {
+    return null;
+  }
   return {
     version: row.version,
     mean: toFloat32(row.mean),

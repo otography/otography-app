@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import type { ReactNode } from "react";
@@ -7,7 +7,7 @@ import { motion } from "#/motion.stylex";
 
 /** 画面上部のバー。position（固定・sticky など）は style で渡す。 */
 function Topbar({ style, children }: { style?: StyleXStyles; children: ReactNode }) {
-  return <header {...stylex.props(styles.topbar, style)}>{children}</header>;
+  return <header {...props(styles.topbar, style)}>{children}</header>;
 }
 
 function BrandIcon() {
@@ -18,18 +18,18 @@ function BrandIcon() {
       aria-hidden="true"
       width={24}
       height={24}
-      {...stylex.props(styles.brandIcon)}
+      {...props(styles.brandIcon)}
     />
   );
 }
 
 function BrandName({ style }: { style?: StyleXStyles }) {
-  return <span {...stylex.props(styles.brandName, style)}>otography</span>;
+  return <span {...props(styles.brandName, style)}>otography</span>;
 }
 
 function SignOutButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button type="button" onClick={onClick} {...stylex.props(styles.signoutBtn)}>
+    <Button type="button" onClick={onClick} {...props(styles.signoutBtn)}>
       ログアウト
     </Button>
   );
@@ -38,7 +38,7 @@ function SignOutButton({ onClick }: { onClick: () => void }) {
 /** チャット画面とプロフィール画面で共通の、上部バーの部品。 */
 export const AppShell = { Topbar, BrandIcon, BrandName, SignOutButton };
 
-const styles = stylex.create({
+const styles = create({
   topbar: {
     zIndex: 10,
     display: "flex",

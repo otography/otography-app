@@ -1,23 +1,15 @@
-import {
-  type InfiniteData,
-  useInfiniteQuery,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import { createToaster } from "@ui-sdk/react/toast";
 import { FAVORITE_COMMENT_MAX, FAVORITE_LIMIT, USER_BIO_MAX, USER_NAME_MAX } from "db/constants";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { type Me, meQuery } from "#/lib/auth";
+import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { meQuery } from "#/lib/auth";
+import type { Me } from "#/lib/auth";
 import { ProfileToasts } from "./ProfileToasts";
-import { type AppleArtist, type AppleSong, catalogSongsQuery } from "#/lib/musickit";
+import { catalogSongsQuery } from "#/lib/musickit";
+import type { AppleArtist, AppleSong } from "#/lib/musickit";
 import {
-  type AuthorPostsPage,
-  type FavoriteArtistItem,
-  type FavoriteDecoration,
-  type FavoriteSongItem,
-  type ReplaceFavoriteArtistInput,
-  type ReplaceFavoriteSongInput,
   authorPostsInfiniteQuery,
   deletePost as deletePostApi,
   profileQuery,
@@ -26,9 +18,17 @@ import {
   setPostLike,
   updateProfile as updateProfileApi,
 } from "#/lib/profile";
+import type {
+  AuthorPostsPage,
+  FavoriteArtistItem,
+  FavoriteDecoration,
+  FavoriteSongItem,
+  ReplaceFavoriteArtistInput,
+  ReplaceFavoriteSongInput,
+} from "#/lib/profile";
 import { ProfileContext } from "./ProfileContext";
 
-function toSongInputs(items: FavoriteSongItem[]): ReplaceFavoriteSongInput[] {
+function toSongInputs(items: Array<FavoriteSongItem>): Array<ReplaceFavoriteSongInput> {
   return items.map((item) => ({
     songId: item.song.appleSongId,
     isrc: item.song.isrc,
@@ -38,7 +38,7 @@ function toSongInputs(items: FavoriteSongItem[]): ReplaceFavoriteSongInput[] {
   }));
 }
 
-function toArtistInputs(items: FavoriteArtistItem[]): ReplaceFavoriteArtistInput[] {
+function toArtistInputs(items: Array<FavoriteArtistItem>): Array<ReplaceFavoriteArtistInput> {
   return items.map((item) => ({
     artistId: item.artist.id,
     comment: item.comment,
@@ -47,12 +47,16 @@ function toArtistInputs(items: FavoriteArtistItem[]): ReplaceFavoriteArtistInput
   }));
 }
 
-function moveItem<T>(items: T[], index: number, direction: -1 | 1): T[] | null {
+function moveItem<T>(items: Array<T>, index: number, direction: -1 | 1): Array<T> | null {
   const target = index + direction;
-  if (target < 0 || target >= items.length) return null;
+  if (target < 0 || target >= items.length) {
+    return null;
+  }
   const next = items.slice();
   const [moved] = next.splice(index, 1);
-  if (!moved) return null;
+  if (!moved) {
+    return null;
+  }
   next.splice(target, 0, moved);
   return next;
 }
@@ -75,16 +79,26 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
     () => postsRes.data?.pages.flatMap((page) => page.posts) ?? [],
     [postsRes.data],
   );
-  const favoriteSongs = profileRes.data?.favoriteSongs ?? [];
-  const favoriteArtists = profileRes.data?.favoriteArtists ?? [];
+  const favoriteSongs = useMemo(
+    () => profileRes.data?.favoriteSongs ?? [],
+    [profileRes.data?.favoriteSongs],
+  );
+  const favoriteArtists = useMemo(
+    () => profileRes.data?.favoriteArtists ?? [],
+    [profileRes.data?.favoriteArtists],
+  );
 
   const songIds = useMemo(() => {
-    const ids: string[] = [];
+    const ids: Array<string> = [];
     for (const post of posts) {
-      if (post.song?.appleSongId) ids.push(post.song.appleSongId);
+      if (post.song?.appleSongId) {
+        ids.push(post.song.appleSongId);
+      }
     }
     for (const fav of favoriteSongs) {
-      if (fav.song.appleSongId) ids.push(fav.song.appleSongId);
+      if (fav.song.appleSongId) {
+        ids.push(fav.song.appleSongId);
+      }
     }
     return ids;
   }, [posts, favoriteSongs]);
@@ -143,7 +157,9 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
       queryClient.setQueryData<InfiniteData<AuthorPostsPage, string | null>>(
         postsOptions.queryKey,
         (old) => {
-          if (!old) return old;
+          if (!old) {
+            return old;
+          }
           return {
             ...old,
             pages: old.pages.map((page) => ({
@@ -173,7 +189,9 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
       queryClient.setQueryData<InfiniteData<AuthorPostsPage, string | null>>(
         postsOptions.queryKey,
         (old) => {
-          if (!old) return old;
+          if (!old) {
+            return old;
+          }
           return {
             ...old,
             pages: old.pages.map((page) => ({
@@ -210,7 +228,7 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
       toaster.error("この曲はすでに登録されています");
       return;
     }
-    const next: ReplaceFavoriteSongInput[] = [
+    const next: Array<ReplaceFavoriteSongInput> = [
       ...toSongInputs(favoriteSongs),
       {
         songId: song.id,
@@ -242,7 +260,9 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
 
   const moveFavoriteSong = async (index: number, direction: -1 | 1) => {
     const reordered = moveItem(favoriteSongs, index, direction);
-    if (!reordered) return;
+    if (!reordered) {
+      return;
+    }
     await saveSongsMutation.mutateAsync(toSongInputs(reordered));
   };
 
@@ -255,7 +275,7 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
       toaster.error("このアーティストはすでに登録されています");
       return;
     }
-    const next: ReplaceFavoriteArtistInput[] = [
+    const next: Array<ReplaceFavoriteArtistInput> = [
       ...toArtistInputs(favoriteArtists),
       {
         artistId: artist.id,
@@ -286,7 +306,9 @@ export function ProfileProvider({ user, children }: { user: Me; children: ReactN
 
   const moveFavoriteArtist = async (index: number, direction: -1 | 1) => {
     const reordered = moveItem(favoriteArtists, index, direction);
-    if (!reordered) return;
+    if (!reordered) {
+      return;
+    }
     await saveArtistsMutation.mutateAsync(toArtistInputs(reordered));
   };
 

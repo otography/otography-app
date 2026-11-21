@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { requireAuth, type SessionEnv } from "../auth/session.ts";
+import { requireAuth } from "../auth/session.ts";
+import type { SessionEnv } from "../auth/session.ts";
 import { getDeveloperToken } from "../lib/apple-music/token.ts";
 import { issueMusicKitToken } from "./usecases/issue-music-kit-token.ts";
 import { logError } from "../lib/log.ts";

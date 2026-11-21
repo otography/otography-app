@@ -9,10 +9,16 @@ import { meSchema } from "../schemas.ts";
  */
 export async function getMe({ db, userId }: { db: Database; userId: string }) {
   const user = await findUserById({ db, userId });
-  if (user instanceof Error) return user;
-  if (!user) return new UserQueryError({ cause: new Error(`ユーザー ${userId} が DB にない`) });
+  if (user instanceof Error) {
+    return user;
+  }
+  if (!user) {
+    return new UserQueryError({ cause: new Error(`ユーザー ${userId} が DB にない`) });
+  }
 
   const me = meSchema.safeParse(user);
-  if (!me.success) return new MeResponseError({ cause: me.error });
+  if (!me.success) {
+    return new MeResponseError({ cause: me.error });
+  }
   return me.data;
 }

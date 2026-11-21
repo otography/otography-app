@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from "vite-plus/test";
 import type { CatalogSong } from "../../src/lib/apple-music/catalog.ts";
-import {
-  AppleSongNotFoundError,
-  type FetchCatalogSongError,
-} from "../../src/lib/apple-music/errors.ts";
+import { AppleSongNotFoundError } from "../../src/lib/apple-music/errors.ts";
+import type { FetchCatalogSongError } from "../../src/lib/apple-music/errors.ts";
 import type { Database } from "../../src/lib/db.ts";
 import { getOrCreateSong } from "../../src/songs/repository.ts";
 import { createTestDb } from "../helpers/db.ts";
@@ -14,7 +12,7 @@ const catalogSong = (overrides: Partial<CatalogSong> = {}): CatalogSong => ({
   title: "曲名",
   artistName: "歌手",
   albumName: null,
-  durationMs: 200000,
+  durationMs: 200_000,
   artworkUrl: null,
   url: null,
   artistIds: ["a1"],
@@ -39,7 +37,9 @@ describe("getOrCreateSong", () => {
     const song = await getOrCreateSong({ db, songId: "100", isrc: "JPAB01234567", fetchSong });
 
     expect(calls).toEqual([["100"]]);
-    if (song instanceof Error) throw song;
+    if (song instanceof Error) {
+      throw song;
+    }
     expect(song.isrc).toBe("JPAB09999999");
     expect(song.fetchedAt).toBeInstanceOf(Date);
     expect(await db.query.songs.findMany({ columns: { isrc: true } })).toEqual([
@@ -59,7 +59,9 @@ describe("getOrCreateSong", () => {
     const song = await getOrCreateSong({ db, songId: "200", isrc: "jpab01234567", fetchSong });
 
     expect(calls).toEqual([]);
-    if (song instanceof Error) throw song;
+    if (song instanceof Error) {
+      throw song;
+    }
     expect(song.appleSongId).toBe("100");
   });
 
@@ -79,7 +81,9 @@ describe("getOrCreateSong", () => {
     ]);
 
     for (const song of results) {
-      if (song instanceof Error) throw song;
+      if (song instanceof Error) {
+        throw song;
+      }
       expect(song.isrc).toBe("JPAB01234567");
     }
     expect(await db.query.songs.findMany()).toHaveLength(1);

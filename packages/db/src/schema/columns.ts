@@ -28,11 +28,15 @@ export const bytes = customType<{ data: Uint8Array; driverData: Uint8Array }>({
 
 /** IEEE 754 半精度（16bit）を number に戻す。 */
 const halfToNumber = (h: number): number => {
-  const sign = h & 0x8000 ? -1 : 1;
+  const sign = h & 0x80_00 ? -1 : 1;
   const exponent = (h >> 10) & 0x1f;
-  const fraction = h & 0x03ff;
-  if (exponent === 0) return sign * 2 ** -14 * (fraction / 1024);
-  if (exponent === 0x1f) return fraction ? Number.NaN : sign * Number.POSITIVE_INFINITY;
+  const fraction = h & 0x03_ff;
+  if (exponent === 0) {
+    return sign * 2 ** -14 * (fraction / 1024);
+  }
+  if (exponent === 0x1f) {
+    return fraction ? Number.NaN : sign * Number.POSITIVE_INFINITY;
+  }
   return sign * 2 ** (exponent - 15) * (1 + fraction / 1024);
 };
 
@@ -47,7 +51,7 @@ const halfToNumber = (h: number): number => {
  * 判断の理由は docs/adr/0002-vector-column-blob-codec.md を参照。
  */
 export const float16Vector = customType<{
-  data: number[];
+  data: Array<number>;
   config: { dimensions: number };
   configRequired: true;
   driverData: Uint8Array;
@@ -63,7 +67,9 @@ export const float16Vector = customType<{
     const view = new DataView(value.buffer, value.byteOffset, value.byteLength);
     const length = Math.floor(view.byteLength / 2);
     const out = Array.from<number>({ length });
-    for (let i = 0; i < length; i++) out[i] = halfToNumber(view.getUint16(i * 2, true));
+    for (let i = 0; i < length; i++) {
+      out[i] = halfToNumber(view.getUint16(i * 2, true));
+    }
     return out;
   },
 });

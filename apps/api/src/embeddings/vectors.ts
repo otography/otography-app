@@ -6,28 +6,40 @@
 const toHalf = (value: number) => {
   const f32 = new Float32Array([value]);
   const bits = new Uint32Array(f32.buffer)[0] ?? 0;
-  const sign = (bits >>> 16) & 0x8000;
+  const sign = (bits >>> 16) & 0x80_00;
   const exponent = (bits >>> 23) & 0xff;
-  const mantissa = bits & 0x7fffff;
-  if (exponent === 0xff) return sign | 0x7c00 | (mantissa ? 0x200 : 0);
-  const e = exponent - 127 + 15;
-  if (e >= 0x1f) return sign | 0x7c00;
-  if (e <= 0) {
-    if (e < -10) return sign;
-    const m = (mantissa | 0x800000) >> (1 - e);
-    return sign | ((m + 0x1000 + ((m >> 13) & 1) - 1) >> 13);
+  const mantissa = bits & 0x7f_ff_ff;
+  if (exponent === 0xff) {
+    return sign | 0x7c_00 | (mantissa ? 0x2_00 : 0);
   }
-  const rounded = mantissa + 0xfff + ((mantissa >> 13) & 1);
-  if (rounded & 0x800000) return sign | (Math.min(e + 1, 0x1f) << 10);
+  const e = exponent - 127 + 15;
+  if (e >= 0x1f) {
+    return sign | 0x7c_00;
+  }
+  if (e <= 0) {
+    if (e < -10) {
+      return sign;
+    }
+    const m = (mantissa | 0x80_00_00) >> (1 - e);
+    return sign | ((m + 0x10_00 + ((m >> 13) & 1) - 1) >> 13);
+  }
+  const rounded = mantissa + 0xf_ff + ((mantissa >> 13) & 1);
+  if (rounded & 0x80_00_00) {
+    return sign | (Math.min(e + 1, 0x1f) << 10);
+  }
   return sign | (e << 10) | (rounded >> 13);
 };
 
 const fromHalf = (h: number) => {
-  const sign = h & 0x8000 ? -1 : 1;
+  const sign = h & 0x80_00 ? -1 : 1;
   const exponent = (h >> 10) & 0x1f;
-  const fraction = h & 0x03ff;
-  if (exponent === 0) return sign * 2 ** -14 * (fraction / 1024);
-  if (exponent === 0x1f) return fraction ? Number.NaN : sign * Number.POSITIVE_INFINITY;
+  const fraction = h & 0x03_ff;
+  if (exponent === 0) {
+    return sign * 2 ** -14 * (fraction / 1024);
+  }
+  if (exponent === 0x1f) {
+    return fraction ? Number.NaN : sign * Number.POSITIVE_INFINITY;
+  }
   return sign * 2 ** (exponent - 15) * (1 + fraction / 1024);
 };
 
@@ -35,7 +47,9 @@ const fromHalf = (h: number) => {
 export function encodeHalf(vector: ArrayLike<number>) {
   const bytes = new Uint8Array(vector.length * 2);
   const view = new DataView(bytes.buffer);
-  for (let i = 0; i < vector.length; i++) view.setUint16(i * 2, toHalf(vector[i] ?? 0), true);
+  for (let i = 0; i < vector.length; i++) {
+    view.setUint16(i * 2, toHalf(vector[i] ?? 0), true);
+  }
   return bytes;
 }
 

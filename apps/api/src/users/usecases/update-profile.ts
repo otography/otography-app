@@ -15,6 +15,8 @@ export async function updateProfile({
   input: z.output<typeof updateProfileInput>;
 }) {
   const updated = await updateUser({ db, userId, values: input });
-  if (updated instanceof Error) return updated;
+  if (updated instanceof Error) {
+    return updated;
+  }
   return getMe({ db, userId });
 }

@@ -9,19 +9,19 @@ import { replaceFavoriteArtistsOfUser } from "../../../src/users/usecases/replac
 import { createTestDb } from "../../helpers/db.ts";
 import { insertUser } from "../helpers.ts";
 
-const catalog: Record<string, CatalogArtist> = {
-  a1: { id: "a1", name: "アーティスト1", artworkUrl: null, url: null },
-  a2: { id: "a2", name: "アーティスト2", artworkUrl: null, url: null },
-};
+const catalog = new Map<string, CatalogArtist>([
+  ["a1", { id: "a1", name: "アーティスト1", artworkUrl: null, url: null }],
+  ["a2", { id: "a2", name: "アーティスト2", artworkUrl: null, url: null }],
+]);
 
 const fakeFetchArtist = () => {
   const fetchArtist = vi.fn(
-    async (artistId: string) => catalog[artistId] ?? new AppleArtistNotFoundError({ artistId }),
+    async (artistId: string) => catalog.get(artistId) ?? new AppleArtistNotFoundError({ artistId }),
   );
   return { calls: fetchArtist.mock.calls, fetchArtist };
 };
 
-const favorites = (items: unknown[]) => replaceFavoriteArtistsInput.parse({ items });
+const favorites = (items: Array<unknown>) => replaceFavoriteArtistsInput.parse({ items });
 
 let db: Database;
 
@@ -40,7 +40,9 @@ describe("replaceFavoriteArtistsOfUser", () => {
       input: favorites([{ artistId: "a2", emoji: "🎸" }, { artistId: "a1" }]),
     });
 
-    if (profile instanceof Error) throw profile;
+    if (profile instanceof Error) {
+      throw profile;
+    }
     expect(calls).toEqual([["a2"], ["a1"]]);
     expect(profile.favoriteArtists.map((f) => [f.artist.name, f.emoji])).toEqual([
       ["アーティスト2", "🎸"],
