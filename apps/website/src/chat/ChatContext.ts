@@ -1,21 +1,24 @@
-import { createContext, type RefObject, use } from "react";
+import { createContext, use } from "react";
+import type { RefObject } from "react";
 import type { AppleSong } from "#/lib/musickit";
 import type { ChatTurn } from "./types";
 
 export type SongSearchTrigger = "@" | "/";
 
 type ChatState = {
-  turns: ChatTurn[];
+  turns: Array<ChatTurn>;
   selectedSong: AppleSong | null;
   draft: string;
   length: number;
   canSubmit: boolean;
   isSubmitting: boolean;
+  isComposing: boolean;
+  lastSubmission: { id: string; length: number } | null;
   searchTrigger: SongSearchTrigger | null;
   searchQuery: string;
   menuOpen: boolean;
   keyboardOpen: boolean;
-  songs: AppleSong[];
+  songs: Array<AppleSong>;
   songsLoading: boolean;
   highlightedIndex: number;
 };
@@ -24,6 +27,7 @@ type ChatActions = {
   selectSong: (song: AppleSong) => void;
   clearSong: () => void;
   updateDraft: (value: string) => void;
+  setComposing: (composing: boolean) => void;
   openSongSearch: (trigger: SongSearchTrigger) => void;
   dismissSongSearch: () => void;
   submit: () => void;
@@ -49,6 +53,8 @@ export const ChatContext = createContext<ChatContextValue | null>(null);
 
 export function useChat() {
   const value = use(ChatContext);
-  if (!value) throw new Error("useChat は ChatProvider の中で使う");
+  if (!value) {
+    throw new Error("useChat は ChatProvider の中で使う");
+  }
   return value;
 }

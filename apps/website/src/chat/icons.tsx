@@ -74,3 +74,23 @@ export function SidebarIcon() {
     </svg>
   );
 }
+
+export function SparklesIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M8 2.25 9.35 6.15 13.25 7.5 9.35 8.85 8 12.75 6.65 8.85 2.75 7.5 6.65 6.15 8 2.25Z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.75 2v2.5M11.5 3.25H14"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}

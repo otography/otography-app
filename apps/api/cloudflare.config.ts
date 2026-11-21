@@ -53,6 +53,19 @@ export default defineConfig(({ isPreview }) => ({
           : { id: "db0cdaf4-9817-4755-89a0-fa332932c4f7", name: "x-store-01" },
       ),
       READ_RATE_LIMIT: bindings.rateLimit({ namespace: "1003", simple: { limit: 60, period: 60 } }),
+      // 感想記述支援の判断モデル呼び出し回数制限。超過時はフェイルオープンで沈黙を返す。
+      DRAFT_ASSIST_RATE_LIMIT: bindings.rateLimit({
+        namespace: "1004",
+        simple: { limit: 30, period: 60 },
+      }),
+      // 感想記述支援の判断モデル切り替えと閾値調整（未設定時は clef-flash と初期閾値を使う）。
+      DRAFT_ASSIST_PROVIDER: bindings.secret(),
+      DRAFT_ASSIST_MODEL: bindings.secret(),
+      DRAFT_ASSIST_API_URL: bindings.secret(),
+      DRAFT_ASSIST_API_KEY: bindings.secret(),
+      DRAFT_ASSIST_CHOICE_CONFIDENCE: bindings.secret(),
+      DRAFT_ASSIST_ELEMENT_PRESENT: bindings.secret(),
+      DRAFT_ASSIST_ELEMENT_ABSENT: bindings.secret(),
     },
   },
 }));

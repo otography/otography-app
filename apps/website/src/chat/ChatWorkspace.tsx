@@ -1,10 +1,11 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { useEffect, useRef } from "react";
 import { authClient } from "#/lib/auth-client";
-import { type Me, meQuery } from "#/lib/auth";
+import { meQuery } from "#/lib/auth";
+import type { Me } from "#/lib/auth";
 import { motion } from "#/motion.stylex";
 import { MiniPlayerBar } from "#/songs/MiniPlayerBar";
 import { usePreviewPlayer } from "#/songs/preview-player";
@@ -16,6 +17,7 @@ import { ChatHistoryProvider } from "./ChatHistoryProvider";
 import { ChatHistorySidebar } from "./ChatHistorySidebar";
 import { ChatProvider } from "./ChatProvider";
 import { ChatThread } from "./ChatThread";
+import { DraftAssistProvider } from "./DraftAssistProvider";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 function initials(name: string) {
@@ -39,7 +41,9 @@ function ChatShell({ user }: { user: Me }) {
   // 入力欄がキーボード裏へ隠れないよう、シェルを visualViewport に追従させる。
   useEffect(() => {
     const shellEl = shellRef.current;
-    if (!shellEl) return;
+    if (!shellEl) {
+      return;
+    }
 
     const html = document.documentElement;
     const { body } = document;
@@ -92,7 +96,9 @@ function ChatShell({ user }: { user: Me }) {
       }
 
       if (vv) {
-        if (Math.abs(vv.scale - 1) > 0.01) return;
+        if (Math.abs(vv.scale - 1) > 0.01) {
+          return;
+        }
         shellEl.style.height = `${vv.height}px`;
         shellEl.style.top = `${vv.offsetTop}px`;
         setKeyboardOpen(
@@ -137,13 +143,13 @@ function ChatShell({ user }: { user: Me }) {
   }, [setKeyboardOpen]);
 
   return (
-    <div ref={shellRef} data-chat-shell="" {...stylex.props(styles.shell)}>
+    <div ref={shellRef} data-chat-shell="" {...props(styles.shell)}>
       <ChatHistorySidebar.Desktop />
       <ChatHistorySidebar.MobileDrawer />
 
-      <div {...stylex.props(styles.workspace)}>
+      <div {...props(styles.workspace)}>
         <AppShell.Topbar style={styles.topbar}>
-          <div {...stylex.props(styles.brand)}>
+          <div {...props(styles.brand)}>
             <ChatHistorySidebar.OpenTrigger />
             {showTopbarBrand ? (
               <>
@@ -152,19 +158,15 @@ function ChatShell({ user }: { user: Me }) {
               </>
             ) : null}
           </div>
-          <div {...stylex.props(styles.account)}>
-            <Link
-              to="/profile"
-              aria-label="プロフィールを開く"
-              {...stylex.props(styles.profileLink)}
-            >
-              <Avatar {...stylex.props(styles.avatarSm)}>
+          <div {...props(styles.account)}>
+            <Link to="/profile" aria-label="プロフィールを開く" {...props(styles.profileLink)}>
+              <Avatar {...props(styles.avatarSm)}>
                 {user.image ? (
                   <AvatarImage
                     src={user.image}
                     alt={user.name}
                     referrerPolicy="no-referrer"
-                    {...stylex.props(styles.avatarImg)}
+                    {...props(styles.avatarImg)}
                   />
                 ) : null}
                 <AvatarFallback>
@@ -172,7 +174,7 @@ function ChatShell({ user }: { user: Me }) {
                   <span data-slot="visually-hidden">{user.name}</span>
                 </AvatarFallback>
               </Avatar>
-              <span {...stylex.props(styles.accountName)}>{user.name}</span>
+              <span {...props(styles.accountName)}>{user.name}</span>
             </Link>
             <AppShell.SignOutButton
               onClick={() => {
@@ -187,16 +189,18 @@ function ChatShell({ user }: { user: Me }) {
 
         <MiniPlayerBar />
 
-        <main {...stylex.props(styles.main)}>
-          <div {...stylex.props(styles.mainInner)}>
+        <main {...props(styles.main)}>
+          <div {...props(styles.mainInner)}>
             <ChatThread user={user} />
           </div>
         </main>
 
         <ChatComposer.Frame>
+          <ChatComposer.DraftAssist />
           <ChatComposer.SongPicker />
           <ChatComposer.Attachment />
           <ChatComposer.Input />
+          <ChatComposer.EmptyHints />
           <ChatComposer.Toolbar>
             <ChatComposer.PickSongButton />
             <ChatComposer.Submit />
@@ -211,13 +215,15 @@ export function ChatWorkspace({ user }: { user: Me }) {
   return (
     <ChatHistoryProvider publicId={user.publicId}>
       <ChatProvider userPublicId={user.publicId}>
-        <ChatShell user={user} />
+        <DraftAssistProvider>
+          <ChatShell user={user} />
+        </DraftAssistProvider>
       </ChatProvider>
     </ChatHistoryProvider>
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   shell: {
     position: "fixed",
     top: 0,

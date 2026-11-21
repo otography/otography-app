@@ -1,14 +1,16 @@
 import { Hono } from "hono";
 import { adminRoutes } from "./admin/routes.ts";
 import { auth } from "./auth/auth.ts";
+import { sessionMiddleware } from "./auth/session.ts";
+import type { SessionEnv } from "./auth/session.ts";
+import { draftAssistRoutes } from "./draft-assist/routes.ts";
 import { db } from "./lib/db.ts";
+import { logError } from "./lib/log.ts";
 import { purgeExpired } from "./maintenance/usecases/purge-expired.ts";
-import { type SessionEnv, sessionMiddleware } from "./auth/session.ts";
 import { postsRoutes } from "./posts/routes.ts";
 import { reportsRoutes } from "./reports/routes.ts";
 import { musicRoutes } from "./songs/routes.ts";
 import { usersRoutes } from "./users/routes.ts";
-import { logError } from "./lib/log.ts";
 
 // 機能ごとのルートをつなぐ。フォルダの構成は docs/adr/0011-organize-api-source-by-feature.md を参照。
 const app = new Hono<SessionEnv>()
@@ -21,7 +23,8 @@ const app = new Hono<SessionEnv>()
   .route("/api/music", musicRoutes)
   .route("/api/posts", postsRoutes)
   .route("/api/reports", reportsRoutes)
-  .route("/api/admin", adminRoutes);
+  .route("/api/admin", adminRoutes)
+  .route("/api/draft-assist", draftAssistRoutes);
 
 export type AppType = typeof app;
 export type { Auth } from "./auth/auth.ts";
