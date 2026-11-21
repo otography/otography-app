@@ -11,6 +11,8 @@ const MAX_ASSIST_SHOWN = 2;
 const MIN_EVAL_TEXT_LENGTH = 6;
 const MAX_EVAL_TEXT_LENGTH = 120;
 const API_DEBOUNCE_MS = 2500;
+const AUTO_HIDE_AFTER_TYPING_MS = 3500;
+const AUTO_HIDE_CHAR_DELTA = 12;
 const FADE_OUT_MS = 160;
 
 interface SessionState {
@@ -51,6 +53,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
   const sessionRef = useRef<SessionState>(createSession());
   const abortRef = useRef<AbortController | null>(null);
   const fadeTimerRef = useRef<number | null>(null);
+  const autoHideTimerRef = useRef<number | null>(null);
   const lastSubmissionIdRef = useRef<string | null>(null);
   const prevSongIdRef = useRef<string | null>(null);
   const prevDraftRef = useRef<string>(draft);
@@ -59,6 +62,10 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     if (fadeTimerRef.current !== null) {
       window.clearTimeout(fadeTimerRef.current);
       fadeTimerRef.current = null;
+    }
+    if (autoHideTimerRef.current !== null) {
+      window.clearTimeout(autoHideTimerRef.current);
+      autoHideTimerRef.current = null;
     }
   }, []);
 
@@ -203,15 +210,38 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     };
   }, [abortInFlight, clearFadeTimer, flushAbandonedIfNeeded]);
 
-  // 入力再開・IME 変換開始時に進行中のリクエストを破棄し、表示中ポップアップを静かに消去する。
+  // 入力再開・IME 変換開始時に進行中のリクエストを破棄し、表示中ポップアップは少しの間残してから静かに消去する。
   useEffect(() => {
     const draftChanged = draft !== prevDraftRef.current;
     prevDraftRef.current = draft;
 
-    if (draftChanged || isComposing || menuOpen) {
+    if (menuOpen) {
       abortInFlight();
       if (visible) {
-        fadeOutPopup();
+        queueMicrotask(() => {
+          fadeOutPopup();
+        });
+      }
+      return;
+    }
+
+    if (draftChanged || isComposing) {
+      abortInFlight();
+      if (visible) {
+        const shownAtLen = sessionRef.current.charCountAtLastShown;
+        const currentLen = draft.trim().length;
+        if (shownAtLen !== null && Math.abs(currentLen - shownAtLen) >= AUTO_HIDE_CHAR_DELTA) {
+          queueMicrotask(() => {
+            fadeOutPopup();
+          });
+          return;
+        }
+        if (autoHideTimerRef.current === null) {
+          autoHideTimerRef.current = window.setTimeout(() => {
+            autoHideTimerRef.current = null;
+            fadeOutPopup();
+          }, AUTO_HIDE_AFTER_TYPING_MS);
+        }
       }
     }
   }, [abortInFlight, draft, fadeOutPopup, isComposing, menuOpen, visible]);
@@ -310,7 +340,9 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     [chatMeta.textareaRef],
   );
 
-  const showEmptyHints = selectedSong !== null && !menuOpen && draft.length === 0;
+  // 書き出し直後（0〜5文字）の間も観点ヒントバーを残し、6文字以上でフェードアウトする。
+  const showEmptyHints =
+    selectedSong !== null && !menuOpen && draft.trim().length < MIN_EVAL_TEXT_LENGTH;
 
   return (
     <DraftAssistContext
