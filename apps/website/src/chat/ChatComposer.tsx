@@ -1,6 +1,6 @@
 import { create, keyframes, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
-import { useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { artworkUrl } from "#/lib/musickit";
 import { useMediaQuery } from "#/lib/use-media-query";
@@ -17,18 +17,17 @@ import { chatMedia, chatTokens as t } from "./tokens.stylex";
 /** 入力欄の外枠。キーボード表示中は余白を詰める。中に他の部品を並べる。 */
 function Frame({ children }: { children: ReactNode }) {
   const { state, actions } = useChat();
+  const { registerComposer, submit } = actions;
 
   return (
     <div {...props(styles.dock, state.keyboardOpen && styles.dockKeyboardOpen)}>
       <form
-        ref={(el) => {
-          actions.registerComposer(el);
-        }}
+        ref={registerComposer}
         data-chat-composer=""
         {...props(styles.composer)}
         onSubmit={(event) => {
           event.preventDefault();
-          actions.submit();
+          submit();
         }}
       >
         {children}
@@ -101,8 +100,16 @@ function Input() {
   const text = compact ? copy.compact : copy.full;
   const { menuOpen, songs, highlightedIndex, keyboardOpen } = state;
   const localTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const { registerTextarea } = actions;
   const isComposingRef = useRef(false);
   const compositionEndedAtRef = useRef(0);
+  const handleTextareaRef = useCallback(
+    (el: HTMLTextAreaElement | null) => {
+      localTextareaRef.current = el;
+      registerTextarea(el);
+    },
+    [registerTextarea],
+  );
 
   // Safari では compositionend が keydown(Enter) より先に発火するため、直後の Enter も変換確定として扱う。
   const isImeComposing = (event: KeyboardEvent<HTMLTextAreaElement>) =>
@@ -143,10 +150,7 @@ function Input() {
 
   return (
     <textarea
-      ref={(el) => {
-        localTextareaRef.current = el;
-        actions.registerTextarea(el);
-      }}
+      ref={handleTextareaRef}
       {...props(styles.textarea)}
       aria-label={text.label}
       aria-controls={menuOpen ? meta.pickerId : undefined}
