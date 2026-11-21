@@ -60,14 +60,11 @@ export default defineConfig(({ isPreview }) => ({
         namespace: "1004",
         simple: { limit: 30, period: 60 },
       }),
-      // 感想記述支援の判断モデル切り替えと閾値調整（未設定時は clef-flash と初期閾値を使う）。
-      DRAFT_ASSIST_PROVIDER: bindings.secret(),
-      DRAFT_ASSIST_MODEL: bindings.secret(),
-      DRAFT_ASSIST_API_URL: bindings.secret(),
+      // 感想記述支援の判断モデル設定（API キーのみ secret、それ以外は plain text）。
+      DRAFT_ASSIST_PROVIDER: bindings.text("clef-flash"),
+      DRAFT_ASSIST_MODEL: bindings.text("@cf/cloudflare/clef-flash"),
+      DRAFT_ASSIST_API_URL: bindings.text(""),
       DRAFT_ASSIST_API_KEY: bindings.secret(),
-      DRAFT_ASSIST_CHOICE_CONFIDENCE: bindings.secret(),
-      DRAFT_ASSIST_ELEMENT_PRESENT: bindings.secret(),
-      DRAFT_ASSIST_ELEMENT_ABSENT: bindings.secret(),
     },
   },
 }));

@@ -1,11 +1,5 @@
 import { describe, expect, test } from "vite-plus/test";
-import {
-  decidePopup,
-  DEFAULT_SHALLOW_SINGLE_STRATEGY,
-  DEFAULT_THRESHOLDS,
-  readShallowSingleStrategy,
-  readThresholds,
-} from "../../src/draft-assist/decide.ts";
+import { decidePopup, DEFAULT_THRESHOLDS } from "../../src/draft-assist/decide.ts";
 import type { NormalizedDecisionResult } from "../../src/draft-assist/types.ts";
 
 function makeResult(
@@ -141,40 +135,5 @@ describe("decidePopup", () => {
     expect(
       decidePopup(makeResult({ elements: { sound: 0.7, emotion: 0.3 }, concreteDetail: 0.7 })),
     ).toBeNull();
-  });
-});
-
-describe("readThresholds & readShallowSingleStrategy", () => {
-  test("環境変数から閾値と戦略を読み込み、不正値はデフォルトにフォールバックする", () => {
-    expect(readThresholds({})).toEqual(DEFAULT_THRESHOLDS);
-    expect(
-      readThresholds({
-        DRAFT_ASSIST_CHOICE_CONFIDENCE: "0.85",
-        DRAFT_ASSIST_ELEMENT_PRESENT: "0.7",
-        DRAFT_ASSIST_ELEMENT_ABSENT: "0.2",
-        DRAFT_ASSIST_DETAIL_DEEP: "0.75",
-        DRAFT_ASSIST_DETAIL_SHALLOW: "0.3",
-      }),
-    ).toEqual({
-      CHOICE_CONFIDENCE: 0.85,
-      ELEMENT_PRESENT: 0.7,
-      ELEMENT_ABSENT: 0.2,
-      DETAIL_DEEP: 0.75,
-      DETAIL_SHALLOW: 0.3,
-    });
-    expect(
-      readThresholds({
-        DRAFT_ASSIST_CHOICE_CONFIDENCE: "1.5",
-        DRAFT_ASSIST_DETAIL_SHALLOW: "-0.1",
-      }),
-    ).toEqual(DEFAULT_THRESHOLDS);
-
-    expect(readShallowSingleStrategy({})).toBe(DEFAULT_SHALLOW_SINGLE_STRATEGY);
-    expect(readShallowSingleStrategy({ DRAFT_ASSIST_SHALLOW_SINGLE_STRATEGY: "widen" })).toBe(
-      "widen",
-    );
-    expect(readShallowSingleStrategy({ DRAFT_ASSIST_SHALLOW_SINGLE_STRATEGY: "invalid" })).toBe(
-      DEFAULT_SHALLOW_SINGLE_STRATEGY,
-    );
   });
 });

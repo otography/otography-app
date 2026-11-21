@@ -15,51 +15,6 @@ export const DEFAULT_THRESHOLDS: DecisionThresholds = {
 
 export const DEFAULT_SHALLOW_SINGLE_STRATEGY: ShallowSingleStrategy = "deepen";
 
-function parseUnitInterval(raw: string | undefined, fallback: number): number {
-  if (raw === undefined || raw.trim() === "") {
-    return fallback;
-  }
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
-    return fallback;
-  }
-  return parsed;
-}
-
-export function readThresholds(
-  env: Record<string, string | undefined> = process.env,
-): DecisionThresholds {
-  return {
-    CHOICE_CONFIDENCE: parseUnitInterval(
-      env.DRAFT_ASSIST_CHOICE_CONFIDENCE,
-      DEFAULT_THRESHOLDS.CHOICE_CONFIDENCE,
-    ),
-    ELEMENT_PRESENT: parseUnitInterval(
-      env.DRAFT_ASSIST_ELEMENT_PRESENT,
-      DEFAULT_THRESHOLDS.ELEMENT_PRESENT,
-    ),
-    ELEMENT_ABSENT: parseUnitInterval(
-      env.DRAFT_ASSIST_ELEMENT_ABSENT,
-      DEFAULT_THRESHOLDS.ELEMENT_ABSENT,
-    ),
-    DETAIL_DEEP: parseUnitInterval(env.DRAFT_ASSIST_DETAIL_DEEP, DEFAULT_THRESHOLDS.DETAIL_DEEP),
-    DETAIL_SHALLOW: parseUnitInterval(
-      env.DRAFT_ASSIST_DETAIL_SHALLOW,
-      DEFAULT_THRESHOLDS.DETAIL_SHALLOW,
-    ),
-  };
-}
-
-export function readShallowSingleStrategy(
-  env: Record<string, string | undefined> = process.env,
-): ShallowSingleStrategy {
-  const raw = env.DRAFT_ASSIST_SHALLOW_SINGLE_STRATEGY?.trim().toLowerCase();
-  if (raw === "deepen" || raw === "widen") {
-    return raw;
-  }
-  return DEFAULT_SHALLOW_SINGLE_STRATEGY;
-}
-
 const ELEMENT_KEYS = ["space", "time", "sound", "memory", "emotion"] as const;
 
 export function decidePopup(

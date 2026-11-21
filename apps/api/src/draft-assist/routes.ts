@@ -4,7 +4,6 @@ import { requireAuth } from "../auth/session.ts";
 import type { SessionEnv } from "../auth/session.ts";
 import { logInfo, logWarning } from "../lib/log.ts";
 import { CLEF_FLASH_MODEL_VERSION } from "./adapter.ts";
-import { readShallowSingleStrategy, readThresholds } from "./decide.ts";
 import { draftAssistEventInput, draftAssistInput } from "./schemas.ts";
 import type { DraftAssistResponse } from "./types.ts";
 import { evaluateDraft } from "./usecases/evaluate-draft.ts";
@@ -40,8 +39,6 @@ export const draftAssistRoutes = new Hono<SessionEnv>()
       const response = await evaluateDraft({
         adapter,
         input: c.req.valid("json"),
-        thresholds: readThresholds(process.env),
-        shallowSingleStrategy: readShallowSingleStrategy(process.env),
       });
       return c.json(response, 200);
     },
