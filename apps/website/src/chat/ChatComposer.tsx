@@ -11,7 +11,7 @@ import { ChatDraftAssist } from "./ChatDraftAssist";
 import { ChatEmptyHints } from "./ChatEmptyHints";
 import { ChatSongPicker } from "./ChatSongPicker";
 import { useDraftAssist } from "./DraftAssistContext";
-import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PlusIcon } from "./icons";
+import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PlusIcon, SparklesIcon } from "./icons";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
 /** 入力欄の外枠。キーボード表示中は余白を詰める。中に他の部品を並べる。 */
@@ -218,6 +218,7 @@ function Toolbar({ children }: { children: ReactNode }) {
 
 function PickSongButton() {
   const { actions } = useChat();
+  const { state: assistState, actions: assistActions } = useDraftAssist();
 
   return (
     <div {...props(styles.tools)}>
@@ -230,6 +231,21 @@ function PickSongButton() {
       >
         <PlusIcon />
         <span>曲を選ぶ</span>
+      </Button>
+      <Button
+        type="button"
+        {...props(styles.toolBtn, styles.assistBtn)}
+        aria-label={`感想のヒントを表示（残り${assistState.remainingCount}回）`}
+        disabled={!assistState.canRequestAssist}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={assistActions.requestAssist}
+      >
+        <SparklesIcon />
+        <span>
+          {assistState.isLoading
+            ? "考え中…"
+            : `感想を書き足すヒント (${assistState.remainingCount}/2)`}
+        </span>
       </Button>
     </div>
   );
@@ -572,6 +588,16 @@ const styles = create({
     transition: {
       default: `transform 160ms ${motion.easeOut}, background-color 150ms ${motion.easeOut}`,
       [chatMedia.reducedMotion]: "background-color 120ms ease",
+    },
+  },
+  assistBtn: {
+    cursor: {
+      default: "pointer",
+      ":disabled": "not-allowed",
+    },
+    opacity: {
+      default: 1,
+      ":disabled": 0.45,
     },
   },
   submitGroup: {

@@ -10,12 +10,16 @@ export interface ActiveAssistPopup {
 type DraftAssistState = {
   activePopup: ActiveAssistPopup | null;
   visible: boolean;
+  isLoading: boolean;
+  remainingCount: number;
+  canRequestAssist: boolean;
   selectedAngle: EmptyHintAngle | null;
   placeholderText: string;
   showEmptyHints: boolean;
 };
 
 type DraftAssistActions = {
+  requestAssist: () => void;
   dismiss: (method: "button" | "swipe") => void;
   selectEmptyHintAngle: (angle: EmptyHintAngle) => void;
 };

@@ -9,17 +9,11 @@ import type { ActiveAssistPopup } from "./DraftAssistContext";
 
 const MAX_ASSIST_SHOWN = 2;
 const MIN_EVAL_TEXT_LENGTH = 6;
-const MAX_EVAL_TEXT_LENGTH = 120;
-const API_DEBOUNCE_MS = 2500;
-const AUTO_HIDE_AFTER_TYPING_MS = 3500;
-const AUTO_HIDE_CHAR_DELTA = 12;
-const FADE_OUT_MS = 160;
 
 interface SessionState {
   id: string;
   shownCount: number;
   shownPopupIds: Set<AssistPopupId>;
-  lastEvaluatedText: string;
   lastShownPopupId: AssistPopupId | null;
   lastMessageAngle: MessageAngle | null;
   charCountAtLastShown: number | null;
@@ -32,7 +26,6 @@ function createSession(): SessionState {
     id: crypto.randomUUID(),
     shownCount: 0,
     shownPopupIds: new Set(),
-    lastEvaluatedText: "",
     lastShownPopupId: null,
     lastMessageAngle: null,
     charCountAtLastShown: null,
@@ -43,53 +36,32 @@ function createSession(): SessionState {
 
 export function DraftAssistProvider({ children }: { children: ReactNode }) {
   const { state: chatState, meta: chatMeta } = useChat();
-  const { selectedSong, draft, menuOpen, isComposing, lastSubmission } = chatState;
+  const { selectedSong, draft, menuOpen, lastSubmission } = chatState;
 
   const [activePopup, setActivePopup] = useState<ActiveAssistPopup | null>(null);
   const [visible, setVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [shownCount, setShownCount] = useState(0);
   const [selectedAngle, setSelectedAngle] = useState<EmptyHintAngle | null>(null);
   const [placeholderText, setPlaceholderText] = useState<string>(() => pickEmptyPlaceholder(null));
 
   const sessionRef = useRef<SessionState>(createSession());
   const abortRef = useRef<AbortController | null>(null);
-  const fadeTimerRef = useRef<number | null>(null);
-  const autoHideTimerRef = useRef<number | null>(null);
   const lastSubmissionIdRef = useRef<string | null>(null);
   const prevSongIdRef = useRef<string | null>(null);
-  const prevDraftRef = useRef<string>(draft);
-
-  const clearFadeTimer = useCallback(() => {
-    if (fadeTimerRef.current !== null) {
-      window.clearTimeout(fadeTimerRef.current);
-      fadeTimerRef.current = null;
-    }
-    if (autoHideTimerRef.current !== null) {
-      window.clearTimeout(autoHideTimerRef.current);
-      autoHideTimerRef.current = null;
-    }
-  }, []);
 
   const abortInFlight = useCallback(() => {
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
     }
+    setIsLoading(false);
   }, []);
 
   const hideImmediately = useCallback(() => {
-    clearFadeTimer();
     setVisible(false);
     setActivePopup(null);
-  }, [clearFadeTimer]);
-
-  const fadeOutPopup = useCallback(() => {
-    setVisible(false);
-    clearFadeTimer();
-    fadeTimerRef.current = window.setTimeout(() => {
-      fadeTimerRef.current = null;
-      setActivePopup(null);
-    }, FADE_OUT_MS);
-  }, [clearFadeTimer]);
+  }, []);
 
   const flushAbandonedIfNeeded = useCallback((keepalive: boolean) => {
     const session = sessionRef.current;
@@ -122,18 +94,16 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       if (session.shownCount >= MAX_ASSIST_SHOWN) {
         return;
       }
-      if (session.shownPopupIds.has(popupId)) {
-        return;
-      }
 
-      clearFadeTimer();
       const picked = pickAssistMessage(popupId);
       session.shownCount += 1;
       session.shownPopupIds.add(popupId);
       session.lastShownPopupId = popupId;
       session.lastMessageAngle = picked.item.angle;
       session.charCountAtLastShown = charCountAtShown;
+      setShownCount(session.shownCount);
 
+      // 既にポップアップが出ている場合も、2回目の結果でそのまま置き換える。
       setActivePopup({
         id: popupId,
         messageIndex: picked.index,
@@ -151,7 +121,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
         modelVersion,
       });
     },
-    [clearFadeTimer],
+    [],
   );
 
   // 投稿完了を検知して draft_submitted を記録する。
@@ -179,7 +149,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     hideImmediately();
   }, [abortInFlight, hideImmediately, lastSubmission]);
 
-  // 曲の選択・変更・解除に合わせて投稿セッションと白紙プレースホルダーを初期化する。
+  // 曲の選択・変更・解除に合わせて投稿セッションと残り回数・白紙プレースホルダーを初期化する。
   useEffect(() => {
     const currentSongId = selectedSong?.id ?? null;
     if (currentSongId === prevSongIdRef.current) {
@@ -194,6 +164,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     abortInFlight();
     hideImmediately();
     sessionRef.current = createSession();
+    setShownCount(0);
     setSelectedAngle(null);
     setPlaceholderText((prev) => pickEmptyPlaceholder(null, prev));
   }, [abortInFlight, flushAbandonedIfNeeded, hideImmediately, selectedSong?.id]);
@@ -206,109 +177,64 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("pagehide", handlePageHide);
       flushAbandonedIfNeeded(true);
       abortInFlight();
-      clearFadeTimer();
     };
-  }, [abortInFlight, clearFadeTimer, flushAbandonedIfNeeded]);
+  }, [abortInFlight, flushAbandonedIfNeeded]);
 
-  // 入力再開・IME 変換開始時に進行中のリクエストを破棄し、表示中ポップアップは少しの間残してから静かに消去する。
+  // 曲検索メニューが開いたときはポップアップと重なるため隠す。入力再開では閉じず明示的に閉じられるまで残す。
   useEffect(() => {
-    const draftChanged = draft !== prevDraftRef.current;
-    prevDraftRef.current = draft;
-
     if (menuOpen) {
       abortInFlight();
-      if (visible) {
-        queueMicrotask(() => {
-          fadeOutPopup();
-        });
-      }
+      hideImmediately();
+    }
+  }, [abortInFlight, hideImmediately, menuOpen]);
+
+  const requestAssist = useCallback(() => {
+    if (!selectedSong || menuOpen || isLoading) {
       return;
     }
-
-    if (draftChanged || isComposing) {
-      abortInFlight();
-      if (visible) {
-        const shownAtLen = sessionRef.current.charCountAtLastShown;
-        const currentLen = draft.trim().length;
-        if (shownAtLen !== null && Math.abs(currentLen - shownAtLen) >= AUTO_HIDE_CHAR_DELTA) {
-          queueMicrotask(() => {
-            fadeOutPopup();
-          });
-          return;
-        }
-        if (autoHideTimerRef.current === null) {
-          autoHideTimerRef.current = window.setTimeout(() => {
-            autoHideTimerRef.current = null;
-            fadeOutPopup();
-          }, AUTO_HIDE_AFTER_TYPING_MS);
-        }
-      }
-    }
-  }, [abortInFlight, draft, fadeOutPopup, isComposing, menuOpen, visible]);
-
-  // 記述後フェーズ（6〜120 文字）の 2,500 ms デバウンス付き API 評価。0〜5 文字では発火しない。
-  useEffect(() => {
-    if (!selectedSong || menuOpen || isComposing) {
-      return;
-    }
-
     const session = sessionRef.current;
     if (session.shownCount >= MAX_ASSIST_SHOWN) {
       return;
     }
 
-    const trimmedLength = draft.trim().length;
-    if (trimmedLength < MIN_EVAL_TEXT_LENGTH || trimmedLength > MAX_EVAL_TEXT_LENGTH) {
-      return;
-    }
-
-    if (draft === session.lastEvaluatedText) {
+    const trimmed = draft.trim();
+    if (!trimmed) {
       return;
     }
 
     const trackTitle = `${selectedSong.attributes.name} - ${selectedSong.attributes.artistName}`;
     const targetSessionId = session.id;
-    const targetDraft = draft;
+    const trimmedLength = trimmed.length;
 
-    const timerId = window.setTimeout(() => {
+    abortInFlight();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    setIsLoading(true);
+
+    void requestDraftAssist(
+      {
+        draftSessionId: targetSessionId,
+        trackTitle,
+        draftText: trimmed,
+      },
+      controller.signal,
+    ).then((res) => {
+      if (controller.signal.aborted) {
+        return;
+      }
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+      }
+      setIsLoading(false);
       if (sessionRef.current.id !== targetSessionId) {
         return;
       }
-      if (sessionRef.current.shownCount >= MAX_ASSIST_SHOWN) {
-        return;
-      }
 
-      abortInFlight();
-      const controller = new AbortController();
-      abortRef.current = controller;
-      sessionRef.current.lastEvaluatedText = targetDraft;
-
-      void requestDraftAssist(
-        {
-          draftSessionId: targetSessionId,
-          trackTitle,
-          draftText: targetDraft,
-        },
-        controller.signal,
-      ).then((res) => {
-        if (controller.signal.aborted) {
-          return;
-        }
-        if (abortRef.current === controller) {
-          abortRef.current = null;
-        }
-        if (sessionRef.current.id !== targetSessionId) {
-          return;
-        }
-        if (!res?.popupId) {
-          return;
-        }
-        showPopup(res.popupId, trimmedLength, res.modelVersion);
-      });
-    }, API_DEBOUNCE_MS);
-
-    return () => window.clearTimeout(timerId);
-  }, [abortInFlight, draft, isComposing, menuOpen, selectedSong, showPopup]);
+      const fallbackId: AssistPopupId =
+        trimmedLength < MIN_EVAL_TEXT_LENGTH ? "B_ABSTRACT" : "E_DEEPEN_GENERAL";
+      showPopup(res?.popupId ?? fallbackId, trimmedLength, res?.modelVersion);
+    });
+  }, [abortInFlight, draft, isLoading, menuOpen, selectedSong, showPopup]);
 
   const dismiss = useCallback(
     (method: "button" | "swipe") => {
@@ -340,6 +266,14 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     [chatMeta.textareaRef],
   );
 
+  const remainingCount = Math.max(0, MAX_ASSIST_SHOWN - shownCount);
+  const canRequestAssist =
+    selectedSong !== null &&
+    !menuOpen &&
+    draft.trim().length > 0 &&
+    remainingCount > 0 &&
+    !isLoading;
+
   // 書き出し直後（0〜5文字）の間も観点ヒントバーを残し、6文字以上でフェードアウトする。
   const showEmptyHints =
     selectedSong !== null && !menuOpen && draft.trim().length < MIN_EVAL_TEXT_LENGTH;
@@ -350,11 +284,15 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
         state: {
           activePopup,
           visible,
+          isLoading,
+          remainingCount,
+          canRequestAssist,
           selectedAngle,
           placeholderText,
           showEmptyHints,
         },
         actions: {
+          requestAssist,
           dismiss,
           selectEmptyHintAngle,
         },
