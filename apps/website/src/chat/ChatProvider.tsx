@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { POST_CONTENT_MAX } from "db/constants";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { searchSongs } from "#/lib/musickit";
 import type { AppleSong } from "#/lib/musickit";
@@ -48,6 +48,7 @@ export function ChatProvider({
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const composerRef = useRef<HTMLFormElement | null>(null);
+  const [composerEl, setComposerEl] = useState<HTMLFormElement | null>(null);
   const pickerId = useId();
 
   const triggerMatch = parseSongTrigger(draft);
@@ -107,12 +108,13 @@ export function ChatProvider({
   const visibleSongsLoading = activeSearchQuery ? songsLoading : false;
   const visibleHighlightedIndex = activeSearchQuery ? highlightedIndex : 0;
 
-  const registerTextarea = (el: HTMLTextAreaElement | null) => {
+  const registerTextarea = useCallback((el: HTMLTextAreaElement | null) => {
     textareaRef.current = el;
-  };
-  const registerComposer = (el: HTMLFormElement | null) => {
+  }, []);
+  const registerComposer = useCallback((el: HTMLFormElement | null) => {
     composerRef.current = el;
-  };
+    setComposerEl((prev) => (prev === el ? prev : el));
+  }, []);
 
   const moveHighlight = (direction: -1 | 1) => {
     if (songs.length === 0) {
@@ -248,6 +250,7 @@ export function ChatProvider({
           maxLength: POST_CONTENT_MAX,
           textareaRef,
           composerRef,
+          composerEl,
           pickerId,
         },
       }}

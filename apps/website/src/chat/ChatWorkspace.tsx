@@ -48,12 +48,18 @@ function ChatShell({ user }: { user: Me }) {
     const html = document.documentElement;
     const { body } = document;
     const prevHtml = {
+      position: html.style.position,
+      inset: html.style.inset,
+      width: html.style.width,
       height: html.style.height,
       overflow: html.style.overflow,
       overscrollBehavior: html.style.overscrollBehavior,
       backgroundColor: html.style.backgroundColor,
     };
     const prevBody = {
+      position: body.style.position,
+      inset: body.style.inset,
+      width: body.style.width,
       height: body.style.height,
       overflow: body.style.overflow,
       overscrollBehavior: body.style.overscrollBehavior,
@@ -67,9 +73,15 @@ function ChatShell({ user }: { user: Me }) {
       body.style.backgroundColor = bg;
     };
 
+    html.style.position = "fixed";
+    html.style.inset = "0";
+    html.style.width = "100%";
     html.style.height = "100%";
     html.style.overflow = "hidden";
     html.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.inset = "0";
+    body.style.width = "100%";
     body.style.height = "100%";
     body.style.overflow = "hidden";
     body.style.overscrollBehavior = "none";
@@ -82,6 +94,9 @@ function ChatShell({ user }: { user: Me }) {
     let baseHeight = vv ? vv.height : window.innerHeight;
 
     const sync = () => {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo(0, 0);
+      }
       const currentWidth = vv ? vv.width : window.innerWidth;
       const currentHeight = vv ? vv.height : window.innerHeight;
       const hasInputFocus =
@@ -124,10 +139,16 @@ function ChatShell({ user }: { user: Me }) {
 
     return () => {
       colorSchemeMedia.removeEventListener("change", syncBackground);
+      html.style.position = prevHtml.position;
+      html.style.inset = prevHtml.inset;
+      html.style.width = prevHtml.width;
       html.style.height = prevHtml.height;
       html.style.overflow = prevHtml.overflow;
       html.style.overscrollBehavior = prevHtml.overscrollBehavior;
       html.style.backgroundColor = prevHtml.backgroundColor;
+      body.style.position = prevBody.position;
+      body.style.inset = prevBody.inset;
+      body.style.width = prevBody.width;
       body.style.height = prevBody.height;
       body.style.overflow = prevBody.overflow;
       body.style.overscrollBehavior = prevBody.overscrollBehavior;

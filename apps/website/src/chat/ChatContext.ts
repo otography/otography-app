@@ -42,6 +42,7 @@ type ChatMeta = {
   maxLength: number;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   composerRef: RefObject<HTMLFormElement | null>;
+  composerEl: HTMLFormElement | null;
   pickerId: string;
 };
 

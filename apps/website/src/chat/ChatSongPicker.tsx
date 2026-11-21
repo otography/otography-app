@@ -19,18 +19,23 @@ export function ChatSongPicker() {
 
   // 入力欄より上の空き高さ全体を使えるようにし、PC のみ上限を chatPopover.maxHeight に抑える。
   useLayoutEffect(() => {
-    const composerEl = meta.composerRef.current;
+    const composerEl = meta.composerEl ?? meta.composerRef.current;
     if (!menuOpen || !composerEl) {
       return;
     }
 
     let rafId = 0;
     const shellEl = composerEl.closest("[data-chat-shell]");
+    const mainEl = shellEl?.querySelector("main") ?? null;
     const compactMedia = window.matchMedia("(max-width: 540px)");
 
     const updateMaxHeight = () => {
       const rect = composerEl.getBoundingClientRect();
-      const topBoundary = shellEl ? shellEl.getBoundingClientRect().top : 0;
+      const vv = window.visualViewport;
+      const shellTop = shellEl ? shellEl.getBoundingClientRect().top : 0;
+      const mainTop = mainEl ? mainEl.getBoundingClientRect().top : shellTop;
+      const vvTop = vv ? vv.offsetTop : 0;
+      const topBoundary = Math.max(mainTop, shellTop, vvTop);
       const available = Math.floor(
         rect.top - topBoundary - chatPopover.sideOffset - collisionPadding,
       );
@@ -53,6 +58,9 @@ export function ChatSongPicker() {
     if (shellEl) {
       ro?.observe(shellEl);
     }
+    if (mainEl) {
+      ro?.observe(mainEl);
+    }
     vv?.addEventListener("resize", scheduleUpdate);
     vv?.addEventListener("scroll", scheduleUpdate);
     window.addEventListener("resize", scheduleUpdate);
@@ -64,11 +72,11 @@ export function ChatSongPicker() {
       vv?.removeEventListener("scroll", scheduleUpdate);
       window.removeEventListener("resize", scheduleUpdate);
     };
-  }, [collisionPadding, meta.composerRef, menuOpen]);
+  }, [collisionPadding, meta.composerEl, meta.composerRef, menuOpen]);
 
   // コンポーザーの外側を押したら閉じる。
   useEffect(() => {
-    const composerEl = meta.composerRef.current;
+    const composerEl = meta.composerEl ?? meta.composerRef.current;
     if (!menuOpen || !composerEl) {
       return;
     }
@@ -79,12 +87,22 @@ export function ChatSongPicker() {
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [actions, meta.composerRef, menuOpen]);
+  }, [actions, meta.composerEl, meta.composerRef, menuOpen]);
 
   useEffect(() => {
-    const item = listRef.current?.children[highlightedIndex];
-    if (item instanceof HTMLElement) {
-      item.scrollIntoView({ block: "nearest" });
+    const listEl = listRef.current;
+    const item = listEl?.children[highlightedIndex];
+    if (!listEl || !(item instanceof HTMLElement)) {
+      return;
+    }
+    const itemTop = item.offsetTop;
+    const itemBottom = itemTop + item.offsetHeight;
+    const viewTop = listEl.scrollTop;
+    const viewBottom = viewTop + listEl.clientHeight;
+    if (itemTop < viewTop) {
+      listEl.scrollTop = itemTop;
+    } else if (itemBottom > viewBottom) {
+      listEl.scrollTop = itemBottom - listEl.clientHeight;
     }
   }, [highlightedIndex]);
 
@@ -296,6 +314,7 @@ const styles = create({
     textAlign: "center",
   },
   triggerList: {
+    position: "relative",
     display: "flex",
     flexGrow: 1,
     flexShrink: 1,
