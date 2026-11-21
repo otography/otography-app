@@ -9,7 +9,9 @@ const BUSY = "混雑しています。しばらく待ってから、もう一度
  */
 const fetchApi: typeof fetch = async (input, init) => {
   const res = await fetch(input, init);
-  if (res.ok || res.headers.get("content-type")?.includes("application/json")) return res;
+  if (res.ok || res.headers.get("content-type")?.includes("application/json")) {
+    return res;
+  }
   return Response.json({ error: BUSY }, { status: res.status, statusText: res.statusText });
 };
 

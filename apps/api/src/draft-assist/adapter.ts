@@ -34,7 +34,7 @@ type JsonValue =
 
 type JsonObject = { readonly [key: string]: JsonValue };
 
-type SystemOnePayload = {
+export type SystemOnePayload = {
   model: string;
   state: {
     track_title: string;
@@ -43,7 +43,7 @@ type SystemOnePayload = {
   questions: typeof DRAFT_ASSIST_QUESTIONS;
 };
 
-export type RunAiFn = (model: string, payload: SystemOnePayload) => Promise<unknown>;
+export type RunAiFn = (model: string, payload: SystemOnePayload) => Promise<JsonValue>;
 
 function isRecord(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);

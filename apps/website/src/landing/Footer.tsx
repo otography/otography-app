@@ -1,9 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { motion } from "#/motion.stylex";
 import { Logo } from "./Logo";
 import { fontTokens, landingMedia } from "./tokens.stylex";
 
-const styles = stylex.create({
+const styles = create({
   footer: {
     display: "grid",
     gridTemplateColumns: {
@@ -68,36 +68,36 @@ const styles = stylex.create({
 
 export function Footer() {
   return (
-    <footer {...stylex.props(styles.footer)}>
+    <footer {...props(styles.footer)}>
       <Logo />
-      <nav aria-label="フッターナビゲーション" {...stylex.props(styles.footerNav)}>
-        <a href="#about" {...stylex.props(styles.footerLink)}>
+      <nav aria-label="フッターナビゲーション" {...props(styles.footerNav)}>
+        <a href="#about" {...props(styles.footerLink)}>
           About
         </a>
-        <a href="#how-it-works" {...stylex.props(styles.footerLink)}>
+        <a href="#how-it-works" {...props(styles.footerLink)}>
           How it works
         </a>
-        <a href="#voices" {...stylex.props(styles.footerLink)}>
+        <a href="#voices" {...props(styles.footerLink)}>
           Voices
         </a>
-        <a href="#terms" {...stylex.props(styles.footerLink)}>
+        <a href="#terms" {...props(styles.footerLink)}>
           Terms
         </a>
-        <a href="#privacy" {...stylex.props(styles.footerLink)}>
+        <a href="#privacy" {...props(styles.footerLink)}>
           Privacy
         </a>
-        <a href="#contact" {...stylex.props(styles.footerLink)}>
+        <a href="#contact" {...props(styles.footerLink)}>
           Contact
         </a>
       </nav>
-      <div {...stylex.props(styles.socialLinks)} aria-label="ソーシャルリンク">
-        <a href="#x" aria-label="X" {...stylex.props(styles.footerLink)}>
+      <div {...props(styles.socialLinks)} aria-label="ソーシャルリンク">
+        <a href="#x" aria-label="X" {...props(styles.footerLink)}>
           X
         </a>
-        <a href="#instagram" aria-label="Instagram" {...stylex.props(styles.footerLink)}>
+        <a href="#instagram" aria-label="Instagram" {...props(styles.footerLink)}>
           ◎
         </a>
-        <a href="#tiktok" aria-label="TikTok" {...stylex.props(styles.footerLink)}>
+        <a href="#tiktok" aria-label="TikTok" {...props(styles.footerLink)}>
           ♪
         </a>
       </div>

@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { Toaster } from "@ui-sdk/core/toast";
 import { Toast, ToastDescription, ToastRegion, ToastTitle } from "@ui-sdk/react/toast";
 import type { ReactNode } from "react";
@@ -8,16 +8,16 @@ export function ProfileToasts({ toaster }: { toaster: Toaster<ReactNode> }) {
   return (
     <ToastRegion toaster={toaster} data-agent-hidden="" side="bottom" align="end">
       {() => (
-        <Toast {...stylex.props(styles.toast)}>
-          <ToastTitle {...stylex.props(styles.toastTitle)} />
-          <ToastDescription {...stylex.props(styles.toastDesc)} />
+        <Toast {...props(styles.toast)}>
+          <ToastTitle {...props(styles.toastTitle)} />
+          <ToastDescription {...props(styles.toastDesc)} />
         </Toast>
       )}
     </ToastRegion>
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   toast: {
     paddingBlock: 12,
     paddingInline: 14,

@@ -3,7 +3,8 @@ import { describe, expect, test } from "vite-plus/test";
 import { replaceFavoriteSongsInput, updateProfileInput } from "../../src/users/schemas.ts";
 
 const item = { songId: "1679278167", isrc: "JPP302300157" };
-const parseItem = (extra: Record<string, unknown>) =>
+const repeatItems = (n: number) => Array.from({ length: n }, () => item);
+const parseItem = (extra: { emoji?: string; color?: string; comment?: string }) =>
   replaceFavoriteSongsInput.safeParse({ items: [{ ...item, ...extra }] }).success;
 
 describe("updateProfileInput", () => {
@@ -40,12 +41,11 @@ describe("replaceFavoriteSongsInput", () => {
   });
 
   test("お気に入りは上限の件数まで", () => {
-    const items = (n: number) => Array.from({ length: n }, () => item);
-    expect(replaceFavoriteSongsInput.safeParse({ items: items(FAVORITE_LIMIT) }).success).toBe(
-      true,
-    );
-    expect(replaceFavoriteSongsInput.safeParse({ items: items(FAVORITE_LIMIT + 1) }).success).toBe(
-      false,
-    );
+    expect(
+      replaceFavoriteSongsInput.safeParse({ items: repeatItems(FAVORITE_LIMIT) }).success,
+    ).toBe(true);
+    expect(
+      replaceFavoriteSongsInput.safeParse({ items: repeatItems(FAVORITE_LIMIT + 1) }).success,
+    ).toBe(false);
   });
 });

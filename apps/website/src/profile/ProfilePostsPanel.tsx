@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Link } from "@tanstack/react-router";
 import {
   AlertDialog,
@@ -13,7 +13,8 @@ import { Button } from "@ui-sdk/react/button";
 import { Toggle } from "@ui-sdk/react/toggle";
 import { MusicNoteIcon } from "#/chat/icons";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
-import { type AppleSong, artworkUrl } from "#/lib/musickit";
+import { artworkUrl } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
 import type { PostView } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
 import { PreviewToggle } from "#/songs/PreviewToggle";
@@ -28,7 +29,9 @@ const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
 
 function formatDate(iso: string) {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
   return dateFormatter.format(date);
 }
 
@@ -39,39 +42,39 @@ function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSo
   const isLiking = state.likingPostId === post.id;
 
   return (
-    <article {...stylex.props(styles.card)}>
+    <article {...props(styles.card)}>
       {post.song ? (
-        <div {...stylex.props(styles.songRow)}>
-          <div {...stylex.props(styles.artWrap)}>
+        <div {...props(styles.songRow)}>
+          <div {...props(styles.artWrap)}>
             {post.song.artworkUrl ? (
               <img
                 src={artworkUrl(post.song.artworkUrl, 96)}
                 alt=""
                 width={44}
                 height={44}
-                {...stylex.props(styles.art)}
+                {...props(styles.art)}
               />
             ) : (
-              <div {...stylex.props(styles.art, styles.artFallback)} aria-hidden="true">
+              <div {...props(styles.art, styles.artFallback)} aria-hidden="true">
                 <MusicNoteIcon />
               </div>
             )}
           </div>
-          <div {...stylex.props(styles.songMeta)}>
+          <div {...props(styles.songMeta)}>
             {post.song.url ? (
               <a
                 href={post.song.url}
                 target="_blank"
                 rel="noreferrer"
-                {...stylex.props(styles.songTitle, styles.songTitleLink)}
+                {...props(styles.songTitle, styles.songTitleLink)}
               >
                 {songTitle}
               </a>
             ) : (
-              <span {...stylex.props(styles.songTitle)}>{songTitle}</span>
+              <span {...props(styles.songTitle)}>{songTitle}</span>
             )}
             {post.song.artistName ? (
-              <span {...stylex.props(styles.songArtist)}>{post.song.artistName}</span>
+              <span {...props(styles.songArtist)}>{post.song.artistName}</span>
             ) : null}
           </div>
           {catalogSong ? (
@@ -80,14 +83,14 @@ function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSo
         </div>
       ) : null}
 
-      <p {...stylex.props(styles.content)}>{post.content}</p>
+      <p {...props(styles.content)}>{post.content}</p>
 
-      <footer {...stylex.props(styles.footer)}>
-        <time dateTime={post.createdAt} {...stylex.props(styles.date)}>
+      <footer {...props(styles.footer)}>
+        <time dateTime={post.createdAt} {...props(styles.date)}>
           {formatDate(post.createdAt)}
         </time>
 
-        <div {...stylex.props(styles.actions)}>
+        <div {...props(styles.actions)}>
           <Toggle
             pressed={post.likedByMe}
             disabled={isLiking}
@@ -95,37 +98,35 @@ function PostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSo
             onPressedChange={(next) => {
               void actions.toggleLike(post.id, next);
             }}
-            {...stylex.props(styles.likeToggle, post.likedByMe && styles.likeTogglePressed)}
+            {...props(styles.likeToggle, post.likedByMe && styles.likeTogglePressed)}
           >
             {post.likedByMe ? <HeartFilledIcon /> : <HeartIcon />}
-            <span {...stylex.props(styles.likeCount)}>{post.likeCount}</span>
+            <span {...props(styles.likeCount)}>{post.likeCount}</span>
           </Toggle>
 
           <AlertDialog pendingAnnouncement="投稿を削除しています">
             <AlertDialogTrigger
               disabled={isDeleting}
               aria-label={`「${songTitle}」の投稿を削除`}
-              {...stylex.props(styles.deleteBtn)}
+              {...props(styles.deleteBtn)}
             >
               <TrashIcon />
             </AlertDialogTrigger>
-            <AlertDialogBackdrop {...stylex.props(styles.backdrop)} />
-            <AlertDialogContent {...stylex.props(styles.dialog)}>
-              <AlertDialogTitle {...stylex.props(styles.dialogTitle)}>
+            <AlertDialogBackdrop {...props(styles.backdrop)} />
+            <AlertDialogContent {...props(styles.dialog)}>
+              <AlertDialogTitle {...props(styles.dialogTitle)}>
                 この投稿を削除しますか？
               </AlertDialogTitle>
-              <AlertDialogDescription {...stylex.props(styles.dialogDesc)}>
+              <AlertDialogDescription {...props(styles.dialogDesc)}>
                 「{songTitle}」への感想を削除します。削除した投稿は元に戻せません。
               </AlertDialogDescription>
-              <div {...stylex.props(styles.dialogFooter)}>
-                <AlertDialogClose {...stylex.props(styles.secondaryBtn)}>
-                  キャンセル
-                </AlertDialogClose>
+              <div {...props(styles.dialogFooter)}>
+                <AlertDialogClose {...props(styles.secondaryBtn)}>キャンセル</AlertDialogClose>
                 <AlertDialogClose
                   value="confirm"
                   data-agent-confirm={`「${songTitle}」の投稿を削除します`}
                   action={() => actions.deletePost(post.id)}
-                  {...stylex.props(styles.dangerBtn)}
+                  {...props(styles.dangerBtn)}
                 >
                   完全に削除
                 </AlertDialogClose>
@@ -143,7 +144,7 @@ export function ProfilePostsPanel() {
 
   if (state.isPostsPending) {
     return (
-      <div {...stylex.props(styles.stateBox)} aria-busy="true">
+      <div {...props(styles.stateBox)} aria-busy="true">
         投稿を読み込んでいます…
       </div>
     );
@@ -151,7 +152,7 @@ export function ProfilePostsPanel() {
 
   if (state.postsError) {
     return (
-      <div role="alert" {...stylex.props(styles.errorBox)}>
+      <div role="alert" {...props(styles.errorBox)}>
         {state.postsError}
       </div>
     );
@@ -159,15 +160,15 @@ export function ProfilePostsPanel() {
 
   if (state.posts.length === 0) {
     return (
-      <div {...stylex.props(styles.emptyBox)}>
-        <div {...stylex.props(styles.emptyIcon)} aria-hidden="true">
+      <div {...props(styles.emptyBox)}>
+        <div {...props(styles.emptyIcon)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
-        <h2 {...stylex.props(styles.emptyTitle)}>まだ投稿がありません</h2>
-        <p {...stylex.props(styles.emptyDesc)}>
+        <h2 {...props(styles.emptyTitle)}>まだ投稿がありません</h2>
+        <p {...props(styles.emptyDesc)}>
           気に入った曲の感想を書くと、ここに自分の記録が溜まっていきます。
         </p>
-        <Button render={<Link to="/" />} {...stylex.props(styles.emptyCta)}>
+        <Button render={<Link to="/" />} {...props(styles.emptyCta)}>
           最初の感想を投稿する
         </Button>
       </div>
@@ -175,7 +176,7 @@ export function ProfilePostsPanel() {
   }
 
   return (
-    <div {...stylex.props(styles.list)}>
+    <div {...props(styles.list)}>
       {state.posts.map((post) => {
         const catalogSong = post.song
           ? (state.catalogSongs.byId.get(post.song.appleSongId) ??
@@ -185,12 +186,12 @@ export function ProfilePostsPanel() {
       })}
 
       {state.hasNextPosts ? (
-        <div {...stylex.props(styles.moreWrap)}>
+        <div {...props(styles.moreWrap)}>
           <Button
             type="button"
             disabled={state.isFetchingNextPosts}
             onClick={actions.fetchMorePosts}
-            {...stylex.props(styles.moreBtn)}
+            {...props(styles.moreBtn)}
           >
             {state.isFetchingNextPosts ? "読み込み中…" : "さらに表示"}
           </Button>
@@ -200,7 +201,7 @@ export function ProfilePostsPanel() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   list: {
     display: "flex",
     flexDirection: "column",

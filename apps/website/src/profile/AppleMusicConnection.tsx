@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { MusicNoteIcon } from "#/chat/icons";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
@@ -10,19 +10,17 @@ export function AppleMusicConnection() {
   const { isAppleMusicAuthorized, isAuthorizingAppleMusic } = state;
 
   return (
-    <section aria-label="Apple Music 連携" {...stylex.props(styles.card)}>
-      <div {...stylex.props(styles.info)}>
-        <div {...stylex.props(styles.iconWrap)} aria-hidden="true">
+    <section aria-label="Apple Music 連携" {...props(styles.card)}>
+      <div {...props(styles.info)}>
+        <div {...props(styles.iconWrap)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
-        <div {...stylex.props(styles.copy)}>
-          <div {...stylex.props(styles.headingRow)}>
-            <h2 {...stylex.props(styles.heading)}>Apple Music</h2>
-            {isAppleMusicAuthorized ? (
-              <span {...stylex.props(styles.statusBadge)}>連携中</span>
-            ) : null}
+        <div {...props(styles.copy)}>
+          <div {...props(styles.headingRow)}>
+            <h2 {...props(styles.heading)}>Apple Music</h2>
+            {isAppleMusicAuthorized ? <span {...props(styles.statusBadge)}>連携中</span> : null}
           </div>
-          <p {...stylex.props(styles.desc)}>
+          <p {...props(styles.desc)}>
             {isAppleMusicAuthorized
               ? "試聴バーの「フルで聴く」から曲をフル再生できます。"
               : "有料アカウントを連携すると、試聴した曲をそのままフル再生できます。"}
@@ -34,7 +32,7 @@ export function AppleMusicConnection() {
         <Button
           type="button"
           onClick={() => void actions.unauthorizeAppleMusic()}
-          {...stylex.props(styles.secondaryBtn)}
+          {...props(styles.secondaryBtn)}
         >
           連携を解除
         </Button>
@@ -43,7 +41,7 @@ export function AppleMusicConnection() {
           type="button"
           disabled={isAuthorizingAppleMusic}
           onClick={() => void actions.authorizeAppleMusic()}
-          {...stylex.props(styles.primaryBtn)}
+          {...props(styles.primaryBtn)}
         >
           {isAuthorizingAppleMusic ? "連携中…" : "連携する"}
         </Button>
@@ -52,7 +50,7 @@ export function AppleMusicConnection() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   card: {
     display: "flex",
     flexWrap: "wrap",

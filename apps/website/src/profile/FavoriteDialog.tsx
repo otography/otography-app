@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import {
   Dialog,
@@ -11,7 +11,8 @@ import {
 } from "@ui-sdk/react/dialog";
 import { Field, FieldLabel } from "@ui-sdk/react/field";
 import { Input } from "@ui-sdk/react/input";
-import { type ReactNode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import { CloseIcon } from "#/chat/icons";
 import type { FavoriteDecoration } from "#/lib/profile";
 import { FavoriteDecorationFields, validateDecoration } from "./FavoriteDecorationEditor";
@@ -29,7 +30,7 @@ const normalizeDecoration = (decoration: FavoriteDecoration): FavoriteDecoration
 type FavoriteSearch<T> = {
   query: string;
   setQuery: (value: string) => void;
-  results: T[];
+  results: Array<T>;
   searching: boolean;
   error: string | null;
   reset: () => void;
@@ -37,38 +38,41 @@ type FavoriteSearch<T> = {
 
 /** ダイアログが開いている間、入力に合わせて検索 API を debounce 付きで呼ぶ。 */
 function useFavoriteSearch<T>(
-  searchFn: (query: string) => Promise<T[]>,
+  searchFn: (query: string) => Promise<Array<T>>,
   open: boolean,
 ): FavoriteSearch<T> {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<T[]>([]);
+  const [results, setResults] = useState<Array<T>>([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const trimmedQuery = open ? query.trim() : "";
+
   useEffect(() => {
-    if (!open || !query.trim()) {
-      setResults([]);
-      setSearching(false);
-      setError(null);
+    if (!trimmedQuery) {
       return;
     }
 
     let cancelled = false;
-    setSearching(true);
-    setError(null);
 
     const timer = window.setTimeout(() => {
-      searchFn(query.trim())
+      setSearching(true);
+      setError(null);
+      searchFn(trimmedQuery)
         .then((found) => {
-          if (cancelled) return;
+          if (cancelled) {
+            return;
+          }
           setResults(found);
           setSearching(false);
         })
-        .catch((cause: unknown) => {
-          if (cancelled) return;
+        .catch((error_: unknown) => {
+          if (cancelled) {
+            return;
+          }
           setResults([]);
           setSearching(false);
-          setError(cause instanceof Error ? cause.message : "検索に失敗しました");
+          setError(error_ instanceof Error ? error_.message : "検索に失敗しました");
         });
     }, 220);
 
@@ -76,19 +80,25 @@ function useFavoriteSearch<T>(
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, query, searchFn]);
+  }, [trimmedQuery, searchFn]);
 
-  const reset = () => {
-    setQuery("");
-    setResults([]);
-    setError(null);
+  return {
+    query,
+    setQuery,
+    results: trimmedQuery ? results : [],
+    searching: trimmedQuery ? searching : false,
+    error: trimmedQuery ? error : null,
+    reset: () => {
+      setQuery("");
+      setResults([]);
+      setSearching(false);
+      setError(null);
+    },
   };
-
-  return { query, setQuery, results, searching, error, reset };
 }
 
 /** 追加ダイアログの状態（開閉・検索・選択・飾り）をまとめる。 */
-export function useFavoriteAddDraft<T>(searchFn: (query: string) => Promise<T[]>) {
+export function useFavoriteAddDraft<T>(searchFn: (query: string) => Promise<Array<T>>) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<T | null>(null);
   const [decoration, setDecoration] = useState<FavoriteDecoration>(EMPTY_DECORATION);
@@ -106,7 +116,9 @@ export function useFavoriteAddDraft<T>(searchFn: (query: string) => Promise<T[]>
   const { emojiError, commentError } = validateDecoration(decoration);
 
   const save = async (add: (item: T, decoration: FavoriteDecoration) => Promise<void>) => {
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     try {
       await add(selected, normalizeDecoration(decoration));
       onOpenChange(false);
@@ -139,16 +151,14 @@ export function FavoriteDialogContent({
 }) {
   return (
     <>
-      <DialogBackdrop {...stylex.props(styles.backdrop)} />
-      <DialogContent {...stylex.props(styles.dialog)}>
-        <div {...stylex.props(styles.dialogHeader)}>
-          <div {...stylex.props(styles.dialogHeading)}>
-            <DialogTitle {...stylex.props(styles.dialogTitle)}>{title}</DialogTitle>
-            <DialogDescription {...stylex.props(styles.dialogDesc)}>
-              {description}
-            </DialogDescription>
+      <DialogBackdrop {...props(styles.backdrop)} />
+      <DialogContent {...props(styles.dialog)}>
+        <div {...props(styles.dialogHeader)}>
+          <div {...props(styles.dialogHeading)}>
+            <DialogTitle {...props(styles.dialogTitle)}>{title}</DialogTitle>
+            <DialogDescription {...props(styles.dialogDesc)}>{description}</DialogDescription>
           </div>
-          <DialogClose aria-label="閉じる" {...stylex.props(styles.closeBtn)}>
+          <DialogClose aria-label="閉じる" {...props(styles.closeBtn)}>
             <CloseIcon />
           </DialogClose>
         </div>
@@ -166,7 +176,7 @@ export function FavoriteDialogForm({
   children: ReactNode;
 }) {
   return (
-    <form {...stylex.props(styles.form)} onSubmit={onSubmit}>
+    <form {...props(styles.form)} onSubmit={onSubmit}>
       {children}
     </form>
   );
@@ -180,9 +190,9 @@ export function FavoriteDialogFooter({
   children: ReactNode;
 }) {
   return (
-    <div {...stylex.props(styles.dialogFooter)}>
-      <DialogClose {...stylex.props(styles.secondaryBtn)}>キャンセル</DialogClose>
-      <Button type="submit" disabled={disabled} {...stylex.props(styles.primaryBtn)}>
+    <div {...props(styles.dialogFooter)}>
+      <DialogClose {...props(styles.secondaryBtn)}>キャンセル</DialogClose>
+      <Button type="submit" disabled={disabled} {...props(styles.primaryBtn)}>
         {children}
       </Button>
     </div>
@@ -199,9 +209,9 @@ export function FavoriteSelectedBox({
   children: ReactNode;
 }) {
   return (
-    <div {...stylex.props(styles.selectedBox)}>
+    <div {...props(styles.selectedBox)}>
       {children}
-      <Button type="button" {...stylex.props(styles.secondaryBtnSm)} onClick={onReset}>
+      <Button type="button" {...props(styles.secondaryBtnSm)} onClick={onReset}>
         {resetLabel}
       </Button>
     </div>
@@ -237,23 +247,23 @@ export function FavoriteSearchSection<T>({
           : idleMessage));
 
   return (
-    <div {...stylex.props(styles.searchSection)}>
+    <div {...props(styles.searchSection)}>
       <Field name={name}>
-        <FieldLabel {...stylex.props(styles.label)}>{label}</FieldLabel>
-        <div {...stylex.props(styles.searchInputWrap)}>
-          <span {...stylex.props(styles.searchIcon)} aria-hidden="true">
+        <FieldLabel {...props(styles.label)}>{label}</FieldLabel>
+        <div {...props(styles.searchInputWrap)}>
+          <span {...props(styles.searchIcon)} aria-hidden="true">
             <SearchIcon />
           </span>
           <Input
             value={query}
             onValueChange={search.setQuery}
             placeholder={placeholder}
-            {...stylex.props(styles.searchInput)}
+            {...props(styles.searchInput)}
           />
         </div>
       </Field>
 
-      <div role="status" aria-live="polite" {...stylex.props(styles.searchStatus)}>
+      <div role="status" aria-live="polite" {...props(styles.searchStatus)}>
         {status}
       </div>
 
@@ -280,7 +290,9 @@ export function EditFavoriteDialog({
   const [decoration, setDecoration] = useState<FavoriteDecoration>(initial);
 
   const handleOpenChange = (next: boolean) => {
-    if (next) setDecoration(initial);
+    if (next) {
+      setDecoration(initial);
+    }
     setOpen(next);
   };
 
@@ -289,7 +301,9 @@ export function EditFavoriteDialog({
 
   const handleSubmit = async (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     try {
       await onSave(normalizeDecoration(decoration));
       setOpen(false);
@@ -300,10 +314,7 @@ export function EditFavoriteDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger
-        aria-label={`「${title}」のメモと飾りを編集`}
-        {...stylex.props(styles.iconBtn)}
-      >
+      <DialogTrigger aria-label={`「${title}」のメモと飾りを編集`} {...props(styles.iconBtn)}>
         <EditIcon />
       </DialogTrigger>
       <FavoriteDialogContent

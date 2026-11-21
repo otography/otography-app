@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { motion } from "#/motion.stylex";
 import { BudouxText } from "./BudouxText";
 import { Avatar } from "./Avatar";
@@ -7,7 +7,7 @@ import { StartButton } from "./StartButton";
 import { fontTokens, landingMedia } from "./tokens.stylex";
 import type { ArtVariant } from "./TrackArt";
 
-const styles = stylex.create({
+const styles = create({
   hero: {
     position: "relative",
     display: "grid",
@@ -382,13 +382,13 @@ function HeroPostCard({
   artist,
 }: (typeof heroPosts)[number]) {
   return (
-    <article {...stylex.props(styles.heroPost, styles[positionStyle])}>
-      <div {...stylex.props(styles.postMeta)}>
+    <article {...props(styles.heroPost, styles[positionStyle])}>
+      <div {...props(styles.postMeta)}>
         <Avatar>{name.slice(0, 1)}</Avatar>
         <span>{name}</span>
-        <time {...stylex.props(styles.postMetaTime)}>{time}</time>
+        <time {...props(styles.postMetaTime)}>{time}</time>
       </div>
-      <p {...stylex.props(styles.heroPostText)}>
+      <p {...props(styles.heroPostText)}>
         <BudouxText text={text} />
       </p>
       <MusicPill artVariant={artVariant} title={title} artist={artist} />
@@ -398,9 +398,9 @@ function HeroPostCard({
 
 export function Hero() {
   return (
-    <section {...stylex.props(styles.hero)} id="about">
-      <div {...stylex.props(styles.heroCopy)}>
-        <h1 aria-label="Music is passed on in words." {...stylex.props(styles.heroTitle)}>
+    <section {...props(styles.hero)} id="about">
+      <div {...props(styles.heroCopy)}>
+        <h1 aria-label="Music is passed on in words." {...props(styles.heroTitle)}>
           Music is
           <br />
           passed on
@@ -412,24 +412,24 @@ export function Hero() {
             fetchPriority="high"
             src="/lp-asset-5-2.webp"
             width={1536}
-            {...stylex.props(styles.inWordsImage)}
+            {...props(styles.inWordsImage)}
           />
         </h1>
-        <p {...stylex.props(styles.heroLead)}>
+        <p {...props(styles.heroLead)}>
           <BudouxText text="聴いた人の言葉をまとって、曲は次の誰かへ渡っていく。" />
         </p>
-        <p {...stylex.props(styles.heroDescription)}>
+        <p {...props(styles.heroDescription)}>
           <BudouxText text="otographyは、楽曲への短い感想を投稿し、誰かの音楽体験に触れられるプラットフォームです。" />
         </p>
-        <div {...stylex.props(styles.heroActions)}>
+        <div {...props(styles.heroActions)}>
           <StartButton style={styles.heroActionPrimaryLink} />
-          <a href="#how-it-works" {...stylex.props(styles.secondaryLink)}>
+          <a href="#how-it-works" {...props(styles.secondaryLink)}>
             <span>もっと知る</span>
             <span aria-hidden="true">⌄</span>
           </a>
         </div>
       </div>
-      <div {...stylex.props(styles.heroVisual)} aria-label="感想カードのプレビュー">
+      <div {...props(styles.heroVisual)} aria-label="感想カードのプレビュー">
         <img
           alt=""
           aria-hidden="true"
@@ -437,7 +437,7 @@ export function Hero() {
           fetchPriority="high"
           src="/lp-asset-4.webp"
           width={1535}
-          {...stylex.props(styles.heroAura)}
+          {...props(styles.heroAura)}
         />
         <img
           alt=""
@@ -445,7 +445,7 @@ export function Hero() {
           fetchPriority="high"
           src="/lp-asset-2.webp"
           width={1536}
-          {...stylex.props(styles.heroDots)}
+          {...props(styles.heroDots)}
         />
         <img
           alt=""
@@ -454,7 +454,7 @@ export function Hero() {
           fetchPriority="high"
           src="/lp-asset-3.webp"
           width={1535}
-          {...stylex.props(styles.heroOval)}
+          {...props(styles.heroOval)}
         />
         <img
           alt=""
@@ -463,7 +463,7 @@ export function Hero() {
           fetchPriority="high"
           src="/lp-asset-1.webp"
           width={1254}
-          {...stylex.props(styles.heroScribble)}
+          {...props(styles.heroScribble)}
         />
         {heroPosts.map((post) => (
           <HeroPostCard key={post.name} {...post} />

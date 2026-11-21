@@ -2,7 +2,8 @@ import { postEmbeddings, posts, users } from "db";
 import { sql } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { EmbeddingSearchError } from "./errors.ts";
-import { type Metric, toQuery } from "./metric.ts";
+import { toQuery } from "./metric.ts";
+import type { Metric } from "./metric.ts";
 
 const vector16 = (v: ArrayLike<number>) => sql`vector16(${JSON.stringify(Array.from(v))})`;
 
@@ -36,7 +37,9 @@ export async function searchSimilarPosts({
 }) {
   const query = metric ? toQuery(z, metric) : null;
   // u が 0（z が平均と一致する）ときは、どの投稿ともコサインが決まらない
-  if (query && query.uNorm === 0) return [];
+  if (query && query.uNorm === 0) {
+    return [];
+  }
 
   const target = vector16(query ? query.u : z);
   const score =
@@ -65,5 +68,5 @@ export async function searchSimilarPosts({
         order by score desc
         limit ${limit}`,
     )
-    .catch((e) => new EmbeddingSearchError({ cause: e }));
+    .catch((error: unknown) => new EmbeddingSearchError({ cause: error }));
 }

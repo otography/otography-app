@@ -1,14 +1,6 @@
-import * as stylex from "@stylexjs/stylex";
-import {
-  createContext,
-  type ReactNode,
-  type RefObject,
-  use,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { create, props as stylexProps } from "@stylexjs/stylex";
+import { createContext, use, useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode, RefObject } from "react";
 import { chatTokens as t } from "./tokens.stylex";
 
 type NoteGlyphKind = "eighth" | "beamed" | "quarter" | "double";
@@ -58,8 +50,8 @@ export function useSearchingNotes(): SearchingNotesContextValue | null {
 
 const MAX_CONCURRENT_NOTES = 10;
 const KEYFRAME_SAMPLES = 36;
-const GLYPHS: readonly NoteGlyphKind[] = ["eighth", "beamed", "quarter", "double"];
-const SIDES: readonly SpawnSide[] = ["top", "left", "bottom", "right"];
+const GLYPHS: ReadonlyArray<NoteGlyphKind> = ["eighth", "beamed", "quarter", "double"];
+const SIDES: ReadonlyArray<SpawnSide> = ["top", "left", "bottom", "right"];
 
 function randomRange(min: number, max: number): number {
   return min + Math.random() * (max - min);
@@ -153,8 +145,8 @@ function createNote(
   };
 }
 
-function buildKeyframes(note: FloatingNote): Keyframe[] {
-  const frames: Keyframe[] = [];
+function buildKeyframes(note: FloatingNote): Array<Keyframe> {
+  const frames: Array<Keyframe> = [];
   const startSway = Math.sin(note.swayPhase);
   const startRot = Math.sin(note.rotPhase);
 
@@ -295,11 +287,17 @@ function FloatingNoteParticle({
   const ref = useRef<HTMLSpanElement | null>(null);
   const animRef = useRef<Animation | null>(null);
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  const initialSpeedScaleRef = useRef(speedScale);
+
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  }, [onDone]);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el || typeof el.animate !== "function") return;
+    if (!el || typeof el.animate !== "function") {
+      return;
+    }
 
     const keyframes = buildKeyframes(note);
     const anim = el.animate(keyframes, {
@@ -307,12 +305,14 @@ function FloatingNoteParticle({
       easing: "linear",
       fill: "forwards",
     });
-    anim.playbackRate = speedScale;
+    anim.playbackRate = initialSpeedScaleRef.current;
     animRef.current = anim;
 
     let cancelled = false;
     anim.onfinish = () => {
-      if (!cancelled) onDoneRef.current(note.id);
+      if (!cancelled) {
+        onDoneRef.current(note.id);
+      }
     };
 
     return () => {
@@ -323,13 +323,14 @@ function FloatingNoteParticle({
   }, [note]);
 
   useEffect(() => {
+    initialSpeedScaleRef.current = speedScale;
     if (animRef.current) {
       animRef.current.playbackRate = speedScale;
     }
   }, [speedScale]);
 
   return (
-    <span ref={ref} {...stylex.props(styles.particle)}>
+    <span ref={ref} {...stylexProps(styles.particle)}>
       <NoteGlyph kind={note.glyph} size={note.size} />
     </span>
   );
@@ -392,7 +393,7 @@ function Overlay() {
 
   const reducedMotion = useReducedMotion();
   const layerRef = useRef<HTMLDivElement | null>(null);
-  const [notes, setNotes] = useState<FloatingNote[]>([]);
+  const [notes, setNotes] = useState<Array<FloatingNote>>([]);
   const nextIdRef = useRef(1);
   const slotRef = useRef(0);
 
@@ -401,21 +402,18 @@ function Overlay() {
   }, []);
 
   useEffect(() => {
-    if (reducedMotion) {
-      setNotes([]);
-      return;
-    }
-
-    if (!active) {
+    if (reducedMotion || !active) {
       // 結果が出たら新規生成だけ止め、すでに流れている音符はそのまま終点まで流し切る
       return;
     }
 
-    const timers: number[] = [];
+    const timers: Array<number> = [];
     let stopped = false;
 
     const spawn = () => {
-      if (stopped) return;
+      if (stopped) {
+        return;
+      }
       const layerRect = layerRef.current?.getBoundingClientRect();
       const width = layerRect && layerRect.width > 0 ? layerRect.width : 420;
       const height = layerRect && layerRect.height > 0 ? layerRect.height : 130;
@@ -452,7 +450,9 @@ function Overlay() {
     }
 
     const scheduleNext = () => {
-      if (stopped) return;
+      if (stopped) {
+        return;
+      }
       const delayMs = Math.max(280, Math.round(randomRange(420, 580) / speedScale));
       const timerId = window.setTimeout(() => {
         spawn();
@@ -475,19 +475,19 @@ function Overlay() {
     return (
       <div
         aria-hidden="true"
-        {...stylex.props(
+        {...stylexProps(
           styles.layer,
           styles.reducedLayer,
           active ? styles.layerVisible : styles.layerHidden,
         )}
       >
-        <span {...stylex.props(styles.reducedNote, styles.reducedNoteTop)}>
+        <span {...stylexProps(styles.reducedNote, styles.reducedNoteTop)}>
           <NoteGlyph kind="eighth" size={14} />
         </span>
-        <span {...stylex.props(styles.reducedNote, styles.reducedNoteLeft)}>
+        <span {...stylexProps(styles.reducedNote, styles.reducedNoteLeft)}>
           <NoteGlyph kind="beamed" size={15} />
         </span>
-        <span {...stylex.props(styles.reducedNote, styles.reducedNoteBottom)}>
+        <span {...stylexProps(styles.reducedNote, styles.reducedNoteBottom)}>
           <NoteGlyph kind="quarter" size={13} />
         </span>
       </div>
@@ -495,7 +495,7 @@ function Overlay() {
   }
 
   return (
-    <div ref={layerRef} aria-hidden="true" {...stylex.props(styles.layer)}>
+    <div ref={layerRef} aria-hidden="true" {...stylexProps(styles.layer)}>
       {notes.map((note) => (
         <FloatingNoteParticle
           key={note.id}
@@ -513,7 +513,7 @@ export const SearchingNotes = {
   Overlay,
 };
 
-const styles = stylex.create({
+const styles = create({
   layer: {
     position: "absolute",
     inset: 0,

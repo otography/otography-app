@@ -14,12 +14,21 @@ const song: CatalogSong = {
   title: "アイドル",
   artistName: "YOASOBI",
   albumName: "アイドル - Single",
-  durationMs: 213000,
+  durationMs: 213_000,
   artworkUrl: "https://example.com/{w}x{h}bb.jpg",
   url: "https://music.apple.com/jp/song/1679278167",
   artistIds: ["1490256993"],
 };
-const user = { id: "u1" } as SessionUser;
+const user: SessionUser = {
+  id: "u1",
+  name: "テスト",
+  email: "a@example.com",
+  emailVerified: false,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  publicId: "p1",
+  isAdmin: false,
+};
 const input = { songId: song.appleSongId, isrc: song.isrc, content: "好きな曲" };
 
 let db: Database;
@@ -41,7 +50,9 @@ describe("createPost", () => {
       input,
     });
 
-    if (post instanceof Error) throw post;
+    if (post instanceof Error) {
+      throw post;
+    }
     expect(post.id).toMatch(/^[a-z0-9]{12}$/);
     expect(post).toMatchObject({
       content: "好きな曲",
@@ -54,7 +65,7 @@ describe("createPost", () => {
   });
 
   test("IP アドレスがないときは、Apple も呼ばず、何も保存しない", async () => {
-    const calls: string[] = [];
+    const calls: Array<string> = [];
     const post = await createPost({
       db,
       fetchSong: async (songId) => {

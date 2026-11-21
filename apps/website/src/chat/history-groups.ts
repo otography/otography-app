@@ -3,7 +3,7 @@ import type { PostView } from "#/lib/posts";
 export type PostDateGroup = {
   dateKey: string;
   label: string;
-  posts: PostView[];
+  posts: Array<PostView>;
 };
 
 function toLocalDateKey(date: Date) {
@@ -18,8 +18,12 @@ function formatDateLabel(date: Date, now: Date) {
   const targetStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diffDays = Math.round((todayStart.getTime() - targetStart.getTime()) / 86_400_000);
 
-  if (diffDays === 0) return "今日";
-  if (diffDays === 1) return "昨日";
+  if (diffDays === 0) {
+    return "今日";
+  }
+  if (diffDays === 1) {
+    return "昨日";
+  }
 
   if (date.getFullYear() === now.getFullYear()) {
     return `${date.getMonth() + 1}月${date.getDate()}日`;
@@ -27,8 +31,11 @@ function formatDateLabel(date: Date, now: Date) {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
-export function groupPostsByDate(posts: readonly PostView[], now = new Date()): PostDateGroup[] {
-  const groups: PostDateGroup[] = [];
+export function groupPostsByDate(
+  posts: ReadonlyArray<PostView>,
+  now = new Date(),
+): Array<PostDateGroup> {
+  const groups: Array<PostDateGroup> = [];
   const byKey = new Map<string, PostDateGroup>();
 
   for (const post of posts) {

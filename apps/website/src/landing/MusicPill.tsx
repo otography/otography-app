@@ -1,8 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { fontTokens } from "./tokens.stylex";
-import { TrackArt, type ArtVariant } from "./TrackArt";
+import { TrackArt } from "./TrackArt";
+import type { ArtVariant } from "./TrackArt";
 
-const styles = stylex.create({
+const styles = create({
   pill: {
     display: "grid",
     gridTemplateColumns: "auto 1fr",
@@ -31,11 +32,11 @@ type MusicPillProps = {
 
 export function MusicPill({ artVariant, title, artist }: MusicPillProps) {
   return (
-    <div {...stylex.props(styles.pill)}>
+    <div {...props(styles.pill)}>
       <TrackArt variant={artVariant} />
       <span>
-        <strong {...stylex.props(styles.title)}>{title}</strong>
-        <small {...stylex.props(styles.subtitle)}>{artist}</small>
+        <strong {...props(styles.title)}>{title}</strong>
+        <small {...props(styles.subtitle)}>{artist}</small>
       </span>
     </div>
   );

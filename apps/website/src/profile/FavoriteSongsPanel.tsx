@@ -1,7 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { props } from "@stylexjs/stylex";
+import type { StyleXStyles } from "@stylexjs/stylex";
 import { Dialog, DialogTrigger } from "@ui-sdk/react/dialog";
 import { MusicNoteIcon, PlusIcon } from "#/chat/icons";
-import { type AppleSong, artworkUrl, searchSongs } from "#/lib/musickit";
+import { artworkUrl, searchSongs } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
 import type { FavoriteSongItem } from "#/lib/profile";
 import { PreviewToggle } from "#/songs/PreviewToggle";
 import {
@@ -19,15 +21,7 @@ import { FavoriteRow } from "./FavoriteRow";
 import { favoriteStyles as styles } from "./favorite-styles";
 import { useProfile } from "./ProfileContext";
 
-function SongArt({
-  song,
-  size,
-  style,
-}: {
-  song: AppleSong;
-  size: number;
-  style: stylex.StyleXStyles;
-}) {
+function SongArt({ song, size, style }: { song: AppleSong; size: number; style: StyleXStyles }) {
   const { artwork } = song.attributes;
   return artwork ? (
     <img
@@ -35,10 +29,10 @@ function SongArt({
       alt=""
       width={size}
       height={size}
-      {...stylex.props(style)}
+      {...props(style)}
     />
   ) : (
-    <div {...stylex.props(style, styles.artFallback)} aria-hidden="true">
+    <div {...props(style, styles.artFallback)} aria-hidden="true">
       <MusicNoteIcon />
     </div>
   );
@@ -56,13 +50,15 @@ function AddFavoriteSongDialog() {
 
   const handleSave = (event: { preventDefault: () => void }) => {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave) {
+      return;
+    }
     void draft.save(actions.addFavoriteSong);
   };
 
   return (
     <Dialog open={draft.open} onOpenChange={draft.onOpenChange}>
-      <DialogTrigger disabled={atLimit} {...stylex.props(styles.addBtn)}>
+      <DialogTrigger disabled={atLimit} {...props(styles.addBtn)}>
         <PlusIcon />
         <span>好きな曲を追加</span>
       </DialogTrigger>
@@ -74,9 +70,9 @@ function AddFavoriteSongDialog() {
           {selected ? (
             <FavoriteSelectedBox resetLabel="別の曲を選ぶ" onReset={() => draft.setSelected(null)}>
               <SongArt song={selected} size={44} style={styles.art} />
-              <div {...stylex.props(styles.meta)}>
-                <span {...stylex.props(styles.title)}>{selected.attributes.name}</span>
-                <span {...stylex.props(styles.sub)}>{selected.attributes.artistName}</span>
+              <div {...props(styles.meta)}>
+                <span {...props(styles.title)}>{selected.attributes.name}</span>
+                <span {...props(styles.sub)}>{selected.attributes.artistName}</span>
               </div>
             </FavoriteSelectedBox>
           ) : (
@@ -88,28 +84,28 @@ function AddFavoriteSongDialog() {
               notFoundMessage="一致する曲が見つかりませんでした"
               search={draft.search}
             >
-              <ul {...stylex.props(styles.resultList)} aria-label="曲の検索結果">
+              <ul {...props(styles.resultList)} aria-label="曲の検索結果">
                 {draft.search.results.map((song) => {
                   const isrc = song.attributes.isrc;
                   const alreadyAdded = Boolean(isrc && existingIsrcs.has(isrc.toUpperCase()));
                   const disabled = !isrc || alreadyAdded;
                   return (
-                    <li key={song.id} {...stylex.props(styles.resultRow)}>
+                    <li key={song.id} {...props(styles.resultRow)}>
                       <button
                         type="button"
                         disabled={disabled}
                         onClick={() => draft.setSelected(song)}
-                        {...stylex.props(styles.resultSelectBtn)}
+                        {...props(styles.resultSelectBtn)}
                       >
                         <SongArt song={song} size={38} style={styles.resultArt} />
-                        <span {...stylex.props(styles.meta)}>
-                          <span {...stylex.props(styles.title)}>{song.attributes.name}</span>
-                          <span {...stylex.props(styles.sub)}>{song.attributes.artistName}</span>
+                        <span {...props(styles.meta)}>
+                          <span {...props(styles.title)}>{song.attributes.name}</span>
+                          <span {...props(styles.sub)}>{song.attributes.artistName}</span>
                         </span>
                         {alreadyAdded ? (
-                          <span {...stylex.props(styles.badge)}>登録済み</span>
+                          <span {...props(styles.badge)}>登録済み</span>
                         ) : !isrc ? (
-                          <span {...stylex.props(styles.badge)}>選択不可</span>
+                          <span {...props(styles.badge)}>選択不可</span>
                         ) : null}
                       </button>
                       <PreviewToggle
@@ -172,16 +168,14 @@ function FavoriteSongRow({
               href={item.song.url}
               target="_blank"
               rel="noreferrer"
-              {...stylex.props(styles.title, styles.titleLink)}
+              {...props(styles.title, styles.titleLink)}
             >
               {title}
             </a>
           ) : (
-            <span {...stylex.props(styles.title)}>{title}</span>
+            <span {...props(styles.title)}>{title}</span>
           )}
-          {item.song.artistName ? (
-            <span {...stylex.props(styles.sub)}>{item.song.artistName}</span>
-          ) : null}
+          {item.song.artistName ? <span {...props(styles.sub)}>{item.song.artistName}</span> : null}
         </FavoriteRow.Meta>
 
         <FavoriteRow.Actions>

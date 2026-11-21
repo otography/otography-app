@@ -4,11 +4,13 @@ import type { postViewOutput } from "./schemas.ts";
 export type PostView = z.output<typeof postViewOutput>;
 
 /** ローカルのダミー検索で、検索中 UI を確認するための待機時間（ミリ秒）。 */
-const LOCAL_SIMILAR_DELAY_MS = 1_500;
+const LOCAL_SIMILAR_DELAY_MS = 1500;
 
 /** ローカルの DB（turso dev や file:）を指す URL かを判定する。 */
 export function isLocalDatabaseUrl(url: string | undefined): boolean {
-  if (!url) return false;
+  if (!url) {
+    return false;
+  }
   return url.startsWith("file:") || /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?\/?$/.test(url);
 }
 
@@ -26,7 +28,7 @@ const OFFICIAL_AUTHOR = {
 } as const;
 
 // packages/db/data/official-reviews.json（staging に投入している公式アカウントの実データ）から抜粋。
-function buildDummySimilarPosts(now: number): PostView[] {
+function buildDummySimilarPosts(now: number): Array<PostView> {
   return [
     {
       id: "jigkxm58kgdj",
@@ -99,9 +101,11 @@ export async function simulateLocalSimilarPosts({
   delayMs = LOCAL_SIMILAR_DELAY_MS,
 }: {
   delayMs?: number;
-} = {}): Promise<PostView[]> {
+} = {}): Promise<Array<PostView>> {
   if (delayMs > 0) {
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, delayMs);
+    });
   }
   return buildDummySimilarPosts(Date.now());
 }

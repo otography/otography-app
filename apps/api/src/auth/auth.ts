@@ -98,7 +98,9 @@ export const auth = betterAuth({
             where: { id: session.userId },
             columns: { suspendedAt: true, deletedAt: true },
           });
-          if (!user || user.suspendedAt || user.deletedAt) return false;
+          if (!user || user.suspendedAt || user.deletedAt) {
+            return false;
+          }
         },
       },
     },

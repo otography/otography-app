@@ -4,23 +4,31 @@
  */
 
 /** 平均と共分散行列（D × D、行優先）。 */
-export function covariance(rows: Float32Array[], d: number) {
+export function covariance(rows: Array<Float32Array>, d: number) {
   const n = rows.length;
   const mean = new Float64Array(d);
-  for (const row of rows) for (let j = 0; j < d; j++) mean[j]! += (row[j] ?? 0) / n;
+  for (const row of rows) {
+    for (let j = 0; j < d; j++) {
+      mean[j] += (row[j] ?? 0) / n;
+    }
+  }
   const c = new Float64Array(d * d);
   const centered = new Float64Array(d);
   for (const row of rows) {
-    for (let j = 0; j < d; j++) centered[j] = (row[j] ?? 0) - mean[j]!;
+    for (let j = 0; j < d; j++) {
+      centered[j] = (row[j] ?? 0) - mean[j];
+    }
     for (let i = 0; i < d; i++) {
-      const ci = centered[i]!;
+      const ci = centered[i];
       const base = i * d;
-      for (let j = i; j < d; j++) c[base + j]! += ci * centered[j]!;
+      for (let j = i; j < d; j++) {
+        c[base + j] += ci * centered[j];
+      }
     }
   }
   for (let i = 0; i < d; i++) {
     for (let j = i; j < d; j++) {
-      const v = c[i * d + j]! / n;
+      const v = c[i * d + j] / n;
       c[i * d + j] = v;
       c[j * d + i] = v;
     }
@@ -35,13 +43,21 @@ function orthonormalize(q: Float64Array, d: number, p: number) {
     for (let b = 0; b < a; b++) {
       const qb = q.subarray(b * d, (b + 1) * d);
       let dot = 0;
-      for (let i = 0; i < d; i++) dot += qa[i]! * qb[i]!;
-      for (let i = 0; i < d; i++) qa[i]! -= dot * qb[i]!;
+      for (let i = 0; i < d; i++) {
+        dot += qa[i] * qb[i];
+      }
+      for (let i = 0; i < d; i++) {
+        qa[i] -= dot * qb[i];
+      }
     }
     let norm = 0;
-    for (let i = 0; i < d; i++) norm += qa[i]! * qa[i]!;
+    for (let i = 0; i < d; i++) {
+      norm += qa[i] * qa[i];
+    }
     norm = Math.sqrt(norm) || 1;
-    for (let i = 0; i < d; i++) qa[i]! /= norm;
+    for (let i = 0; i < d; i++) {
+      qa[i] /= norm;
+    }
   }
 }
 
@@ -54,7 +70,9 @@ function multiply(c: Float64Array, q: Float64Array, d: number, p: number) {
     for (let i = 0; i < d; i++) {
       const row = i * d;
       let acc = 0;
-      for (let j = 0; j < d; j++) acc += c[row + j]! * qa[j]!;
+      for (let j = 0; j < d; j++) {
+        acc += c[row + j] * qa[j];
+      }
       oa[i] = acc;
     }
   }
@@ -65,44 +83,52 @@ function multiply(c: Float64Array, q: Float64Array, d: number, p: number) {
 function jacobi(matrix: Float64Array, m: number) {
   const a = Float64Array.from(matrix);
   const v = new Float64Array(m * m);
-  for (let i = 0; i < m; i++) v[i * m + i] = 1;
+  for (let i = 0; i < m; i++) {
+    v[i * m + i] = 1;
+  }
   for (let sweep = 0; sweep < 50; sweep++) {
     let off = 0;
-    for (let i = 0; i < m; i++) for (let j = i + 1; j < m; j++) off += a[i * m + j]! ** 2;
-    if (off < 1e-22) break;
+    for (let i = 0; i < m; i++) {
+      for (let j = i + 1; j < m; j++) {
+        off += a[i * m + j] ** 2;
+      }
+    }
+    if (off < 1e-22) {
+      break;
+    }
     for (let p = 0; p < m; p++) {
       for (let q = p + 1; q < m; q++) {
-        const apq = a[p * m + q]!;
-        if (Math.abs(apq) < 1e-30) continue;
-        const theta = (a[q * m + q]! - a[p * m + p]!) / (2 * apq);
+        const apq = a[p * m + q];
+        if (Math.abs(apq) < 1e-30) {
+          continue;
+        }
+        const theta = (a[q * m + q] - a[p * m + p]) / (2 * apq);
         const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
         const cos = 1 / Math.sqrt(t * t + 1);
         const sin = t * cos;
         for (let k = 0; k < m; k++) {
-          const akp = a[k * m + p]!;
-          const akq = a[k * m + q]!;
+          const akp = a[k * m + p];
+          const akq = a[k * m + q];
           a[k * m + p] = cos * akp - sin * akq;
           a[k * m + q] = sin * akp + cos * akq;
         }
         for (let k = 0; k < m; k++) {
-          const apk = a[p * m + k]!;
-          const aqk = a[q * m + k]!;
+          const apk = a[p * m + k];
+          const aqk = a[q * m + k];
           a[p * m + k] = cos * apk - sin * aqk;
           a[q * m + k] = sin * apk + cos * aqk;
         }
         for (let k = 0; k < m; k++) {
-          const vkp = v[k * m + p]!;
-          const vkq = v[k * m + q]!;
+          const vkp = v[k * m + p];
+          const vkq = v[k * m + q];
           v[k * m + p] = cos * vkp - sin * vkq;
           v[k * m + q] = sin * vkp + cos * vkq;
         }
       }
     }
   }
-  const order = Array.from({ length: m }, (_, i) => i).sort(
-    (x, y) => a[y * m + y]! - a[x * m + x]!,
-  );
-  return { values: order.map((i) => a[i * m + i]!), vectors: v, order };
+  const order = Array.from({ length: m }, (_, i) => i).sort((x, y) => a[y * m + y] - a[x * m + x]);
+  return { values: order.map((i) => a[i * m + i]), vectors: v, order };
 }
 
 /**
@@ -111,10 +137,10 @@ function jacobi(matrix: Float64Array, m: number) {
  */
 export function topEigen(c: Float64Array, d: number, k: number, iterations = 20) {
   const p = Math.min(d, k + 32);
-  let seed = 12345;
+  let seed = 12_345;
   const random = () => {
-    seed = (seed * 1103515245 + 12345) % 2147483648;
-    return seed / 2147483648 - 0.5;
+    seed = (seed * 1_103_515_245 + 12_345) % 2_147_483_648;
+    return seed / 2_147_483_648 - 0.5;
   };
   let q = Float64Array.from({ length: d * p }, random);
   orthonormalize(q, d, p);
@@ -127,7 +153,9 @@ export function topEigen(c: Float64Array, d: number, k: number, iterations = 20)
   for (let a = 0; a < p; a++) {
     for (let b = 0; b < p; b++) {
       let dot = 0;
-      for (let i = 0; i < d; i++) dot += q[a * d + i]! * cq[b * d + i]!;
+      for (let i = 0; i < d; i++) {
+        dot += q[a * d + i] * cq[b * d + i];
+      }
       t[a * p + b] = dot;
     }
   }
@@ -135,10 +163,12 @@ export function topEigen(c: Float64Array, d: number, k: number, iterations = 20)
   // 固有ベクトル u_r = Q v_r（D 次元）を、行優先で k 本並べる。
   const u = new Float64Array(k * d);
   for (let r = 0; r < k; r++) {
-    const col = order[r]!;
+    const col = order[r];
     for (let i = 0; i < d; i++) {
       let acc = 0;
-      for (let a = 0; a < p; a++) acc += q[a * d + i]! * vectors[a * p + col]!;
+      for (let a = 0; a < p; a++) {
+        acc += q[a * d + i] * vectors[a * p + col];
+      }
       u[r * d + i] = acc;
     }
   }
@@ -151,11 +181,13 @@ export type Transform = { a: Float32Array; b: Float32Array };
  * x の集まりから、射影だけの変換（A = Uᵀ）と、白色化の変換（A = (Λ + τI)^(-1/2) Uᵀ）を作る。b = −Aμ。
  * τ は全次元の平均の分散。件数が少なく、分散の小さい方向の推定が不安定なので、足してから割る（収縮）。
  */
-export function fitTransforms(rows: Float32Array[], D: number, K: number) {
+export function fitTransforms(rows: Array<Float32Array>, D: number, K: number) {
   const { mean, c } = covariance(rows, D);
   const { values, vectors } = topEigen(c, D, K);
   let total = 0;
-  for (let i = 0; i < D; i++) total += c[i * D + i]!;
+  for (let i = 0; i < D; i++) {
+    total += c[i * D + i];
+  }
   const tau = total / D;
   const build = (scaleOf: (r: number) => number): Transform => {
     const a = new Float32Array(K * D);
@@ -164,9 +196,9 @@ export function fitTransforms(rows: Float32Array[], D: number, K: number) {
       const scale = scaleOf(r);
       let bias = 0;
       for (let j = 0; j < D; j++) {
-        const v = vectors[r * D + j]! * scale;
+        const v = vectors[r * D + j] * scale;
         a[r * D + j] = v;
-        bias -= v * mean[j]!;
+        bias -= v * mean[j];
       }
       b[r] = bias;
     }
@@ -175,6 +207,6 @@ export function fitTransforms(rows: Float32Array[], D: number, K: number) {
   return {
     explained: values.reduce((s, v) => s + v, 0) / total,
     pca: build(() => 1),
-    white: build((r) => 1 / Math.sqrt(values[r]! + tau)),
+    white: build((r) => 1 / Math.sqrt(values[r] + tau)),
   };
 }

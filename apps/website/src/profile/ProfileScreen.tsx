@@ -1,12 +1,14 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props as stylexProps } from "@stylexjs/stylex";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@ui-sdk/react/button";
-import { useEffect, type ReactNode } from "react";
+import { useEffect } from "react";
+import type { ReactNode } from "react";
 import { Tabs, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import { authClient } from "#/lib/auth-client";
-import { type Me, meQuery } from "#/lib/auth";
+import { meQuery } from "#/lib/auth";
+import type { Me } from "#/lib/auth";
 import { motion } from "#/motion.stylex";
 import { AppShell } from "#/shell/AppShell";
 import { MiniPlayerBar } from "#/songs/MiniPlayerBar";
@@ -25,7 +27,11 @@ function ProfileTab({ value, children }: { value: string; children: ReactNode })
     <TabsTab
       value={value}
       render={(props, tabState) => (
-        <button {...props} {...stylex.props(styles.tab, tabState.selected && styles.tabSelected)} />
+        <button
+          type="button"
+          {...props}
+          {...stylexProps(styles.tab, tabState.selected && styles.tabSelected)}
+        />
       )}
     >
       {children}
@@ -53,15 +59,15 @@ function ProfileWorkspaceContent() {
   };
 
   return (
-    <div {...stylex.props(styles.shell)}>
-      <div {...stylex.props(styles.stickyHeader)}>
+    <div {...stylexProps(styles.shell)}>
+      <div {...stylexProps(styles.stickyHeader)}>
         <AppShell.Topbar>
-          <div {...stylex.props(styles.leftNav)}>
-            <Button render={<Link to="/" />} {...stylex.props(styles.backBtn)}>
+          <div {...stylexProps(styles.leftNav)}>
+            <Button render={<Link to="/" />} {...stylexProps(styles.backBtn)}>
               <ArrowLeftIcon />
               <span>ホーム</span>
             </Button>
-            <Link to="/" {...stylex.props(styles.brand)}>
+            <Link to="/" {...stylexProps(styles.brand)}>
               <AppShell.BrandIcon />
               <AppShell.BrandName style={styles.brandName} />
             </Link>
@@ -73,10 +79,10 @@ function ProfileWorkspaceContent() {
         <MiniPlayerBar />
       </div>
 
-      <main {...stylex.props(styles.main)}>
-        <div {...stylex.props(styles.inner)}>
+      <main {...stylexProps(styles.main)}>
+        <div {...stylexProps(styles.inner)}>
           {state.profileError ? (
-            <p role="alert" {...stylex.props(styles.errorBanner)}>
+            <p role="alert" {...stylexProps(styles.errorBanner)}>
               {state.profileError}
             </p>
           ) : null}
@@ -84,21 +90,21 @@ function ProfileWorkspaceContent() {
           <ProfileHero />
           <AppleMusicConnection />
 
-          <Tabs defaultValue="posts" {...stylex.props(styles.tabs)}>
-            <TabsList aria-label="プロフィールセクション" {...stylex.props(styles.tabsList)}>
+          <Tabs defaultValue="posts" {...stylexProps(styles.tabs)}>
+            <TabsList aria-label="プロフィールセクション" {...stylexProps(styles.tabsList)}>
               <ProfileTab value="posts">投稿</ProfileTab>
               <ProfileTab value="songs">好きな曲</ProfileTab>
               <ProfileTab value="artists">好きなアーティスト</ProfileTab>
-              <TabsIndicator {...stylex.props(styles.tabIndicator)} />
+              <TabsIndicator {...stylexProps(styles.tabIndicator)} />
             </TabsList>
 
-            <TabsPanel value="posts" {...stylex.props(styles.tabPanel)}>
+            <TabsPanel value="posts" {...stylexProps(styles.tabPanel)}>
               <ProfilePostsPanel />
             </TabsPanel>
-            <TabsPanel value="songs" {...stylex.props(styles.tabPanel)}>
+            <TabsPanel value="songs" {...stylexProps(styles.tabPanel)}>
               <FavoriteSongsPanel />
             </TabsPanel>
-            <TabsPanel value="artists" {...stylex.props(styles.tabPanel)}>
+            <TabsPanel value="artists" {...stylexProps(styles.tabPanel)}>
               <FavoriteArtistsPanel />
             </TabsPanel>
           </Tabs>
@@ -116,7 +122,7 @@ export function ProfileScreen({ user }: { user: Me }) {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   shell: {
     display: "flex",
     flexDirection: "column",

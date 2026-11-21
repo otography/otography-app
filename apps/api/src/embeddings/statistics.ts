@@ -38,7 +38,9 @@ export type Geometry = {
 /** 平均 m、共分散 C、P = C⁻¹ を作る。C が正定値でない（行数が少ないなど）ときは null。 */
 export function toGeometry(moments: Moments): Geometry | null {
   const n = momentsCount(moments);
-  if (!(n > k)) return null;
+  if (!(n > k)) {
+    return null;
+  }
   const mean = Float64Array.from({ length: k }, (_, i) => (moments[at(i, k)] ?? 0) / n);
   const covariance = new Float64Array(k * k);
   for (let i = 0; i < k; i++) {
@@ -49,7 +51,9 @@ export function toGeometry(moments: Moments): Geometry | null {
     }
   }
   const l = cholesky(covariance, k);
-  if (!l) return null;
+  if (!l) {
+    return null;
+  }
   // C = L Lᵀ なら P = C⁻¹ = L⁻ᵀ L⁻¹ なので、W = L⁻¹ とすれば WᵀW = P になる
   const whitener = invertLower(l, k);
   return { mean, precision: lowerGram(whitener, k), whitener };
@@ -61,9 +65,15 @@ export function geometryFromPrecision(
   precision: Float64Array,
 ): Geometry | null {
   const l = cholesky(precision, k);
-  if (!l) return null;
+  if (!l) {
+    return null;
+  }
   const whitener = new Float64Array(k * k);
-  for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) whitener[i * k + j] = l[j * k + i] ?? 0;
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j < k; j++) {
+      whitener[i * k + j] = l[j * k + i] ?? 0;
+    }
+  }
   return { mean, precision, whitener };
 }
 
@@ -73,7 +83,9 @@ export function precisionNorm(z: ArrayLike<number>, geometry: Geometry) {
   let sum = 0;
   for (let i = 0; i < k; i++) {
     let acc = 0;
-    for (let j = 0; j < k; j++) acc += (geometry.whitener[i * k + j] ?? 0) * (d[j] ?? 0);
+    for (let j = 0; j < k; j++) {
+      acc += (geometry.whitener[i * k + j] ?? 0) * (d[j] ?? 0);
+    }
     sum += acc * acc;
   }
   return Math.sqrt(sum);
@@ -104,7 +116,9 @@ export function drift(
   let shiftNorm = 0;
   for (let i = 0; i < k; i++) {
     let acc = 0;
-    for (let j = 0; j < k; j++) acc += (next.precision[i * k + j] ?? 0) * (shift[j] ?? 0);
+    for (let j = 0; j < k; j++) {
+      acc += (next.precision[i * k + j] ?? 0) * (shift[j] ?? 0);
+    }
     shiftNorm += (shift[i] ?? 0) * acc;
   }
   return { precisionChange: Math.sqrt(diff / base), meanShift: Math.sqrt(Math.max(shiftNorm, 0)) };

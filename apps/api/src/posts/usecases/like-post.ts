@@ -18,7 +18,11 @@ export async function setLike({
   liked: boolean;
 }) {
   const likeCount = await writeLike({ db, userId, postId, liked });
-  if (likeCount instanceof Error) return likeCount;
-  if (likeCount === null) return new PostNotFoundError({ postId });
+  if (likeCount instanceof Error) {
+    return likeCount;
+  }
+  if (likeCount === null) {
+    return new PostNotFoundError({ postId });
+  }
   return { likeCount, likedByMe: liked };
 }

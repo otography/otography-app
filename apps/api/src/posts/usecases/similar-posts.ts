@@ -12,7 +12,8 @@ import {
   findVisiblePostsByIds,
   saveSimilarCache,
 } from "../repository.ts";
-import { type PostView, toPostView } from "./post-view.ts";
+import { toPostView } from "./post-view.ts";
+import type { PostView } from "./post-view.ts";
 
 /** 投稿の直後に出す、似た感想の件数。 */
 const SIMILAR_POSTS_LIMIT = 3;
@@ -23,7 +24,7 @@ const SEARCH_POSTS_LIMIT = 20;
 type Embedding = { embed: Embedder; store: VectorStore; transform: Transform | null };
 
 export type SimilarPostsResult = {
-  posts: PostView[];
+  posts: Array<PostView>;
   expired: boolean;
   expiresAt: string;
 };
@@ -35,15 +36,19 @@ async function toPostViews({
   viewerId,
 }: {
   db: Database;
-  ids: string[];
+  ids: Array<string>;
   viewerId: string;
 }) {
   const rows = await findVisiblePostsByIds({ db, ids, viewerId });
-  if (rows instanceof Error) return rows;
+  if (rows instanceof Error) {
+    return rows;
+  }
   const views = [];
   for (const row of rows) {
     const view = toPostView(row);
-    if (view instanceof Error) return view;
+    if (view instanceof Error) {
+      return view;
+    }
     views.push(view);
   }
   return views;
@@ -70,8 +75,12 @@ export async function getSimilarPosts({
   now?: Date;
 }): Promise<SimilarPostsResult | Error> {
   const post = await findVisiblePost({ db, postId, viewerId });
-  if (post instanceof Error) return post;
-  if (!post) return new PostNotFoundError({ postId });
+  if (post instanceof Error) {
+    return post;
+  }
+  if (!post) {
+    return new PostNotFoundError({ postId });
+  }
 
   const expiresAt = new Date(post.createdAt.getTime() + SIMILAR_CACHE_TTL_MS);
   if (now >= expiresAt) {
@@ -79,15 +88,21 @@ export async function getSimilarPosts({
   }
 
   const cached = await findValidSimilarCache({ db, postId, includeSameSong, now });
-  if (cached instanceof Error) return cached;
+  if (cached instanceof Error) {
+    return cached;
+  }
   if (cached) {
     const posts = await toPostViews({ db, ids: cached.postIds, viewerId });
-    if (posts instanceof Error) return posts;
+    if (posts instanceof Error) {
+      return posts;
+    }
     return { posts, expired: false, expiresAt: cached.expiresAt.toISOString() };
   }
 
   const { transform } = embedding;
-  if (!transform) return new EmbeddingUnavailableError({ model: EMBEDDING_MODEL });
+  if (!transform) {
+    return new EmbeddingUnavailableError({ model: EMBEDDING_MODEL });
+  }
 
   const hits = await findSimilarPosts({
     db,
@@ -98,7 +113,9 @@ export async function getSimilarPosts({
     includeSameSong,
     limit: SIMILAR_POSTS_LIMIT,
   });
-  if (hits instanceof Error) return hits;
+  if (hits instanceof Error) {
+    return hits;
+  }
 
   const hitIds = hits.map((hit) => hit.postId);
   const saved = await saveSimilarCache({
@@ -108,10 +125,14 @@ export async function getSimilarPosts({
     similarPostIds: hitIds,
     expiresAt,
   });
-  if (saved instanceof Error) logError(saved);
+  if (saved instanceof Error) {
+    logError(saved);
+  }
 
   const posts = await toPostViews({ db, ids: hitIds, viewerId });
-  if (posts instanceof Error) return posts;
+  if (posts instanceof Error) {
+    return posts;
+  }
   return { posts, expired: false, expiresAt: expiresAt.toISOString() };
 }
 
@@ -128,12 +149,16 @@ export async function getLocalSimulatedSimilarPosts({
   postId: string;
   viewerId: string;
   includeSameSong: boolean;
-  simulate: () => Promise<PostView[]>;
+  simulate: () => Promise<Array<PostView>>;
   now?: Date;
 }): Promise<SimilarPostsResult | Error> {
   const post = await findVisiblePost({ db, postId, viewerId });
-  if (post instanceof Error) return post;
-  if (!post) return new PostNotFoundError({ postId });
+  if (post instanceof Error) {
+    return post;
+  }
+  if (!post) {
+    return new PostNotFoundError({ postId });
+  }
 
   const expiresAt = new Date(post.createdAt.getTime() + SIMILAR_CACHE_TTL_MS);
   if (now >= expiresAt) {
@@ -141,10 +166,14 @@ export async function getLocalSimulatedSimilarPosts({
   }
 
   const cached = await findValidSimilarCache({ db, postId, includeSameSong, now });
-  if (cached instanceof Error) return cached;
+  if (cached instanceof Error) {
+    return cached;
+  }
   if (cached) {
     const posts = await toPostViews({ db, ids: cached.postIds, viewerId });
-    if (posts instanceof Error) return posts;
+    if (posts instanceof Error) {
+      return posts;
+    }
     return { posts, expired: false, expiresAt: cached.expiresAt.toISOString() };
   }
 
@@ -154,7 +183,9 @@ export async function getLocalSimulatedSimilarPosts({
     ids: simulated.map((p) => p.id),
     viewerId,
   });
-  if (visibleSimulated instanceof Error) return visibleSimulated;
+  if (visibleSimulated instanceof Error) {
+    return visibleSimulated;
+  }
 
   // シミュレーション投稿が DB に実在する場合のみキャッシュに保存する（FK 制約を満たすため）。
   if (visibleSimulated.length > 0) {
@@ -165,7 +196,9 @@ export async function getLocalSimulatedSimilarPosts({
       similarPostIds: visibleSimulated.map((p) => p.id),
       expiresAt,
     });
-    if (saved instanceof Error) logError(saved);
+    if (saved instanceof Error) {
+      logError(saved);
+    }
     return { posts: visibleSimulated, expired: false, expiresAt: expiresAt.toISOString() };
   }
 
@@ -185,7 +218,9 @@ export async function searchPosts({
   viewerId: string;
 }) {
   const { transform } = embedding;
-  if (!transform) return new EmbeddingUnavailableError({ model: EMBEDDING_MODEL });
+  if (!transform) {
+    return new EmbeddingUnavailableError({ model: EMBEDDING_MODEL });
+  }
   const hits = await searchPostsByText({
     db,
     embed: embedding.embed,
@@ -193,6 +228,8 @@ export async function searchPosts({
     text,
     limit: SEARCH_POSTS_LIMIT,
   });
-  if (hits instanceof Error) return hits;
+  if (hits instanceof Error) {
+    return hits;
+  }
   return toPostViews({ db, ids: hits.map((hit) => hit.postId), viewerId });
 }

@@ -19,8 +19,12 @@ export async function resolveReport({
   status: Exclude<ReportStatus, "open">;
 }) {
   const updated = await updateReportStatus({ db, reportId, status });
-  if (updated instanceof Error) return updated;
-  if (updated === null) return new ReportNotFoundError({ reportId });
+  if (updated instanceof Error) {
+    return updated;
+  }
+  if (updated === null) {
+    return new ReportNotFoundError({ reportId });
+  }
   return { status };
 }
 
@@ -35,8 +39,12 @@ export async function setPostHidden({
   hidden: boolean;
 }) {
   const updated = await updatePostHidden({ db, postId, hidden });
-  if (updated instanceof Error) return updated;
-  if (updated === null) return new AdminTargetNotFoundError({ kind: "投稿", id: postId });
+  if (updated instanceof Error) {
+    return updated;
+  }
+  if (updated === null) {
+    return new AdminTargetNotFoundError({ kind: "投稿", id: postId });
+  }
   return { hidden };
 }
 
@@ -53,11 +61,19 @@ export async function setUserSuspended({
   suspended: boolean;
 }) {
   const userId = await findUserIdByPublicId({ db, publicId });
-  if (userId instanceof Error) return userId;
-  if (userId === null) return new AdminTargetNotFoundError({ kind: "ユーザー", id: publicId });
-  if (userId === adminId) return new SelfSuspendError();
+  if (userId instanceof Error) {
+    return userId;
+  }
+  if (userId === null) {
+    return new AdminTargetNotFoundError({ kind: "ユーザー", id: publicId });
+  }
+  if (userId === adminId) {
+    return new SelfSuspendError();
+  }
 
   const updated = await updateUserSuspended({ db, userId, suspended });
-  if (updated instanceof Error) return updated;
+  if (updated instanceof Error) {
+    return updated;
+  }
   return { suspended };
 }

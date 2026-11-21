@@ -1,11 +1,12 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { motion } from "#/motion.stylex";
 import { BudouxText } from "./BudouxText";
 import { Avatar } from "./Avatar";
 import { fontTokens, landingMedia } from "./tokens.stylex";
-import { TrackArt, type ArtVariant } from "./TrackArt";
+import { TrackArt } from "./TrackArt";
+import type { ArtVariant } from "./TrackArt";
 
-const styles = stylex.create({
+const styles = create({
   discovery: {
     display: "grid",
     gridTemplateColumns: {
@@ -197,19 +198,19 @@ function DiscoveryCard({
   quote,
 }: (typeof discoveryItems)[number]) {
   return (
-    <article {...stylex.props(styles.discoveryCard)}>
+    <article {...props(styles.discoveryCard)}>
       <TrackArt variant={artVariant} style={styles.discoveryArt} label={`${title} のジャケット`} />
-      <h3 {...stylex.props(styles.discoveryCardTitle)}>{title}</h3>
-      <p {...stylex.props(styles.discoveryCardArtist)}>{artist}</p>
-      <div {...stylex.props(styles.discoveryMeta)}>
+      <h3 {...props(styles.discoveryCardTitle)}>{title}</h3>
+      <p {...props(styles.discoveryCardArtist)}>{artist}</p>
+      <div {...props(styles.discoveryMeta)}>
         <Avatar style={styles.discoveryAvatar}>{user.slice(0, 1)}</Avatar>
         <span>{user}</span>
-        <span aria-hidden="true" {...stylex.props(styles.heartIcon)}>
+        <span aria-hidden="true" {...props(styles.heartIcon)}>
           ♡
         </span>
         <span>{likes}</span>
       </div>
-      <blockquote {...stylex.props(styles.discoveryCardQuote)}>
+      <blockquote {...props(styles.discoveryCardQuote)}>
         <BudouxText text={quote} />
       </blockquote>
     </article>
@@ -218,21 +219,21 @@ function DiscoveryCard({
 
 export function Discovery() {
   return (
-    <section {...stylex.props(styles.discovery)} id="voices">
-      <div {...stylex.props(styles.discoveryIntro)}>
-        <span {...stylex.props(styles.kicker)}>DISCOVER</span>
-        <h2 {...stylex.props(styles.sectionTitle)}>
+    <section {...props(styles.discovery)} id="voices">
+      <div {...props(styles.discoveryIntro)}>
+        <span {...props(styles.kicker)}>DISCOVER</span>
+        <h2 {...props(styles.sectionTitle)}>
           <BudouxText text="いろんな人の、いろんな聴き方。" />
         </h2>
-        <p {...stylex.props(styles.discoveryIntroText)}>
+        <p {...props(styles.discoveryIntroText)}>
           <BudouxText text="同じ曲でも、聴く人やタイミングで感じ方は違う。だからおもしろい。" />
         </p>
-        <a href="#voices" {...stylex.props(styles.discoveryLink)}>
+        <a href="#voices" {...props(styles.discoveryLink)}>
           <span>みんなの感想を見る</span>
           <span aria-hidden="true">→</span>
         </a>
       </div>
-      <div {...stylex.props(styles.discoveryGrid)}>
+      <div {...props(styles.discoveryGrid)}>
         {discoveryItems.map((item) => (
           <DiscoveryCard key={item.title} {...item} />
         ))}

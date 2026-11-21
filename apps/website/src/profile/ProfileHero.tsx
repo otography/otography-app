@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
 import { Button } from "@ui-sdk/react/button";
 import {
@@ -71,27 +71,27 @@ function ProfileEditDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger {...stylex.props(styles.editBtn)}>
+      <DialogTrigger {...props(styles.editBtn)}>
         <EditIcon />
         <span>プロフィールを編集</span>
       </DialogTrigger>
-      <DialogBackdrop {...stylex.props(styles.backdrop)} />
-      <DialogContent {...stylex.props(styles.dialog)}>
-        <div {...stylex.props(styles.dialogHeader)}>
-          <div {...stylex.props(styles.dialogHeading)}>
-            <DialogTitle {...stylex.props(styles.dialogTitle)}>プロフィールを編集</DialogTitle>
-            <DialogDescription {...stylex.props(styles.dialogDesc)}>
+      <DialogBackdrop {...props(styles.backdrop)} />
+      <DialogContent {...props(styles.dialog)}>
+        <div {...props(styles.dialogHeader)}>
+          <div {...props(styles.dialogHeading)}>
+            <DialogTitle {...props(styles.dialogTitle)}>プロフィールを編集</DialogTitle>
+            <DialogDescription {...props(styles.dialogDesc)}>
               表示名と自己紹介は、他のユーザーにも公開されます。
             </DialogDescription>
           </div>
-          <DialogClose aria-label="閉じる" {...stylex.props(styles.closeBtn)}>
+          <DialogClose aria-label="閉じる" {...props(styles.closeBtn)}>
             <CloseIcon />
           </DialogClose>
         </div>
 
-        <form {...stylex.props(styles.form)} onSubmit={(event) => void handleSubmit(event)}>
+        <form {...props(styles.form)} onSubmit={(event) => void handleSubmit(event)}>
           <Field name="displayName" invalid={nameError ? true : undefined}>
-            <FieldLabel {...stylex.props(styles.label)}>表示名</FieldLabel>
+            <FieldLabel {...props(styles.label)}>表示名</FieldLabel>
             <Input
               value={name}
               onValueChange={(value) => {
@@ -101,9 +101,9 @@ function ProfileEditDialog() {
               maxLength={meta.userNameMax}
               required
               placeholder="表示名"
-              {...stylex.props(styles.input)}
+              {...props(styles.input)}
             />
-            <FieldDescription {...stylex.props(styles.fieldHint)}>
+            <FieldDescription {...props(styles.fieldHint)}>
               {nameLength} / {meta.userNameMax}
             </FieldDescription>
             <FieldError match="valueMissing">表示名を入力してください</FieldError>
@@ -111,16 +111,16 @@ function ProfileEditDialog() {
           </Field>
 
           <Field name="bio" invalid={bioLength > meta.userBioMax ? true : undefined}>
-            <FieldLabel {...stylex.props(styles.label)}>自己紹介</FieldLabel>
+            <FieldLabel {...props(styles.label)}>自己紹介</FieldLabel>
             <Textarea
               value={bio}
               onValueChange={setBio}
               rows={4}
               maxLength={meta.userBioMax}
               placeholder="よく聴くジャンルや、音楽の好みなどを書いてみましょう"
-              {...stylex.props(styles.textarea)}
+              {...props(styles.textarea)}
             />
-            <FieldDescription {...stylex.props(styles.fieldHint)}>
+            <FieldDescription {...props(styles.fieldHint)}>
               {bioLength} / {meta.userBioMax}
             </FieldDescription>
             {bioLength > meta.userBioMax ? (
@@ -128,12 +128,12 @@ function ProfileEditDialog() {
             ) : null}
           </Field>
 
-          <div {...stylex.props(styles.dialogFooter)}>
-            <DialogClose {...stylex.props(styles.secondaryBtn)}>キャンセル</DialogClose>
+          <div {...props(styles.dialogFooter)}>
+            <DialogClose {...props(styles.secondaryBtn)}>キャンセル</DialogClose>
             <Button
               type="submit"
               disabled={state.isUpdatingProfile || !name.trim() || bioLength > meta.userBioMax}
-              {...stylex.props(styles.primaryBtn)}
+              {...props(styles.primaryBtn)}
             >
               {state.isUpdatingProfile ? "保存中…" : "変更を保存"}
             </Button>
@@ -151,16 +151,16 @@ export function ProfileHero() {
   const image = state.profile?.image ?? state.user.image;
 
   return (
-    <section aria-label="プロフィール概要" {...stylex.props(styles.hero)}>
-      <div {...stylex.props(styles.heroTop)}>
-        <div {...stylex.props(styles.identity)}>
-          <Avatar role="img" aria-label={displayName} {...stylex.props(styles.avatar)}>
+    <section aria-label="プロフィール概要" {...props(styles.hero)}>
+      <div {...props(styles.heroTop)}>
+        <div {...props(styles.identity)}>
+          <Avatar role="img" aria-label={displayName} {...props(styles.avatar)}>
             {image ? (
               <AvatarImage
                 src={image}
                 alt={displayName}
                 referrerPolicy="no-referrer"
-                {...stylex.props(styles.avatarImg)}
+                {...props(styles.avatarImg)}
               />
             ) : null}
             <AvatarFallback>
@@ -168,9 +168,9 @@ export function ProfileHero() {
             </AvatarFallback>
           </Avatar>
 
-          <div {...stylex.props(styles.nameBlock)}>
-            <h1 {...stylex.props(styles.name)}>{displayName}</h1>
-            <span {...stylex.props(styles.handle)}>@{state.user.publicId}</span>
+          <div {...props(styles.nameBlock)}>
+            <h1 {...props(styles.name)}>{displayName}</h1>
+            <span {...props(styles.handle)}>@{state.user.publicId}</span>
           </div>
         </div>
 
@@ -178,33 +178,33 @@ export function ProfileHero() {
       </div>
 
       {bio ? (
-        <p {...stylex.props(styles.bio)}>{bio}</p>
+        <p {...props(styles.bio)}>{bio}</p>
       ) : (
-        <p {...stylex.props(styles.bioEmpty)}>
+        <p {...props(styles.bioEmpty)}>
           自己紹介はまだ設定されていません。よく聴く音楽や気分を書いてみましょう。
         </p>
       )}
 
-      <dl {...stylex.props(styles.stats)}>
-        <div {...stylex.props(styles.statItem)}>
-          <dt {...stylex.props(styles.statLabel)}>投稿</dt>
-          <dd {...stylex.props(styles.statValue)}>
+      <dl {...props(styles.stats)}>
+        <div {...props(styles.statItem)}>
+          <dt {...props(styles.statLabel)}>投稿</dt>
+          <dd {...props(styles.statValue)}>
             {state.posts.length}
             {state.hasNextPosts ? "+" : ""}
           </dd>
         </div>
-        <div {...stylex.props(styles.statItem)}>
-          <dt {...stylex.props(styles.statLabel)}>好きな曲</dt>
-          <dd {...stylex.props(styles.statValue)}>
+        <div {...props(styles.statItem)}>
+          <dt {...props(styles.statLabel)}>好きな曲</dt>
+          <dd {...props(styles.statValue)}>
             {state.favoriteSongs.length}
-            <span {...stylex.props(styles.statDenom)}> / {meta.favoriteLimit}</span>
+            <span {...props(styles.statDenom)}> / {meta.favoriteLimit}</span>
           </dd>
         </div>
-        <div {...stylex.props(styles.statItem)}>
-          <dt {...stylex.props(styles.statLabel)}>好きなアーティスト</dt>
-          <dd {...stylex.props(styles.statValue)}>
+        <div {...props(styles.statItem)}>
+          <dt {...props(styles.statLabel)}>好きなアーティスト</dt>
+          <dd {...props(styles.statValue)}>
             {state.favoriteArtists.length}
-            <span {...stylex.props(styles.statDenom)}> / {meta.favoriteLimit}</span>
+            <span {...props(styles.statDenom)}> / {meta.favoriteLimit}</span>
           </dd>
         </div>
       </dl>
@@ -212,7 +212,7 @@ export function ProfileHero() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   hero: {
     display: "flex",
     flexDirection: "column",

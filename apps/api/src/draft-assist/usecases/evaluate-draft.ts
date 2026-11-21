@@ -1,4 +1,4 @@
-import { logWarning } from "../../lib/log.ts";
+import { logInfo, logWarning } from "../../lib/log.ts";
 import type { DecisionModelAdapter } from "../adapter.ts";
 import { decidePopup, DEFAULT_SHALLOW_SINGLE_STRATEGY, DEFAULT_THRESHOLDS } from "../decide.ts";
 import { DecisionModelTimeoutError } from "../errors.ts";
@@ -97,7 +97,7 @@ export async function evaluateDraft(deps: {
   if (deps.onLog) {
     deps.onLog(logEntry);
   } else {
-    console.log(JSON.stringify(logEntry));
+    logInfo(JSON.stringify(logEntry));
   }
 
   return {

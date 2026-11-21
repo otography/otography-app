@@ -1,4 +1,6 @@
 import { defineRelations } from "drizzle-orm";
+// Drizzle の defineRelations はスキーマ全体のモジュールオブジェクトをそのまま受け取る。
+// oxlint-disable-next-line import/no-namespace
 import * as schema from "./schema/index.ts";
 
 // 削除・非表示ではない投稿だけを返す条件。投稿の一覧を返すリレーションには、既定でこの条件を付ける。

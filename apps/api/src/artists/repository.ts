@@ -8,7 +8,7 @@ const findArtist = ({ db, artistId }: { db: Database; artistId: string }) =>
   db.query.artists
     .findFirst({ where: { id: artistId } })
     .then((artist) => artist ?? null)
-    .catch((e) => new ArtistQueryError({ artistId, cause: e }));
+    .catch((error: unknown) => new ArtistQueryError({ artistId, cause: error }));
 
 // 別のリクエストが同じアーティストを先に保存した場合は、その行を返す。
 const saveArtist = ({ db, artist }: { db: Database; artist: CatalogArtist }) =>
@@ -19,7 +19,7 @@ const saveArtist = ({ db, artist }: { db: Database; artist: CatalogArtist }) =>
         .values({ ...artist, fetchedAt: new Date() })
         .onConflictDoNothing()
         .returning()
-        .catch((e) => new ArtistQueryError({ artistId: artist.id, cause: e })),
+        .catch((error: unknown) => new ArtistQueryError({ artistId: artist.id, cause: error })),
     find: () => findArtist({ db, artistId: artist.id }),
     missing: () =>
       new ArtistQueryError({ artistId: artist.id, cause: new Error("保存した行が見つからない") }),

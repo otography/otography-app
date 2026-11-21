@@ -5,7 +5,7 @@ import { sessionMiddleware } from "./auth/session.ts";
 import type { SessionEnv } from "./auth/session.ts";
 import { draftAssistRoutes } from "./draft-assist/routes.ts";
 import { db } from "./lib/db.ts";
-import { logError } from "./lib/log.ts";
+import { logError, logInfo } from "./lib/log.ts";
 import { purgeExpired } from "./maintenance/usecases/purge-expired.ts";
 import { postsRoutes } from "./posts/routes.ts";
 import { reportsRoutes } from "./reports/routes.ts";
@@ -38,6 +38,6 @@ export default {
       logError(purged);
       return;
     }
-    console.log("期限を過ぎた行を物理削除しました", purged);
+    logInfo("期限を過ぎた行を物理削除しました", purged);
   },
 } satisfies ExportedHandler;

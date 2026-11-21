@@ -40,7 +40,7 @@ const xOf = new Map<string, Float32Array>([
   ["非表示で近い", near(0.05)],
 ]);
 
-const calls: string[][] = [];
+const calls: Array<Array<string>> = [];
 const embed: Embedder = async (texts) => {
   calls.push(texts);
   return texts.map((text) => xOf.get(text) ?? randomX());
@@ -77,7 +77,9 @@ beforeEach(async () => {
     transform,
     posts: rows.filter((row) => row.id !== "origin"),
   });
-  if (embedded instanceof Error) throw embedded;
+  if (embedded instanceof Error) {
+    throw embedded;
+  }
   calls.length = 0;
 });
 
@@ -90,7 +92,9 @@ describe("getSimilarPosts", () => {
       viewerId: "u",
       includeSameSong: false,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(result.expired).toBe(false);
     expect(result.posts.map((post) => post.id)).toEqual(["close", "mid", expect.any(String)]);
     expect(result.posts.map((post) => post.id)).not.toContain("samesong");
@@ -106,7 +110,9 @@ describe("getSimilarPosts", () => {
       viewerId: "u",
       includeSameSong: true,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(result.expired).toBe(false);
     expect(result.posts.map((post) => post.id)).toEqual(["samesong", "close", "mid"]);
   });
@@ -119,7 +125,9 @@ describe("getSimilarPosts", () => {
       viewerId: "u",
       includeSameSong: false,
     });
-    if (first instanceof Error) throw first;
+    if (first instanceof Error) {
+      throw first;
+    }
 
     const caches = await db.select().from(postSimilarCaches);
     const items = await db.select().from(postSimilarCacheItems);
@@ -137,7 +145,9 @@ describe("getSimilarPosts", () => {
       viewerId: "u",
       includeSameSong: false,
     });
-    if (second instanceof Error) throw second;
+    if (second instanceof Error) {
+      throw second;
+    }
     expect(calls).toEqual([]);
     expect(second.expired).toBe(false);
     expect(second.posts.map((post) => post.id)).not.toContain("close");
@@ -154,7 +164,9 @@ describe("getSimilarPosts", () => {
       includeSameSong: false,
       now: after24h,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(result.expired).toBe(true);
     expect(result.posts).toEqual([]);
     expect(calls).toEqual([]);
@@ -168,7 +180,9 @@ describe("getSimilarPosts", () => {
       viewerId: "u",
       includeSameSong: false,
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     expect(calls).toEqual([["元"]]);
     expect(store.rows.has("origin")).toBe(true);
     const saved = await db.select().from(postEmbeddings);
@@ -218,7 +232,9 @@ describe("searchPosts", () => {
       text: "元",
       viewerId: "u",
     });
-    if (result instanceof Error) throw result;
+    if (result instanceof Error) {
+      throw result;
+    }
     const ids = result.map((post) => post.id);
     expect(ids.slice(0, 3)).toEqual(["samesong", "close", "mid"]);
     expect(ids).not.toContain("hidden");

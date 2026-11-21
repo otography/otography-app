@@ -1,7 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import * as errore from "errore";
+import { matchErrorPartial } from "errore";
 import { Hono } from "hono";
-import { requireAuth, type SessionEnv } from "../auth/session.ts";
+import { requireAuth } from "../auth/session.ts";
+import type { SessionEnv } from "../auth/session.ts";
 import { fetchSong } from "../lib/apple-music/client.ts";
 import { db } from "../lib/db.ts";
 import { rateLimit } from "../lib/rate-limit/middleware.ts";
@@ -27,7 +28,9 @@ const SEARCH_UNAVAILABLE = "感想を探す機能は準備中です。時間を�
 /** 埋め込みを使うのに要るもの（Workers AI、D1、今の変換）。 */
 const loadEmbedding = async () => {
   const transform = await currentTransform();
-  if (transform instanceof Error) return transform;
+  if (transform instanceof Error) {
+    return transform;
+  }
   return { embed, store, transform };
 };
 
@@ -58,7 +61,7 @@ export const postsRoutes = new Hono<SessionEnv>()
       });
       if (post instanceof Error) {
         // 利用者が対処できるエラーだけ、そのメッセージを返す。それ以外はログに残して 500 にする。
-        const { status, error } = errore.matchErrorPartial<
+        const { status, error } = matchErrorPartial<
           typeof post,
           { status: 422 | 500 | 503; error: string }
         >(
@@ -128,7 +131,9 @@ export const postsRoutes = new Hono<SessionEnv>()
   // 投稿 1 件。
   .get("/:id", requireAuth, rateLimit("READ_RATE_LIMIT"), async (c) => {
     const post = await getPost({ db, postId: c.req.param("id"), viewerId: c.get("user").id });
-    if (post instanceof PostNotFoundError) return c.json({ error: post.message }, 404);
+    if (post instanceof PostNotFoundError) {
+      return c.json({ error: post.message }, 404);
+    }
     if (post instanceof Error) {
       logError(post);
       return c.json({ error: INTERNAL_ERROR }, 500);
@@ -158,7 +163,9 @@ export const postsRoutes = new Hono<SessionEnv>()
           includeSameSong,
           simulate: simulateLocalSimilarPosts,
         });
-        if (result instanceof PostNotFoundError) return c.json({ error: result.message }, 404);
+        if (result instanceof PostNotFoundError) {
+          return c.json({ error: result.message }, 404);
+        }
         if (result instanceof Error) {
           logError(result);
           return c.json({ error: INTERNAL_ERROR }, 500);
@@ -177,11 +184,14 @@ export const postsRoutes = new Hono<SessionEnv>()
         viewerId: c.get("user").id,
         includeSameSong,
       });
-      if (result instanceof PostNotFoundError) return c.json({ error: result.message }, 404);
+      if (result instanceof PostNotFoundError) {
+        return c.json({ error: result.message }, 404);
+      }
       if (result instanceof Error) {
         logError(result);
-        if (result instanceof EmbeddingUnavailableError)
+        if (result instanceof EmbeddingUnavailableError) {
           return c.json({ error: SEARCH_UNAVAILABLE }, 503);
+        }
         return c.json({ error: INTERNAL_ERROR }, 500);
       }
       return c.json(result);
@@ -190,7 +200,9 @@ export const postsRoutes = new Hono<SessionEnv>()
   // 自分の投稿を削除する。
   .delete("/:id", requireAuth, rateLimit("WRITE_RATE_LIMIT"), async (c) => {
     const deleted = await deletePost({ db, postId: c.req.param("id"), userId: c.get("user").id });
-    if (deleted instanceof PostNotFoundError) return c.json({ error: deleted.message }, 404);
+    if (deleted instanceof PostNotFoundError) {
+      return c.json({ error: deleted.message }, 404);
+    }
     if (deleted instanceof Error) {
       logError(deleted);
       return c.json({ error: INTERNAL_ERROR }, 500);
@@ -205,7 +217,9 @@ export const postsRoutes = new Hono<SessionEnv>()
       postId: c.req.param("id"),
       liked: true,
     });
-    if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
+    if (like instanceof PostNotFoundError) {
+      return c.json({ error: like.message }, 404);
+    }
     if (like instanceof Error) {
       logError(like);
       return c.json({ error: INTERNAL_ERROR }, 500);
@@ -220,7 +234,9 @@ export const postsRoutes = new Hono<SessionEnv>()
       postId: c.req.param("id"),
       liked: false,
     });
-    if (like instanceof PostNotFoundError) return c.json({ error: like.message }, 404);
+    if (like instanceof PostNotFoundError) {
+      return c.json({ error: like.message }, 404);
+    }
     if (like instanceof Error) {
       logError(like);
       return c.json({ error: INTERNAL_ERROR }, 500);

@@ -32,14 +32,14 @@ export const findProfileByPublicId = ({ db, publicId }: { db: Database; publicId
       },
     })
     .then((user) => user ?? null)
-    .catch((e) => new UserQueryError({ cause: e }));
+    .catch((error: unknown) => new UserQueryError({ cause: error }));
 
 /** 内部 ID でユーザーを読む。 */
 export const findUserById = ({ db, userId }: { db: Database; userId: string }) =>
   db.query.users
     .findFirst({ where: { id: userId } })
     .then((user) => user ?? null)
-    .catch((e) => new UserQueryError({ cause: e }));
+    .catch((error: unknown) => new UserQueryError({ cause: error }));
 
 /** 表示名と自己紹介を変える。 */
 export const updateUser = ({
@@ -56,7 +56,7 @@ export const updateUser = ({
     .set(values)
     .where(eq(users.id, userId))
     .then(() => null)
-    .catch((e) => new UserQueryError({ cause: e }));
+    .catch((error: unknown) => new UserQueryError({ cause: error }));
 
 type BatchItem = Parameters<Database["batch"]>[0][number];
 
@@ -72,7 +72,7 @@ const replaceRows = ({
 }) =>
   (insert ? db.batch([remove, insert]) : db.batch([remove]))
     .then(() => null)
-    .catch((e) => new UserQueryError({ cause: e }));
+    .catch((error: unknown) => new UserQueryError({ cause: error }));
 
 /** お気に入りの曲を一覧ごと置き換える。 */
 export const replaceFavoriteSongs = ({
@@ -82,7 +82,7 @@ export const replaceFavoriteSongs = ({
 }: {
   db: Database;
   userId: string;
-  items: Omit<typeof favoriteSongs.$inferInsert, "userId">[];
+  items: Array<Omit<typeof favoriteSongs.$inferInsert, "userId">>;
 }) =>
   replaceRows({
     db,
@@ -100,7 +100,7 @@ export const replaceFavoriteArtists = ({
 }: {
   db: Database;
   userId: string;
-  items: Omit<typeof favoriteArtists.$inferInsert, "userId">[];
+  items: Array<Omit<typeof favoriteArtists.$inferInsert, "userId">>;
 }) =>
   replaceRows({
     db,
@@ -164,4 +164,4 @@ export const softDeleteUser = ({ db, userId }: { db: Database; userId: string })
       db.delete(likes).where(eq(likes.userId, userId)),
     ])
     .then(() => null)
-    .catch((e) => new UserQueryError({ cause: e }));
+    .catch((error: unknown) => new UserQueryError({ cause: error }));

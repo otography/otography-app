@@ -1,22 +1,7 @@
-import {
-  type ReactNode,
-  createContext,
-  use,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import {
-  type AppleSong,
-  type MusicKitInstance,
-  type MusicKitPlaybackStateEvent,
-  type MusicKitPlaybackTimeEvent,
-  findSongIdByIsrc,
-  getLoadedMusicKit,
-  getMusicKit,
-} from "#/lib/musickit";
+import { createContext, use, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { findSongIdByIsrc, getLoadedMusicKit, getMusicKit } from "#/lib/musickit";
+import type { AppleSong, MusicKitInstance } from "#/lib/musickit";
 
 export type PlayerMode = "preview" | "full";
 export type PlaybackStatus = "idle" | "loading" | "playing" | "paused";
@@ -50,22 +35,34 @@ const PreviewPlayerContext = createContext<PreviewPlayerContextValue | null>(nul
 
 function mapPlaybackState(state: number | undefined): PlaybackStatus {
   const states = window.MusicKit?.PlaybackStates;
-  if (state === undefined) return "idle";
+  if (state === undefined) {
+    return "idle";
+  }
   if (states) {
-    if (state === states.playing) return "playing";
+    if (state === states.playing) {
+      return "playing";
+    }
     if (state === states.loading || state === states.waiting || state === states.stalled) {
       return "loading";
     }
-    if (state === states.paused) return "paused";
+    if (state === states.paused) {
+      return "paused";
+    }
     if (state === states.stopped || state === states.ended || state === states.completed) {
       return "paused";
     }
     return "idle";
   }
   // PlaybackStates 定数が取れない場合のフォールバック（v3 の数値定義）
-  if (state === 2) return "playing";
-  if (state === 1 || state === 8 || state === 9) return "loading";
-  if (state === 3 || state === 4 || state === 5 || state === 10) return "paused";
+  if (state === 2) {
+    return "playing";
+  }
+  if (state === 1 || state === 8 || state === 9) {
+    return "loading";
+  }
+  if (state === 3 || state === 4 || state === 5 || state === 10) {
+    return "paused";
+  }
   return "idle";
 }
 
@@ -95,7 +92,9 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const bindMusicKitEvents = useCallback((music: MusicKitInstance) => {
-    if (boundMusicRef.current === music) return;
+    if (boundMusicRef.current === music) {
+      return;
+    }
     boundMusicRef.current = music;
     setIsAppleMusicAuthorized(Boolean(music.isAuthorized));
 
@@ -103,19 +102,43 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
       setIsAppleMusicAuthorized(Boolean(music.isAuthorized));
     };
     const onStateChange = (event: unknown) => {
-      if (modeRef.current !== "full") return;
+      if (modeRef.current !== "full") {
+        return;
+      }
       if (music.isPlaying) {
         setStatus("playing");
         return;
       }
-      const nextState = (event as MusicKitPlaybackStateEvent | null)?.state ?? music.playbackState;
+      const eventState =
+        typeof event === "object" &&
+        event !== null &&
+        "state" in event &&
+        typeof event.state === "number"
+          ? event.state
+          : undefined;
+      const nextState = eventState ?? music.playbackState;
       setStatus(mapPlaybackState(nextState));
     };
     const onTimeChange = (event: unknown) => {
-      if (modeRef.current !== "full") return;
-      const payload = event as MusicKitPlaybackTimeEvent | null;
-      const nextTime = payload?.currentPlaybackTime ?? music.currentPlaybackTime;
-      const nextDuration = payload?.currentPlaybackDuration ?? music.currentPlaybackDuration;
+      if (modeRef.current !== "full") {
+        return;
+      }
+      const eventTime =
+        typeof event === "object" &&
+        event !== null &&
+        "currentPlaybackTime" in event &&
+        typeof event.currentPlaybackTime === "number"
+          ? event.currentPlaybackTime
+          : undefined;
+      const eventDuration =
+        typeof event === "object" &&
+        event !== null &&
+        "currentPlaybackDuration" in event &&
+        typeof event.currentPlaybackDuration === "number"
+          ? event.currentPlaybackDuration
+          : undefined;
+      const nextTime = eventTime ?? music.currentPlaybackTime;
+      const nextDuration = eventDuration ?? music.currentPlaybackDuration;
       if (typeof nextTime === "number" && Number.isFinite(nextTime)) {
         setCurrentTime(nextTime);
       }
@@ -123,9 +146,10 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
         setDuration(nextDuration);
       }
     };
-    const onPlaybackError = (event: unknown) => {
-      if (modeRef.current !== "full") return;
-      console.warn("Apple Music mediaPlaybackError", event);
+    const onPlaybackError = () => {
+      if (modeRef.current !== "full") {
+        return;
+      }
       setStatus("paused");
       setError("フル再生できませんでした。Apple Music の有料プランに加入しているかご確認ください");
     };
@@ -172,7 +196,9 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
 
   const pauseFullMusic = useCallback(() => {
     const music = getLoadedMusicKit() ?? boundMusicRef.current;
-    if (!music) return;
+    if (!music) {
+      return;
+    }
     try {
       music.pause();
     } catch {
@@ -182,7 +208,11 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
 
   const toggle = useCallback(
     (song: AppleSong) => {
-      const audio = (audioRef.current ??= new Audio());
+      let audio = audioRef.current;
+      if (!audio) {
+        audio = new Audio();
+        audioRef.current = audio;
+      }
 
       if (modeRef.current === "preview" && playingId === song.id) {
         audio.pause();
@@ -203,17 +233,23 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
 
       audio.src = url;
       audio.ontimeupdate = () => {
-        if (modeRef.current !== "preview") return;
+        if (modeRef.current !== "preview") {
+          return;
+        }
         setCurrentTime(audio.currentTime || 0);
       };
       audio.onloadedmetadata = () => {
-        if (modeRef.current !== "preview") return;
+        if (modeRef.current !== "preview") {
+          return;
+        }
         if (Number.isFinite(audio.duration) && audio.duration > 0) {
           setDuration(audio.duration);
         }
       };
       audio.onended = () => {
-        if (modeRef.current !== "preview") return;
+        if (modeRef.current !== "preview") {
+          return;
+        }
         setPlayingId(null);
         setStatus("paused");
       };
@@ -226,8 +262,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
       setStatus("playing");
       setPlayingId(song.id);
 
-      audio.play().catch((e: unknown) => {
-        console.warn("試聴を再生できませんでした", e);
+      audio.play().catch(() => {
         setPlayingId(null);
         setStatus("paused");
         setError("試聴を再生できませんでした");
@@ -250,8 +285,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
       const authorized = Boolean(music.isAuthorized);
       setIsAppleMusicAuthorized(authorized);
       return authorized;
-    } catch (e: unknown) {
-      console.warn("Apple Music の連携に失敗しました", e);
+    } catch {
       setError("Apple Music と連携できませんでした");
       return false;
     } finally {
@@ -281,8 +315,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
       }
       await music.unauthorize();
       setIsAppleMusicAuthorized(false);
-    } catch (e: unknown) {
-      console.warn("Apple Music の連携解除に失敗しました", e);
+    } catch {
       setError("Apple Music の連携を解除できませんでした");
     }
   }, [updateMode]);
@@ -344,11 +377,6 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
         }
 
         if (music.queueIsEmpty || music.queue?.items?.length === 0) {
-          console.warn("Apple Music のキューが空のままです", {
-            songId: song.id,
-            storefrontId: music.storefrontId,
-            playbackState: music.playbackState,
-          });
           setStatus("paused");
           setError("この曲は Apple Music でフル再生できませんでした");
           return;
@@ -362,13 +390,12 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
         ) {
           setDuration(music.currentPlaybackDuration);
         }
-      } catch (e: unknown) {
-        console.warn("Apple Music フル再生に失敗しました", e);
+      } catch (error_: unknown) {
         setStatus("paused");
         const isNotAllowed =
-          e instanceof DOMException
-            ? e.name === "NotAllowedError"
-            : e instanceof Error && /NotAllowed|autoplay|user gesture/i.test(e.message);
+          error_ instanceof DOMException
+            ? error_.name === "NotAllowedError"
+            : error_ instanceof Error && /NotAllowed|autoplay|user gesture/i.test(error_.message);
         if (isNotAllowed) {
           setError("再生ボタンを押してフル再生を開始してください");
         } else {
@@ -382,11 +409,15 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
   );
 
   const togglePlayPause = useCallback(() => {
-    if (!activeSong || !modeRef.current) return;
+    if (!activeSong || !modeRef.current) {
+      return;
+    }
 
     if (modeRef.current === "preview") {
       const audio = audioRef.current;
-      if (!audio) return;
+      if (!audio) {
+        return;
+      }
       if (status === "playing") {
         audio.pause();
         setPlayingId(null);
@@ -395,8 +426,7 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
         setError(null);
         setPlayingId(activeSong.id);
         setStatus("playing");
-        audio.play().catch((e: unknown) => {
-          console.warn("試聴を再生できませんでした", e);
+        audio.play().catch(() => {
           setPlayingId(null);
           setStatus("paused");
           setError("試聴を再生できませんでした");
@@ -439,8 +469,8 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
 
     const music = getLoadedMusicKit() ?? boundMusicRef.current;
     if (music) {
-      void music.seekToTime(clamped).catch((e: unknown) => {
-        console.warn("シークに失敗しました", e);
+      void music.seekToTime(clamped).catch(() => {
+        // シーク失敗時は再生状態を維持する
       });
     }
   }, []);
@@ -510,6 +540,8 @@ export function PreviewPlayerProvider({ children }: { children: ReactNode }) {
 
 export function usePreviewPlayer() {
   const value = use(PreviewPlayerContext);
-  if (!value) throw new Error("usePreviewPlayer は PreviewPlayerProvider の中で使う");
+  if (!value) {
+    throw new Error("usePreviewPlayer は PreviewPlayerProvider の中で使う");
+  }
   return value;
 }

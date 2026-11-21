@@ -13,35 +13,41 @@ import { replaceFavoriteSongsInput } from "../../../src/users/schemas.ts";
 import { createTestDb } from "../../helpers/db.ts";
 import { insertUser } from "../helpers.ts";
 
-const catalog: Record<string, CatalogSong> = {
-  "1": {
-    isrc: "JPAA00000001",
-    appleSongId: "1",
-    title: "曲1",
-    artistName: "A",
-    albumName: null,
-    durationMs: null,
-    artworkUrl: null,
-    url: null,
-    artistIds: [],
-  },
-  "2": {
-    isrc: "JPAA00000002",
-    appleSongId: "2",
-    title: "曲2",
-    artistName: "B",
-    albumName: null,
-    durationMs: null,
-    artworkUrl: null,
-    url: null,
-    artistIds: [],
-  },
-};
+const catalog = new Map<string, CatalogSong>([
+  [
+    "1",
+    {
+      isrc: "JPAA00000001",
+      appleSongId: "1",
+      title: "曲1",
+      artistName: "A",
+      albumName: null,
+      durationMs: null,
+      artworkUrl: null,
+      url: null,
+      artistIds: [],
+    },
+  ],
+  [
+    "2",
+    {
+      isrc: "JPAA00000002",
+      appleSongId: "2",
+      title: "曲2",
+      artistName: "B",
+      albumName: null,
+      durationMs: null,
+      artworkUrl: null,
+      url: null,
+      artistIds: [],
+    },
+  ],
+]);
 const fetchSong = async (songId: string) =>
-  catalog[songId] ?? new AppleSongNotFoundError({ songId });
+  catalog.get(songId) ?? new AppleSongNotFoundError({ songId });
 
 /** 入力のスキーマを通して、API が受け取るのと同じ形にする。 */
-const favorites = (items: unknown[]) => replaceFavoriteSongsInput.parse({ items });
+const favorites = (items: Array<unknown>) => replaceFavoriteSongsInput.parse({ items });
 
 let db: Database;
 
@@ -57,7 +63,9 @@ describe("getMe / updateProfile", () => {
       userId: "u1",
       input: { name: "新しい名前", bio: "よろしく" },
     });
-    if (me instanceof Error) throw me;
+    if (me instanceof Error) {
+      throw me;
+    }
     expect(me).toEqual({
       name: "新しい名前",
       email: "a@example.com",
@@ -111,7 +119,9 @@ describe("replaceFavoriteSongsOfUser", () => {
         { songId: "1", isrc: "JPAA00000001" },
       ]),
     });
-    if (profile instanceof Error) throw profile;
+    if (profile instanceof Error) {
+      throw profile;
+    }
     expect(profile).toEqual({
       publicId: "abc123def456",
       name: "テスト",
@@ -148,7 +158,9 @@ describe("replaceFavoriteSongsOfUser", () => {
       userId: "u1",
       input: favorites([]),
     });
-    if (profile instanceof Error) throw profile;
+    if (profile instanceof Error) {
+      throw profile;
+    }
     expect(profile.favoriteSongs).toEqual([]);
   });
 

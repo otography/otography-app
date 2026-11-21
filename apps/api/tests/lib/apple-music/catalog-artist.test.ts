@@ -12,7 +12,7 @@ const respond =
 
 describe("fetchCatalogArtist", () => {
   test("jp のストアフロントからアーティストを取得し、artists の列の形にする", async () => {
-    const urls: string[] = [];
+    const urls: Array<string> = [];
     const artist = await fetchCatalogArtist({
       artistId: "1490256993",
       developerToken: "token",
@@ -35,7 +35,7 @@ describe("fetchCatalogArtist", () => {
       },
     });
 
-    expect(new URL(urls[0]!).pathname).toBe("/v1/catalog/jp/artists/1490256993");
+    expect(new URL(urls[0]).pathname).toBe("/v1/catalog/jp/artists/1490256993");
     expect(artist).toEqual({
       id: "1490256993",
       name: "YOASOBI",
@@ -45,9 +45,11 @@ describe("fetchCatalogArtist", () => {
   });
 
   test("404 と 429 を区別して返す", async () => {
-    const call = (fetch: typeof globalThis.fetch) =>
-      fetchCatalogArtist({ artistId: "1", developerToken: "token", fetch });
-    expect(await call(respond(404))).toBeInstanceOf(AppleArtistNotFoundError);
-    expect(await call(respond(429))).toBeInstanceOf(AppleMusicRateLimitError);
+    expect(
+      await fetchCatalogArtist({ artistId: "1", developerToken: "token", fetch: respond(404) }),
+    ).toBeInstanceOf(AppleArtistNotFoundError);
+    expect(
+      await fetchCatalogArtist({ artistId: "1", developerToken: "token", fetch: respond(429) }),
+    ).toBeInstanceOf(AppleMusicRateLimitError);
   });
 });

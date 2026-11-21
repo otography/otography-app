@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { defineConsts, defineVars } from "@stylexjs/stylex";
 
 const DARK = "@media (prefers-color-scheme: dark)";
 
@@ -11,14 +11,14 @@ const MUTED = { default: "#595962", [DARK]: "#a3a3ab" } as const;
 const PRIMARY = { default: "#171717", [DARK]: "#f4f4f5" } as const;
 const PRIMARY_FG = { default: "#ffffff", [DARK]: "#171717" } as const;
 
-export const chatMedia = stylex.defineConsts({
+export const chatMedia = defineConsts({
   compact: "@media (max-width: 540px)",
   touch: "@media (pointer: coarse)",
   hover: "@media (hover: hover) and (pointer: fine)",
   reducedMotion: "@media (prefers-reduced-motion: reduce)",
 });
 
-export const chatPopover = stylex.defineConsts({
+export const chatPopover = defineConsts({
   maxHeight: 420,
   minHeight: 120,
   sideOffset: 10,
@@ -26,7 +26,7 @@ export const chatPopover = stylex.defineConsts({
   collisionPaddingCompact: 8,
 });
 
-export const chatTokens = stylex.defineVars({
+export const chatTokens = defineVars({
   bg: {
     default: "#ffffff",
     [DARK]: "#171717",

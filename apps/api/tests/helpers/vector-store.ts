@@ -5,11 +5,20 @@ export const memoryStore = () => {
   const rows = new Map<string, Float32Array>();
   const store: VectorStore = {
     put: async (items) => {
-      for (const item of items) if (!rows.has(item.postId)) rows.set(item.postId, item.x);
+      for (const item of items) {
+        if (!rows.has(item.postId)) {
+          rows.set(item.postId, item.x);
+        }
+      }
       return null;
     },
     get: async (ids) =>
-      new Map(ids.flatMap((id) => (rows.has(id) ? [[id, rows.get(id)!] as const] : []))),
+      new Map(
+        ids.flatMap((id) => {
+          const vector = rows.get(id);
+          return vector ? [[id, vector] as const] : [];
+        }),
+      ),
   };
   return { rows, store };
 };

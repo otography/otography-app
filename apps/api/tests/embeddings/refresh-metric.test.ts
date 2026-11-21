@@ -23,7 +23,7 @@ const options = { minCount: 300, threshold: 0.05, publish: true };
 
 let db: Database;
 
-const addEmbeddings = async (ids: string[]) => {
+const addEmbeddings = async (ids: Array<string>) => {
   await db.insert(posts).values(ids.map((id) => ({ id, userId: "author", content: id })));
   await db.insert(postEmbeddings).values(
     ids.map((postId) => {
@@ -73,9 +73,13 @@ describe("refreshEmbeddingMetric", () => {
     // 保存された（F16 に丸めた）z から求めた計量でのノルムと一致する
     const rows = await storedEmbeddings();
     const moments = emptyMoments();
-    for (const row of rows) accumulate(moments, row.embedding, 1);
+    for (const row of rows) {
+      accumulate(moments, row.embedding, 1);
+    }
     const geometry = toGeometry(moments);
-    if (!geometry) throw new Error("計量を作れなかった");
+    if (!geometry) {
+      throw new Error("計量を作れなかった");
+    }
     for (const row of rows.slice(0, 20)) {
       expect(row.pnormA).toBeCloseTo(precisionNorm(row.embedding, geometry), 6);
     }
@@ -98,7 +102,9 @@ describe("refreshEmbeddingMetric", () => {
     expect(added[0]?.pnormA).toBeGreaterThan(0);
 
     // 計量が読めれば、検索はその計量で並べ直す
-    if (metric instanceof Error || !metric) throw new Error("計量を読めなかった");
+    if (metric instanceof Error || !metric) {
+      throw new Error("計量を読めなかった");
+    }
     const result = await searchSimilarPosts({ db, z: sample(), metric, limit: 5, candidates: 50 });
     expect(result).toHaveLength(5);
   }, 30_000);

@@ -1,4 +1,5 @@
-import { postEmbeddings, posts, reports, sessions, users, type ReportStatus } from "db";
+import { postEmbeddings, posts, reports, sessions, users } from "db";
+import type { ReportStatus } from "db";
 import { eq } from "drizzle-orm";
 import type { Database } from "../lib/db.ts";
 import { AdminQueryError } from "./errors.ts";
@@ -8,7 +9,7 @@ export const findIsAdmin = ({ db, userId }: { db: Database; userId: string }) =>
   db.query.users
     .findFirst({ where: { id: userId }, columns: { isAdmin: true } })
     .then((user) => user?.isAdmin ?? false)
-    .catch((e) => new AdminQueryError({ cause: e }));
+    .catch((error: unknown) => new AdminQueryError({ cause: error }));
 
 /** 状態ごとの通報を、新しい順に読む。 */
 export const findReports = ({
@@ -32,7 +33,7 @@ export const findReports = ({
         post: { columns: { id: true, content: true, hiddenAt: true, deletedAt: true } },
       },
     })
-    .catch((e) => new AdminQueryError({ cause: e }));
+    .catch((error: unknown) => new AdminQueryError({ cause: error }));
 
 /** 通報の状態を変える。変えた通報の ID を返し、通報が無ければ null を返す。 */
 export const updateReportStatus = ({
@@ -50,7 +51,7 @@ export const updateReportStatus = ({
     .where(eq(reports.id, reportId))
     .returning({ id: reports.id })
     .then(([row]) => row?.id ?? null)
-    .catch((e) => new AdminQueryError({ cause: e }));
+    .catch((error: unknown) => new AdminQueryError({ cause: error }));
 
 /**
  * 投稿を非表示にする（hidden が true）か、非表示を解除する。非表示にするときは、埋め込みの行も消す。
@@ -75,8 +76,10 @@ export const updatePostHidden = async ({
     hidden
       ? db.batch([update, db.delete(postEmbeddings).where(eq(postEmbeddings.postId, postId))])
       : db.batch([update])
-  ).catch((e) => new AdminQueryError({ cause: e }));
-  if (result instanceof Error) return result;
+  ).catch((error: unknown) => new AdminQueryError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
   return result[0][0]?.id ?? null;
 };
 
@@ -102,8 +105,10 @@ export const updateUserSuspended = async ({
     suspended
       ? db.batch([update, db.delete(sessions).where(eq(sessions.userId, userId))])
       : db.batch([update])
-  ).catch((e) => new AdminQueryError({ cause: e }));
-  if (result instanceof Error) return result;
+  ).catch((error: unknown) => new AdminQueryError({ cause: error }));
+  if (result instanceof Error) {
+    return result;
+  }
   return result[0][0]?.id ?? null;
 };
 
@@ -112,4 +117,4 @@ export const findUserIdByPublicId = ({ db, publicId }: { db: Database; publicId:
   db.query.users
     .findFirst({ where: { publicId, deletedAt: { isNull: true } }, columns: { id: true } })
     .then((user) => user?.id ?? null)
-    .catch((e) => new AdminQueryError({ cause: e }));
+    .catch((error: unknown) => new AdminQueryError({ cause: error }));

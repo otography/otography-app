@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { artworkUrl } from "#/lib/musickit";
@@ -20,7 +20,9 @@ export function ChatSongPicker() {
   // 入力欄より上の空き高さ全体を使えるようにし、PC のみ上限を chatPopover.maxHeight に抑える。
   useLayoutEffect(() => {
     const composerEl = meta.composerRef.current;
-    if (!menuOpen || !composerEl) return;
+    if (!menuOpen || !composerEl) {
+      return;
+    }
 
     let rafId = 0;
     const shellEl = composerEl.closest("[data-chat-shell]");
@@ -48,7 +50,9 @@ export function ChatSongPicker() {
     const vv = window.visualViewport;
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(scheduleUpdate) : null;
     ro?.observe(composerEl);
-    if (shellEl) ro?.observe(shellEl);
+    if (shellEl) {
+      ro?.observe(shellEl);
+    }
     vv?.addEventListener("resize", scheduleUpdate);
     vv?.addEventListener("scroll", scheduleUpdate);
     window.addEventListener("resize", scheduleUpdate);
@@ -65,7 +69,9 @@ export function ChatSongPicker() {
   // コンポーザーの外側を押したら閉じる。
   useEffect(() => {
     const composerEl = meta.composerRef.current;
-    if (!menuOpen || !composerEl) return;
+    if (!menuOpen || !composerEl) {
+      return;
+    }
     const onPointerDown = (event: PointerEvent) => {
       if (event.target instanceof Node && !composerEl.contains(event.target)) {
         actions.dismissSongSearch();
@@ -82,15 +88,17 @@ export function ChatSongPicker() {
     }
   }, [highlightedIndex]);
 
-  if (!menuOpen) return null;
+  if (!menuOpen) {
+    return null;
+  }
 
   return (
     <div
       id={meta.pickerId}
       aria-label="曲の検索候補"
-      {...stylex.props(styles.triggerPopover, styles.triggerPopoverMaxHeight(maxHeight))}
+      {...props(styles.triggerPopover, styles.triggerPopoverMaxHeight(maxHeight))}
     >
-      <div role="status" aria-live="polite" {...stylex.props(styles.triggerStatus)}>
+      <div role="status" aria-live="polite" {...props(styles.triggerStatus)}>
         {songsLoading
           ? "曲を検索中…"
           : songs.length > 0
@@ -101,7 +109,7 @@ export function ChatSongPicker() {
       </div>
 
       {!songsLoading && songs.length === 0 ? (
-        <div {...stylex.props(styles.triggerEmpty)}>
+        <div {...props(styles.triggerEmpty)}>
           {!searchQuery
             ? "曲名やアーティスト名を入力してください"
             : `「${searchQuery}」に一致する曲が見つかりません`}
@@ -109,7 +117,7 @@ export function ChatSongPicker() {
       ) : null}
 
       {songs.length > 0 ? (
-        <div ref={listRef} {...stylex.props(styles.triggerList)}>
+        <div ref={listRef} {...props(styles.triggerList)}>
           {songs.map((song, index) => {
             const { name, artistName, artwork, isrc } = song.attributes;
             const disabled = !isrc;
@@ -118,7 +126,7 @@ export function ChatSongPicker() {
                 key={song.id}
                 type="button"
                 disabled={disabled}
-                {...stylex.props(
+                {...props(
                   styles.triggerItem,
                   index === highlightedIndex && styles.triggerItemHighlighted,
                   disabled && styles.triggerItemDisabled,
@@ -127,26 +135,26 @@ export function ChatSongPicker() {
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => actions.selectSong(song)}
               >
-                <span {...stylex.props(styles.triggerItemIcon)} aria-hidden="true">
+                <span {...props(styles.triggerItemIcon)} aria-hidden="true">
                   {artwork ? (
                     <img
                       src={artworkUrl(artwork.url, 72)}
                       alt=""
                       width={36}
                       height={36}
-                      {...stylex.props(styles.triggerArt)}
+                      {...props(styles.triggerArt)}
                     />
                   ) : (
-                    <span {...stylex.props(styles.triggerArt, styles.artFallback)}>
+                    <span {...props(styles.triggerArt, styles.artFallback)}>
                       <MusicNoteIcon />
                     </span>
                   )}
                 </span>
-                <span {...stylex.props(styles.triggerItemText)}>
-                  <span {...stylex.props(styles.triggerItemTitle)}>{name}</span>
-                  <span {...stylex.props(styles.triggerItemSub)}>{artistName}</span>
+                <span {...props(styles.triggerItemText)}>
+                  <span {...props(styles.triggerItemTitle)}>{name}</span>
+                  <span {...props(styles.triggerItemSub)}>{artistName}</span>
                 </span>
-                {disabled ? <span {...stylex.props(styles.triggerBadge)}>選択不可</span> : null}
+                {disabled ? <span {...props(styles.triggerBadge)}>選択不可</span> : null}
               </button>
             );
           })}
@@ -154,10 +162,10 @@ export function ChatSongPicker() {
       ) : null}
 
       {keyboardOpen && songs.length > 0 ? (
-        <div {...stylex.props(styles.triggerFooter)}>
+        <div {...props(styles.triggerFooter)}>
           <Button
             type="button"
-            {...stylex.props(styles.expandResultsBtn)}
+            {...props(styles.expandResultsBtn)}
             aria-label="キーボードを閉じて検索結果を広く表示する"
             onClick={() => meta.textareaRef.current?.blur()}
           >
@@ -169,7 +177,7 @@ export function ChatSongPicker() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   artFallback: {
     display: "grid",
     placeItems: "center",

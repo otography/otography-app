@@ -14,7 +14,9 @@ type LoggedError = { name: string; message: string; stack?: string; cause?: Logg
  * 原因は cause として別に出すので、その部分は切り捨てる（そこに値が残るため）。
  */
 export function redactError(error: unknown, depth = 0): LoggedError | string {
-  if (!(error instanceof Error)) return String(error);
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
   const message =
     error instanceof DrizzleQueryError ? `Failed query: ${error.query}` : error.message;
   return {
@@ -27,6 +29,9 @@ export function redactError(error: unknown, depth = 0): LoggedError | string {
         : redactError(error.cause, depth + 1),
   };
 }
+
+/** 情報ログを出力する。 */
+export const logInfo = (...args: Array<unknown>) => console.log(...args);
 
 /** 想定外のエラーを、SQL の値を取り除いてからログに出す。 */
 export const logError = (error: unknown) => console.error(redactError(error));

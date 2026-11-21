@@ -67,21 +67,19 @@ export function ChatProvider({
   };
 
   const searchQuery = triggerMatch?.query.trim() ?? "";
+  const activeSearchQuery = menuOpen ? searchQuery : "";
 
   // 曲検索のメニューが開いている間、入力に合わせて候補を debounce 付きで取得する。
   useEffect(() => {
-    if (!menuOpen || !searchQuery) {
-      setSongs([]);
-      setSongsLoading(false);
-      setHighlightedIndex(0);
+    if (!activeSearchQuery) {
       return;
     }
 
     let cancelled = false;
-    setSongsLoading(true);
 
     const timer = window.setTimeout(() => {
-      searchSongs(searchQuery)
+      setSongsLoading(true);
+      searchSongs(activeSearchQuery)
         .then((result) => {
           if (cancelled) {
             return;
@@ -103,7 +101,18 @@ export function ChatProvider({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [menuOpen, searchQuery]);
+  }, [activeSearchQuery]);
+
+  const visibleSongs = activeSearchQuery ? songs : [];
+  const visibleSongsLoading = activeSearchQuery ? songsLoading : false;
+  const visibleHighlightedIndex = activeSearchQuery ? highlightedIndex : 0;
+
+  const registerTextarea = (el: HTMLTextAreaElement | null) => {
+    textareaRef.current = el;
+  };
+  const registerComposer = (el: HTMLFormElement | null) => {
+    composerRef.current = el;
+  };
 
   const moveHighlight = (direction: -1 | 1) => {
     if (songs.length === 0) {
@@ -217,9 +226,9 @@ export function ChatProvider({
           searchQuery,
           menuOpen,
           keyboardOpen,
-          songs,
-          songsLoading,
-          highlightedIndex,
+          songs: visibleSongs,
+          songsLoading: visibleSongsLoading,
+          highlightedIndex: visibleHighlightedIndex,
         },
         actions: {
           selectSong,
@@ -232,6 +241,8 @@ export function ChatProvider({
           setKeyboardOpen,
           highlightSong: setHighlightedIndex,
           moveHighlight,
+          registerTextarea,
+          registerComposer,
         },
         meta: {
           maxLength: POST_CONTENT_MAX,

@@ -34,6 +34,8 @@ type ChatActions = {
   setKeyboardOpen: (open: boolean) => void;
   highlightSong: (index: number) => void;
   moveHighlight: (direction: -1 | 1) => void;
+  registerTextarea: (el: HTMLTextAreaElement | null) => void;
+  registerComposer: (el: HTMLFormElement | null) => void;
 };
 
 type ChatMeta = {

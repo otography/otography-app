@@ -1,10 +1,10 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 import { authClient } from "#/lib/auth-client";
 import { motion } from "#/motion.stylex";
 import { fontTokens } from "./tokens.stylex";
 
-const styles = stylex.create({
+const styles = create({
   primaryLink: {
     display: "inline-flex",
     gap: "0.9rem",
@@ -69,7 +69,7 @@ export function StartButton({ style }: StartButtonProps) {
     <button
       type="button"
       onClick={() => void authClient.signIn.social({ provider: "google", callbackURL: "/" })}
-      {...stylex.props(styles.primaryLink, style)}
+      {...props(styles.primaryLink, style)}
     >
       <span>無料ではじめる</span>
       <span aria-hidden="true">→</span>

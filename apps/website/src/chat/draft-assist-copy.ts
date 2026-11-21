@@ -115,10 +115,15 @@ export function pickEmptyPlaceholder(
   return candidates[Math.floor(random() * candidates.length)] ?? pool[0] ?? "";
 }
 
+export type PickedAssistMessage = {
+  item: AssistMessageItem;
+  index: number;
+};
+
 export function pickAssistMessage(
   popupId: AssistPopupId,
   random: () => number = Math.random,
-): { item: AssistMessageItem; index: number } {
+): PickedAssistMessage {
   const candidates = ASSIST_POPUP_MESSAGES[popupId];
   const fallback: AssistMessageItem = candidates[0] ?? { angle: "zoom_in", text: "" };
   if (candidates.length <= 1) {

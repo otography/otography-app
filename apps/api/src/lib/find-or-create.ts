@@ -13,7 +13,9 @@ export async function findOrCreate<Found, Created>({
   create: () => Promise<Created>;
 }) {
   const existing = await find();
-  if (existing !== null) return existing;
+  if (existing !== null) {
+    return existing;
+  }
   return create();
 }
 
@@ -26,14 +28,18 @@ export async function insertOrFindExisting<Row, InsertError extends Error, Found
   find,
   missing,
 }: {
-  insert: () => Promise<InsertError | Row[]>;
+  insert: () => Promise<InsertError | Array<Row>>;
   find: () => Promise<Found | null>;
   missing: () => Missing;
 }) {
   const inserted = await insert();
-  if (inserted instanceof Error) return inserted;
+  if (inserted instanceof Error) {
+    return inserted;
+  }
   const [row] = inserted;
-  if (row !== undefined) return row;
+  if (row !== undefined) {
+    return row;
+  }
 
   const existing = await find();
   return existing ?? missing();

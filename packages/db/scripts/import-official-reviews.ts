@@ -21,7 +21,7 @@ import { posts, relations, songs, users } from "../src/index.ts";
 import { OFFICIAL_USER_ID, officialPostId } from "../src/official-reviews.ts";
 
 type ReviewData = {
-  songs: {
+  songs: Array<{
     isrc: string;
     appleSongId: string;
     title: string | null;
@@ -30,9 +30,9 @@ type ReviewData = {
     durationMs: number | null;
     artworkUrl: string | null;
     url: string | null;
-    artistIds: string[];
-  }[];
-  posts: { key: string; isrc: string; content: string }[];
+    artistIds: Array<string>;
+  }>;
+  posts: Array<{ key: string; isrc: string; content: string }>;
 };
 
 const OFFICIAL = {
@@ -53,9 +53,19 @@ const db = drizzle({
   relations,
 });
 
-const data = JSON.parse(
+function isReviewData(value: unknown): value is ReviewData {
+  return (
+    typeof value === "object" && value !== null && "posts" in value && Array.isArray(value.posts)
+  );
+}
+
+const parsedData: unknown = JSON.parse(
   await readFile(new URL("../data/official-reviews.json", import.meta.url), "utf8"),
-) as ReviewData;
+);
+if (!isReviewData(parsedData)) {
+  throw new Error("official-reviews.json の形式が不正です");
+}
+const data = parsedData;
 
 const postId = officialPostId;
 
@@ -86,7 +96,7 @@ const rows = data.posts
     };
   });
 
-const chunks = <T>(items: T[]) =>
+const chunks = <T>(items: Array<T>) =>
   Array.from({ length: Math.ceil(items.length / CHUNK) }, (_, i) =>
     items.slice(i * CHUNK, (i + 1) * CHUNK),
   );
@@ -109,7 +119,7 @@ const existing = new Set(
   ),
 );
 let inserted = 0;
-const updated: string[] = [];
+const updated: Array<string> = [];
 for (const part of chunks(rows)) {
   // 本文が変わった行だけを書き直す（投稿日時などは変えない）。returning は、入れた行と書き直した行を返す。
   const result = await db
@@ -122,8 +132,11 @@ for (const part of chunks(rows)) {
     })
     .returning({ id: posts.id });
   for (const { id } of result) {
-    if (existing.has(id)) updated.push(id);
-    else inserted += 1;
+    if (existing.has(id)) {
+      updated.push(id);
+    } else {
+      inserted += 1;
+    }
   }
 }
 

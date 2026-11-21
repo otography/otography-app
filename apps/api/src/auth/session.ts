@@ -27,6 +27,8 @@ export const sessionMiddleware = createMiddleware<SessionEnv>(async (c, next) =>
 export const requireAuth = createMiddleware<{
   Variables: { user: SessionUser; session: Session["session"] };
 }>(async (c, next) => {
-  if (!c.get("user")) return c.json({ error: "unauthorized" }, 401);
+  if (!c.get("user")) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
   await next();
 });

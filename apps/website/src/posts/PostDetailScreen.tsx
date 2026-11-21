@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "@ui-sdk/react/avatar";
@@ -9,8 +9,10 @@ import { MusicNoteIcon } from "#/chat/icons";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import { meQuery } from "#/lib/auth";
 import { authClient } from "#/lib/auth-client";
-import { type AppleSong, artworkUrl, catalogSongsQuery } from "#/lib/musickit";
-import { postQuery, type PostView, similarPostsQuery } from "#/lib/posts";
+import { artworkUrl, catalogSongsQuery } from "#/lib/musickit";
+import type { AppleSong } from "#/lib/musickit";
+import { postQuery, similarPostsQuery } from "#/lib/posts";
+import type { PostView } from "#/lib/posts";
 import { motion } from "#/motion.stylex";
 import { ArrowLeftIcon } from "#/profile/icons";
 import { AppShell } from "#/shell/AppShell";
@@ -35,13 +37,17 @@ const expiresFormatter = new Intl.DateTimeFormat("ja-JP", {
 
 function formatDateTime(iso: string) {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
   return dateTimeFormatter.format(date);
 }
 
 function formatExpiresAt(iso: string) {
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "";
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
   return expiresFormatter.format(date);
 }
 
@@ -50,39 +56,41 @@ function initials(name: string) {
 }
 
 function SongRow({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
-  if (!post.song) return null;
+  if (!post.song) {
+    return null;
+  }
   const title = post.song.title ?? "（曲名なし）";
 
   return (
-    <div {...stylex.props(styles.songRow)}>
+    <div {...props(styles.songRow)}>
       {post.song.artworkUrl ? (
         <img
           src={artworkUrl(post.song.artworkUrl, 96)}
           alt=""
           width={44}
           height={44}
-          {...stylex.props(styles.art)}
+          {...props(styles.art)}
         />
       ) : (
-        <div {...stylex.props(styles.art, styles.artFallback)} aria-hidden="true">
+        <div {...props(styles.art, styles.artFallback)} aria-hidden="true">
           <MusicNoteIcon />
         </div>
       )}
-      <div {...stylex.props(styles.songMeta)}>
+      <div {...props(styles.songMeta)}>
         {post.song.url ? (
           <a
             href={post.song.url}
             target="_blank"
             rel="noreferrer"
-            {...stylex.props(styles.songTitle, styles.songTitleLink)}
+            {...props(styles.songTitle, styles.songTitleLink)}
           >
             {title}
           </a>
         ) : (
-          <span {...stylex.props(styles.songTitle)}>{title}</span>
+          <span {...props(styles.songTitle)}>{title}</span>
         )}
         {post.song.artistName ? (
-          <span {...stylex.props(styles.songArtist)}>{post.song.artistName}</span>
+          <span {...props(styles.songArtist)}>{post.song.artistName}</span>
         ) : null}
       </div>
       {catalogSong ? (
@@ -94,17 +102,17 @@ function SongRow({ post, catalogSong }: { post: PostView; catalogSong?: AppleSon
 
 function SimilarPostCard({ post, catalogSong }: { post: PostView; catalogSong?: AppleSong }) {
   return (
-    <article {...stylex.props(styles.similarCard)}>
+    <article {...props(styles.similarCard)}>
       <SongRow post={post} catalogSong={catalogSong} />
-      <p {...stylex.props(styles.similarQuote)}>{post.content}</p>
-      <div {...stylex.props(styles.similarAuthor)}>
-        <Avatar {...stylex.props(styles.avatarSm)}>
+      <p {...props(styles.similarQuote)}>{post.content}</p>
+      <div {...props(styles.similarAuthor)}>
+        <Avatar {...props(styles.avatarSm)}>
           {post.author.image ? (
             <AvatarImage
               src={post.author.image}
               alt={post.author.name}
               referrerPolicy="no-referrer"
-              {...stylex.props(styles.avatarImg)}
+              {...props(styles.avatarImg)}
             />
           ) : null}
           <AvatarFallback>
@@ -129,15 +137,20 @@ function PostDetailContent({ postId }: { postId: string }) {
     enabled: postResult.isSuccess,
   });
 
-  const similarPosts = similarResult.data?.posts ?? [];
+  const similarPosts = useMemo(() => similarResult.data?.posts ?? [], [similarResult.data?.posts]);
+  const postAppleSongId = postResult.data?.song?.appleSongId;
   const songIds = useMemo(() => {
-    const ids: string[] = [];
-    if (postResult.data?.song?.appleSongId) ids.push(postResult.data.song.appleSongId);
+    const ids: Array<string> = [];
+    if (postAppleSongId) {
+      ids.push(postAppleSongId);
+    }
     for (const post of similarPosts) {
-      if (post.song?.appleSongId) ids.push(post.song.appleSongId);
+      if (post.song?.appleSongId) {
+        ids.push(post.song.appleSongId);
+      }
     }
     return ids;
-  }, [postResult.data?.song?.appleSongId, similarPosts]);
+  }, [postAppleSongId, similarPosts]);
 
   const catalogQuery = useQuery(catalogSongsQuery(songIds));
   const catalogSongs = useMemo(() => {
@@ -174,15 +187,15 @@ function PostDetailContent({ postId }: { postId: string }) {
   };
 
   return (
-    <div {...stylex.props(styles.shell)}>
-      <div {...stylex.props(styles.stickyHeader)}>
+    <div {...props(styles.shell)}>
+      <div {...props(styles.stickyHeader)}>
         <AppShell.Topbar>
-          <div {...stylex.props(styles.leftNav)}>
-            <Button render={<Link to="/" />} {...stylex.props(styles.backBtn)}>
+          <div {...props(styles.leftNav)}>
+            <Button render={<Link to="/" />} {...props(styles.backBtn)}>
               <ArrowLeftIcon />
               <span>ホーム</span>
             </Button>
-            <Link to="/" {...stylex.props(styles.brand)}>
+            <Link to="/" {...props(styles.brand)}>
               <AppShell.BrandIcon />
               <AppShell.BrandName style={styles.brandName} />
             </Link>
@@ -194,49 +207,46 @@ function PostDetailContent({ postId }: { postId: string }) {
         <MiniPlayerBar />
       </div>
 
-      <main {...stylex.props(styles.main)}>
-        <div {...stylex.props(styles.inner)}>
+      <main {...props(styles.main)}>
+        <div {...props(styles.inner)}>
           {postResult.isPending ? (
-            <div {...stylex.props(styles.stateBox)} aria-busy="true">
+            <div {...props(styles.stateBox)} aria-busy="true">
               投稿を読み込んでいます…
             </div>
           ) : postResult.isError ? (
-            <div role="alert" {...stylex.props(styles.errorBox)}>
-              <p {...stylex.props(styles.errorMessage)}>{postResult.error.message}</p>
-              <Button render={<Link to="/" />} {...stylex.props(styles.errorAction)}>
+            <div role="alert" {...props(styles.errorBox)}>
+              <p {...props(styles.errorMessage)}>{postResult.error.message}</p>
+              <Button render={<Link to="/" />} {...props(styles.errorAction)}>
                 ホームに戻る
               </Button>
             </div>
           ) : (
             <>
-              <section aria-label="あなたの投稿" {...stylex.props(styles.postCard)}>
+              <section aria-label="あなたの投稿" {...props(styles.postCard)}>
                 <SongRow post={postResult.data} catalogSong={lookupSong(postResult.data)} />
-                <p {...stylex.props(styles.postContent)}>{postResult.data.content}</p>
-                <footer {...stylex.props(styles.postFooter)}>
-                  <time dateTime={postResult.data.createdAt} {...stylex.props(styles.timestamp)}>
+                <p {...props(styles.postContent)}>{postResult.data.content}</p>
+                <footer {...props(styles.postFooter)}>
+                  <time dateTime={postResult.data.createdAt} {...props(styles.timestamp)}>
                     {formatDateTime(postResult.data.createdAt)}
                   </time>
                 </footer>
               </section>
 
-              <section aria-labelledby="similar-section-heading" {...stylex.props(styles.section)}>
-                <div {...stylex.props(styles.sectionHeader)}>
-                  <div {...stylex.props(styles.sectionTitleGroup)}>
-                    <h2 id="similar-section-heading" {...stylex.props(styles.sectionTitle)}>
+              <section aria-labelledby="similar-section-heading" {...props(styles.section)}>
+                <div {...props(styles.sectionHeader)}>
+                  <div {...props(styles.sectionTitleGroup)}>
+                    <h2 id="similar-section-heading" {...props(styles.sectionTitle)}>
                       近い感覚の曲
                     </h2>
                     {similarResult.data && !similarResult.data.expired ? (
-                      <span {...stylex.props(styles.expiryHint)}>
+                      <span {...props(styles.expiryHint)}>
                         {formatExpiresAt(similarResult.data.expiresAt)} まで閲覧可能
                       </span>
                     ) : null}
                   </div>
                   {similarResult.data && !similarResult.data.expired ? (
                     <Toggle
-                      {...stylex.props(
-                        styles.filterToggle,
-                        includeSameSong && styles.filterTogglePressed,
-                      )}
+                      {...props(styles.filterToggle, includeSameSong && styles.filterTogglePressed)}
                       pressed={includeSameSong}
                       onPressedChange={setIncludeSameSong}
                     >
@@ -246,33 +256,29 @@ function PostDetailContent({ postId }: { postId: string }) {
                 </div>
 
                 {similarResult.isPending ? (
-                  <div {...stylex.props(styles.stateBox)} aria-busy="true">
+                  <div {...props(styles.stateBox)} aria-busy="true">
                     検索結果を読み込んでいます…
                   </div>
                 ) : similarResult.isError ? (
-                  <p role="alert" {...stylex.props(styles.inlineError)}>
+                  <p role="alert" {...props(styles.inlineError)}>
                     {similarResult.error.message}
                   </p>
                 ) : similarResult.data?.expired ? (
-                  <div {...stylex.props(styles.expiredCard)}>
-                    <p {...stylex.props(styles.expiredTitle)}>
-                      検索結果の閲覧期限（24時間）を過ぎました
-                    </p>
-                    <p {...stylex.props(styles.expiredDesc)}>
+                  <div {...props(styles.expiredCard)}>
+                    <p {...props(styles.expiredTitle)}>検索結果の閲覧期限（24時間）を過ぎました</p>
+                    <p {...props(styles.expiredDesc)}>
                       投稿した感想は引き続きいつでもこのページから見返せます。
                     </p>
                   </div>
                 ) : similarPosts.length > 0 ? (
-                  <div {...stylex.props(styles.similarList)}>
+                  <div {...props(styles.similarList)}>
                     {similarPosts.map((post) => (
                       <SimilarPostCard key={post.id} post={post} catalogSong={lookupSong(post)} />
                     ))}
                   </div>
                 ) : (
-                  <div {...stylex.props(styles.expiredCard)}>
-                    <p {...stylex.props(styles.expiredDesc)}>
-                      まだ近い感覚の感想は見つかりませんでした。
-                    </p>
+                  <div {...props(styles.expiredCard)}>
+                    <p {...props(styles.expiredDesc)}>まだ近い感覚の感想は見つかりませんでした。</p>
                   </div>
                 )}
               </section>
@@ -288,7 +294,7 @@ export function PostDetailScreen({ postId }: { postId: string }) {
   return <PostDetailContent postId={postId} />;
 }
 
-const styles = stylex.create({
+const styles = create({
   shell: {
     display: "flex",
     flexDirection: "column",

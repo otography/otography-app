@@ -1,7 +1,8 @@
 import { zValidator } from "@hono/zod-validator";
-import * as errore from "errore";
+import { matchErrorPartial } from "errore";
 import { Hono } from "hono";
-import { requireAuth, type SessionEnv } from "../auth/session.ts";
+import { requireAuth } from "../auth/session.ts";
+import type { SessionEnv } from "../auth/session.ts";
 import { db } from "../lib/db.ts";
 import { requireAdmin } from "./middleware.ts";
 import { listReportsQuery, resolveReportInput } from "./schemas.ts";
@@ -23,7 +24,7 @@ type AdminError = Extract<
 
 /** 管理の操作のエラーを、HTTP のステータスと文言にする。 */
 const toResponse = (error: AdminError) =>
-  errore.matchErrorPartial<AdminError, { status: 400 | 404 | 500; error: string }>(
+  matchErrorPartial<AdminError, { status: 400 | 404 | 500; error: string }>(
     error,
     {
       ReportNotFoundError: (e) => ({ status: 404, error: e.message }),
@@ -45,7 +46,9 @@ export const adminRoutes = new Hono<SessionEnv>()
     requireAuth,
     requireAdmin,
     zValidator("query", listReportsQuery, (result, c) => {
-      if (!result.success) return c.json(invalid, 400);
+      if (!result.success) {
+        return c.json(invalid, 400);
+      }
     }),
     async (c) => {
       const page = await listReports({ db, status: c.req.valid("query").status });
@@ -62,7 +65,9 @@ export const adminRoutes = new Hono<SessionEnv>()
     requireAuth,
     requireAdmin,
     zValidator("json", resolveReportInput, (result, c) => {
-      if (!result.success) return c.json(invalid, 400);
+      if (!result.success) {
+        return c.json(invalid, 400);
+      }
     }),
     async (c) => {
       const result = await resolveReport({

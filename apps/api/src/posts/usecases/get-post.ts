@@ -14,7 +14,11 @@ export async function getPost({
   viewerId: string;
 }) {
   const post = await findVisiblePost({ db, postId, viewerId });
-  if (post instanceof Error) return post;
-  if (!post) return new PostNotFoundError({ postId });
+  if (post instanceof Error) {
+    return post;
+  }
+  if (!post) {
+    return new PostNotFoundError({ postId });
+  }
   return toPostView(post);
 }

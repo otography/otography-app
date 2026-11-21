@@ -1,7 +1,7 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import type { StyleXStyles } from "@stylexjs/stylex";
 
-const styles = stylex.create({
+const styles = create({
   base: {
     display: "inline-grid",
     flexGrow: "0",
@@ -24,5 +24,5 @@ type AvatarProps = {
 };
 
 export function Avatar({ children, style }: AvatarProps) {
-  return <span {...stylex.props(styles.base, style)}>{children}</span>;
+  return <span {...props(styles.base, style)}>{children}</span>;
 }

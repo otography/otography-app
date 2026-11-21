@@ -1,7 +1,7 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { fontTokens } from "./tokens.stylex";
 
-const styles = stylex.create({
+const styles = create({
   logo: {
     display: "inline-flex",
     alignItems: "center",
@@ -18,5 +18,5 @@ const styles = stylex.create({
 });
 
 export function Logo() {
-  return <span {...stylex.props(styles.logo)}>otography</span>;
+  return <span {...props(styles.logo)}>otography</span>;
 }

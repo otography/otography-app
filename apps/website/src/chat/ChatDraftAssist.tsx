@@ -1,4 +1,4 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
@@ -10,6 +10,12 @@ import { chatMedia, chatPopover, chatTokens as t } from "./tokens.stylex";
 const DISMISS_DISTANCE_PX = 36;
 const DISMISS_VELOCITY_PX_PER_MS = 0.45;
 const RUBBER_BAND_FACTOR = 0.2;
+
+const resetCardInlineStyle = (el: HTMLDivElement) => {
+  el.style.transform = "";
+  el.style.opacity = "";
+  el.style.transition = "";
+};
 
 export function ChatDraftAssist() {
   const { state, actions } = useDraftAssist();
@@ -25,27 +31,25 @@ export function ChatDraftAssist() {
     velocityY: number;
   } | null>(null);
 
+  const shouldEnter = Boolean(activePopup && visible);
+
   // マウント直後に 1 フレーム遅らせて進入トランジションを走らせる。
   useEffect(() => {
-    if (!activePopup || !visible) {
-      setEntered(false);
+    if (!shouldEnter) {
       return;
     }
     const rafId = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(rafId);
-  }, [activePopup, visible]);
+    return () => {
+      cancelAnimationFrame(rafId);
+      setEntered(false);
+    };
+  }, [shouldEnter]);
 
   if (!activePopup) {
     return null;
   }
 
   const isShown = visible && entered;
-
-  const resetCardInlineStyle = (el: HTMLDivElement) => {
-    el.style.transform = "";
-    el.style.opacity = "";
-    el.style.transition = "";
-  };
 
   const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) {
@@ -132,17 +136,17 @@ export function ChatDraftAssist() {
       aria-live="polite"
       data-draft-assist={activePopup.id}
       data-open={isShown ? "" : undefined}
-      {...stylex.props(styles.card, isShown ? styles.cardVisible : styles.cardHidden)}
+      {...props(styles.card, isShown ? styles.cardVisible : styles.cardHidden)}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={(event) => finishDrag(event, false)}
       onPointerCancel={(event) => finishDrag(event, true)}
     >
-      <div {...stylex.props(styles.header)}>
-        <p {...stylex.props(styles.message)}>{activePopup.item.text}</p>
+      <div {...props(styles.header)}>
+        <p {...props(styles.message)}>{activePopup.item.text}</p>
         <Button
           type="button"
-          {...stylex.props(styles.closeBtn)}
+          {...props(styles.closeBtn)}
           aria-label="ヒントを閉じる"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => actions.dismiss("button")}
@@ -154,7 +158,7 @@ export function ChatDraftAssist() {
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   card: {
     position: "absolute",
     bottom: `calc(100% + ${chatPopover.sideOffset}px)`,

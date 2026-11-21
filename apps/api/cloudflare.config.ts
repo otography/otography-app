@@ -1,4 +1,6 @@
 import { bindings, defineConfig, triggers } from "cf/config";
+// cf-worker の import attribute は Worker エントリーポイントの名前空間インポートを要求する。
+// oxlint-disable-next-line import/no-namespace
 import * as entrypoint from "./src/index.ts" with { type: "cf-worker" };
 
 // Worker は本番の 1 つだけにし、ステージングはその Worker の Preview（名前は staging）として作る。
@@ -22,7 +24,7 @@ export default defineConfig(({ isPreview }) => ({
     observability: { enabled: true, redactQueryString: true },
     // 保存期間（90 日）を過ぎた論理削除の行と IP ログを、毎日 3:00（日本時間）に物理削除する。
     // Preview は Cron トリガーを持てない（cf の Preview のアップロードが triggers を受け付けない）ので、本番だけに付ける。
-    ...(isPreview ? {} : { triggers: [triggers.scheduled({ schedule: "0 18 * * *" })] }),
+    triggers: isPreview ? undefined : [triggers.scheduled({ schedule: "0 18 * * *" })],
     env: {
       BETTER_AUTH_SECRET: bindings.secret(),
       GOOGLE_CLIENT_ID: bindings.secret(),

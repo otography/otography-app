@@ -16,7 +16,11 @@ export async function deletePost({
   userId: string;
 }) {
   const deleted = await softDeletePost({ db, postId, userId });
-  if (deleted instanceof Error) return deleted;
-  if (deleted === null) return new PostNotFoundError({ postId });
+  if (deleted instanceof Error) {
+    return deleted;
+  }
+  if (deleted === null) {
+    return new PostNotFoundError({ postId });
+  }
   return null;
 }

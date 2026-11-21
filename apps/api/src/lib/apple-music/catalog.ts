@@ -4,10 +4,9 @@ import {
   AppleMusicRateLimitError,
   AppleMusicRequestError,
   AppleSongNotFoundError,
-  type FetchCatalogArtistError,
-  type FetchCatalogSongError,
   SongWithoutIsrcError,
 } from "./errors.ts";
+import type { FetchCatalogArtistError, FetchCatalogSongError } from "./errors.ts";
 import { catalogArtistsResponse, catalogSongsResponse } from "./schemas.ts";
 
 // ストアフロントと言語は jp・日本語に固定する（設計ドキュメントの決定 25）。
@@ -36,20 +35,32 @@ async function requestCatalog<Schema extends z.ZodType>({
 }) {
   const url = `${API_BASE}${path}?${new URLSearchParams({ ...query, l: LANGUAGE }).toString()}`;
   const res = await fetch(url, { headers: { Authorization: `Bearer ${developerToken}` } }).catch(
-    (e) => new AppleMusicRequestError({ path, cause: e }),
+    (error: unknown) => new AppleMusicRequestError({ path, cause: error }),
   );
-  if (res instanceof Error) return res;
-  if (res.status === 404) return null;
-  if (res.status === 429) return new AppleMusicRateLimitError();
-  if (!res.ok) return new AppleMusicRequestError({ path, cause: new Error(`HTTP ${res.status}`) });
+  if (res instanceof Error) {
+    return res;
+  }
+  if (res.status === 404) {
+    return null;
+  }
+  if (res.status === 429) {
+    return new AppleMusicRateLimitError();
+  }
+  if (!res.ok) {
+    return new AppleMusicRequestError({ path, cause: new Error(`HTTP ${res.status}`) });
+  }
 
   const parsed = await res
     .json()
     .then((body) => schema.safeParse(body))
-    .catch((e) => new AppleMusicRequestError({ path, cause: e }));
-  if (parsed instanceof Error) return parsed;
-  if (!parsed.success) return new AppleMusicRequestError({ path, cause: parsed.error });
-  return parsed.data as z.output<Schema>;
+    .catch((error: unknown) => new AppleMusicRequestError({ path, cause: error }));
+  if (parsed instanceof Error) {
+    return parsed;
+  }
+  if (!parsed.success) {
+    return new AppleMusicRequestError({ path, cause: parsed.error });
+  }
+  return parsed.data;
 }
 
 /** Apple Music のカタログから取得した曲。songs テーブルの列に合わせた形。 */
@@ -62,7 +73,7 @@ export type CatalogSong = {
   durationMs: number | null;
   artworkUrl: string | null;
   url: string | null;
-  artistIds: string[];
+  artistIds: Array<string>;
 };
 
 /** Apple Music のカタログ ID で曲を 1 つ取得する。アーティストの ID も一緒に取る。 */
@@ -82,13 +93,19 @@ export async function fetchCatalogSong({
     developerToken,
     fetch,
   });
-  if (body instanceof Error) return body;
+  if (body instanceof Error) {
+    return body;
+  }
 
   const song = body?.data[0];
-  if (!song) return new AppleSongNotFoundError({ songId });
+  if (!song) {
+    return new AppleSongNotFoundError({ songId });
+  }
 
   const { attributes } = song;
-  if (!attributes.isrc) return new SongWithoutIsrcError({ songId });
+  if (!attributes.isrc) {
+    return new SongWithoutIsrcError({ songId });
+  }
 
   return {
     isrc: attributes.isrc.toUpperCase(),
@@ -128,10 +145,14 @@ export async function fetchCatalogArtist({
     developerToken,
     fetch,
   });
-  if (body instanceof Error) return body;
+  if (body instanceof Error) {
+    return body;
+  }
 
   const artist = body?.data[0];
-  if (!artist) return new AppleArtistNotFoundError({ artistId });
+  if (!artist) {
+    return new AppleArtistNotFoundError({ artistId });
+  }
 
   return {
     id: artist.id,

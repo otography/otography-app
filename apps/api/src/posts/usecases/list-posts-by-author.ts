@@ -28,13 +28,17 @@ export async function listPostsByAuthor({
     before,
     limit: PAGE_SIZE + 1,
   });
-  if (rows instanceof Error) return rows;
+  if (rows instanceof Error) {
+    return rows;
+  }
 
   const page = rows.slice(0, PAGE_SIZE);
   const posts = [];
   for (const row of page) {
     const view = toPostView(row);
-    if (view instanceof Error) return view;
+    if (view instanceof Error) {
+      return view;
+    }
     posts.push(view);
   }
   const last = page.at(-1);

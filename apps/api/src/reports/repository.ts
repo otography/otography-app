@@ -17,7 +17,7 @@ export const findVisiblePostAuthorId = ({ db, postId }: { db: Database; postId: 
       columns: { userId: true },
     })
     .then((post) => post?.userId ?? null)
-    .catch((e) => new ReportQueryError({ cause: e }));
+    .catch((error: unknown) => new ReportQueryError({ cause: error }));
 
 /** 公開 ID のユーザーの内部 ID を読む。利用停止中・退会済みなら null。 */
 export const findActiveUserId = ({ db, publicId }: { db: Database; publicId: string }) =>
@@ -27,7 +27,7 @@ export const findActiveUserId = ({ db, publicId }: { db: Database; publicId: str
       columns: { id: true },
     })
     .then((user) => user?.id ?? null)
-    .catch((e) => new ReportQueryError({ cause: e }));
+    .catch((error: unknown) => new ReportQueryError({ cause: error }));
 
 /**
  * 通報を保存する。同じ人が同じ対象を未処理のまま通報済みなら、保存せずに成功として扱う
@@ -39,4 +39,4 @@ export const insertReport = ({ db, report }: { db: Database; report: NewReport }
     .values(report)
     .onConflictDoNothing()
     .then(() => null)
-    .catch((e) => new ReportQueryError({ cause: e }));
+    .catch((error: unknown) => new ReportQueryError({ cause: error }));

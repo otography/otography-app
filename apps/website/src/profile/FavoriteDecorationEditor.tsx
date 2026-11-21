@@ -1,10 +1,10 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@ui-sdk/react/field";
 import { Input } from "@ui-sdk/react/input";
 import { Radio, RadioGroup, RadioIndicator } from "@ui-sdk/react/radio";
 import { Textarea } from "@ui-sdk/react/textarea";
-import { FAVORITE_COLORS, FAVORITE_COMMENT_MAX, type FavoriteColor } from "db/constants";
+import { FAVORITE_COLORS, FAVORITE_COMMENT_MAX } from "db/constants";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import type { FavoriteDecoration } from "#/lib/profile";
 import { motion } from "#/motion.stylex";
@@ -22,10 +22,12 @@ function isSingleEmoji(value: string) {
   );
 }
 
-export function validateDecoration(decoration: FavoriteDecoration): {
+export type DecorationValidation = {
   emojiError: string | null;
   commentError: string | null;
-} {
+};
+
+export function validateDecoration(decoration: FavoriteDecoration): DecorationValidation {
   const emoji = decoration.emoji?.trim() ?? "";
   const comment = decoration.comment?.trim() ?? "";
   const emojiError = emoji && !isSingleEmoji(emoji) ? "絵文字は 1 つだけ入力してください" : null;
@@ -51,49 +53,49 @@ export function FavoriteDecorationFields({
   const { emojiError, commentError } = validateDecoration(value);
 
   return (
-    <div {...stylex.props(styles.stack)}>
+    <div {...props(styles.stack)}>
       <Field name={`${fieldPrefix}-comment`} invalid={commentError ? true : undefined}>
-        <FieldLabel {...stylex.props(styles.label)}>ひとことメモ（任意）</FieldLabel>
+        <FieldLabel {...props(styles.label)}>ひとことメモ（任意）</FieldLabel>
         <Textarea
           value={commentValue}
           onValueChange={(next) => onChange({ ...value, comment: next || null })}
           rows={3}
           maxLength={FAVORITE_COMMENT_MAX}
           placeholder="好きな理由や思い出のシーンなど"
-          {...stylex.props(styles.textarea)}
+          {...props(styles.textarea)}
         />
-        <FieldDescription {...stylex.props(styles.hint)}>
+        <FieldDescription {...props(styles.hint)}>
           {commentLength} / {FAVORITE_COMMENT_MAX}
         </FieldDescription>
         {commentError ? <FieldError match>{commentError}</FieldError> : null}
       </Field>
 
       <Field name={`${fieldPrefix}-emoji`} invalid={emojiError ? true : undefined}>
-        <FieldLabel {...stylex.props(styles.label)}>絵文字バッジ（任意）</FieldLabel>
-        <div {...stylex.props(styles.emojiRow)}>
+        <FieldLabel {...props(styles.label)}>絵文字バッジ（任意）</FieldLabel>
+        <div {...props(styles.emojiRow)}>
           <Input
             value={emojiValue}
             onValueChange={(next) => onChange({ ...value, emoji: next.trim() || null })}
             placeholder="例: 🎧"
-            {...stylex.props(styles.emojiInput)}
+            {...props(styles.emojiInput)}
           />
           {emojiValue ? (
             <Button
               type="button"
-              {...stylex.props(styles.clearBtn)}
+              {...props(styles.clearBtn)}
               onClick={() => onChange({ ...value, emoji: null })}
             >
               絵文字を外す
             </Button>
           ) : null}
         </div>
-        <div {...stylex.props(styles.presetGrid)} role="group" aria-label="絵文字の候補">
+        <div {...props(styles.presetGrid)} role="group" aria-label="絵文字の候補">
           {PRESET_EMOJIS.map((emoji) => (
             <Button
               key={emoji}
               type="button"
               aria-label={`絵文字 ${emoji} を選ぶ`}
-              {...stylex.props(styles.presetBtn, emojiValue === emoji && styles.presetBtnSelected)}
+              {...props(styles.presetBtn, emojiValue === emoji && styles.presetBtnSelected)}
               onClick={() => onChange({ ...value, emoji: emojiValue === emoji ? null : emoji })}
             >
               {emoji}
@@ -104,40 +106,35 @@ export function FavoriteDecorationFields({
       </Field>
 
       <Field name={`${fieldPrefix}-color`}>
-        <FieldLabel {...stylex.props(styles.label)}>アクセントカラー（任意）</FieldLabel>
+        <FieldLabel {...props(styles.label)}>アクセントカラー（任意）</FieldLabel>
         <RadioGroup
           value={value.color ?? NO_COLOR_VALUE}
           onValueChange={(next) =>
             onChange({
               ...value,
-              color: !next || next === NO_COLOR_VALUE ? null : (next as FavoriteColor),
+              color: !next || next === NO_COLOR_VALUE ? null : next,
             })
           }
-          {...stylex.props(styles.colorGroup)}
+          {...props(styles.colorGroup)}
         >
-          <label
-            {...stylex.props(styles.colorChip, value.color === null && styles.colorChipSelected)}
-          >
-            <Radio value={NO_COLOR_VALUE} {...stylex.props(styles.hiddenRadio)}>
+          <label {...props(styles.colorChip, value.color === null && styles.colorChipSelected)}>
+            <Radio value={NO_COLOR_VALUE} {...props(styles.hiddenRadio)}>
               <RadioIndicator />
             </Radio>
-            <span {...stylex.props(styles.colorDotNone)} aria-hidden="true" />
+            <span {...props(styles.colorDotNone)} aria-hidden="true" />
             <span>なし</span>
           </label>
           {FAVORITE_COLORS.map((color) => {
             const meta = FAVORITE_COLOR_META[color];
             const selected = value.color === color;
             return (
-              <label
-                key={color}
-                {...stylex.props(styles.colorChip, selected && styles.colorChipSelected)}
-              >
-                <Radio value={color} {...stylex.props(styles.hiddenRadio)}>
+              <label key={color} {...props(styles.colorChip, selected && styles.colorChipSelected)}>
+                <Radio value={color} {...props(styles.hiddenRadio)}>
                   <RadioIndicator />
                 </Radio>
                 <span
                   aria-hidden="true"
-                  {...stylex.props(styles.colorDot)}
+                  {...props(styles.colorDot)}
                   style={{ backgroundColor: meta.swatch }}
                 />
                 <span>{meta.label}</span>
@@ -150,7 +147,7 @@ export function FavoriteDecorationFields({
   );
 }
 
-const styles = stylex.create({
+const styles = create({
   stack: {
     display: "flex",
     flexDirection: "column",

@@ -3,6 +3,7 @@ import { describe, expect, test } from "vite-plus/test";
 import { createPostInput } from "../../src/posts/schemas.ts";
 
 const valid = { songId: "1679278167", isrc: "jpp302300157", content: "  好きな曲  " };
+const parseContent = (content: string) => createPostInput.safeParse({ ...valid, content }).success;
 
 describe("createPostInput", () => {
   test("本文の前後の空白を除き、ISRC を大文字にする", () => {
@@ -18,11 +19,10 @@ describe("createPostInput", () => {
   });
 
   test("本文の上限はコードポイントで数える（DB の CHECK 制約の length() と同じ数え方）", () => {
-    const parse = (content: string) => createPostInput.safeParse({ ...valid, content }).success;
-    expect(parse("あ".repeat(POST_CONTENT_MAX))).toBe(true);
-    expect(parse("あ".repeat(POST_CONTENT_MAX + 1))).toBe(false);
-    expect(parse("😀".repeat(POST_CONTENT_MAX))).toBe(true);
-    expect(parse("😀".repeat(POST_CONTENT_MAX + 1))).toBe(false);
+    expect(parseContent("あ".repeat(POST_CONTENT_MAX))).toBe(true);
+    expect(parseContent("あ".repeat(POST_CONTENT_MAX + 1))).toBe(false);
+    expect(parseContent("😀".repeat(POST_CONTENT_MAX))).toBe(true);
+    expect(parseContent("😀".repeat(POST_CONTENT_MAX + 1))).toBe(false);
   });
 
   test("ISRC は 12 文字、曲の ID と本文は必須", () => {

@@ -15,12 +15,14 @@ export const VECTOR_STORE_SCHEMA = `CREATE TABLE IF NOT EXISTS x_vectors (
 )`;
 
 /** 文の配列から x の配列を作る（同じ順）。 */
-export type Embedder = (texts: string[]) => Promise<EmbeddingRequestError | Float32Array[]>;
+export type Embedder = (
+  texts: Array<string>,
+) => Promise<EmbeddingRequestError | Array<Float32Array>>;
 
 /** x の置き場所（D1）。Worker からはバインディング、バッチからは REST API で使う。 */
 export type VectorStore = {
   /** 入れる。同じ post_id の行が既にあれば、そのままにする。 */
-  put: (rows: { postId: string; x: Float32Array }[]) => Promise<VectorStoreError | null>;
+  put: (rows: Array<{ postId: string; x: Float32Array }>) => Promise<VectorStoreError | null>;
   /** 指定した投稿の x を読む。無い投稿は結果に含めない。 */
-  get: (postIds: string[]) => Promise<VectorStoreError | Map<string, Float32Array>>;
+  get: (postIds: Array<string>) => Promise<VectorStoreError | Map<string, Float32Array>>;
 };

@@ -1,9 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { create } from "@stylexjs/stylex";
 import { chatMedia, chatTokens as t } from "#/chat/tokens.stylex";
 import { motion } from "#/motion.stylex";
 
 /** 「好きな曲」と「好きなアーティスト」で共有するスタイル。 */
-export const favoriteStyles = stylex.create({
+export const favoriteStyles = create({
   panel: {
     display: "flex",
     flexDirection: "column",

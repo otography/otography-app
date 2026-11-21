@@ -4,7 +4,7 @@ import { issueMusicKitToken } from "../../../src/songs/usecases/issue-music-kit-
 
 describe("issueMusicKitToken", () => {
   test("リクエストのオリジンに限定したトークンを発行する", async () => {
-    const origins: (string | null)[] = [];
+    const origins: Array<string | null> = [];
     const token = await issueMusicKitToken({
       origin: "https://app.otography.workers.dev",
       getDeveloperToken: async ({ origin }) => {

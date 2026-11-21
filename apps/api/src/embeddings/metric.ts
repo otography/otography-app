@@ -30,7 +30,9 @@ export function toQuery(z: ArrayLike<number>, metric: Metric) {
   let trace = 0;
   for (let i = 0; i < k; i++) {
     let acc = 0;
-    for (let j = 0; j < k; j++) acc += (metric.precision[i * k + j] ?? 0) * (centered[j] ?? 0);
+    for (let j = 0; j < k; j++) {
+      acc += (metric.precision[i * k + j] ?? 0) * (centered[j] ?? 0);
+    }
     u[i] = acc;
     squaredNorm += acc * acc;
     meanDotU += (metric.mean[i] ?? 0) * acc;

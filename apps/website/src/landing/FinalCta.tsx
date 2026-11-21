@@ -1,9 +1,9 @@
-import * as stylex from "@stylexjs/stylex";
+import { create, props } from "@stylexjs/stylex";
 import { BudouxText } from "./BudouxText";
 import { fontTokens, landingTokens as t } from "./tokens.stylex";
 import { StartButton } from "./StartButton";
 
-const styles = stylex.create({
+const styles = create({
   finalCta: {
     position: "relative",
     display: "grid",
@@ -130,14 +130,14 @@ const styles = stylex.create({
 
 export function FinalCta() {
   return (
-    <section {...stylex.props(styles.finalCta)}>
+    <section {...props(styles.finalCta)}>
       <img
         alt=""
         aria-hidden="true"
         height={1024}
         src="/lp-asset-7.png"
         width={1535}
-        {...stylex.props(styles.ctaPurpleAura)}
+        {...props(styles.ctaPurpleAura)}
       />
       <img
         alt=""
@@ -145,7 +145,7 @@ export function FinalCta() {
         height={511}
         src="/lp-asset-8.webp"
         width={511}
-        {...stylex.props(styles.ctaPinkOrb)}
+        {...props(styles.ctaPinkOrb)}
       />
       <img
         alt=""
@@ -153,14 +153,14 @@ export function FinalCta() {
         height={1254}
         src="/lp-asset-9.png"
         width={1254}
-        {...stylex.props(styles.ctaGoldOrb)}
+        {...props(styles.ctaGoldOrb)}
       />
-      <p {...stylex.props(styles.finalCtaText)}>
+      <p {...props(styles.finalCtaText)}>
         <BudouxText text="あなたの言葉が、誰かの音楽体験を変えるかもしれない。" />
       </p>
-      <div {...stylex.props(styles.finalCtaActions)}>
+      <div {...props(styles.finalCtaActions)}>
         <StartButton style={styles.finalCtaPrimaryLink} />
-        <small {...stylex.props(styles.finalCtaSmall)}>
+        <small {...props(styles.finalCtaSmall)}>
           <BudouxText text="アカウント登録なしでも閲覧できます" />
         </small>
       </div>

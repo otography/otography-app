@@ -1,4 +1,4 @@
-import * as jose from "jose";
+import { exportPKCS8, importPKCS8 } from "jose";
 import { beforeAll, describe, expect, test } from "vite-plus/test";
 import { normalizePkcs8Pem } from "../../../src/lib/apple-music/private-key.ts";
 
@@ -11,11 +11,11 @@ beforeAll(async () => {
     true,
     ["sign", "verify"],
   );
-  pem = await jose.exportPKCS8(privateKey);
+  pem = await exportPKCS8(privateKey);
 });
 
 const canImport = (value: string) =>
-  jose.importPKCS8(normalizePkcs8Pem(value), "ES256").then(
+  importPKCS8(normalizePkcs8Pem(value), "ES256").then(
     () => true,
     () => false,
   );
@@ -30,8 +30,8 @@ describe("normalizePkcs8Pem", () => {
     expect(await canImport(`  ${pem}\n\n`)).toBe(true);
   });
 
-  test("改行が \\n の 2 文字や空白になっていても読める", async () => {
-    expect(await canImport(pem.replaceAll("\n", "\\n"))).toBe(true);
+  test(String.raw`改行が \n の 2 文字や空白になっていても読める`, async () => {
+    expect(await canImport(pem.replaceAll("\n", String.raw`\n`))).toBe(true);
     expect(await canImport(pem.replaceAll("\n", " "))).toBe(true);
   });
 

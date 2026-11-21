@@ -15,7 +15,7 @@ export const rateLimit = (limiter: Limiter) =>
   createMiddleware<{ Variables: { user: SessionUser } }>(async (c, next) => {
     const outcome = await env[limiter]
       .limit({ key: c.get("user").id })
-      .catch((e) => new RateLimitCheckError({ limiter, cause: e }));
+      .catch((error: unknown) => new RateLimitCheckError({ limiter, cause: error }));
     if (outcome instanceof Error) {
       logWarning(outcome.message, outcome.cause);
       return next();
