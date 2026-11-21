@@ -1,5 +1,4 @@
 export const ASSIST_POPUP_IDS = [
-  "A_STALLED",
   "B_ABSTRACT",
   "C_CRITIQUE",
   "D_EMOTION_ONLY",
@@ -13,9 +12,19 @@ export const ASSIST_POPUP_IDS = [
   "E_DEEPEN_EMOTION",
 ] as const;
 
-type AssistPopupId = (typeof ASSIST_POPUP_IDS)[number];
+export type AssistPopupId = (typeof ASSIST_POPUP_IDS)[number];
 
-export type ApiAssistPopupId = Exclude<AssistPopupId, "A_STALLED">;
+export const EMPTY_HINT_ANGLE_IDS = ["mood", "scene", "sound", "memory"] as const;
+
+export const MESSAGE_ANGLES = [
+  "zoom_in",
+  "sensory",
+  "contrast",
+  "role_or_who",
+  "reflective_why",
+  "reframe_self",
+  "widen_dimension",
+] as const;
 
 export type ToneChoice = "abstract_only" | "objective_critique" | "personal_experience" | "other";
 
@@ -28,7 +37,7 @@ export interface DraftAssistRequest {
 }
 
 export interface DraftAssistResponse {
-  popupId: ApiAssistPopupId | null;
+  popupId: AssistPopupId | null;
   modelVersion: string;
 }
 

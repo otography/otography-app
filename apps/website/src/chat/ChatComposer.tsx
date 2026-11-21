@@ -8,7 +8,9 @@ import { motion } from "#/motion.stylex";
 import { PreviewToggle } from "#/songs/PreviewToggle";
 import { useChat } from "./ChatContext";
 import { ChatDraftAssist } from "./ChatDraftAssist";
+import { ChatEmptyHints } from "./ChatEmptyHints";
 import { ChatSongPicker } from "./ChatSongPicker";
+import { useDraftAssist } from "./DraftAssistContext";
 import { ArrowUpIcon, CloseIcon, MusicNoteIcon, PlusIcon } from "./icons";
 import { chatMedia, chatTokens as t } from "./tokens.stylex";
 
@@ -90,6 +92,7 @@ const copy = {
 /** 感想の入力欄。曲検索メニューが開いている間は、候補の移動・確定のキー操作も受け持つ。 */
 function Input() {
   const { state, actions, meta } = useChat();
+  const { state: assistState } = useDraftAssist();
   const compact = useMediaQuery("(max-width: 540px)");
   const coarsePointer = useMediaQuery("(pointer: coarse)");
   const isMobile = compact || coarsePointer;
@@ -142,7 +145,9 @@ function Input() {
       aria-label={text.label}
       aria-controls={menuOpen ? meta.pickerId : undefined}
       enterKeyHint={menuOpen ? "search" : isMobile ? "enter" : "send"}
-      placeholder={state.selectedSong ? text.withSong : text.withoutSong}
+      placeholder={
+        state.selectedSong ? assistState.placeholderText || text.withSong : text.withoutSong
+      }
       rows={1}
       value={state.draft}
       onFocus={() => {
@@ -268,6 +273,7 @@ function Submit() {
 export const ChatComposer = {
   Frame,
   DraftAssist: ChatDraftAssist,
+  EmptyHints: ChatEmptyHints,
   SongPicker: ChatSongPicker,
   Attachment,
   Input,

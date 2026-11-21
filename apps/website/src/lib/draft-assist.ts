@@ -2,7 +2,6 @@ import type { InferRequestType } from "hono/client";
 import { client } from "#/lib/api";
 
 export type AssistPopupId =
-  | "A_STALLED"
   | "B_ABSTRACT"
   | "C_CRITIQUE"
   | "D_EMOTION_ONLY"
@@ -15,7 +14,21 @@ export type AssistPopupId =
   | "E_DEEPEN_MEMORY"
   | "E_DEEPEN_EMOTION";
 
-export type ApiAssistPopupId = Exclude<AssistPopupId, "A_STALLED">;
+export type EmptyHintAngle = "mood" | "scene" | "sound" | "memory";
+
+export type MessageAngle =
+  | "zoom_in"
+  | "sensory"
+  | "contrast"
+  | "role_or_who"
+  | "reflective_why"
+  | "reframe_self"
+  | "widen_dimension";
+
+export interface AssistMessageItem {
+  angle: MessageAngle;
+  text: string;
+}
 
 export interface DraftAssistRequest {
   draftSessionId: string;
@@ -24,7 +37,7 @@ export interface DraftAssistRequest {
 }
 
 export interface DraftAssistResponse {
-  popupId: ApiAssistPopupId | null;
+  popupId: AssistPopupId | null;
   modelVersion: string;
 }
 

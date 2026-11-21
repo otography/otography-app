@@ -200,6 +200,7 @@ function ChatShell({ user }: { user: Me }) {
           <ChatComposer.SongPicker />
           <ChatComposer.Attachment />
           <ChatComposer.Input />
+          <ChatComposer.EmptyHints />
           <ChatComposer.Toolbar>
             <ChatComposer.PickSongButton />
             <ChatComposer.Submit />

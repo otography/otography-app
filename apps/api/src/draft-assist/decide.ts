@@ -1,5 +1,5 @@
 import type {
-  ApiAssistPopupId,
+  AssistPopupId,
   DecisionThresholds,
   NormalizedDecisionResult,
   ShallowSingleStrategy,
@@ -66,7 +66,7 @@ export function decidePopup(
   res: NormalizedDecisionResult,
   thresholds: DecisionThresholds = DEFAULT_THRESHOLDS,
   shallowSingleStrategy: ShallowSingleStrategy = DEFAULT_SHALLOW_SINGLE_STRATEGY,
-): ApiAssistPopupId | null {
+): AssistPopupId | null {
   const { toneType, elements, concreteDetail } = res;
 
   const presentKeys = ELEMENT_KEYS.filter((k) => elements[k] >= thresholds.ELEMENT_PRESENT);

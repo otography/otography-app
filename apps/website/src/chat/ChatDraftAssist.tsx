@@ -1,4 +1,4 @@
-import { create, props } from "@stylexjs/stylex";
+import * as stylex from "@stylexjs/stylex";
 import { Button } from "@ui-sdk/react/button";
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent } from "react";
@@ -51,7 +51,7 @@ export function ChatDraftAssist() {
     if (event.button !== 0) {
       return;
     }
-    // ボタンやチップのタップ操作はドラッグとして奪わない。
+    // 閉じるボタンのタップ操作はドラッグとして奪わない。
     if (event.target instanceof Element && event.target.closest("button")) {
       return;
     }
@@ -132,17 +132,17 @@ export function ChatDraftAssist() {
       aria-live="polite"
       data-draft-assist={activePopup.id}
       data-open={isShown ? "" : undefined}
-      {...props(styles.card, isShown ? styles.cardVisible : styles.cardHidden)}
+      {...stylex.props(styles.card, isShown ? styles.cardVisible : styles.cardHidden)}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={(event) => finishDrag(event, false)}
       onPointerCancel={(event) => finishDrag(event, true)}
     >
-      <div {...props(styles.header)}>
-        <p {...props(styles.message)}>{activePopup.message}</p>
+      <div {...stylex.props(styles.header)}>
+        <p {...stylex.props(styles.message)}>{activePopup.item.text}</p>
         <Button
           type="button"
-          {...props(styles.closeBtn)}
+          {...stylex.props(styles.closeBtn)}
           aria-label="ヒントを閉じる"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => actions.dismiss("button")}
@@ -150,27 +150,11 @@ export function ChatDraftAssist() {
           <CloseIcon />
         </Button>
       </div>
-
-      {activePopup.chips.length > 0 ? (
-        <div {...props(styles.chips)} role="group" aria-label="書き出しの候補">
-          {activePopup.chips.map((chip) => (
-            <Button
-              key={chip.label}
-              type="button"
-              {...props(styles.chip)}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => actions.applyChip(chip)}
-            >
-              {chip.label}
-            </Button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }
 
-const styles = create({
+const styles = stylex.create({
   card: {
     position: "absolute",
     bottom: `calc(100% + ${chatPopover.sideOffset}px)`,
@@ -283,46 +267,6 @@ const styles = create({
       position: "absolute",
       inset: -9,
       content: '""',
-    },
-  },
-  chips: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  chip: {
-    display: "inline-flex",
-    alignItems: "center",
-    minHeight: 30,
-    paddingBlock: 4,
-    paddingInline: 10,
-    fontFamily: "inherit",
-    fontSize: 12,
-    fontWeight: 500,
-    color: t.text,
-    cursor: "pointer",
-    backgroundColor: {
-      default: t.surface,
-      ":hover": {
-        default: t.surface,
-        [chatMedia.hover]: t.hover,
-      },
-      ":active": t.hover,
-    },
-    borderColor: t.border,
-    borderStyle: "solid",
-    borderWidth: 1,
-    borderRadius: 9999,
-    transform: {
-      default: null,
-      ":active": {
-        default: "scale(0.97)",
-        [chatMedia.reducedMotion]: "none",
-      },
-    },
-    transition: {
-      default: `transform 150ms ${motion.easeOut}, background-color 140ms ${motion.easeOut}`,
-      [chatMedia.reducedMotion]: "background-color 120ms ease",
     },
   },
 });

@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { requestDraftAssist, sendDraftAssistEvent } from "#/lib/draft-assist";
-import type { AssistPopupId } from "#/lib/draft-assist";
+import type { AssistPopupId, EmptyHintAngle, MessageAngle } from "#/lib/draft-assist";
 import { useChat } from "./ChatContext";
-import { buildDraftWithChip, pickAssistMessage, STALLED_CHIPS } from "./draft-assist-copy";
-import type { AssistChip } from "./draft-assist-copy";
+import { pickAssistMessage, pickEmptyPlaceholder } from "./draft-assist-copy";
 import { DraftAssistContext } from "./DraftAssistContext";
 import type { ActiveAssistPopup } from "./DraftAssistContext";
 
 const MAX_ASSIST_SHOWN = 2;
+const MIN_EVAL_TEXT_LENGTH = 6;
 const MAX_EVAL_TEXT_LENGTH = 120;
-const STALLED_MAX_LENGTH = 5;
-const STALLED_DEBOUNCE_MS = 5000;
 const API_DEBOUNCE_MS = 2500;
 const FADE_OUT_MS = 160;
 
@@ -20,8 +18,9 @@ interface SessionState {
   shownCount: number;
   shownPopupIds: Set<AssistPopupId>;
   lastEvaluatedText: string;
-  textLengthAtLastShown: number | null;
-  lastTextLength: number;
+  lastShownPopupId: AssistPopupId | null;
+  lastMessageAngle: MessageAngle | null;
+  charCountAtLastShown: number | null;
   submitted: boolean;
   abandonedLogged: boolean;
 }
@@ -32,19 +31,22 @@ function createSession(): SessionState {
     shownCount: 0,
     shownPopupIds: new Set(),
     lastEvaluatedText: "",
-    textLengthAtLastShown: null,
-    lastTextLength: 0,
+    lastShownPopupId: null,
+    lastMessageAngle: null,
+    charCountAtLastShown: null,
     submitted: false,
     abandonedLogged: false,
   };
 }
 
 export function DraftAssistProvider({ children }: { children: ReactNode }) {
-  const { state: chatState, actions: chatActions, meta: chatMeta } = useChat();
+  const { state: chatState, meta: chatMeta } = useChat();
   const { selectedSong, draft, menuOpen, isComposing, lastSubmission } = chatState;
 
   const [activePopup, setActivePopup] = useState<ActiveAssistPopup | null>(null);
   const [visible, setVisible] = useState(false);
+  const [selectedAngle, setSelectedAngle] = useState<EmptyHintAngle | null>(null);
+  const [placeholderText, setPlaceholderText] = useState<string>(() => pickEmptyPlaceholder(null));
 
   const sessionRef = useRef<SessionState>(createSession());
   const abortRef = useRef<AbortController | null>(null);
@@ -84,7 +86,13 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
 
   const flushAbandonedIfNeeded = useCallback((keepalive: boolean) => {
     const session = sessionRef.current;
-    if (session.submitted || session.abandonedLogged || session.shownCount === 0) {
+    if (
+      session.submitted ||
+      session.abandonedLogged ||
+      session.shownCount === 0 ||
+      !session.lastShownPopupId ||
+      !session.lastMessageAngle
+    ) {
       return;
     }
     session.abandonedLogged = true;
@@ -92,7 +100,8 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       {
         event: "draft_abandoned",
         draftSessionId: session.id,
-        lastTextLength: session.lastTextLength,
+        lastShownPopupId: session.lastShownPopupId,
+        lastMessageAngle: session.lastMessageAngle,
         shownCount: session.shownCount,
         shownPopupIds: Array.from(session.shownPopupIds),
       },
@@ -101,7 +110,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const showPopup = useCallback(
-    (popupId: AssistPopupId, textLength: number, modelVersion?: string) => {
+    (popupId: AssistPopupId, charCountAtShown: number, modelVersion?: string) => {
       const session = sessionRef.current;
       if (session.shownCount >= MAX_ASSIST_SHOWN) {
         return;
@@ -111,15 +120,17 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       }
 
       clearFadeTimer();
+      const picked = pickAssistMessage(popupId);
       session.shownCount += 1;
       session.shownPopupIds.add(popupId);
-      session.textLengthAtLastShown = textLength;
+      session.lastShownPopupId = popupId;
+      session.lastMessageAngle = picked.item.angle;
+      session.charCountAtLastShown = charCountAtShown;
 
-      const picked = pickAssistMessage(popupId);
       setActivePopup({
         id: popupId,
-        message: picked.message,
-        chips: popupId === "A_STALLED" ? STALLED_CHIPS : [],
+        messageIndex: picked.index,
+        item: picked.item,
       });
       setVisible(true);
 
@@ -128,7 +139,8 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
         draftSessionId: session.id,
         popupId,
         messageIndex: picked.index,
-        textLength,
+        messageAngle: picked.item.angle,
+        charCountAtShown,
         modelVersion,
       });
     },
@@ -148,10 +160,10 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       sendDraftAssistEvent({
         event: "draft_submitted",
         draftSessionId: session.id,
-        finalTextLength: lastSubmission.length,
+        finalCharCount: lastSubmission.length,
         appendedAfterAssist:
-          session.textLengthAtLastShown !== null &&
-          lastSubmission.length > session.textLengthAtLastShown,
+          session.charCountAtLastShown !== null &&
+          lastSubmission.length > session.charCountAtLastShown,
         shownCount: session.shownCount,
         shownPopupIds: Array.from(session.shownPopupIds),
       });
@@ -160,7 +172,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     hideImmediately();
   }, [abortInFlight, hideImmediately, lastSubmission]);
 
-  // 曲の選択・変更・解除に合わせて投稿セッションを切り替える。
+  // 曲の選択・変更・解除に合わせて投稿セッションと白紙プレースホルダーを初期化する。
   useEffect(() => {
     const currentSongId = selectedSong?.id ?? null;
     if (currentSongId === prevSongIdRef.current) {
@@ -175,6 +187,8 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     abortInFlight();
     hideImmediately();
     sessionRef.current = createSession();
+    setSelectedAngle(null);
+    setPlaceholderText((prev) => pickEmptyPlaceholder(null, prev));
   }, [abortInFlight, flushAbandonedIfNeeded, hideImmediately, selectedSong?.id]);
 
   // ページ離脱・アンマウント時の draft_abandoned 記録。
@@ -193,7 +207,6 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const draftChanged = draft !== prevDraftRef.current;
     prevDraftRef.current = draft;
-    sessionRef.current.lastTextLength = draft.trim().length;
 
     if (draftChanged || isComposing || menuOpen) {
       abortInFlight();
@@ -203,7 +216,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     }
   }, [abortInFlight, draft, fadeOutPopup, isComposing, menuOpen, visible]);
 
-  // デバウンス付きトリガー（A_STALLED のローカル検知、および 6〜120 文字の API 評価）。
+  // 記述後フェーズ（6〜120 文字）の 2,500 ms デバウンス付き API 評価。0〜5 文字では発火しない。
   useEffect(() => {
     if (!selectedSong || menuOpen || isComposing) {
       return;
@@ -215,20 +228,8 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
     }
 
     const trimmedLength = draft.trim().length;
-    if (trimmedLength > MAX_EVAL_TEXT_LENGTH) {
+    if (trimmedLength < MIN_EVAL_TEXT_LENGTH || trimmedLength > MAX_EVAL_TEXT_LENGTH) {
       return;
-    }
-
-    if (trimmedLength <= STALLED_MAX_LENGTH) {
-      if (session.shownPopupIds.has("A_STALLED")) {
-        return;
-      }
-
-      const timerId = window.setTimeout(() => {
-        showPopup("A_STALLED", trimmedLength);
-      }, STALLED_DEBOUNCE_MS);
-
-      return () => window.clearTimeout(timerId);
     }
 
     if (draft === session.lastEvaluatedText) {
@@ -286,32 +287,30 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
           event: "assist_dismissed",
           draftSessionId: sessionRef.current.id,
           popupId: activePopup.id,
+          messageAngle: activePopup.item.angle,
           method,
-          textLength: draft.trim().length,
         });
       }
       hideImmediately();
     },
-    [activePopup, draft, hideImmediately],
+    [activePopup, hideImmediately],
   );
 
-  const applyChip = useCallback(
-    (chip: AssistChip) => {
-      const nextDraft = buildDraftWithChip(draft, chip.insertText);
-      hideImmediately();
-      chatActions.updateDraft(nextDraft);
-      requestAnimationFrame(() => {
-        const el = chatMeta.textareaRef.current;
-        if (!el) {
-          return;
-        }
-        el.focus();
-        const pos = nextDraft.length;
-        el.setSelectionRange(pos, pos);
+  const selectEmptyHintAngle = useCallback(
+    (angle: EmptyHintAngle) => {
+      setSelectedAngle(angle);
+      setPlaceholderText((prev) => pickEmptyPlaceholder(angle, prev));
+      sendDraftAssistEvent({
+        event: "empty_hint_tapped",
+        draftSessionId: sessionRef.current.id,
+        angle,
       });
+      chatMeta.textareaRef.current?.focus();
     },
-    [chatActions, chatMeta.textareaRef, draft, hideImmediately],
+    [chatMeta.textareaRef],
   );
+
+  const showEmptyHints = selectedSong !== null && !menuOpen && draft.length === 0;
 
   return (
     <DraftAssistContext
@@ -319,10 +318,13 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
         state: {
           activePopup,
           visible,
+          selectedAngle,
+          placeholderText,
+          showEmptyHints,
         },
         actions: {
           dismiss,
-          applyChip,
+          selectEmptyHintAngle,
         },
       }}
     >

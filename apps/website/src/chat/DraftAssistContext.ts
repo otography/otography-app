@@ -1,21 +1,23 @@
 import { createContext, use } from "react";
-import type { AssistPopupId } from "#/lib/draft-assist";
-import type { AssistChip } from "./draft-assist-copy";
+import type { AssistMessageItem, AssistPopupId, EmptyHintAngle } from "#/lib/draft-assist";
 
 export interface ActiveAssistPopup {
   id: AssistPopupId;
-  message: string;
-  chips: ReadonlyArray<AssistChip>;
+  messageIndex: number;
+  item: AssistMessageItem;
 }
 
 type DraftAssistState = {
   activePopup: ActiveAssistPopup | null;
   visible: boolean;
+  selectedAngle: EmptyHintAngle | null;
+  placeholderText: string;
+  showEmptyHints: boolean;
 };
 
 type DraftAssistActions = {
   dismiss: (method: "button" | "swipe") => void;
-  applyChip: (chip: AssistChip) => void;
+  selectEmptyHintAngle: (angle: EmptyHintAngle) => void;
 };
 
 export type DraftAssistContextValue = {
