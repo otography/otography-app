@@ -115,9 +115,10 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
       session.shownPopupIds.add(popupId);
       session.textLengthAtLastShown = textLength;
 
+      const picked = pickAssistMessage(popupId);
       setActivePopup({
         id: popupId,
-        message: pickAssistMessage(popupId),
+        message: picked.message,
         chips: popupId === "A_STALLED" ? STALLED_CHIPS : [],
       });
       setVisible(true);
@@ -126,6 +127,7 @@ export function DraftAssistProvider({ children }: { children: ReactNode }) {
         event: "assist_shown",
         draftSessionId: session.id,
         popupId,
+        messageIndex: picked.index,
         textLength,
         modelVersion,
       });

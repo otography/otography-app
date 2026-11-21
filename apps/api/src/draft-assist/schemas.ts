@@ -12,6 +12,7 @@ export const draftAssistEventInput = z.discriminatedUnion("event", [
     event: z.literal("assist_shown"),
     draftSessionId: z.string().trim().min(1).max(128),
     popupId: z.enum(ASSIST_POPUP_IDS),
+    messageIndex: z.number().int().min(0).max(100),
     textLength: z.number().int().min(0).max(1000),
     modelVersion: z.string().max(128).optional(),
   }),

@@ -5,7 +5,7 @@ import { evaluateDraft } from "../../src/draft-assist/usecases/evaluate-draft.ts
 import type { DecisionLogEntry } from "../../src/draft-assist/usecases/evaluate-draft.ts";
 
 describe("evaluateDraft", () => {
-  test("正常時は判定結果を返し、計測ログを記録する", async () => {
+  test("正常時は判定結果を返し、concreteDetail を含む計測ログを記録する", async () => {
     const logs: Array<DecisionLogEntry> = [];
     const adapter: DecisionModelAdapter = {
       modelVersion: "clef-flash",
@@ -13,6 +13,7 @@ describe("evaluateDraft", () => {
         modelVersion: "clef-flash",
         toneType: { choice: "abstract_only", confidence: 0.92 },
         elements: { space: 0.1, time: 0.1, sound: 0.1, memory: 0.1, emotion: 0.2 },
+        concreteDetail: 0.12,
       }),
     };
 
@@ -32,6 +33,7 @@ describe("evaluateDraft", () => {
       event: "draft_assist_decision",
       draftSessionId: "sess-1",
       modelVersion: "clef-flash",
+      concreteDetail: 0.12,
       decidedPopupId: "B_ABSTRACT",
     });
   });

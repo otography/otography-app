@@ -147,8 +147,16 @@ export function normalizeSystemOneResponse(
   const sound = parseNoulProbability(answers.has_sound);
   const memory = parseNoulProbability(answers.has_memory);
   const emotion = parseNoulProbability(answers.has_emotion_or_action);
+  const concreteDetail = parseNoulProbability(answers.has_concrete_detail);
 
-  if (space === null || time === null || sound === null || memory === null || emotion === null) {
+  if (
+    space === null ||
+    time === null ||
+    sound === null ||
+    memory === null ||
+    emotion === null ||
+    concreteDetail === null
+  ) {
     return new DecisionModelParseError({ detail: "noul 確率の一部が欠落しています" });
   }
 
@@ -159,6 +167,7 @@ export function normalizeSystemOneResponse(
     modelVersion,
     toneType,
     elements: { space, time, sound, memory, emotion },
+    concreteDetail,
   };
 }
 

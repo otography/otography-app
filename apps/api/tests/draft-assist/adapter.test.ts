@@ -13,7 +13,7 @@ import {
 } from "../../src/draft-assist/errors.ts";
 
 describe("normalizeSystemOneResponse", () => {
-  test("System One 標準形式（probabilities + noul）を正規化できる", () => {
+  test("System One 標準形式（probabilities + noul + has_concrete_detail）を正規化できる", () => {
     const result = normalizeSystemOneResponse(
       {
         model: "pplx-decider-flash-v1.3",
@@ -31,6 +31,7 @@ describe("normalizeSystemOneResponse", () => {
           has_sound: { noul: 0.2 },
           has_memory: { noul: 0.05 },
           has_emotion_or_action: { noul: 0.72 },
+          has_concrete_detail: { noul: 0.18 },
         },
       },
       "fallback",
@@ -40,6 +41,7 @@ describe("normalizeSystemOneResponse", () => {
       modelVersion: "pplx-decider-flash-v1.3",
       toneType: { choice: "abstract_only", confidence: 0.88 },
       elements: { space: 0.12, time: 0.08, sound: 0.2, memory: 0.05, emotion: 0.72 },
+      concreteDetail: 0.18,
     });
   });
 
@@ -53,6 +55,7 @@ describe("normalizeSystemOneResponse", () => {
           has_sound: 0.3,
           has_memory: 0.0,
           has_emotion_or_action: 0.15,
+          has_concrete_detail: 0.6,
         },
       },
       "clef-flash",
@@ -62,12 +65,29 @@ describe("normalizeSystemOneResponse", () => {
       modelVersion: "clef-flash",
       toneType: { choice: "objective_critique", confidence: 0.91 },
       elements: { space: 0.1, time: 0.2, sound: 0.3, memory: 0.0, emotion: 0.15 },
+      concreteDetail: 0.6,
     });
   });
 
-  test("必須フィールド欠損時は DecisionModelParseError を返す", () => {
-    const result = normalizeSystemOneResponse({ answers: {} }, "clef-flash");
-    expect(result).toBeInstanceOf(DecisionModelParseError);
+  test("必須フィールド欠損時（has_concrete_detail 欠落含む）は DecisionModelParseError を返す", () => {
+    expect(normalizeSystemOneResponse({ answers: {} }, "clef-flash")).toBeInstanceOf(
+      DecisionModelParseError,
+    );
+    expect(
+      normalizeSystemOneResponse(
+        {
+          answers: {
+            tone_type: { choice: "abstract_only", confidence: 0.9 },
+            has_space: { noul: 0.1 },
+            has_time: { noul: 0.1 },
+            has_sound: { noul: 0.1 },
+            has_memory: { noul: 0.1 },
+            has_emotion_or_action: { noul: 0.1 },
+          },
+        },
+        "clef-flash",
+      ),
+    ).toBeInstanceOf(DecisionModelParseError);
   });
 });
 
@@ -88,6 +108,7 @@ describe("resolveDecisionAdapter & adapters", () => {
             has_sound: { noul: 0.1 },
             has_memory: { noul: 0.1 },
             has_emotion_or_action: { noul: 0.1 },
+            has_concrete_detail: { noul: 0.2 },
           },
         };
       },
@@ -127,6 +148,7 @@ describe("resolveDecisionAdapter & adapters", () => {
             has_sound: { noul: 0.1 },
             has_memory: { noul: 0.1 },
             has_emotion_or_action: { noul: 0.1 },
+            has_concrete_detail: { noul: 0.7 },
           },
         }),
     });

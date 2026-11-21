@@ -1,10 +1,19 @@
-import type { ApiAssistPopupId, DecisionThresholds, NormalizedDecisionResult } from "./types.ts";
+import type {
+  ApiAssistPopupId,
+  DecisionThresholds,
+  NormalizedDecisionResult,
+  ShallowSingleStrategy,
+} from "./types.ts";
 
 export const DEFAULT_THRESHOLDS: DecisionThresholds = {
   CHOICE_CONFIDENCE: 0.8,
   ELEMENT_PRESENT: 0.65,
   ELEMENT_ABSENT: 0.25,
+  DETAIL_DEEP: 0.65,
+  DETAIL_SHALLOW: 0.25,
 };
+
+export const DEFAULT_SHALLOW_SINGLE_STRATEGY: ShallowSingleStrategy = "deepen";
 
 function parseUnitInterval(raw: string | undefined, fallback: number): number {
   if (raw === undefined || raw.trim() === "") {
@@ -33,7 +42,22 @@ export function readThresholds(
       env.DRAFT_ASSIST_ELEMENT_ABSENT,
       DEFAULT_THRESHOLDS.ELEMENT_ABSENT,
     ),
+    DETAIL_DEEP: parseUnitInterval(env.DRAFT_ASSIST_DETAIL_DEEP, DEFAULT_THRESHOLDS.DETAIL_DEEP),
+    DETAIL_SHALLOW: parseUnitInterval(
+      env.DRAFT_ASSIST_DETAIL_SHALLOW,
+      DEFAULT_THRESHOLDS.DETAIL_SHALLOW,
+    ),
   };
+}
+
+export function readShallowSingleStrategy(
+  env: Record<string, string | undefined> = process.env,
+): ShallowSingleStrategy {
+  const raw = env.DRAFT_ASSIST_SHALLOW_SINGLE_STRATEGY?.trim().toLowerCase();
+  if (raw === "deepen" || raw === "widen") {
+    return raw;
+  }
+  return DEFAULT_SHALLOW_SINGLE_STRATEGY;
 }
 
 const ELEMENT_KEYS = ["space", "time", "sound", "memory", "emotion"] as const;
@@ -41,28 +65,55 @@ const ELEMENT_KEYS = ["space", "time", "sound", "memory", "emotion"] as const;
 export function decidePopup(
   res: NormalizedDecisionResult,
   thresholds: DecisionThresholds = DEFAULT_THRESHOLDS,
+  shallowSingleStrategy: ShallowSingleStrategy = DEFAULT_SHALLOW_SINGLE_STRATEGY,
 ): ApiAssistPopupId | null {
-  const { toneType, elements } = res;
+  const { toneType, elements, concreteDetail } = res;
 
   const presentKeys = ELEMENT_KEYS.filter((k) => elements[k] >= thresholds.ELEMENT_PRESENT);
+  const isShallow = concreteDetail <= thresholds.DETAIL_SHALLOW;
 
-  // 2要素以上が明確に含まれていれば十分とみなし沈黙する。
+  // 1. [最優先：軸のズレ] 作品への客観評価・批評寄り
+  if (
+    toneType.confidence >= thresholds.CHOICE_CONFIDENCE &&
+    toneType.choice === "objective_critique"
+  ) {
+    return "C_CRITIQUE";
+  }
+
+  // 2. [幅2以上] 複数要素が揃っている場合
   if (presentKeys.length >= 2) {
+    if (isShallow) {
+      return "E_DEEPEN_GENERAL";
+    }
     return null;
   }
 
-  if (toneType.confidence >= thresholds.CHOICE_CONFIDENCE) {
-    if (toneType.choice === "abstract_only") {
-      return "B_ABSTRACT";
-    }
-    if (toneType.choice === "objective_critique") {
-      return "C_CRITIQUE";
-    }
+  // 3. [幅0・抽象語のみ] 起点の具体化
+  if (toneType.confidence >= thresholds.CHOICE_CONFIDENCE && toneType.choice === "abstract_only") {
+    return "B_ABSTRACT";
   }
 
+  // 4. [幅1] 単一要素のみ明確な場合
   if (presentKeys.length === 1) {
     const only = presentKeys[0];
 
+    // 4-A. 明確に浅い場合（戦略フラグに応じて深掘り or 横の拡張）
+    if (isShallow && shallowSingleStrategy === "deepen") {
+      if (only === "space" || only === "time") {
+        return "E_DEEPEN_CONTEXT";
+      }
+      if (only === "sound") {
+        return "E_DEEPEN_SOUND";
+      }
+      if (only === "memory") {
+        return "E_DEEPEN_MEMORY";
+      }
+      if (only === "emotion") {
+        return "E_DEEPEN_EMOTION";
+      }
+    }
+
+    // 4-B. 深い、中間帯、または横拡張戦略の場合
     if (
       only === "emotion" &&
       elements.space <= thresholds.ELEMENT_ABSENT &&

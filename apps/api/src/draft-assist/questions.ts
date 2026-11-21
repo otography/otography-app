@@ -55,4 +55,14 @@ export const DRAFT_ASSIST_QUESTIONS = {
       false: "No internal emotional shift, sensation, or action is described.",
     },
   },
+  has_concrete_detail: {
+    type: "noul",
+    instructions:
+      "Does the draft contain at least one concrete, vivid detail (such as a specific musical part, a distinct scene, or a personal memory) rather than only generic or interchangeable words?",
+    criteria: {
+      true: "Includes specific phrasing that evokes a distinct scene, sound, or personal moment (e.g., 'rain on the train window', 'the guitar riff in the intro', 'walking home after the last train').",
+      false:
+        "Consists only of broad, generic, or vague expressions that could apply to almost any song (e.g., 'good', 'relaxing', 'at night', 'nice melody').",
+    },
+  },
 } as const;

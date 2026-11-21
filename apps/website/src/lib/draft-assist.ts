@@ -8,7 +8,12 @@ export type AssistPopupId =
   | "D_EMOTION_ONLY"
   | "D_CONTEXT_ONLY"
   | "D_SOUND_ONLY"
-  | "D_MEMORY_ONLY";
+  | "D_MEMORY_ONLY"
+  | "E_DEEPEN_GENERAL"
+  | "E_DEEPEN_CONTEXT"
+  | "E_DEEPEN_SOUND"
+  | "E_DEEPEN_MEMORY"
+  | "E_DEEPEN_EMOTION";
 
 export type ApiAssistPopupId = Exclude<AssistPopupId, "A_STALLED">;
 

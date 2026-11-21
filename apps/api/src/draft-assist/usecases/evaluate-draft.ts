@@ -1,12 +1,13 @@
 import { logWarning } from "../../lib/log.ts";
 import type { DecisionModelAdapter } from "../adapter.ts";
-import { decidePopup, DEFAULT_THRESHOLDS } from "../decide.ts";
+import { decidePopup, DEFAULT_SHALLOW_SINGLE_STRATEGY, DEFAULT_THRESHOLDS } from "../decide.ts";
 import { DecisionModelTimeoutError } from "../errors.ts";
 import type {
   DecisionThresholds,
   DraftAssistRequest,
   DraftAssistResponse,
   NormalizedDecisionResult,
+  ShallowSingleStrategy,
 } from "../types.ts";
 
 const DEFAULT_DECISION_TIMEOUT_MS = 1200;
@@ -18,6 +19,7 @@ export interface DecisionLogEntry {
   latencyMs: number;
   toneType: NormalizedDecisionResult["toneType"];
   elements: NormalizedDecisionResult["elements"];
+  concreteDetail: number;
   decidedPopupId: DraftAssistResponse["popupId"];
 }
 
@@ -49,6 +51,7 @@ export async function evaluateDraft(deps: {
   adapter: DecisionModelAdapter;
   input: DraftAssistRequest;
   thresholds?: DecisionThresholds;
+  shallowSingleStrategy?: ShallowSingleStrategy;
   timeoutMs?: number;
   now?: () => number;
   onLog?: (entry: DecisionLogEntry) => void;
@@ -56,6 +59,7 @@ export async function evaluateDraft(deps: {
   const now = deps.now ?? Date.now;
   const timeoutMs = deps.timeoutMs ?? DEFAULT_DECISION_TIMEOUT_MS;
   const thresholds = deps.thresholds ?? DEFAULT_THRESHOLDS;
+  const shallowSingleStrategy = deps.shallowSingleStrategy ?? DEFAULT_SHALLOW_SINGLE_STRATEGY;
   const startedAt = now();
 
   const result = await withTimeout(
@@ -78,7 +82,7 @@ export async function evaluateDraft(deps: {
     };
   }
 
-  const popupId = decidePopup(result, thresholds);
+  const popupId = decidePopup(result, thresholds, shallowSingleStrategy);
   const logEntry: DecisionLogEntry = {
     event: "draft_assist_decision",
     draftSessionId: deps.input.draftSessionId,
@@ -86,6 +90,7 @@ export async function evaluateDraft(deps: {
     latencyMs,
     toneType: result.toneType,
     elements: result.elements,
+    concreteDetail: result.concreteDetail,
     decidedPopupId: popupId,
   };
 
