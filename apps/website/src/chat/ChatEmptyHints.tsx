@@ -55,6 +55,10 @@ const styles = stylex.create({
     },
   },
   hintBarHidden: {
+    display: {
+      default: "flex",
+      [chatMedia.compact]: "none",
+    },
     pointerEvents: "none",
     opacity: 0,
   },
